@@ -524,7 +524,7 @@ function buildFields(){
     ChallengesDelays:spVal("challenges"),DelayCause:spVal("delayCause"),DirectedOutOfScope:spVal("directed"),
     LookAheadStatus:spVal("lookStatus"),NextDayPlan:spVal("lookAhead"),Photos:spVal("photos"),
     AdditionalNotes:spVal("notes"),Certified:spYN(a.certify),Signature:spVal("signature"),
-    SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail
+    SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail,LogText:buildText()
   };
   Object.keys(f).forEach(function(k){if(f[k]===null)delete f[k];});
   return f;
