@@ -195,6 +195,7 @@ var QUESTIONS = [
   {id:"quality",sec:"Quality & Inspections",type:"textarea",label:"Any quality issues, rework, or punch items?",help:"Defects, rework, or items needing correction.",req:false,ph:"Enter 'None' if none"},
 
   {id:"chalStatus",sec:"Challenges & Delays",type:"select",label:"What is the status of any challenges or delays?",help:"Select the current status.",options:CHAL_STATUS,req:true},
+  {id:"escalatedTo",sec:"Challenges & Delays",type:"text",label:"Who was it escalated to?",help:"Name the supervisor this was escalated to.",req:false,showIf:function(r){return r.chalStatus==="Escalated to Supervisor";},ph:"Supervisor name"},
   {id:"challenges",sec:"Challenges & Delays",type:"textarea",label:"Describe any challenges, delays, or disruptions.",help:"Be specific and factual; these records matter in disputes.",req:true,showIf:function(r){return r.chalStatus!=="None";},ph:"e.g., Could not access Mech Rm 2; locked by GC until 1pm"},
   {id:"delayCause",sec:"Challenges & Delays",type:"text",label:"What caused the delay or challenge?",help:"Root cause and who/what was responsible.",req:false,showIf:function(r){return r.chalStatus!=="None";},ph:"e.g., GC scheduling / missing material / owner change"},
   {id:"directed",sec:"Challenges & Delays",type:"text",label:"Was any work directed by others or out of scope (potential change order)?",help:"Document extra or changed work directed on site.",req:false,ph:"e.g., GC directed added fire damper; 'None' if none"},
@@ -468,7 +469,7 @@ function buildText(){
   line("Inspections/Tests",a.inspections); line("Quality Issues/Rework",a.quality);
   L.push("");
   L.push("-- CHALLENGES & DELAYS --");
-  line("Status",a.chalStatus); line("Challenges/Delays",a.challenges); line("Cause",a.delayCause); line("Directed/Out-of-Scope Work",a.directed);
+  line("Status",a.chalStatus); line("Escalated To",a.escalatedTo); line("Challenges/Delays",a.challenges); line("Cause",a.delayCause); line("Directed/Out-of-Scope Work",a.directed);
   L.push("");
   L.push("-- LOOK AHEAD --");
   line("Status",a.lookStatus); line("Next-Day Plan",a.lookAhead);
@@ -519,7 +520,7 @@ function buildFields(){
     DeliveriesReceived:spVal("deliveries"),ShortagesBackorders:spVal("shortages"),
     Subcontractors:spVal("subs"),VisitorsInspectors:spVal("visitors"),ToolboxTalkHeld:spVal("toolbox"),
     SafetyTopic:spVal("toolboxTopic"),IncidentsNearMisses:spVal("incidents"),SafetyNotes:spVal("safetyNotes"),
-    InspectionsTests:spVal("inspections"),QualityIssuesRework:spVal("quality"),ChallengeStatus:spVal("chalStatus"),
+    InspectionsTests:spVal("inspections"),QualityIssuesRework:spVal("quality"),ChallengeStatus:spVal("chalStatus"),EscalatedTo:spVal("escalatedTo"),
     ChallengesDelays:spVal("challenges"),DelayCause:spVal("delayCause"),DirectedOutOfScope:spVal("directed"),
     LookAheadStatus:spVal("lookStatus"),NextDayPlan:spVal("lookAhead"),Photos:spVal("photos"),
     AdditionalNotes:spVal("notes"),Certified:spYN(a.certify),Signature:spVal("signature"),
