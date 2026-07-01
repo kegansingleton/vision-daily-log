@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Daily Timecard</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--warn:#b45309;--warnbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.3px}
+header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:14px 12px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .n{background:var(--vm);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=number],input[type=text],select{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.search{margin-bottom:8px}
+.crewbox{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:9px}
+.crewrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f2f4;font-size:15px}
+.crewrow:last-child{border-bottom:0}
+.crewrow input{width:20px;height:20px;flex:0 0 auto}
+.crewrow .num{color:var(--mut);font-size:12px;margin-left:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#fdecea;color:var(--vm2);border:1px solid #f5c6c2;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.entry{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:#fafafa}
+.entry .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.entry .top b{font-size:13px;color:var(--vm2)}
+.paytabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.paytab{flex:1;min-width:70px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;background:#fff;cursor:pointer;color:var(--mut)}
+.paytab.on{background:var(--vm);color:#fff;border-color:var(--vm)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.applybox{margin-top:8px}
+.applygrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.mini{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:13px}
+.mini input{width:16px;height:16px}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-primary{background:var(--vm);color:#fff}
+.btn-primary:disabled{opacity:.5}
+.btn-ghost{background:#fff;color:var(--vm);border:1.5px dashed var(--vm)}
+.btn-x{background:none;border:none;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+.summary{font-size:13px}
+.summary table{width:100%;border-collapse:collapse}
+.summary td{padding:6px 4px;border-bottom:1px solid #f1f2f4}
+.summary td:last-child{text-align:right;font-weight:700}
+.summary .bad td:last-child{color:var(--vm)}
+.hint{font-size:12px;color:var(--mut);margin-top:4px}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:760px;margin:0 auto}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}
+.gate h1{font-size:22px;margin:0 0 6px}
+.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}
+.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.load{text-align:center;color:var(--mut);padding:30px;font-size:14px}
+.req{color:var(--vm)}
+</style>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <h1>Vision Mechanical</h1>
+  <p>Daily Timecard. Sign in with your Vision Mechanical account to enter crew time.</p>
+  <button id="signin">Sign in with Microsoft</button>
+  <div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+
+<header>
+  <h1>Daily Timecard</h1>
+  <div class="who" id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div id="loading" class="load">Loading crew, jobs, and codes…</div>
+
+  <div id="main" style="display:none">
+    <div class="card">
+      <h2><span class="n">1</span> Work date</h2>
+      <input type="date" id="workDate">
+      <div class="hint">Enter time for the day the crew worked (usually today).</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">2</span> Who worked today?</h2>
+      <input type="text" class="search" id="crewSearch" placeholder="Search name or number…">
+      <div class="crewbox" id="crewBox"></div>
+      <div class="chips" id="crewChips"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">3</span> Time entries</h2>
+      <div id="entries"></div>
+      <button class="btn btn-ghost" id="addEntry">+ Add time entry</button>
+      <div class="hint">Add a line for each job/phase/line the crew worked, then check who it applies to. Same job for 3 guys = one line, check all 3.</div>
+    </div>
+
+    <div class="card summary">
+      <h2><span class="n">4</span> Daily totals</h2>
+      <div id="summary"></div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<div class="foot" id="foot" style="display:none"><div class="inner">
+  <button class="btn btn-primary" id="submitBtn">Submit timecard</button>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/dist/msal-browser.min.js"></script>
+<script>
+/* ============ CONFIG ============ */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobs:"836523ba-cd20-4736-98ce-5716668b8973",phase:"96011c89-8511-490e-8061-826a682f17d1",line:"d0b90d62-f16f-46cb-b232-b433cad1cd99",tc:"91c4a3db-97f6-4b52-a855-516d5c414124"};
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var PAYTYPES=["Regular","Sick","Vacation","Holiday"];
+
+/* ============ STATE ============ */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", loginName="";
+var REF={emp:[],jobs:[],phase:[],line:[]};
+var crewSel={}; // empNo -> {num,name}
+var entries=[]; // {id,pay,job,jobName,phase,line,hours,apply:{empNo:true}}
+var eid=1;
+
+/* ============ AUTH ============ */
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginEmail=acct.username||""; loginName=acct.name||acct.username||"";
+  document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("foot").style.display="block";
+  document.getElementById("who").textContent=loginName+" · "+new Date().toLocaleDateString();
+  loadRefData();
+}
+async function getToken(){
+  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
+  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
+}
+document.getElementById("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+
+msalApp.handleRedirectPromise().then(function(resp){
+  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
+  if(acct){afterLogin(acct);}
+}).catch(function(e){ document.getElementById("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ============ LOAD REFERENCE DATA ============ */
+async function gGetAll(listId,fields){
+  var token=await getToken();
+  var url=GRAPH+listId+"/items?$expand=fields($select="+fields.join(",")+")&$top=999";
+  var out=[];
+  while(url){
+    var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(r=>r.json());
+    if(j.error) throw new Error(j.error.message);
+    (j.value||[]).forEach(function(it){ out.push(it.fields); });
+    url=j["@odata.nextLink"]||null;
+  }
+  return out;
+}
+function activeOnly(a){ return a.filter(function(x){ return (x.Active||"Yes").toLowerCase()!=="no"; }); }
+async function loadRefData(){
+  try{
+    var emp=await gGetAll(LIST.emp,["EmployeeNumber","EmployeeName","Active"]);
+    var jobs=await gGetAll(LIST.jobs,["JobNo","JobName","Active"]);
+    var phase=await gGetAll(LIST.phase,["PhaseCode","PhaseDesc","Active"]);
+    var line=await gGetAll(LIST.line,["LineNum","LineDesc","Active"]);
+    REF.emp=activeOnly(emp).sort(function(a,b){return (a.EmployeeName||"").localeCompare(b.EmployeeName||"");});
+    REF.jobs=activeOnly(jobs).sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
+    REF.phase=activeOnly(phase).sort(function(a,b){return (a.PhaseCode||"").localeCompare(b.PhaseCode||"");});
+    REF.line=activeOnly(line).sort(function(a,b){return (parseInt(a.LineNum||0)-parseInt(b.LineNum||0));});
+    initUI();
+  }catch(e){ document.getElementById("loading").innerHTML="Could not load data: "+e.message; }
+}
+
+/* ============ UI ============ */
+function initUI(){
+  document.getElementById("loading").style.display="none";
+  document.getElementById("main").style.display="block";
+  var d=new Date(); var iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  document.getElementById("workDate").value=iso;
+  // restore last crew
+  try{var last=JSON.parse(localStorage.getItem("vm_tc_lastcrew")||"[]");
+      last.forEach(function(e){crewSel[e.num]={num:e.num,name:e.name};});}catch(e){}
+  renderCrew(); renderChips();
+  if(entries.length===0) addEntry();
+  renderEntries(); renderSummary();
+  document.getElementById("crewSearch").oninput=renderCrew;
+  document.getElementById("addEntry").onclick=function(){addEntry();renderEntries();renderSummary();};
+  document.getElementById("submitBtn").onclick=submit;
+}
+function renderCrew(){
+  var q=(document.getElementById("crewSearch").value||"").toLowerCase();
+  var box=document.getElementById("crewBox"); box.innerHTML="";
+  REF.emp.forEach(function(e){
+    var num=e.EmployeeNumber, name=e.EmployeeName||"";
+    if(q && !(name.toLowerCase().indexOf(q)>=0 || (num||"").indexOf(q)>=0)) return;
+    var row=document.createElement("label"); row.className="crewrow";
+    var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!crewSel[num];
+    cb.onchange=function(){ if(cb.checked){crewSel[num]={num:num,name:name};} else {delete crewSel[num]; entries.forEach(function(en){delete en.apply[num];});} renderChips(); renderEntries(); renderSummary(); saveCrew(); };
+    var nm=document.createElement("span"); nm.textContent=name;
+    var nn=document.createElement("span"); nn.className="num"; nn.textContent="#"+num;
+    row.appendChild(cb); row.appendChild(nm); row.appendChild(nn); box.appendChild(row);
+  });
+}
+function saveCrew(){ try{localStorage.setItem("vm_tc_lastcrew",JSON.stringify(Object.values(crewSel)));}catch(e){} }
+function renderChips(){
+  var c=document.getElementById("crewChips"); c.innerHTML="";
+  var arr=Object.values(crewSel);
+  if(arr.length===0){c.innerHTML='<span class="hint">No crew selected yet.</span>';return;}
+  arr.forEach(function(e){var s=document.createElement("span");s.className="chip";s.textContent=e.name;c.appendChild(s);});
+}
+function addEntry(){ entries.push({id:eid++,pay:"Regular",job:"",jobName:"",phase:"",line:"",hours:"",apply:{}}); }
+function opt(v,t,sel){ return '<option value="'+v.replace(/"/g,'&quot;')+'"'+(sel===v?" selected":"")+'>'+t+'</option>'; }
+function renderEntries(){
+  var wrap=document.getElementById("entries"); wrap.innerHTML="";
+  var crew=Object.values(crewSel);
+  entries.forEach(function(en,idx){
+    var div=document.createElement("div"); div.className="entry";
+    var tabs=PAYTYPES.map(function(p){return '<div class="paytab'+(en.pay===p?" on":"")+'" data-p="'+p+'">'+p+'</div>';}).join("");
+    var jobSel='<option value="">— Select job —</option>'+REF.jobs.map(function(j){return opt(j.JobNo,j.JobNo+" · "+(j.JobName||""),en.job);}).join("");
+    var phSel='<option value="">— Phase —</option>'+REF.phase.map(function(p){var t=p.PhaseCode+(p.PhaseDesc?" · "+p.PhaseDesc:"");return opt(p.PhaseCode,t,en.phase);}).join("");
+    var lnSel='<option value="">— Line —</option>'+REF.line.map(function(l){var t=l.LineNum+(l.LineDesc?" · "+l.LineDesc:"");return opt(l.LineNum,t,en.line);}).join("");
+    var jobBlock=en.pay==="Regular"?(
+      '<label>Job <span class="req">*</span></label><select data-f="job">'+jobSel+'</select>'+
+      '<div class="grid2"><div><label>Phase <span class="req">*</span></label><select data-f="phase">'+phSel+'</select></div>'+
+      '<div><label>Line <span class="req">*</span></label><select data-f="line">'+lnSel+'</select></div></div>'):
+      '<div class="hint" style="margin:6px 0">'+en.pay+' time — no job/phase/line needed.</div>';
+    var applyMini=crew.length? ('<div class="applygrid">'+
+        '<label class="mini"><input type="checkbox" data-all="1" '+(crew.length&&crew.every(function(c){return en.apply[c.num];})?"checked":"")+'> <b>All crew</b></label>'+
+        crew.map(function(c){return '<label class="mini"><input type="checkbox" data-emp="'+c.num+'" '+(en.apply[c.num]?"checked":"")+'> '+c.name+'</label>';}).join("")+
+      '</div>') : '<div class="hint">Select crew in step 2 first.</div>';
+    div.innerHTML=
+      '<div class="top"><b>Entry '+(idx+1)+'</b><button class="btn-x" data-del="1" title="Remove">&times;</button></div>'+
+      '<div class="paytabs">'+tabs+'</div>'+
+      jobBlock+
+      '<label>Hours <span class="req">*</span> <span class="hint">(0.5 steps)</span></label>'+
+      '<input type="number" data-f="hours" min="0.5" step="0.5" inputmode="decimal" value="'+(en.hours||"")+'" placeholder="e.g. 8">'+
+      '<div class="applybox"><label>Applies to <span class="req">*</span></label>'+applyMini+'</div>';
+    // wire pay tabs
+    div.querySelectorAll(".paytab").forEach(function(t){t.onclick=function(){en.pay=t.getAttribute("data-p");renderEntries();renderSummary();};});
+    // wire selects/inputs
+    div.querySelectorAll("[data-f]").forEach(function(el){el.onchange=function(){
+      var f=el.getAttribute("data-f"); en[f]=el.value;
+      if(f==="job"){var jb=REF.jobs.find(function(j){return j.JobNo===el.value;});en.jobName=jb?(jb.JobName||""):"";}
+      renderSummary();
+    };});
+    // del
+    div.querySelector("[data-del]").onclick=function(){entries=entries.filter(function(x){return x.id!==en.id;});if(entries.length===0)addEntry();renderEntries();renderSummary();};
+    // apply checkboxes
+    var allcb=div.querySelector('[data-all]');
+    if(allcb) allcb.onchange=function(){crew.forEach(function(c){if(allcb.checked)en.apply[c.num]=true;else delete en.apply[c.num];});renderEntries();renderSummary();};
+    div.querySelectorAll('[data-emp]').forEach(function(cb){cb.onchange=function(){var n=cb.getAttribute("data-emp");if(cb.checked)en.apply[n]=true;else delete en.apply[n];renderEntries();renderSummary();};});
+    wrap.appendChild(div);
+  });
+}
+function renderSummary(){
+  var tot={}; // empNo -> hours
+  entries.forEach(function(en){
+    var h=parseFloat(en.hours||0)||0; if(h<=0)return;
+    Object.keys(en.apply).forEach(function(n){ if(!crewSel[n])return; tot[n]=(tot[n]||0)+h; });
+  });
+  var el=document.getElementById("summary");
+  var crew=Object.values(crewSel);
+  if(crew.length===0){el.innerHTML='<span class="hint">Add crew and entries to see totals.</span>';return;}
+  var rows=crew.map(function(c){var h=tot[c.num]||0;var bad=(h===0||h>16);return '<tr class="'+(bad?"bad":"")+'"><td>'+c.name+'</td><td>'+(h||"—")+(h?" hrs":"")+'</td></tr>';}).join("");
+  el.innerHTML='<table>'+rows+'</table><div class="hint">Flagged red = 0 hours or over 16. Double-check before submitting.</div>';
+}
+
+/* ============ SUBMIT ============ */
+function fmtDateText(iso){var p=iso.split("-");return parseInt(p[1])+"/"+parseInt(p[2])+"/"+p[0];}
+function uuid(){return 'b-'+Date.now()+'-'+Math.random().toString(16).slice(2,8);}
+async function submit(){
+  var msg=document.getElementById("msg"); msg.className="msg"; msg.textContent="";
+  var iso=document.getElementById("workDate").value;
+  if(!iso){msg.className="msg err";msg.textContent="Pick a work date.";return;}
+  var crew=Object.values(crewSel);
+  if(crew.length===0){msg.className="msg err";msg.textContent="Select at least one crew member.";return;}
+  // build rows + validate
+  var rows=[]; var problems=[];
+  entries.forEach(function(en,idx){
+    var h=parseFloat(en.hours||0)||0;
+    var who=Object.keys(en.apply).filter(function(n){return crewSel[n];});
+    if(h<=0){problems.push("Entry "+(idx+1)+": hours missing.");}
+    if(who.length===0){problems.push("Entry "+(idx+1)+": no crew checked.");}
+    if(en.pay==="Regular" && (!en.job||!en.phase||!en.line)){problems.push("Entry "+(idx+1)+": job, phase, and line required.");}
+    if(h>0 && who.length){
+      who.forEach(function(n){
+        rows.push({
+          Title:crewSel[n].name+" "+iso+" "+(en.job||en.pay),
+          WorkDate:iso, WorkDateText:fmtDateText(iso),
+          EmployeeNumber:n, EmployeeName:crewSel[n].name, PayType:en.pay,
+          JobNo:en.pay==="Regular"?en.job:"", JobName:en.pay==="Regular"?en.jobName:"",
+          PhaseCode:en.pay==="Regular"?en.phase:"", LineNum:en.pay==="Regular"?en.line:"",
+          Hours:h, Foreman:loginName, ForemanEmail:loginEmail
+        });
+      });
+    }
+  });
+  if(problems.length){msg.className="msg err";msg.innerHTML="Fix these:<br>"+problems.join("<br>");return;}
+  if(rows.length===0){msg.className="msg err";msg.textContent="Nothing to submit.";return;}
+  var batch=uuid(); var when=new Date().toLocaleString();
+  var btn=document.getElementById("submitBtn"); btn.disabled=true; btn.textContent="Submitting "+rows.length+" lines…";
+  try{
+    var token=await getToken();
+    var ok=0;
+    for(var i=0;i<rows.length;i++){
+      rows[i].BatchId=batch; rows[i].SubmittedAt=when;
+      var r=await fetch(GRAPH+LIST.tc+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:rows[i]})});
+      if(r.ok)ok++; else {var er=await r.json();throw new Error((er.error&&er.error.message)||("HTTP "+r.status));}
+    }
+    msg.className="msg ok"; msg.textContent="✓ Submitted "+ok+" time lines for "+crew.length+" crew on "+fmtDateText(iso)+". You can close this or enter another day.";
+    // reset entries but keep crew
+    entries=[]; addEntry(); renderEntries(); renderSummary();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(e){ msg.className="msg err"; msg.textContent="Submit failed: "+e.message; }
+  finally{ btn.disabled=false; btn.textContent="Submit timecard"; }
+}
+</script>
+</body>
+</html>
