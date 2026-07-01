@@ -122,7 +122,7 @@
     </div>
     <div class="actions">
       <button class="btn gold" id="copyBtn">&#128203; Copy to Clipboard</button>
-      <button class="btn next" id="emailBtn">&#9993; Submit Log to Office</button>
+      <button class="btn next" id="emailBtn">&#9993; Submit Log</button>
       <button class="btn ghost" id="editBtn">&larr; Back to Edit</button>
       <button class="btn ghost" id="newBtn">+ Start New Log</button>
     </div>
@@ -485,29 +485,58 @@ function buildText(){
 function today(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
-/* ---------- Submission payload (email-bridge) ---------- */
-function buildJSON(){
-  var payload={};
-  QUESTIONS.forEach(function(q){ payload[q.id]=(answers[q.id]!==undefined?answers[q.id]:""); });
-  payload.loginEmail=loginEmail; payload.template=VERSION;
-  return JSON.stringify(payload);
-}
-function buildSubmitBody(){
-  return buildText()+"\n\n---VISIONLOG-DATA (do not edit below this line)---\n"+buildJSON()+"\n---END VISIONLOG-DATA---";
-}
-/* ---------- Microsoft login (MSAL, client-side) ---------- */
+/* ---------- Microsoft login + direct-to-SharePoint (Graph) ---------- */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/bccd1165-a999-41b4-9cae-394d0766fb4a/items";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
 var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
-function hideGate(){ var g=E("authGate"); if(g) g.style.display="none"; }
+function hideGate(){var g=E("authGate");if(g)g.style.display="none";}
 function startAuth(){
   msalInstance.handleRedirectPromise().then(function(){
     var acct=msalInstance.getAllAccounts()[0];
-    if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email"]}); return; }
+    if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); return; }
     msalInstance.setActiveAccount(acct);
     loginEmail=acct.username||"";
     hideGate(); render();
   }).catch(function(e){
-    var g=E("authGate"); if(g) g.innerHTML="<div style=\"max-width:340px\">Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
+    var g=E("authGate"); if(g) g.innerHTML="<div style='max-width:340px'>Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
+  });
+}
+function spVal(id){var v=answers[id];if(Array.isArray(v))return v.join(", ");return (v===undefined||v===null)?"":v;}
+function spNum(id){var n=parseFloat(answers[id]);return isNaN(n)?null:n;}
+function spYN(v){return v===true?"Yes":(v||"");}
+function buildFields(){
+  var a=answers;
+  var f={
+    Title:(a.date||"")+" | "+(a.project||"")+" | "+(a.submittedBy||""),
+    LogDate:a.date?(a.date+"T12:00:00Z"):null,
+    Project:spVal("project"),SubmittedBy:spVal("submittedBy"),ForemanSuper:spVal("foreman"),
+    Weather:spVal("weather"),Temperature:spVal("temp"),WeatherImpactedWork:spVal("weatherImpact"),
+    WeatherImpactDetail:spVal("weatherImpactDetail"),CrewOnSite:spVal("crew"),
+    TotalWorkers:spNum("crewCount"),RegularManHours:spNum("regHours"),OvertimeManHours:spNum("otHours"),
+    LaborNotes:spVal("laborNotes"),ActivityStatus:spVal("actStatus"),WorkPerformed:spVal("activities"),
+    AreasLocations:spVal("location"),Quantities:spVal("quantities"),Equipment:spVal("equipment"),
+    DeliveriesReceived:spVal("deliveries"),ShortagesBackorders:spVal("shortages"),
+    Subcontractors:spVal("subs"),VisitorsInspectors:spVal("visitors"),ToolboxTalkHeld:spVal("toolbox"),
+    SafetyTopic:spVal("toolboxTopic"),IncidentsNearMisses:spVal("incidents"),SafetyNotes:spVal("safetyNotes"),
+    InspectionsTests:spVal("inspections"),QualityIssuesRework:spVal("quality"),ChallengeStatus:spVal("chalStatus"),
+    ChallengesDelays:spVal("challenges"),DelayCause:spVal("delayCause"),DirectedOutOfScope:spVal("directed"),
+    LookAheadStatus:spVal("lookStatus"),NextDayPlan:spVal("lookAhead"),Photos:spVal("photos"),
+    AdditionalNotes:spVal("notes"),Certified:spYN(a.certify),Signature:spVal("signature"),
+    SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail
+  };
+  Object.keys(f).forEach(function(k){if(f[k]===null)delete f[k];});
+  return f;
+}
+function submitToSharePoint(){
+  var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
+  return msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){
+    return msalInstance.acquireTokenPopup({scopes:[GRAPH_SCOPE]});
+  }).then(function(tok){
+    return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{"Authorization":"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})});
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){throw new Error("HTTP "+resp.status+" "+t.slice(0,200));});
+    return resp.json();
   });
 }
 
@@ -524,10 +553,15 @@ E('copyBtn').onclick=function(){
   } else { t.select(); document.execCommand('copy'); E('okMsg').textContent="Copied."; }
 };
 E('emailBtn').onclick=function(){
-  var subj="DAILY LOG | "+(answers.date||'')+" | "+(answers.project||'')+" | "+(answers.submittedBy||'');
-  var body=encodeURIComponent(buildSubmitBody());
-  window.location.href="mailto:"+REPORTS_TO+"?subject="+encodeURIComponent(subj)+"&body="+body;
-  E('okMsg').textContent="Your mail app should open \u2014 tap SEND to submit your log to the office.";
+  var btn=this,msg=E('okMsg');
+  msg.style.color="";msg.textContent="Saving your log to SharePoint...";btn.disabled=true;
+  submitToSharePoint().then(function(){
+    msg.style.color="#1d7a46";msg.textContent="Submitted. Your daily log has been filed to SharePoint.";
+    btn.textContent="Submitted";
+  }).catch(function(e){
+    msg.style.color="#b8462b";msg.textContent="Could not submit ("+e.message+"). Tap Copy and email it to "+REPORTS_TO+" as a backup.";
+    btn.disabled=false;
+  });
 };
 E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
 E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; idx=0; render(); } };
