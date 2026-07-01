@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionMech Sheet Metal Daily Log</title>
+<style>
+  :root{
+    --navy:#10243f; --blue:#1d4e89; --accent:#2e7dd1; --gold:#c8932a;
+    --bg:#f4f6f9; --card:#ffffff; --line:#d9e0ea; --text:#1a2433; --muted:#62707f;
+    --good:#1d7a46; --warn:#b8462b; --shadow:0 6px 24px rgba(16,36,63,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+       background:var(--bg);color:var(--text);line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+  header.app{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;
+    padding:18px 16px;text-align:center;box-shadow:var(--shadow)}
+  header.app h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header.app .sub{font-size:12px;opacity:.85;margin-top:3px}
+  .lock{font-size:11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    border-radius:6px;padding:6px 10px;margin:10px auto 0;max-width:680px;line-height:1.45}
+  .lock b{color:var(--gold)}
+  .progress{height:8px;background:#e3e8ef;border-radius:99px;margin:18px 0 6px;overflow:hidden}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));width:0;transition:width .3s}
+  .meta-line{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:22px 20px;margin-top:8px}
+  .section-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;
+    text-transform:uppercase;color:var(--accent);background:#eaf3fd;border-radius:6px;padding:3px 9px;margin-bottom:12px}
+  .q-num{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .q-label{font-size:19px;font-weight:600;margin:0 0 4px}
+  .q-help{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .req{color:var(--warn);font-weight:700}
+  input[type=text],input[type=date],input[type=number],select,textarea{
+    width:100%;font-size:16px;font-family:inherit;color:var(--text);
+    border:1.5px solid var(--line);border-radius:10px;padding:12px 13px;background:#fff;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(46,125,209,.15)}
+  textarea{min-height:120px;resize:vertical}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:9px 15px;
+    font-size:15px;cursor:pointer;user-select:none;transition:.15s}
+  .chip.sel{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  .yn{display:flex;gap:10px}
+  .yn .chip{flex:1;text-align:center}
+  .input-row{display:flex;gap:8px;align-items:flex-start}
+  .input-row > *:first-child{flex:1}
+  .mic{flex:0 0 auto;width:52px;height:48px;border-radius:10px;border:1.5px solid var(--line);
+    background:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .mic.live{background:var(--warn);border-color:var(--warn);color:#fff;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .mic-status{font-size:13px;color:var(--accent);margin-top:8px;min-height:18px;line-height:1.4}
+  .nav{display:flex;gap:10px;margin-top:22px}
+  .btn{flex:1;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:14px;cursor:pointer}
+  .btn.back{background:#e7ebf1;color:var(--text);flex:0 0 110px}
+  .btn.next{background:var(--blue);color:#fff}
+  .btn.next:hover{background:var(--accent)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .toolbar{display:flex;justify-content:center;gap:18px;margin-top:14px;font-size:13px;color:var(--muted)}
+  .toolbar label{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .err{color:var(--warn);font-size:13px;margin-top:8px;min-height:18px}
+  .review h2{font-size:18px;margin:0 0 4px}
+  .rev-sec{margin-top:18px}
+  .rev-sec h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);
+    border-bottom:1px solid var(--line);padding-bottom:5px;margin:0 0 8px}
+  .rev-item{display:flex;gap:10px;padding:5px 0;font-size:14px}
+  .rev-item .k{flex:0 0 42%;color:var(--muted)}
+  .rev-item .v{flex:1;white-space:pre-wrap;font-weight:500}
+  .rev-item .v.empty{color:#9aa6b3;font-weight:400;font-style:italic}
+  .out{width:100%;min-height:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin-top:14px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .actions .btn{flex:1 1 150px}
+  .btn.gold{background:var(--gold);color:#10243f}
+  .btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
+  .ok{color:var(--good);font-weight:600;text-align:center;margin-top:10px;min-height:20px}
+  .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:26px;line-height:1.5}
+  .hide{display:none!important}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="authGate" style="position:fixed;inset:0;background:#10243f;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:18px;text-align:center;padding:20px">Signing you in with Microsoft&hellip;</div>
+<header class="app">
+  <h1>VisionMech &mdash; Sheet Metal Daily Log</h1>
+  <div class="sub">Standardized Field Report &bull; Mechanical Contracting</div>
+  <div class="lock">
+    <b>STANDARDIZED TEMPLATE &mdash; DO NOT MODIFY.</b> This form follows a fixed question set, the same every time.
+    Changes to questions, fields, or wording may be made <b>only by Anna Vigil, Kegan Singleton, or Bill Singleton.</b>
+    Template <b id="verTag"></b>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="progress"><div id="bar"></div></div>
+  <div class="meta-line"><span id="stepLabel"></span><span id="pct"></span></div>
+
+  <div class="card" id="qcard">
+    <span class="section-tag" id="secTag"></span>
+    <div class="q-num" id="qnum"></div>
+    <h2 class="q-label" id="qlabel"></h2>
+    <p class="q-help" id="qhelp"></p>
+    <div id="qinput"></div>
+    <div class="err" id="qerr"></div>
+    <div class="nav">
+      <button class="btn back" id="backBtn">&larr; Back</button>
+      <button class="btn next" id="nextBtn">Next &rarr;</button>
+    </div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="voiceOn" checked> &#128266; Read questions aloud</label>
+      <label><a href="#" id="replay" style="color:var(--accent);text-decoration:none">&#9658; Repeat question</a></label>
+    </div>
+  </div>
+
+  <div class="card review hide" id="reviewCard">
+    <span class="section-tag">Review &amp; Submit</span>
+    <h2>Daily Log Summary</h2>
+    <p class="q-help">Review every entry below. Use <b>Back to Edit</b> to fix anything, then copy or email the completed log.</p>
+    <div id="reviewBody"></div>
+    <div class="rev-sec">
+      <h3>Formatted Log (copy or email this)</h3>
+      <textarea class="out" id="outText" readonly></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn gold" id="copyBtn">&#128203; Copy to Clipboard</button>
+      <button class="btn next" id="emailBtn">&#9993; Submit Log to Office</button>
+      <button class="btn ghost" id="editBtn">&larr; Back to Edit</button>
+      <button class="btn ghost" id="newBtn">+ Start New Log</button>
+    </div>
+    <div class="ok" id="okMsg"></div>
+  </div>
+
+  <div class="footer">
+    VisionMech Mechanical &bull; Field Daily Log &bull; Retain for project records.<br>
+    This report may be relied upon as a contemporaneous business record. Complete it each work day.
+  </div>
+</div>
+
+<script>
+var VERSION = "v1.0 (Jun 2026)";
+var REPORTS_TO = "reports@visionmech.net";
+var loginEmail = "";
+
+/* ---- Fixed dropdown sources (from the company Master list) ---- */
+var PROJECTS = [
+  "A24105 AVCF Utility","A25101 Leadville WTP","A25102 Ft. Lyon Building 6",
+  "A25103 CMHIP 115/116 HVAC Replacement","A25104 Comanche Unit 3",
+  "A25105 Centennial Correctional Booster","A25106 SIEA Office Cooling",
+  "A25107 Estes Energetics 945 Building","A25108 Building 55 at CMHIP",
+  "A25109 Beulah ES Boiler","A26100 Karval","A26101 Voyager Production Complex",
+  "A26102 Voyager Process Piping at 945"
+];
+var CREW = ["Mason","Buddie","Shawn","Matt","JC","Trevor","Dom"];
+var WEATHER = ["Fair","Clear","Cloudy","Rain","Snow","Windy","Hot","Cold"];
+var ACT_STATUS = ["In Progress","Complete"];
+var CHAL_STATUS = ["None","Ongoing","Resolved","Escalated to Supervisor"];
+var LOOK_STATUS = ["Ready","Waiting on Material","Need to follow-up","Need Direction"];
+
+/* ---- THE STANDARDIZED, RIGID QUESTION SET ----
+   Order and wording are fixed. Edit only with admin approval. */
+var QUESTIONS = [
+  {id:"date",sec:"Job Identification",type:"date",label:"What is today's date?",help:"The date this work was performed.",req:true},
+  {id:"project",sec:"Job Identification",type:"select",label:"Which project is this log for?",help:"Select the job number and name.",options:PROJECTS,req:true},
+  {id:"submittedBy",sec:"Job Identification",type:"selectOther",label:"Who is submitting this log?",help:"The crew lead or person completing this report.",options:CREW,req:true},
+  {id:"foreman",sec:"Job Identification",type:"text",label:"Who was the foreman or superintendent on site?",help:"Person in charge of the crew today.",req:false,ph:"Name"},
+
+  {id:"weather",sec:"Site Conditions",type:"select",label:"What were the weather conditions?",help:"General conditions for the work day.",options:WEATHER,req:true},
+  {id:"temp",sec:"Site Conditions",type:"text",label:"What was the approximate temperature?",help:"Helps document conditions affecting work.",req:false,ph:"e.g., 42 low / 70 high"},
+  {id:"weatherImpact",sec:"Site Conditions",type:"yesno",label:"Did weather impact the work today?",help:"Important for documenting weather-related delays.",req:true},
+  {id:"weatherImpactDetail",sec:"Site Conditions",type:"textarea",label:"How did weather impact the work?",help:"Describe the impact and any lost time.",req:true,showIf:function(r){return r.weatherImpact==="Yes";},ph:"e.g., Crane lift postponed 2 hrs due to high winds"},
+
+  {id:"crew",sec:"Crew & Labor",type:"multi",label:"Which crew members were on site today?",help:"Tap everyone present. Add others if needed.",options:CREW,allowOther:true,req:true},
+  {id:"crewCount",sec:"Crew & Labor",type:"number",label:"Total number of workers on site?",help:"Headcount including any not listed by name.",req:true,ph:"e.g., 5"},
+  {id:"regHours",sec:"Crew & Labor",type:"number",label:"Total regular man-hours worked today?",help:"Combined straight-time hours for the crew.",req:true,ph:"e.g., 40"},
+  {id:"otHours",sec:"Crew & Labor",type:"number",label:"Total overtime man-hours worked today?",help:"Enter 0 if none.",req:true,ph:"e.g., 0"},
+  {id:"laborNotes",sec:"Crew & Labor",type:"textarea",label:"Any notes on labor or hours by worker?",help:"Optional breakdown, e.g., who worked what hours.",req:false,ph:"Optional"},
+
+  {id:"actStatus",sec:"Work Performed",type:"select",label:"What is the overall activity status?",help:"Status of today's scope of work.",options:ACT_STATUS,req:true},
+  {id:"activities",sec:"Work Performed",type:"textarea",label:"Describe the work performed today.",help:"Be specific: what was installed, fabricated, or completed.",req:true,ph:"e.g., Installed 60 ft of 24x12 supply duct in Mechanical Room 2; set 2 VAV boxes."},
+  {id:"location",sec:"Work Performed",type:"text",label:"What areas or locations were worked in?",help:"Building, floor, room, or grid area.",req:false,ph:"e.g., Bldg 6, Level 2, Mech Rm"},
+  {id:"quantities",sec:"Work Performed",type:"text",label:"Quantities installed or completed?",help:"Track units for production records.",req:false,ph:"e.g., 60 LF duct, 2 VAVs, 8 hangers"},
+
+  {id:"equipment",sec:"Equipment & Materials",type:"textarea",label:"What equipment was on site or used today?",help:"Owned, rented, or idle equipment.",req:false,ph:"e.g., Scissor lift (rental), plasma cutter, company van 4"},
+  {id:"deliveries",sec:"Equipment & Materials",type:"textarea",label:"What materials or deliveries were received today?",help:"Note supplier and what arrived.",req:false,ph:"e.g., Received 20 sticks of 6 in round from Sheet Metal Connectors"},
+  {id:"shortages",sec:"Equipment & Materials",type:"text",label:"Any material shortages or backorders?",help:"Anything missing that could affect schedule.",req:false,ph:"Enter 'None' if none"},
+
+  {id:"subs",sec:"Other Parties On Site",type:"text",label:"Were any subcontractors on site? Who?",help:"Other trades present and what they did.",req:false,ph:"e.g., Electricians roughing in panel; 'None' if none"},
+  {id:"visitors",sec:"Other Parties On Site",type:"text",label:"Any visitors, owners, or inspectors on site?",help:"Document who visited and why.",req:false,ph:"e.g., AHJ mechanical inspector 10am; 'None' if none"},
+
+  {id:"toolbox",sec:"Safety",type:"yesno",label:"Was a toolbox talk or safety briefing held?",help:"Daily safety documentation.",req:true},
+  {id:"toolboxTopic",sec:"Safety",type:"text",label:"What was the safety topic?",help:"Topic covered in the briefing.",req:false,showIf:function(r){return r.toolbox==="Yes";},ph:"e.g., Ladder safety / fall protection"},
+  {id:"incidents",sec:"Safety",type:"textarea",label:"Any safety incidents, injuries, or near misses?",help:"Document fully. Enter 'None' if none. Report serious incidents immediately.",req:true,ph:"Enter 'None' if none"},
+  {id:"safetyNotes",sec:"Safety",type:"text",label:"Any PPE, JHA, or other safety notes?",help:"Compliance observations.",req:false,ph:"Optional"},
+
+  {id:"inspections",sec:"Quality & Inspections",type:"textarea",label:"Were any inspections or tests performed today?",help:"Result and inspector if applicable.",req:false,ph:"e.g., Duct leakage test passed; 'None' if none"},
+  {id:"quality",sec:"Quality & Inspections",type:"textarea",label:"Any quality issues, rework, or punch items?",help:"Defects, rework, or items needing correction.",req:false,ph:"Enter 'None' if none"},
+
+  {id:"chalStatus",sec:"Challenges & Delays",type:"select",label:"What is the status of any challenges or delays?",help:"Select the current status.",options:CHAL_STATUS,req:true},
+  {id:"challenges",sec:"Challenges & Delays",type:"textarea",label:"Describe any challenges, delays, or disruptions.",help:"Be specific and factual; these records matter in disputes.",req:true,showIf:function(r){return r.chalStatus!=="None";},ph:"e.g., Could not access Mech Rm 2; locked by GC until 1pm"},
+  {id:"delayCause",sec:"Challenges & Delays",type:"text",label:"What caused the delay or challenge?",help:"Root cause and who/what was responsible.",req:false,showIf:function(r){return r.chalStatus!=="None";},ph:"e.g., GC scheduling / missing material / owner change"},
+  {id:"directed",sec:"Challenges & Delays",type:"text",label:"Was any work directed by others or out of scope (potential change order)?",help:"Document extra or changed work directed on site.",req:false,ph:"e.g., GC directed added fire damper; 'None' if none"},
+
+  {id:"lookStatus",sec:"Look Ahead",type:"select",label:"What is the look-ahead status?",help:"Readiness for the next work day.",options:LOOK_STATUS,req:true},
+  {id:"lookAhead",sec:"Look Ahead",type:"textarea",label:"What is the plan for the next work day?",help:"What the crew will tackle next and anything needed.",req:true,ph:"e.g., Continue duct mains east wing; need lift returned and 90 deg elbows"},
+
+  {id:"photos",sec:"Documentation & Sign-off",type:"text",label:"Were photos taken? How many and of what?",help:"Photos strengthen the record.",req:false,ph:"e.g., 6 photos of completed duct run"},
+  {id:"notes",sec:"Documentation & Sign-off",type:"textarea",label:"Any additional notes for the record?",help:"Anything else worth documenting.",req:false,ph:"Optional"},
+  {id:"certify",sec:"Documentation & Sign-off",type:"confirm",label:"Certification",help:"Please confirm before signing.",confirmText:"I certify that the information in this daily log is true, complete, and accurate to the best of my knowledge.",req:true},
+  {id:"signature",sec:"Documentation & Sign-off",type:"text",label:"Type your full name to sign this log.",help:"Your typed name serves as your signature.",req:true,ph:"Full name"}
+];
+
+/* ---------- State ---------- */
+var answers = {};
+var idx = 0;
+var visible = [];
+
+function applicable(q){ return !q.showIf || q.showIf(answers); }
+function rebuildVisible(){ visible = QUESTIONS.map(function(q,i){return i;}).filter(function(i){return applicable(QUESTIONS[i]);}); }
+
+/* ---------- Text-to-speech ---------- */
+function speak(text){
+  if(!document.getElementById('voiceOn').checked) return;
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.rate=1; u.pitch=1;
+  window.speechSynthesis.speak(u);
+}
+
+/* ---------- Speech-to-text (dictation) ---------- */
+var recog=null, recogActive=false, micPermok=null;
+function micSupported(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
+
+function ensureMicPermission(){
+  if(micPermok===true) return Promise.resolve(true);
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    return navigator.mediaDevices.getUserMedia({audio:true})
+      .then(function(s){ s.getTracks().forEach(function(t){t.stop();}); micPermok=true; return true; })
+      .catch(function(){ micPermok=false; return false; });
+  }
+  return Promise.resolve(true);
+}
+
+function startDictation(){
+  var mic=E('micBtn'), target=E('f'), status=E('micStatus');
+  if(!target) return;
+  if(!micSupported()){
+    status.textContent='Voice input is not supported in this browser. Use Chrome or Edge, or type your answer.';
+    return;
+  }
+  if(recogActive){ try{recog.stop();}catch(e){} return; }
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+
+  var base = target.value ? target.value.trim() : '';
+  status.textContent='Requesting microphone...';
+
+  ensureMicPermission().then(function(ok){
+    if(ok===false){
+      status.innerHTML='Microphone permission was denied. Click the <b>lock / camera icon</b> in the address bar, set Microphone to <b>Allow</b>, then tap the mic again. (On phones, allow mic for this site.)';
+      return;
+    }
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false; recog.maxAlternatives=1;
+    recog.onstart=function(){ recogActive=true; mic.classList.add('live'); status.textContent='Listening... speak now. Tap the mic again to stop.'; };
+    recog.onresult=function(e){
+      var finalT='', interim='';
+      for(var i=0;i<e.results.length;i++){
+        var tr=e.results[i][0].transcript;
+        if(e.results[i].isFinal) finalT+=tr; else interim+=tr;
+      }
+      target.value=(base?base+' ':'')+(finalT||interim);
+      target.dispatchEvent(new Event('input'));
+    };
+    recog.onerror=function(ev){
+      recogActive=false; mic.classList.remove('live');
+      var msg={
+        'not-allowed':'Microphone blocked. Click the lock / camera icon in the address bar, set Microphone to Allow, then retry.',
+        'service-not-allowed':'Microphone blocked by the browser. Allow mic access for this page and retry.',
+        'no-speech':'Did not catch anything; tap the mic and speak again.',
+        'audio-capture':'No microphone detected. Check that a mic is connected and enabled.',
+        'network':'Voice recognition needs an internet connection. Reconnect and retry, or type your answer.',
+        'aborted':''
+      };
+      status.textContent = (ev.error in msg) ? msg[ev.error] : ('Voice error: '+ev.error+'. You can type your answer instead.');
+    };
+    recog.onend=function(){ recogActive=false; mic.classList.remove('live'); if(status.textContent.indexOf('Listening')>-1) status.textContent=''; };
+    try{ recog.start(); }
+    catch(e){ try{recog.stop();}catch(_){ } }
+  });
+}
+
+/* ---------- Render ---------- */
+function E(id){ return document.getElementById(id); }
+function render(){
+  rebuildVisible();
+  if(idx>=visible.length){ showReview(); return; }
+  E('reviewCard').classList.add('hide'); E('qcard').classList.remove('hide');
+  var qi=visible[idx], q=QUESTIONS[qi];
+  var pos=idx+1, total=visible.length;
+  E('bar').style.width=Math.round((idx)/total*100)+"%";
+  E('pct').textContent=pos+" of "+total;
+  E('stepLabel').textContent=q.sec;
+  E('secTag').textContent=q.sec;
+  E('qnum').textContent="Question "+pos;
+  E('qlabel').innerHTML=esc(q.label)+(q.req?' <span class="req">*</span>':'');
+  E('qhelp').textContent=q.help||'';
+  E('qerr').textContent='';
+  E('qinput').innerHTML=buildInput(q);
+  wireInput(q);
+  E('backBtn').disabled = idx===0;
+  E('nextBtn').textContent = (idx===total-1)?'Review':'Next';
+  var spoken=q.label.replace(/[*]/g,'');
+  if(q.type==='confirm') spoken=q.label+". "+q.confirmText;
+  speak(spoken);
+}
+
+function buildInput(q){
+  var v=answers[q.id];
+  switch(q.type){
+    case 'date': return '<input type="date" id="f" value="'+(v||today())+'">';
+    case 'number': return micWrap('<input type="number" id="f" inputmode="decimal" value="'+(v||'')+'" placeholder="'+(q.ph||'')+'">');
+    case 'text': return micWrap('<input type="text" id="f" value="'+(v?esc(v):'')+'" placeholder="'+(q.ph||'')+'">');
+    case 'textarea': return micWrap('<textarea id="f" placeholder="'+(q.ph||'')+'">'+(v?esc(v):'')+'</textarea>');
+    case 'select': return selHTML(q.options,v);
+    case 'selectOther': return selHTML(q.options,v,true);
+    case 'yesno': return '<div class="yn" id="f">'+
+        '<div class="chip '+(v==='Yes'?'sel':'')+'" data-val="Yes">Yes</div>'+
+        '<div class="chip '+(v==='No'?'sel':'')+'" data-val="No">No</div></div>';
+    case 'multi': {
+      var sel=Array.isArray(v)?v:[];
+      var h='<div class="chips" id="f">';
+      q.options.forEach(function(o){ h+='<div class="chip '+(sel.indexOf(o)>-1?'sel':'')+'" data-val="'+esc(o)+'">'+esc(o)+'</div>'; });
+      h+='</div>';
+      if(q.allowOther) h+='<div style="margin-top:10px"><input type="text" id="fother" placeholder="Add other names (comma separated)" value="'+otherVals(sel,q.options)+'"></div>';
+      return h;
+    }
+    case 'confirm': return '<label class="chip '+(v?'sel':'')+'" id="f" style="display:block;text-align:left;line-height:1.4">'+
+        '<input type="checkbox" id="fchk" '+(v?'checked':'')+' style="width:auto;margin-right:8px;transform:scale(1.3)"> '+esc(q.confirmText)+'</label>';
+  }
+}
+function selHTML(opts,v,other){
+  var h='<select id="f"><option value="">-- Select --</option>';
+  opts.forEach(function(o){ h+='<option '+(v===o?'selected':'')+'>'+esc(o)+'</option>'; });
+  if(other) h+='<option value="__other" '+(v&&opts.indexOf(v)<0?'selected':'')+'>Other...</option>';
+  h+='</select>';
+  if(other) h+='<div id="otherWrap" class="'+((v&&opts.indexOf(v)<0)?'':'hide')+'" style="margin-top:10px"><input type="text" id="fother" placeholder="Enter name" value="'+((v&&opts.indexOf(v)<0)?esc(v):'')+'"></div>';
+  return h;
+}
+function micWrap(inner){
+  if(!micSupported()) return inner;
+  return '<div class="input-row">'+inner+'<button type="button" class="mic" id="micBtn" title="Tap to speak your answer">&#127908;</button></div><div class="mic-status" id="micStatus"></div>';
+}
+function otherVals(sel,opts){ return sel.filter(function(s){return opts.indexOf(s)<0;}).join(", "); }
+
+function wireInput(q){
+  var f=E('f');
+  var mic=E('micBtn');
+  if(mic){ mic.onclick=startDictation; }
+  if(q.type==='select'||q.type==='selectOther'){
+    f.onchange=function(){
+      var ow=E('otherWrap');
+      if(ow) ow.classList.toggle('hide', f.value!=='__other');
+    };
+  }
+  if(q.type==='yesno'||q.type==='multi'){
+    f.querySelectorAll('.chip').forEach(function(c){
+      c.onclick=function(){
+        if(q.type==='yesno'){ f.querySelectorAll('.chip').forEach(function(x){x.classList.remove('sel');}); c.classList.add('sel'); }
+        else c.classList.toggle('sel');
+      };
+    });
+  }
+  if(q.type==='confirm'){
+    var chk=E('fchk');
+    chk.onchange=function(){ E('f').classList.toggle('sel',chk.checked); };
+  }
+  setTimeout(function(){ var el=E('f'); if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')&&el.type!=='checkbox') el.focus(); },60);
+}
+
+function collect(q){
+  switch(q.type){
+    case 'select': return E('f').value;
+    case 'selectOther':{ var v=E('f').value; return v==='__other'?(E('fother').value.trim()):v; }
+    case 'yesno':{ var s=E('f').querySelector('.chip.sel'); return s?s.getAttribute('data-val'):''; }
+    case 'multi':{
+      var arr=[].slice.call(E('f').querySelectorAll('.chip.sel')).map(function(c){return c.getAttribute('data-val');});
+      var o=E('fother'); if(o&&o.value.trim()) arr=arr.concat(o.value.split(',').map(function(s){return s.trim();}).filter(Boolean));
+      return arr;
+    }
+    case 'confirm': return E('fchk').checked;
+    case 'number': return E('f').value;
+    default: return E('f').value.trim();
+  }
+}
+function isEmpty(q,v){
+  if(q.type==='multi') return !v||v.length===0;
+  if(q.type==='confirm') return !v;
+  return v===''||v===undefined||v===null;
+}
+
+/* ---------- Nav ---------- */
+function next(){
+  var qi=visible[idx], q=QUESTIONS[qi];
+  var v=collect(q);
+  if(q.req&&isEmpty(q,v)){
+    E('qerr').textContent = q.type==='confirm' ? 'You must certify to continue.' : 'This field is required.';
+    speak("This field is required.");
+    return;
+  }
+  answers[q.id]=v;
+  idx++;
+  rebuildVisible();
+  render();
+}
+function back(){ if(idx>0){ idx--; render(); } }
+
+/* ---------- Review & Output ---------- */
+function showReview(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  E('qcard').classList.add('hide'); E('reviewCard').classList.remove('hide');
+  E('bar').style.width='100%'; E('pct').textContent='Complete';
+  E('stepLabel').textContent='Review & Submit';
+  var secs=[]; var seen={};
+  QUESTIONS.forEach(function(q){ if(!applicable(q))return; if(!seen[q.sec]){seen[q.sec]=[];secs.push(q.sec);} seen[q.sec].push(q); });
+  var h='';
+  secs.forEach(function(s){
+    h+='<div class="rev-sec"><h3>'+esc(s)+'</h3>';
+    seen[s].forEach(function(q){
+      var val=answers[q.id];
+      if(Array.isArray(val)) val=val.join(', ');
+      if(q.type==='confirm') val=val?'Certified':'';
+      var empty=val===''||val===undefined||val===null;
+      h+='<div class="rev-item"><div class="k">'+esc(q.label.replace(/\?.*/,'?'))+'</div>'+
+         '<div class="v '+(empty?'empty':'')+'">'+(empty?'--':esc(String(val)))+'</div></div>';
+    });
+    h+='</div>';
+  });
+  E('reviewBody').innerHTML=h;
+  E('outText').value=buildText();
+}
+
+function buildText(){
+  var a=answers; var L=[];
+  function line(k,v){ if(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))return; L.push(k+": "+(Array.isArray(v)?v.join(', '):v)); }
+  L.push("VISIONMECH - SHEET METAL DAILY LOG");
+  L.push("Template "+VERSION);
+  L.push("========================================");
+  line("Date",a.date); line("Project",a.project); line("Submitted By",a.submittedBy); line("Foreman/Super",a.foreman);
+  L.push("");
+  L.push("-- SITE CONDITIONS --");
+  line("Weather",a.weather); line("Temperature",a.temp); line("Weather Impacted Work",a.weatherImpact); line("Impact Detail",a.weatherImpactDetail);
+  L.push("");
+  L.push("-- CREW & LABOR --");
+  line("Crew On Site",a.crew); line("Total Workers",a.crewCount); line("Regular Man-Hours",a.regHours); line("Overtime Man-Hours",a.otHours); line("Labor Notes",a.laborNotes);
+  L.push("");
+  L.push("-- WORK PERFORMED --");
+  line("Activity Status",a.actStatus); line("Work Performed",a.activities); line("Areas/Locations",a.location); line("Quantities",a.quantities);
+  L.push("");
+  L.push("-- EQUIPMENT & MATERIALS --");
+  line("Equipment",a.equipment); line("Deliveries Received",a.deliveries); line("Shortages/Backorders",a.shortages);
+  L.push("");
+  L.push("-- OTHER PARTIES ON SITE --");
+  line("Subcontractors",a.subs); line("Visitors/Inspectors",a.visitors);
+  L.push("");
+  L.push("-- SAFETY --");
+  line("Toolbox Talk Held",a.toolbox); line("Safety Topic",a.toolboxTopic); line("Incidents/Near Misses",a.incidents); line("Safety Notes",a.safetyNotes);
+  L.push("");
+  L.push("-- QUALITY & INSPECTIONS --");
+  line("Inspections/Tests",a.inspections); line("Quality Issues/Rework",a.quality);
+  L.push("");
+  L.push("-- CHALLENGES & DELAYS --");
+  line("Status",a.chalStatus); line("Challenges/Delays",a.challenges); line("Cause",a.delayCause); line("Directed/Out-of-Scope Work",a.directed);
+  L.push("");
+  L.push("-- LOOK AHEAD --");
+  line("Status",a.lookStatus); line("Next-Day Plan",a.lookAhead);
+  L.push("");
+  L.push("-- DOCUMENTATION & SIGN-OFF --");
+  line("Photos",a.photos); line("Additional Notes",a.notes);
+  L.push("Certification: "+(a.certify?"Certified true & accurate by signer":"NOT CERTIFIED"));
+  line("Signed",a.signature);
+  L.push("========================================");
+  return L.join("\n");
+}
+
+/* ---------- Helpers ---------- */
+function today(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+/* ---------- Submission payload (email-bridge) ---------- */
+function buildJSON(){
+  var payload={};
+  QUESTIONS.forEach(function(q){ payload[q.id]=(answers[q.id]!==undefined?answers[q.id]:""); });
+  payload.loginEmail=loginEmail; payload.template=VERSION;
+  return JSON.stringify(payload);
+}
+function buildSubmitBody(){
+  return buildText()+"\n\n---VISIONLOG-DATA (do not edit below this line)---\n"+buildJSON()+"\n---END VISIONLOG-DATA---";
+}
+/* ---------- Microsoft login (MSAL, client-side) ---------- */
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
+var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
+function hideGate(){ var g=E("authGate"); if(g) g.style.display="none"; }
+function startAuth(){
+  msalInstance.handleRedirectPromise().then(function(){
+    var acct=msalInstance.getAllAccounts()[0];
+    if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email"]}); return; }
+    msalInstance.setActiveAccount(acct);
+    loginEmail=acct.username||"";
+    hideGate(); render();
+  }).catch(function(e){
+    var g=E("authGate"); if(g) g.innerHTML="<div style=\"max-width:340px\">Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
+  });
+}
+
+/* ---------- Wire up ---------- */
+E('verTag').textContent=VERSION;
+E('nextBtn').onclick=next;
+E('backBtn').onclick=back;
+E('replay').onclick=function(e){ e.preventDefault(); var qi=visible[idx]; if(qi!=null) speak(QUESTIONS[qi].label.replace(/[*]/g,'')); };
+E('copyBtn').onclick=function(){
+  var t=E('outText');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(function(){E('okMsg').textContent="Copied to clipboard.";})
+      .catch(function(){ t.select(); document.execCommand('copy'); E('okMsg').textContent="Copied."; });
+  } else { t.select(); document.execCommand('copy'); E('okMsg').textContent="Copied."; }
+};
+E('emailBtn').onclick=function(){
+  var subj="DAILY LOG | "+(answers.date||'')+" | "+(answers.project||'')+" | "+(answers.submittedBy||'');
+  var body=encodeURIComponent(buildSubmitBody());
+  window.location.href="mailto:"+REPORTS_TO+"?subject="+encodeURIComponent(subj)+"&body="+body;
+  E('okMsg').textContent="Your mail app should open \u2014 tap SEND to submit your log to the office.";
+};
+E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
+E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; idx=0; render(); } };
+E('voiceOn').onchange=function(){ if(!E('voiceOn').checked&&window.speechSynthesis) window.speechSynthesis.cancel(); };
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!E('qcard').classList.contains('hide')){
+    var t=document.activeElement;
+    if(t&&t.tagName==='TEXTAREA')return;
+    e.preventDefault(); next();
+  }
+});
+
+startAuth();
+</script>
+</body>
+</html>
