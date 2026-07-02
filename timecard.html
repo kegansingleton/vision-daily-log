@@ -64,6 +64,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </head>
 <body>
 <div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical" style="height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)">
   <h1>Vision Mechanical</h1>
   <p>Daily Timecard. Sign in with your Vision Mechanical account to enter crew time.</p>
   <button id="signin">Sign in with Microsoft</button>
@@ -71,8 +72,13 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </div></div>
 
 <header>
-  <h1>Daily Timecard</h1>
-  <div class="who" id="who"></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical" style="height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto">
+    <div>
+      <h1 style="margin:0">Daily Timecard</h1>
+      <div class="who" id="who"></div>
+    </div>
+  </div>
 </header>
 
 <div class="wrap" id="app" style="display:none">
