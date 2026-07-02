@@ -76,7 +76,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </header>
 
 <div class="wrap" id="app" style="display:none">
-  <div id="loading" class="load">Loading crew, jobs, and codes…</div>
+  <div id="loading" class="load">Loading crew and job task schedules…</div>
 
   <div id="main" style="display:none">
     <div class="card">
@@ -116,7 +116,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 <script>
 /* ============ CONFIG ============ */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
-var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobs:"836523ba-cd20-4736-98ce-5716668b8973",phase:"96011c89-8511-490e-8061-826a682f17d1",line:"d0b90d62-f16f-46cb-b232-b433cad1cd99",tc:"91c4a3db-97f6-4b52-a855-516d5c414124"};
+var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobtasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",tc:"91c4a3db-97f6-4b52-a855-516d5c414124"};
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
@@ -125,7 +125,7 @@ var PAYTYPES=["Regular","Sick","Vacation","Holiday"];
 /* ============ STATE ============ */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", loginName="";
-var REF={emp:[],jobs:[],phase:[],line:[]};
+var REF={emp:[],jobs:[],map:{}};
 var crewSel={}; // empNo -> {num,name}
 var entries=[]; // {id,pay,job,jobName,phase,line,hours,apply:{empNo:true}}
 var eid=1;
@@ -165,16 +165,29 @@ async function gGetAll(listId,fields){
   return out;
 }
 function activeOnly(a){ return a.filter(function(x){ return (x.Active||"Yes").toLowerCase()!=="no"; }); }
+function buildMap(jt){
+  var map={}, jobs=[];
+  jt.forEach(function(r){
+    var j=r.JobNo; if(!j) return;
+    if(!map[j]){ map[j]={name:r.JobName||j, phases:{}, phaseList:[]}; jobs.push({JobNo:j,JobName:r.JobName||j}); }
+    var p=r.PhaseCode; if(!p) return;
+    if(!map[j].phases[p]){ map[j].phases[p]={desc:r.PhaseDesc||"", lines:[]}; map[j].phaseList.push(p); }
+    map[j].phases[p].lines.push({line:r.LineNum||"", ldesc:r.LineDesc||""});
+  });
+  jobs.sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
+  Object.keys(map).forEach(function(j){
+    map[j].phaseList.sort();
+    Object.keys(map[j].phases).forEach(function(p){ map[j].phases[p].lines.sort(function(a,b){return (parseInt(a.line)||0)-(parseInt(b.line)||0);}); });
+  });
+  return {map:map, jobs:jobs};
+}
 async function loadRefData(){
   try{
     var emp=await gGetAll(LIST.emp,["EmployeeNumber","EmployeeName","Active"]);
-    var jobs=await gGetAll(LIST.jobs,["JobNo","JobName","Active"]);
-    var phase=await gGetAll(LIST.phase,["PhaseCode","PhaseDesc","Active"]);
-    var line=await gGetAll(LIST.line,["LineNum","LineDesc","Active"]);
+    var jt=await gGetAll(LIST.jobtasks,["JobNo","JobName","PhaseCode","PhaseDesc","LineNum","LineDesc","Active"]);
     REF.emp=activeOnly(emp).sort(function(a,b){return (a.EmployeeName||"").localeCompare(b.EmployeeName||"");});
-    REF.jobs=activeOnly(jobs).sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
-    REF.phase=activeOnly(phase).sort(function(a,b){return (a.PhaseCode||"").localeCompare(b.PhaseCode||"");});
-    REF.line=activeOnly(line).sort(function(a,b){return (parseInt(a.LineNum||0)-parseInt(b.LineNum||0));});
+    var built=buildMap(activeOnly(jt));
+    REF.map=built.map; REF.jobs=built.jobs;
     initUI();
   }catch(e){ document.getElementById("loading").innerHTML="Could not load data: "+e.message; }
 }
@@ -185,7 +198,6 @@ function initUI(){
   document.getElementById("main").style.display="block";
   var d=new Date(); var iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   document.getElementById("workDate").value=iso;
-  // restore last crew
   try{var last=JSON.parse(localStorage.getItem("vm_tc_lastcrew")||"[]");
       last.forEach(function(e){crewSel[e.num]={num:e.num,name:e.name};});}catch(e){}
   renderCrew(); renderChips();
@@ -217,16 +229,19 @@ function renderChips(){
   arr.forEach(function(e){var s=document.createElement("span");s.className="chip";s.textContent=e.name;c.appendChild(s);});
 }
 function addEntry(){ entries.push({id:eid++,pay:"Regular",job:"",jobName:"",phase:"",line:"",hours:"",apply:{}}); }
-function opt(v,t,sel){ return '<option value="'+v.replace(/"/g,'&quot;')+'"'+(sel===v?" selected":"")+'>'+t+'</option>'; }
+function opt(v,t,sel){ return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(sel===v?" selected":"")+'>'+t+'</option>'; }
 function renderEntries(){
   var wrap=document.getElementById("entries"); wrap.innerHTML="";
   var crew=Object.values(crewSel);
   entries.forEach(function(en,idx){
     var div=document.createElement("div"); div.className="entry";
     var tabs=PAYTYPES.map(function(p){return '<div class="paytab'+(en.pay===p?" on":"")+'" data-p="'+p+'">'+p+'</div>';}).join("");
+    var jm=en.job&&REF.map[en.job]?REF.map[en.job]:null;
+    var phasesForJob=jm?jm.phaseList:[];
+    var linesForPhase=(jm&&en.phase&&jm.phases[en.phase])?jm.phases[en.phase].lines:[];
     var jobSel='<option value="">— Select job —</option>'+REF.jobs.map(function(j){return opt(j.JobNo,j.JobNo+" · "+(j.JobName||""),en.job);}).join("");
-    var phSel='<option value="">— Phase —</option>'+REF.phase.map(function(p){var t=p.PhaseCode+(p.PhaseDesc?" · "+p.PhaseDesc:"");return opt(p.PhaseCode,t,en.phase);}).join("");
-    var lnSel='<option value="">— Line —</option>'+REF.line.map(function(l){var t=l.LineNum+(l.LineDesc?" · "+l.LineDesc:"");return opt(l.LineNum,t,en.line);}).join("");
+    var phSel='<option value="">'+(en.job?'— Select phase —':'— Pick a job first —')+'</option>'+phasesForJob.map(function(p){var d=jm.phases[p].desc;return opt(p,p+(d?" · "+d:""),en.phase);}).join("");
+    var lnSel='<option value="">'+(en.phase?'— Select line —':'— Pick a phase first —')+'</option>'+linesForPhase.map(function(l){return opt(l.line,l.line+(l.ldesc?" · "+l.ldesc:""),en.line);}).join("");
     var jobBlock=en.pay==="Regular"?(
       '<label>Job <span class="req">*</span></label><select data-f="job">'+jobSel+'</select>'+
       '<div class="grid2"><div><label>Phase <span class="req">*</span></label><select data-f="phase">'+phSel+'</select></div>'+
@@ -243,17 +258,14 @@ function renderEntries(){
       '<label>Hours <span class="req">*</span> <span class="hint">(0.5 steps)</span></label>'+
       '<input type="number" data-f="hours" min="0.5" step="0.5" inputmode="decimal" value="'+(en.hours||"")+'" placeholder="e.g. 8">'+
       '<div class="applybox"><label>Applies to <span class="req">*</span></label>'+applyMini+'</div>';
-    // wire pay tabs
     div.querySelectorAll(".paytab").forEach(function(t){t.onclick=function(){en.pay=t.getAttribute("data-p");renderEntries();renderSummary();};});
-    // wire selects/inputs
     div.querySelectorAll("[data-f]").forEach(function(el){el.onchange=function(){
       var f=el.getAttribute("data-f"); en[f]=el.value;
-      if(f==="job"){var jb=REF.jobs.find(function(j){return j.JobNo===el.value;});en.jobName=jb?(jb.JobName||""):"";}
+      if(f==="job"){ en.jobName=REF.map[el.value]?REF.map[el.value].name:""; en.phase=""; en.line=""; renderEntries(); renderSummary(); return; }
+      if(f==="phase"){ en.line=""; renderEntries(); renderSummary(); return; }
       renderSummary();
     };});
-    // del
     div.querySelector("[data-del]").onclick=function(){entries=entries.filter(function(x){return x.id!==en.id;});if(entries.length===0)addEntry();renderEntries();renderSummary();};
-    // apply checkboxes
     var allcb=div.querySelector('[data-all]');
     if(allcb) allcb.onchange=function(){crew.forEach(function(c){if(allcb.checked)en.apply[c.num]=true;else delete en.apply[c.num];});renderEntries();renderSummary();};
     div.querySelectorAll('[data-emp]').forEach(function(cb){cb.onchange=function(){var n=cb.getAttribute("data-emp");if(cb.checked)en.apply[n]=true;else delete en.apply[n];renderEntries();renderSummary();};});
@@ -261,7 +273,7 @@ function renderEntries(){
   });
 }
 function renderSummary(){
-  var tot={}; // empNo -> hours
+  var tot={};
   entries.forEach(function(en){
     var h=parseFloat(en.hours||0)||0; if(h<=0)return;
     Object.keys(en.apply).forEach(function(n){ if(!crewSel[n])return; tot[n]=(tot[n]||0)+h; });
@@ -282,7 +294,6 @@ async function submit(){
   if(!iso){msg.className="msg err";msg.textContent="Pick a work date.";return;}
   var crew=Object.values(crewSel);
   if(crew.length===0){msg.className="msg err";msg.textContent="Select at least one crew member.";return;}
-  // build rows + validate
   var rows=[]; var problems=[];
   entries.forEach(function(en,idx){
     var h=parseFloat(en.hours||0)||0;
@@ -316,7 +327,6 @@ async function submit(){
       if(r.ok)ok++; else {var er=await r.json();throw new Error((er.error&&er.error.message)||("HTTP "+r.status));}
     }
     msg.className="msg ok"; msg.textContent="✓ Submitted "+ok+" time lines for "+crew.length+" crew on "+fmtDateText(iso)+". You can close this or enter another day.";
-    // reset entries but keep crew
     entries=[]; addEntry(); renderEntries(); renderSummary();
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(e){ msg.className="msg err"; msg.textContent="Submit failed: "+e.message; }
