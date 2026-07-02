@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision Mechanical — Employee Setup</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header h1{margin:0;font-size:18px;font-weight:700}
+header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:820px;margin:0 auto;padding:16px 14px 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 8px;font-size:16px;color:var(--vm2)}
+p.help{color:var(--mut);font-size:14px;margin:6px 0 14px}
+.drop{border:2px dashed var(--vm);border-radius:12px;padding:34px 18px;text-align:center;background:#fff7f6;cursor:pointer;transition:.15s}
+.drop.drag{background:#fdecea}
+.drop b{color:var(--vm2)}
+.drop input{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #eef0f2}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.stat{display:flex;gap:22px;flex-wrap:wrap;margin:10px 0}
+.stat div b{display:block;font-size:22px;color:var(--vm2)}
+.stat div span{font-size:12px;color:var(--mut)}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff;margin-top:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin-top:12px;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}
+.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.msg.info{background:#eff6ff;color:#1d4ed8;display:block}
+.warn{background:#fef3c7;color:#92400e;border-radius:9px;padding:10px 12px;font-size:13px;margin-top:10px}
+.bar{height:10px;background:#eef0f2;border-radius:6px;overflow:hidden;margin-top:10px;display:none}
+.bar > i{display:block;height:100%;width:0;background:var(--vm);transition:width .2s}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}
+.gate h1{font-size:22px;margin:0 0 6px}
+.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.mut{color:var(--mut);font-size:13px}
+.preview{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical" style="height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)">
+  <h1>Vision Mechanical</h1>
+  <p>Employee Setup. Sign in to refresh the crew list from a Vista employee export.</p>
+  <button id="signin">Sign in with Microsoft</button>
+  <div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical" style="height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto">
+    <div>
+      <h1>Employee Setup — Crew List Refresh</h1>
+      <div class="who" id="who"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2>Refresh the crew list from Vista</h2>
+    <p class="help">Export the <b>PR Employee List (Active Only)</b> from Vista as a CSV and drop it below. This reads every active employee's number and name and <b>replaces</b> the crew list — new hires appear, terminated employees drop off. Past timecards keep their names, so nothing is lost.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".csv,text/csv">
+      <div><b>Drop the Vista employee CSV here</b><br><span class="mut">or tap to choose a file</span></div>
+    </label>
+    <div class="msg info" id="parseMsg" style="display:none"></div>
+  </div>
+
+  <div class="card" id="previewCard" style="display:none">
+    <h2>Review before refreshing</h2>
+    <div class="stat" id="stat"></div>
+    <div class="warn" id="warn"></div>
+    <div class="preview"><table id="previewTbl"></table></div>
+    <button class="btn" id="loadBtn">Replace crew list with this file</button>
+    <div class="bar" id="bar"><i></i></div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script>
+/* ===== CONFIG ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var GBATCH="https://graph.microsoft.com/v1.0/$batch";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginName="";
+var PARSED=null; // [{num,name}]
+
+/* ===== AUTH ===== */
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginName=acct.name||acct.username||"";
+  document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("who").textContent=loginName;
+}
+async function getToken(){
+  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
+  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
+}
+document.getElementById("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){
+  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
+  if(acct) afterLogin(acct);
+}).catch(function(e){ document.getElementById("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== CSV PARSER ===== */
+function parseCSV(text){
+  var rows=[], row=[], field="", i=0, inQ=false, c;
+  text=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  while(i<text.length){
+    c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} inQ=false;i++;continue; } field+=c;i++;continue; }
+    if(c==='"'){inQ=true;i++;continue;}
+    if(c===','){row.push(field);field="";i++;continue;}
+    if(c==='\n'){row.push(field);field="";rows.push(row);row=[];i++;continue;}
+    field+=c;i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function clean(s){return (s||"").replace(/\s+/g," ").trim();}
+
+/* ===== EXTRACT employees from Vista PR report ===== */
+function extractEmployees(rows){
+  var out=[], seen={};
+  rows.forEach(function(r){
+    var num="", name="", active="";
+    for(var i=0;i<r.length;i++){
+      var cc=(r[i]||"").trim();
+      if(/^\d{2,5}$/.test(cc)){
+        num=cc;
+        for(var j=i+1;j<r.length;j++){ if((r[j]||"").trim()){ name=clean(r[j]); break; } }
+        for(var k=i+1;k<r.length;k++){ var v=(r[k]||"").trim(); if(v==="Yes"||v==="No"){active=v;break;} }
+        break;
+      }
+    }
+    if(num && name && !/^\d+$/.test(name) && !seen[num]){ seen[num]=1; out.push({num:num,name:name,active:active}); }
+  });
+  return out.filter(function(e){ return e.active!=="No"; });
+}
+
+/* ===== FILE ===== */
+var drop=document.getElementById("drop"), fileInput=document.getElementById("file");
+["dragenter","dragover"].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add("drag");});});
+["dragleave","drop"].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove("drag");});});
+drop.addEventListener("drop",function(ev){ if(ev.dataTransfer.files[0]) handleFile(ev.dataTransfer.files[0]); });
+fileInput.addEventListener("change",function(){ if(fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(f){
+  var pm=document.getElementById("parseMsg"); pm.style.display="block"; pm.className="msg info"; pm.textContent="Reading "+f.name+"…";
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var emps=extractEmployees(parseCSV(reader.result));
+      if(emps.length===0){ pm.className="msg err"; pm.textContent="Couldn't find employees. Make sure it's the PR Employee List export."; return; }
+      PARSED=emps; pm.className="msg ok"; pm.textContent="Parsed "+f.name+" ✓";
+      renderPreview(emps);
+    }catch(e){ pm.className="msg err"; pm.textContent="Parse error: "+e.message; }
+  };
+  reader.readAsText(f);
+}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function renderPreview(emps){
+  document.getElementById("previewCard").style.display="block";
+  document.getElementById("stat").innerHTML='<div><b>'+emps.length+'</b><span>Active employees</span></div>';
+  document.getElementById("warn").textContent="This replaces the entire crew list with the "+emps.length+" people in this file.";
+  var tbl='<tr><th>Number</th><th>Name</th></tr>';
+  emps.slice().sort(function(a,b){return parseInt(a.num)-parseInt(b.num);}).forEach(function(e){ tbl+='<tr><td>'+e.num+'</td><td>'+esc(e.name)+'</td></tr>'; });
+  document.getElementById("previewTbl").innerHTML=tbl;
+  document.getElementById("msg").style.display="none";
+}
+
+/* ===== GRAPH ===== */
+async function graphBatch(token, requests){
+  var r=await fetch(GBATCH,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({requests:requests})});
+  return (await r.json()).responses||[];
+}
+async function getAllIds(token){
+  var ids=[], url=GRAPH+EMP_LIST+"/items?$select=id&$top=999";
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(r=>r.json()); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){ids.push(it.id);}); url=j["@odata.nextLink"]||null; }
+  return ids;
+}
+
+/* ===== LOAD (full replace) ===== */
+document.getElementById("loadBtn").onclick=async function(){
+  if(!PARSED) return;
+  var btn=this, msg=document.getElementById("msg"), bar=document.getElementById("bar"), fill=bar.querySelector("i");
+  btn.disabled=true; msg.className="msg info"; msg.style.display="block"; bar.style.display="block";
+  try{
+    var token=await getToken();
+    var rel="/sites/"+SITE_ID+"/lists/"+EMP_LIST+"/items";
+    msg.textContent="Clearing old crew list…";
+    var oldIds=await getAllIds(token);
+    for(var d=0; d<oldIds.length; d+=20){
+      await graphBatch(token, oldIds.slice(d,d+20).map(function(id,ix){return {id:String(ix),method:"DELETE",url:rel+"/"+id};}));
+    }
+    msg.textContent="Loading "+PARSED.length+" employees…";
+    var done=0;
+    for(var s=0; s<PARSED.length; s+=20){
+      var chunk=PARSED.slice(s,s+20);
+      var reqs=chunk.map(function(e,ix){ return {id:String(ix),method:"POST",url:rel,headers:{"Content-Type":"application/json"},
+        body:{fields:{Title:e.num, EmployeeNumber:e.num, EmployeeName:e.name, Active:"Yes"}}}; });
+      var resp=await graphBatch(token, reqs);
+      var bad=resp.filter(function(r){return r.status>=300;});
+      if(bad.length) throw new Error("Write failed ("+bad[0].status+"): "+JSON.stringify(bad[0].body).slice(0,160));
+      done+=chunk.length; fill.style.width=Math.round(done/PARSED.length*100)+"%";
+    }
+    msg.className="msg ok"; msg.textContent="✓ Crew list refreshed — "+PARSED.length+" active employees are now available on timecards.";
+  }catch(e){ msg.className="msg err"; msg.textContent="Refresh failed: "+e.message; }
+  finally{ btn.disabled=false; }
+};
+</script>
+</body>
+</html>
