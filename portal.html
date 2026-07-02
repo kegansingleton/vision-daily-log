@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Employee Portal</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{max-width:820px;margin:0 auto;display:flex;align-items:center;gap:12px}
+header img{height:44px;width:auto;background:#fff;border-radius:8px;padding:5px 7px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.3px}
+header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:820px;margin:0 auto;padding:18px 14px 60px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.tile{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-decoration:none;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.05);transition:.12s}
+.tile:hover{border-color:var(--vm);box-shadow:0 4px 14px rgba(192,57,43,.15);transform:translateY(-1px)}
+.tile .ic{width:46px;height:46px;flex:0 0 auto;border-radius:12px;background:#fdecea;color:var(--vm);display:flex;align-items:center;justify-content:center;font-size:22px}
+.tile .tx b{display:block;font-size:16px;color:var(--vm2)}
+.tile .tx span{font-size:12.5px;color:var(--mut)}
+.sec{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mut);margin:22px 4px 8px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:360px}
+.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}
+.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.gate .msg{margin-top:14px;font-size:13px;opacity:.9}
+.foot{text-align:center;font-size:11px;color:var(--mut);margin-top:28px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1>
+  <p>Employee Portal. Sign in with your Vision Mechanical account to continue.</p>
+  <button id="signin">Sign in with Microsoft</button>
+  <div class="msg" id="gateMsg"></div>
+</div></div>
+
+<header>
+  <div class="row">
+    <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+    <div>
+      <h1>Employee Portal</h1>
+      <div class="who" id="who"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="sec">Field Tools</div>
+  <div class="grid">
+    <a class="tile" href="/timecard.html"><div class="ic">&#128337;</div><div class="tx"><b>Daily Timecard</b><span>Foremen: enter crew time</span></div></a>
+    <a class="tile" href="/"><div class="ic">&#128221;</div><div class="tx"><b>Daily Field Log</b><span>Submit the daily field report</span></div></a>
+  </div>
+
+  <div class="sec">Documents &amp; Files</div>
+  <div class="grid">
+    <a class="tile" href="https://visionmech.sharepoint.com/Standard%20Operating%20Procedures/Forms/AllItems.aspx"><div class="ic">&#128218;</div><div class="tx"><b>SOP Library</b><span>Standard Operating Procedures</span></div></a>
+    <a class="tile" href="https://us.workplace.datto.com/login"><div class="ic">&#128193;</div><div class="tx"><b>Field Files</b><span>Datto Workplace file server</span></div></a>
+  </div>
+
+  <div class="sec">Setup (Office)</div>
+  <div class="grid">
+    <a class="tile" href="/jobsetup.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Job Setup</b><span>Load phase &amp; line codes for a job</span></div></a>
+    <a class="tile" href="/employees.html"><div class="ic">&#128101;</div><div class="tx"><b>Employee Setup</b><span>Refresh the crew list from Vista</span></div></a>
+  </div>
+
+  <div class="foot">Vision Mechanical &bull; Employee Portal &bull; Access limited to Vision Mechanical accounts.</div>
+</div>
+
+<script>
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
+function E(id){return document.getElementById(id);}
+function showApp(acct){
+  E("gate").style.display="none";
+  E("app").style.display="block";
+  E("who").textContent=acct&&acct.username?acct.username:"";
+}
+function start(){
+  msalInstance.handleRedirectPromise().then(function(){
+    var acct=msalInstance.getAllAccounts()[0];
+    if(acct){ msalInstance.setActiveAccount(acct); showApp(acct); }
+  }).catch(function(e){
+    E("gateMsg").textContent="Sign-in problem: "+String(e);
+  });
+}
+E("signin").onclick=function(){
+  msalInstance.loginRedirect({scopes:["openid","profile","email"]});
+};
+start();
+</script>
+</body>
+</html>
