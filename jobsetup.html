@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision Mechanical — Job Setup</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header h1{margin:0;font-size:18px;font-weight:700}
+header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:820px;margin:0 auto;padding:16px 14px 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 8px;font-size:16px;color:var(--vm2)}
+p.help{color:var(--mut);font-size:14px;margin:6px 0 14px}
+.drop{border:2px dashed var(--vm);border-radius:12px;padding:34px 18px;text-align:center;background:#fff7f6;cursor:pointer;transition:.15s}
+.drop.drag{background:#fdecea}
+.drop b{color:var(--vm2)}
+.drop input{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #eef0f2}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.pill{display:inline-block;background:#fdecea;color:var(--vm2);border:1px solid #f5c6c2;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;margin:2px}
+.stat{display:flex;gap:22px;flex-wrap:wrap;margin:10px 0}
+.stat div b{display:block;font-size:22px;color:var(--vm2)}
+.stat div span{font-size:12px;color:var(--mut)}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff;margin-top:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin-top:12px;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}
+.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.msg.info{background:#eff6ff;color:#1d4ed8;display:block}
+.bar{height:10px;background:#eef0f2;border-radius:6px;overflow:hidden;margin-top:10px;display:none}
+.bar > i{display:block;height:100%;width:0;background:var(--vm);transition:width .2s}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}
+.gate h1{font-size:22px;margin:0 0 6px}
+.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.mut{color:var(--mut);font-size:13px}
+.preview{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <h1>Vision Mechanical</h1>
+  <p>Job Setup. Sign in to load a job's phase &amp; line codes from a Viewpoint task schedule.</p>
+  <button id="signin">Sign in with Microsoft</button>
+  <div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+
+<header>
+  <h1>Job Setup — Task Schedule Loader</h1>
+  <div class="who" id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2>Load a job's task schedule</h2>
+    <p class="help">Export the <b>VM JC Task Schedule</b> for a job from Viewpoint as a CSV, then drop it below. This reads the job number, phases, and line codes automatically and loads them so foremen can pick them on their timecards. Re-drop a newer export any time to refresh a job.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".csv,text/csv">
+      <div><b>Drop the task schedule CSV here</b><br><span class="mut">or tap to choose a file</span></div>
+    </label>
+    <div class="msg info" id="parseMsg" style="display:none"></div>
+  </div>
+
+  <div class="card" id="previewCard" style="display:none">
+    <h2>Review before loading</h2>
+    <div class="stat" id="stat"></div>
+    <div id="phasePills"></div>
+    <div class="preview"><table id="previewTbl"></table></div>
+    <button class="btn" id="loadBtn">Load this job into SharePoint</button>
+    <div class="bar" id="bar"><i></i></div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script>
+/* ===== CONFIG ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST={jobTasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",jobs:"836523ba-cd20-4736-98ce-5716668b8973"};
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var GBATCH="https://graph.microsoft.com/v1.0/$batch";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginName="";
+var PARSED=null; // {jobs:{jobNo:{name, rows:[{phase,pdesc,line,ldesc,budget}]}}}
+
+/* ===== AUTH ===== */
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginName=acct.name||acct.username||"";
+  document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("who").textContent=loginName;
+}
+async function getToken(){
+  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
+  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
+}
+document.getElementById("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){
+  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
+  if(acct) afterLogin(acct);
+}).catch(function(e){ document.getElementById("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== CSV PARSER (RFC4180: quotes, embedded commas & newlines) ===== */
+function parseCSV(text){
+  var rows=[], row=[], field="", i=0, inQ=false, c;
+  text=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  while(i<text.length){
+    c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} inQ=false;i++;continue; }
+      field+=c;i++;continue;
+    }
+    if(c==='"'){inQ=true;i++;continue;}
+    if(c===','){row.push(field);field="";i++;continue;}
+    if(c==='\n'){row.push(field);field="";rows.push(row);row=[];i++;continue;}
+    field+=c;i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function clean(s){return (s||"").replace(/\s+/g," ").trim();}
+
+/* ===== EXTRACT job/phase/line from Viewpoint export ===== */
+function extract(rows){
+  var jobs={}, curJob=null, curName=null;
+  for(var k=0;k<rows.length;k++){
+    var r=rows[k]; while(r.length<60) r.push("");
+    var jn=clean(r[2]).replace(/\.+$/,"");
+    if(jn) curJob=jn;
+    var jfull=clean(r[16]);
+    if(jfull.indexOf("Job:")===0){ curName=clean(jfull.replace(/^Job:\s*\S+\.?\s*/,"")); }
+    var pm=clean(r[18]).match(/^(\d+)/); var phase=pm?pm[1]:"";
+    var line=clean(r[20]);
+    if(phase && line && curJob){
+      if(!jobs[curJob]) jobs[curJob]={name:curName||curJob, seen:{}, rows:[]};
+      if(curName) jobs[curJob].name=curName;
+      var key=phase+"|"+line;
+      if(!jobs[curJob].seen[key]){
+        jobs[curJob].seen[key]=1;
+        jobs[curJob].rows.push({phase:phase, pdesc:clean(r[19]), line:line, ldesc:clean(r[21]), budget:clean(r[22])});
+      }
+    }
+  }
+  return jobs;
+}
+
+/* ===== FILE HANDLING ===== */
+var drop=document.getElementById("drop"), fileInput=document.getElementById("file");
+["dragenter","dragover"].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add("drag");});});
+["dragleave","drop"].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove("drag");});});
+drop.addEventListener("drop",function(ev){ if(ev.dataTransfer.files[0]) handleFile(ev.dataTransfer.files[0]); });
+fileInput.addEventListener("change",function(){ if(fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(f){
+  var pm=document.getElementById("parseMsg");
+  pm.style.display="block"; pm.className="msg info"; pm.textContent="Reading "+f.name+"…";
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var rows=parseCSV(reader.result);
+      var jobs=extract(rows);
+      var jobNos=Object.keys(jobs);
+      if(jobNos.length===0){ pm.className="msg err"; pm.textContent="Couldn't find phase/line rows in that file. Make sure it's the VM JC Task Schedule export."; return; }
+      PARSED=jobs;
+      pm.className="msg ok"; pm.textContent="Parsed "+f.name+" ✓";
+      renderPreview(jobs);
+    }catch(e){ pm.className="msg err"; pm.textContent="Parse error: "+e.message; }
+  };
+  reader.readAsText(f);
+}
+
+function renderPreview(jobs){
+  var jobNos=Object.keys(jobs);
+  var totalRows=0, allPhases={}, allLines={};
+  jobNos.forEach(function(jn){ jobs[jn].rows.forEach(function(x){ totalRows++; allPhases[x.phase]=1; allLines[x.line]=1; }); });
+  document.getElementById("previewCard").style.display="block";
+  document.getElementById("stat").innerHTML=
+    '<div><b>'+jobNos.length+'</b><span>Job'+(jobNos.length>1?'s':'')+'</span></div>'+
+    '<div><b>'+Object.keys(allPhases).length+'</b><span>Phases</span></div>'+
+    '<div><b>'+totalRows+'</b><span>Phase/line rows</span></div>';
+  var pills='';
+  jobNos.forEach(function(jn){ pills+='<span class="pill">'+jn+' — '+ (jobs[jn].name||'') +'</span>'; });
+  document.getElementById("phasePills").innerHTML=pills;
+  // table preview (first 40)
+  var tbl='<tr><th>Job</th><th>Phase</th><th>Phase Desc</th><th>Line</th><th>Line Desc</th></tr>';
+  var shown=0;
+  jobNos.forEach(function(jn){ jobs[jn].rows.forEach(function(x){ if(shown<40){ tbl+='<tr><td>'+jn+'</td><td>'+x.phase+'</td><td>'+esc(x.pdesc)+'</td><td>'+x.line+'</td><td>'+esc(x.ldesc)+'</td></tr>'; shown++; } }); });
+  if(totalRows>40) tbl+='<tr><td colspan="5" class="mut">…and '+(totalRows-40)+' more</td></tr>';
+  document.getElementById("previewTbl").innerHTML=tbl;
+  document.getElementById("msg").style.display="none";
+}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+
+/* ===== GRAPH BATCH HELPERS ===== */
+async function graphBatch(token, requests){
+  // requests: [{id,method,url,body}] up to 20
+  var r=await fetch(GBATCH,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
+    body:JSON.stringify({requests:requests})});
+  var j=await r.json();
+  return j.responses||[];
+}
+async function getExistingIds(token, jobNo){
+  var ids=[], url=GRAPH+LIST.jobTasks+"/items?$expand=fields($select=JobNo)&$top=999";
+  while(url){
+    var j=await fetch(url,{headers:{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(r=>r.json());
+    if(j.error) throw new Error(j.error.message);
+    (j.value||[]).forEach(function(it){ if(it.fields && it.fields.JobNo===jobNo) ids.push(it.id); });
+    url=j["@odata.nextLink"]||null;
+  }
+  return ids;
+}
+
+/* ===== LOAD ===== */
+document.getElementById("loadBtn").onclick=async function(){
+  if(!PARSED) return;
+  var btn=this, msg=document.getElementById("msg"), bar=document.getElementById("bar"), fill=bar.querySelector("i");
+  btn.disabled=true; msg.className="msg info"; msg.style.display="block"; bar.style.display="block";
+  try{
+    var token=await getToken();
+    var jobNos=Object.keys(PARSED);
+    var relPath="/sites/"+SITE_ID+"/lists/"+LIST.jobTasks+"/items";
+    var jobsRel="/sites/"+SITE_ID+"/lists/"+LIST.jobs+"/items";
+    var totalRows=0; jobNos.forEach(function(jn){ totalRows+=PARSED[jn].rows.length; });
+    var done=0;
+
+    for(var ji=0; ji<jobNos.length; ji++){
+      var jn=jobNos[ji], job=PARSED[jn];
+      msg.textContent="Refreshing "+jn+" — clearing old rows…";
+      // delete existing rows for this job
+      var oldIds=await getExistingIds(token, jn);
+      for(var d=0; d<oldIds.length; d+=20){
+        var dreq=oldIds.slice(d,d+20).map(function(id,ix){return {id:String(ix),method:"DELETE",url:relPath+"/"+id};});
+        await graphBatch(token, dreq);
+      }
+      // ensure Jobs list has this job
+      await ensureJob(token, jobsRel, jn, job.name);
+      // insert new rows in batches of 20
+      msg.textContent="Loading "+jn+" — writing "+job.rows.length+" phase/line rows…";
+      for(var s=0; s<job.rows.length; s+=20){
+        var chunk=job.rows.slice(s,s+20);
+        var reqs=chunk.map(function(x,ix){
+          return {id:String(ix),method:"POST",url:relPath,headers:{"Content-Type":"application/json"},
+            body:{fields:{Title:jn+" "+x.phase+" "+x.line, JobNo:jn, JobName:job.name, PhaseCode:x.phase, PhaseDesc:x.pdesc, LineNum:x.line, LineDesc:x.ldesc, BudgetHours:parseFloat(x.budget)||0, Active:"Yes"}}};
+        });
+        var resp=await graphBatch(token, reqs);
+        var bad=resp.filter(function(r){return r.status>=300;});
+        if(bad.length){ throw new Error("Write failed ("+bad[0].status+"): "+JSON.stringify(bad[0].body).slice(0,180)); }
+        done+=chunk.length;
+        fill.style.width=Math.round(done/totalRows*100)+"%";
+      }
+    }
+    msg.className="msg ok";
+    msg.innerHTML="✓ Loaded "+jobNos.join(", ")+" — "+totalRows+" phase/line rows are now available on the timecard.";
+  }catch(e){ msg.className="msg err"; msg.textContent="Load failed: "+e.message; }
+  finally{ btn.disabled=false; }
+};
+
+async function ensureJob(token, jobsRel, jn, name){
+  // check if job exists
+  var url="https://graph.microsoft.com"+jobsRel+"?$expand=fields($select=JobNo)&$top=999";
+  var exists=false;
+  while(url){
+    var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(r=>r.json());
+    (j.value||[]).forEach(function(it){ if(it.fields && it.fields.JobNo===jn) exists=true; });
+    url=j["@odata.nextLink"]||null;
+    if(exists) break;
+  }
+  if(!exists){
+    await fetch(GRAPH+LIST.jobs+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
+      body:JSON.stringify({fields:{Title:jn, JobNo:jn, JobName:name, Active:"Yes"}})});
+  }
+}
+</script>
+</body>
+</html>
