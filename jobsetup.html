@@ -15,6 +15,11 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .card h2{margin:0 0 8px;font-size:16px;color:var(--vm2)}
 p.help{color:var(--mut);font-size:14px;margin:6px 0 14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
+input[type=text]{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px}
+.codes{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.codes span{background:#f3f4f6;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.or{text-align:center;color:var(--mut);font-size:13px;font-weight:600;margin:2px 0}
 .drop{border:2px dashed var(--vm);border-radius:12px;padding:34px 18px;text-align:center;background:#fff7f6;cursor:pointer;transition:.15s}
 .drop.drag{background:#fdecea}
 .drop b{color:var(--vm2)}
@@ -67,6 +72,20 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
     <div class="msg info" id="parseMsg" style="display:none"></div>
   </div>
 
+  <div class="or">— or —</div>
+
+  <div class="card">
+    <h2>Set up a Q, S, or T job by hand</h2>
+    <p class="help">These jobs all use the same standard phase codes — no export needed. Type the job number and name and it loads them. You can fine-tune the codes for any job later in SharePoint.</p>
+    <div class="codes" id="genCodes"></div>
+    <label>Job number</label>
+    <input type="text" id="mJobNo" placeholder="e.g. 26Q-231">
+    <label>Job name</label>
+    <input type="text" id="mJobName" placeholder="e.g. Smith Building RTU Replacement">
+    <button class="btn" id="manualBtn" style="margin-top:14px">Set up with standard codes</button>
+    <div class="msg" id="manualMsg" style="display:none"></div>
+  </div>
+
   <div class="card" id="previewCard" style="display:none">
     <h2>Review before loading</h2>
     <div class="stat" id="stat"></div>
@@ -87,6 +106,8 @@ var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var GBATCH="https://graph.microsoft.com/v1.0/$batch";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+// Standard phase codes applied to Q / S / T jobs (no line codes). Editable in SharePoint per job.
+var GENERIC_PHASES=["1110","1115","1151","1211","1210","1310","1335","1600","1620","1670","1710","1720","1735","1740","1745","1770","1790","1800"];
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginName="";
@@ -280,6 +301,21 @@ async function ensureJob(token, jobsRel, jn, name){
       body:JSON.stringify({fields:{Title:jn, JobNo:jn, JobName:name, Active:"Yes"}})});
   }
 }
+
+/* ===== MANUAL ENTRY (Q/S/T standard codes) ===== */
+(function(){ var el=document.getElementById("genCodes"); if(el) el.innerHTML=GENERIC_PHASES.map(function(p){return '<span>'+p+'</span>';}).join(""); })();
+document.getElementById("manualBtn").onclick=function(){
+  var jn=(document.getElementById("mJobNo").value||"").trim();
+  var nm=(document.getElementById("mJobName").value||"").trim();
+  var mm=document.getElementById("manualMsg");
+  if(!jn||!nm){ mm.style.display="block"; mm.className="msg err"; mm.textContent="Enter both a job number and a job name."; return; }
+  var rows=GENERIC_PHASES.map(function(p){return {phase:p,pdesc:"",line:"",ldesc:"",budget:""};});
+  var jobs={}; jobs[jn]={name:nm, seen:{}, rows:rows};
+  PARSED=jobs;
+  mm.style.display="block"; mm.className="msg ok"; mm.textContent="Ready — review below, then load.";
+  renderPreview(jobs);
+  document.getElementById("previewCard").scrollIntoView({behavior:"smooth"});
+};
 </script>
 </body>
 </html>

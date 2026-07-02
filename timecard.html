@@ -172,7 +172,7 @@ function buildMap(jt){
     if(!map[j]){ map[j]={name:r.JobName||j, phases:{}, phaseList:[]}; jobs.push({JobNo:j,JobName:r.JobName||j}); }
     var p=r.PhaseCode; if(!p) return;
     if(!map[j].phases[p]){ map[j].phases[p]={desc:r.PhaseDesc||"", lines:[]}; map[j].phaseList.push(p); }
-    map[j].phases[p].lines.push({line:r.LineNum||"", ldesc:r.LineDesc||""});
+    if(r.LineNum && String(r.LineNum).trim()!==""){ map[j].phases[p].lines.push({line:r.LineNum, ldesc:r.LineDesc||""}); }
   });
   jobs.sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
   Object.keys(map).forEach(function(j){
@@ -242,10 +242,14 @@ function renderEntries(){
     var jobSel='<option value="">— Select job —</option>'+REF.jobs.map(function(j){return opt(j.JobNo,j.JobNo+" · "+(j.JobName||""),en.job);}).join("");
     var phSel='<option value="">'+(en.job?'— Select phase —':'— Pick a job first —')+'</option>'+phasesForJob.map(function(p){var d=jm.phases[p].desc;return opt(p,p+(d?" · "+d:""),en.phase);}).join("");
     var lnSel='<option value="">'+(en.phase?'— Select line —':'— Pick a phase first —')+'</option>'+linesForPhase.map(function(l){return opt(l.line,l.line+(l.ldesc?" · "+l.ldesc:""),en.line);}).join("");
+    var noLine=en.phase&&linesForPhase.length===0;
+    var lineField=noLine
+      ? '<div><label>Line</label><div class="hint" style="padding:11px 0 0">No line code for this phase.</div></div>'
+      : '<div><label>Line <span class="req">*</span></label><select data-f="line">'+lnSel+'</select></div>';
     var jobBlock=en.pay==="Regular"?(
       '<label>Job <span class="req">*</span></label><select data-f="job">'+jobSel+'</select>'+
       '<div class="grid2"><div><label>Phase <span class="req">*</span></label><select data-f="phase">'+phSel+'</select></div>'+
-      '<div><label>Line <span class="req">*</span></label><select data-f="line">'+lnSel+'</select></div></div>'):
+      lineField+'</div>'):
       '<div class="hint" style="margin:6px 0">'+en.pay+' time — no job/phase/line needed.</div>';
     var applyMini=crew.length? ('<div class="applygrid">'+
         '<label class="mini"><input type="checkbox" data-all="1" '+(crew.length&&crew.every(function(c){return en.apply[c.num];})?"checked":"")+'> <b>All crew</b></label>'+
@@ -300,7 +304,10 @@ async function submit(){
     var who=Object.keys(en.apply).filter(function(n){return crewSel[n];});
     if(h<=0){problems.push("Entry "+(idx+1)+": hours missing.");}
     if(who.length===0){problems.push("Entry "+(idx+1)+": no crew checked.");}
-    if(en.pay==="Regular" && (!en.job||!en.phase||!en.line)){problems.push("Entry "+(idx+1)+": job, phase, and line required.");}
+    if(en.pay==="Regular"){
+      if(!en.job||!en.phase){problems.push("Entry "+(idx+1)+": job and phase required.");}
+      else { var jm2=REF.map[en.job]; var hasLines=jm2&&jm2.phases[en.phase]&&jm2.phases[en.phase].lines.length>0; if(hasLines&&!en.line){problems.push("Entry "+(idx+1)+": line required.");} }
+    }
     if(h>0 && who.length){
       who.forEach(function(n){
         rows.push({
