@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Training Sign-In</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:700px;margin:0 auto;padding:14px 12px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--vm2);display:flex;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=text],textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:70px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.crewbox{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px;margin-top:8px}
+.crewrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f2f4;font-size:15px}
+.crewrow:last-child{border-bottom:0}.crewrow input{width:20px;height:20px;flex:0 0 auto}.crewrow .num{color:var(--mut);font-size:12px;margin-left:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#fdecea;color:var(--vm2);border:1px solid #f5c6c2;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.count{font-size:13px;color:var(--vm2);font-weight:700;margin-top:6px}
+.req{color:var(--vm)}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.5}
+.load{text-align:center;color:var(--mut);padding:20px;font-size:14px}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}.foot .inner{max-width:700px;margin:0 auto}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Training Sign-In. Sign in with your Vision Mechanical account to log a session.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Training Sign-In</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2><span class="n">1</span> Session</h2>
+    <label>Training topic <span class="req">*</span></label><input type="text" id="topic" placeholder="e.g. Ladder Safety / Fall Protection">
+    <div class="grid2">
+      <div><label>Date <span class="req">*</span></label><input type="date" id="tDate"></div>
+      <div><label>Instructor <span class="req">*</span></label><input type="text" id="instructor"></div>
+    </div>
+    <label>Location</label><input type="text" id="loc" placeholder="Shop / jobsite / room">
+  </div>
+  <div class="card">
+    <h2><span class="n">2</span> Attendees <span class="req">*</span></h2>
+    <div id="loading" class="load">Loading crew list...</div>
+    <div id="crewWrap" style="display:none">
+      <input type="text" class="search" id="crewSearch" placeholder="Search name or number...">
+      <div class="crewbox" id="crewBox"></div>
+      <div class="count" id="count">0 selected</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2><span class="n">3</span> Notes</h2>
+    <textarea id="notes" placeholder="Optional notes about the session"></textarea>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<div class="foot" id="foot" style="display:none"><div class="inner"><button class="btn" id="submitBtn">Submit sign-in sheet</button></div></div>
+<script>
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST="5e520b8b-c978-420e-918d-47eb991635fc";
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+var EMP_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+EMP_LIST+"/items?expand=fields(select=EmployeeName,EmployeeNumber,Active)&$top=500";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
+var crew=[];var sel={};
+function E(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tok(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];return msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){return msal_i.acquireTokenPopup({scopes:[GRAPH_SCOPE]});});}
+function loadCrew(){
+  tok().then(function(t){return fetch(EMP_URL,{headers:{Authorization:"Bearer "+t.accessToken}});}).then(function(r){return r.json();}).then(function(j){
+    crew=(j.value||[]).map(function(it){return {name:it.fields.EmployeeName||"",num:it.fields.EmployeeNumber||it.fields.Title||"",active:it.fields.Active};}).filter(function(c){return c.name&&c.active!=="No";});
+    crew.sort(function(a,b){return a.name.localeCompare(b.name);});
+    E("loading").style.display="none";E("crewWrap").style.display="block";renderCrew("");
+  }).catch(function(e){E("loading").textContent="Could not load crew ("+e.message+"). You can still type attendees in Notes.";});
+}
+function renderCrew(q){
+  q=(q||"").toLowerCase();
+  var h="";crew.forEach(function(c,i){if(q&&(c.name+" "+c.num).toLowerCase().indexOf(q)<0)return;h+='<div class="crewrow"><input type="checkbox" data-i="'+i+'"'+(sel[i]?" checked":"")+'><span>'+esc(c.name)+'</span><span class="num">#'+esc(c.num)+'</span></div>';});
+  E("crewBox").innerHTML=h;
+  E("crewBox").querySelectorAll("input").forEach(function(cb){cb.onchange=function(){var i=+cb.getAttribute("data-i");if(cb.checked)sel[i]=true;else delete sel[i];chips();};});
+  chips();
+}
+function chips(){var n=Object.keys(sel).length;E("count").textContent=n+" selected";var h="";Object.keys(sel).forEach(function(i){h+='<span class="chip">'+esc(crew[i].name)+'</span>';});E("chips").innerHTML=h;}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("instructor").value)E("instructor").value=(a.name||"").trim();if(!E("tDate").value)E("tDate").value=today();E("crewSearch").oninput=function(){renderCrew(E("crewSearch").value);};loadCrew();}
+function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
+E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
+function buildText(a){var L=["VISION MECHANICAL - TRAINING SIGN-IN","========================================","Topic: "+a.topic,"Date: "+a.tDate,"Instructor: "+a.instructor,"Location: "+a.loc,"","Attendees ("+a.attendees.length+"):"];a.attendees.forEach(function(n,i){L.push("  "+(i+1)+". "+n);});if(a.notes){L.push("");L.push("Notes: "+a.notes);}L.push("");L.push("Submitted: "+a.submittedAt+" by "+a.loginEmail);L.push("========================================");return L.join("\n");}
+function submitSheet(){
+  var msg=E("msg"),btn=E("submitBtn");
+  if(!E("topic").value.trim()){msg.className="msg err";msg.textContent="Enter the training topic";return;}
+  if(!E("tDate").value){msg.className="msg err";msg.textContent="Pick the date";return;}
+  if(!E("instructor").value.trim()){msg.className="msg err";msg.textContent="Enter the instructor";return;}
+  var names=Object.keys(sel).map(function(i){return crew[i].name;});
+  if(names.length===0){msg.className="msg err";msg.textContent="Check off at least one attendee";return;}
+  var a={topic:E("topic").value.trim(),tDate:E("tDate").value,instructor:E("instructor").value.trim(),loc:E("loc").value.trim(),attendees:names,notes:E("notes").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
+  var fields={Title:a.tDate+" | "+a.topic,Topic:a.topic,TrainingDate:a.tDate+"T12:00:00Z",TrainingDateText:a.tDate,Instructor:a.instructor,Location:a.loc,Attendees:JSON.stringify(a.attendees),AttendeeCount:a.attendees.length,Notes:a.notes,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
+  btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting sign-in sheet...";
+  tok().then(function(t){return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+t.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Training recorded with "+names.length+" attendees.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+}
+E("submitBtn").onclick=submitSheet;start();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Safety Close-Call Report</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:680px;margin:0 auto;padding:14px 12px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:700;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=text],textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:100px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.req{color:var(--vm)}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.5}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:680px;margin:0 auto}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Safety Close-Call Report. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Safety Close-Call Report</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2><span class="n">1</span> Report info</h2>
+    <div class="grid2">
+      <div><label>Worker name <span class="req">*</span></label><input type="text" id="worker"></div>
+      <div><label>Date of close call <span class="req">*</span></label><input type="date" id="ccDate"></div>
+    </div>
+    <div class="grid2">
+      <div><label>Supervisor</label><input type="text" id="sup"></div>
+      <div><label>Jobsite</label><input type="text" id="site"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2><span class="n">2</span> Injury (if any)</h2>
+    <p class="desc">Use this when you had an injury that was resolved on the jobsite so you could go back to work &mdash; so the office has a correct record if it complicates later.</p>
+    <div class="grid2">
+      <div><label>Type of injury</label><input type="text" id="injType"></div>
+      <div><label>Body part</label><input type="text" id="bodyPart"></div>
+    </div>
+    <label>Details</label><textarea id="injDetails" placeholder="What happened, how it was handled"></textarea>
+  </div>
+  <div class="card">
+    <h2><span class="n">3</span> Incident / close-call (if any)</h2>
+    <p class="desc">Use this if you had a close-call or kept an incident from happening. The Safety Team uses these to prevent jobsite accidents. (A report that leads to a change can earn Safety Incentive Rewards.)</p>
+    <label>Type of accident / hazard</label><input type="text" id="accType">
+    <label>Details</label><textarea id="incDetails" placeholder="What happened or could have happened, and what would prevent it"></textarea>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<div class="foot" id="foot" style="display:none"><div class="inner"><button class="btn" id="submitBtn">Submit report</button></div></div>
+<script>
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST="9e3404f0-5749-4c17-a93a-81130123b70a";
+var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
+function E(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().slice(0,10);}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("worker").value)E("worker").value=(a.name||"").trim();if(!E("ccDate").value)E("ccDate").value=today();}
+function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
+E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
+function buildText(a){var L=["VISION MECHANICAL - SAFETY CLOSE-CALL REPORT","========================================","Worker: "+a.worker,"Date: "+a.ccDate,"Supervisor: "+a.sup,"Jobsite: "+a.site,"","-- INJURY --","Type: "+a.injType+"   Body part: "+a.bodyPart,"Details: "+a.injDetails,"","-- INCIDENT / CLOSE-CALL --","Type: "+a.accType,"Details: "+a.incDetails,"","Submitted: "+a.submittedAt+" by "+a.loginEmail,"========================================"];return L.join("\n");}
+function submitReport(){
+  var msg=E("msg"),btn=E("submitBtn");
+  if(!E("worker").value.trim()){msg.className="msg err";msg.textContent="Enter worker name";return;}
+  if(!E("ccDate").value){msg.className="msg err";msg.textContent="Pick the date";return;}
+  var hasInj=E("injType").value.trim()||E("bodyPart").value.trim()||E("injDetails").value.trim();
+  var hasInc=E("accType").value.trim()||E("incDetails").value.trim();
+  if(!hasInj&&!hasInc){msg.className="msg err";msg.textContent="Fill in either the Injury or the Incident section";return;}
+  var kind=hasInj&&hasInc?"Injury + Incident":(hasInj?"Injury":"Incident");
+  var a={worker:E("worker").value.trim(),ccDate:E("ccDate").value,sup:E("sup").value.trim(),site:E("site").value.trim(),injType:E("injType").value.trim(),bodyPart:E("bodyPart").value.trim(),injDetails:E("injDetails").value.trim(),accType:E("accType").value.trim(),incDetails:E("incDetails").value.trim(),kind:kind,loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
+  var fields={Title:a.ccDate+" | "+a.worker+" | "+a.kind,WorkerName:a.worker,CloseCallDate:a.ccDate+"T12:00:00Z",CloseCallDateText:a.ccDate,SupervisorName:a.sup,Jobsite:a.site,ReportKind:a.kind,InjuryType:a.injType,BodyPart:a.bodyPart,InjuryDetails:a.injDetails,AccidentType:a.accType,IncidentDetails:a.incDetails,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
+  btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting report...";
+  var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
+  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){return msal_i.acquireTokenPopup({scopes:[GRAPH_SCOPE]});}).then(function(tok){return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Thank you for reporting.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+}
+E("submitBtn").onclick=submitReport;start();
+</script>
+</body>
+</html>
