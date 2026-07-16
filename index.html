@@ -142,7 +142,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.0 (Jun 2026)";
+var VERSION = "v1.1 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -497,6 +497,11 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/bccd1165-a999-41b4-9cae-394d0766fb4a/items";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
 var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
+/* ---------- Draft persistence: a redirect sign-in must never lose a filled-in log ---------- */
+var DRAFT_KEY="dfl_draft_v1";
+function saveDraft(){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify({answers:answers, resume:true, ts:Date.now()})); }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+function restoreDraft(){ try{ var raw=localStorage.getItem(DRAFT_KEY); if(!raw) return false; var d=JSON.parse(raw); if(d&&d.answers){ for(var k in d.answers){ answers[k]=d.answers[k]; } return !!d.resume; } }catch(e){} return false; }
 function hideGate(){var g=E("authGate");if(g)g.style.display="none";}
 function startAuth(){
 msalInstance.handleRedirectPromise().then(function(){
@@ -504,7 +509,9 @@ var acct=msalInstance.getAllAccounts()[0];
 if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); return; }
 msalInstance.setActiveAccount(acct);
 loginEmail=acct.username||"";
-hideGate(); render();
+hideGate();
+if(restoreDraft()){ idx=999; render(); var m=E('okMsg'); if(m){ m.style.color=""; m.textContent="You're signed in — tap Submit to file your log."; } }
+else { render(); }
 }).catch(function(e){
 var g=E("authGate"); if(g) g.innerHTML="<div style='max-width:340px'>Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
 });
@@ -535,13 +542,8 @@ SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail,LogText:buildText(
 Object.keys(f).forEach(function(k){if(f[k]===null)delete f[k];});
 return f;
 }
-function submitToSharePoint(){
-var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
-return msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){
-return msalInstance.acquireTokenPopup({scopes:[GRAPH_SCOPE]});
-}).then(function(tok){
-return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{"Authorization":"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})});
-}).then(function(resp){
+function postLog(accessToken){
+return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{"Authorization":"Bearer "+accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})}).then(function(resp){
 if(!resp.ok) return resp.text().then(function(t){throw new Error("HTTP "+resp.status+" "+t.slice(0,200));});
 return resp.json();
 });
@@ -562,12 +564,20 @@ navigator.clipboard.writeText(t.value).then(function(){E('okMsg').textContent="C
 E('emailBtn').onclick=function(){
 var btn=this,msg=E('okMsg');
 msg.style.color="";msg.textContent="Saving your log to SharePoint...";btn.disabled=true;
-submitToSharePoint().then(function(){
+var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
+msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+postLog(tok.accessToken).then(function(){
 msg.style.color="#15803d";msg.textContent="Submitted. Your daily log has been filed to SharePoint.";
-btn.textContent="Submitted";
+btn.textContent="Submitted"; clearDraft();
 }).catch(function(e){
 msg.style.color="#b8462b";msg.textContent="Could not submit ("+e.message+"). Tap Copy and email it to "+REPORTS_TO+" as a backup.";
 btn.disabled=false;
+});
+}).catch(function(){
+/* Silent token failed -> refresh the sign-in with a full-page REDIRECT (works on phones; no popup, so no block_nested_popups). The log is saved and restored automatically on return. */
+saveDraft();
+msg.style.color="";msg.textContent="Confirming your sign-in…";
+msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});
 });
 };
 E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
@@ -583,6 +593,7 @@ e.preventDefault(); next();
 });
 
 startAuth();
+/* build v1.1 - mobile redirect auth */
 </script>
 </body>
 </html>
