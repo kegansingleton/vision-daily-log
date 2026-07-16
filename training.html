@@ -89,7 +89,7 @@ var crew=[];var sel={};
 function E(id){return document.getElementById(id);}
 function today(){return new Date().toISOString().slice(0,10);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function tok(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];return msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){return msal_i.acquireTokenPopup({scopes:[GRAPH_SCOPE]});});}
+function tok(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];return msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});});}
 function loadCrew(){
   tok().then(function(t){return fetch(EMP_URL,{headers:{Authorization:"Bearer "+t.accessToken}});}).then(function(r){return r.json();}).then(function(j){
     crew=(j.value||[]).map(function(it){return {name:it.fields.EmployeeName||"",num:it.fields.EmployeeNumber||it.fields.Title||"",active:it.fields.Active};}).filter(function(c){return c.name&&c.active!=="No";});

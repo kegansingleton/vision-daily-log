@@ -142,7 +142,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.1 (Jul 2026)";
+var VERSION = "v1.2 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -164,7 +164,7 @@ var LOOK_STATUS = ["Ready","Waiting on Material","Need to follow-up","Need Direc
 /* ---- THE STANDARDIZED, RIGID QUESTION SET ----
 Order and wording are fixed. Edit only with admin approval. */
 var QUESTIONS = [
-{id:"date",sec:"Job Identification",type:"date",label:"What is today's date?",help:"The date this work was performed.",req:true},
+{id:"date",sec:"Job Identification",type:"date",label:"What date is this log for?",help:"The work day this log covers - not necessarily today. Filling it out the next morning? Enter yesterday's date.",req:true},
 {id:"project",sec:"Job Identification",type:"select",label:"Which project is this log for?",help:"Select the job number and name.",options:PROJECTS,req:true},
 {id:"submittedBy",sec:"Job Identification",type:"selectOther",label:"Who is submitting this log?",help:"The crew lead or person completing this report.",options:CREW,req:true},
 {id:"foreman",sec:"Job Identification",type:"text",label:"Who was the foreman or superintendent on site?",help:"Person in charge of the crew today.",req:false,ph:"Name"},
@@ -323,7 +323,7 @@ speak(spoken);
 function buildInput(q){
 var v=answers[q.id];
 switch(q.type){
-case 'date': return '<input type="date" id="f" value="'+(v||today())+'">';
+case 'date': return '<input type="date" id="f" max="'+today()+'" value="'+(v||"")+'">';
 case 'number': return micWrap('<input type="number" id="f" inputmode="decimal" value="'+(v||'')+'" placeholder="'+(q.ph||'')+'">');
 case 'text': return micWrap('<input type="text" id="f" value="'+(v?esc(v):'')+'" placeholder="'+(q.ph||'')+'">');
 case 'textarea': return micWrap('<textarea id="f" placeholder="'+(q.ph||'')+'">'+(v?esc(v):'')+'</textarea>');

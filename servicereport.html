@@ -185,7 +185,7 @@ function submitReport(){
   var fields={Title:a.date+" | "+a.jobName+" | "+a.tech,WorkDate:a.date+"T12:00:00Z",WorkDateText:a.date,JobNo:a.jobNo,JobName:a.jobName,PhaseCode:a.phase,ServiceStatus:a.status,Technician:a.tech,ReasonForCall:a.reason,WorkPerformed:a.work,LaborHours:a.totLabor,OvertimeHours:a.totOt,LineItems:JSON.stringify(a.items),ForemanSignature:a.sig,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
   msg.className="msg";msg.style.display="none";btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting service report...";
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
-  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){return msal_i.acquireTokenPopup({scopes:[GRAPH_SCOPE]});}).then(function(tok){
+  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){
     return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
   }).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){
     msg.className="msg ok";msg.textContent="Submitted. Your service report has been filed.";btn.textContent="Submitted";
