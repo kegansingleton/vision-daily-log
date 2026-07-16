@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.3 (Jul 2026)";
+var VERSION = "v1.4 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -535,7 +535,10 @@ function spNum(id){var n=parseFloat(answers[id]);return isNaN(n)?null:n;}
 function spYN(v){return v===true?"Yes":(v||"");}
 function buildFields(){
 var a=answers;
+var _now=new Date();var _pad=function(n){return (n<10?'0':'')+n;};var _todayStr=_now.getFullYear()+'-'+_pad(_now.getMonth()+1)+'-'+_pad(_now.getDate());
+var _late=((a.date&&a.date<_todayStr)||(a.date===_todayStr&&_now.getHours()>=21))?"Yes":"No";
 var f={
+LateSubmission:_late,
 Title:(a.date||"")+" | "+(a.project||"")+" | "+(a.submittedBy||""),
 LogDate:a.date?(a.date+"T12:00:00Z"):null,
 Project:spVal("project"),SubmittedBy:spVal("submittedBy"),ForemanSuper:spVal("foreman"),
