@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.4 (Jul 2026)";
+var VERSION = "v1.5 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -174,6 +174,7 @@ var QUESTIONS = [
 {id:"date",sec:"Job Identification",type:"date",label:"What date is this log for?",help:"The work day this log covers - not necessarily today. Filling it out the next morning? Enter yesterday's date.",req:true},
 {id:"project",sec:"Job Identification",type:"select",label:"Which project is this log for?",help:"Select the job number and name.",options:PROJECTS,req:true},
 {id:"submittedBy",sec:"Job Identification",type:"selectOther",label:"Who is submitting this log?",help:"The crew lead or person completing this report.",options:CREW,req:true},
+{id:"craft",sec:"Job Identification",type:"multi",label:"What craft(s) for this log?",help:"Tap all that apply - can be more than one, and can change day to day.",options:["Sheet Metal","Pipefitting","Plumbing","Shop"],req:true},
 {id:"foreman",sec:"Job Identification",type:"text",label:"Who was the foreman or superintendent on site?",help:"Person in charge of the crew today.",req:false,ph:"Name"},
 
 {id:"weather",sec:"Site Conditions",type:"select",label:"What were the weather conditions?",help:"General conditions for the work day.",options:WEATHER,req:true},
@@ -461,10 +462,10 @@ E('outText').value=buildText();
 function buildText(){
 var a=answers; var L=[];
 function line(k,v){ if(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))return; L.push(k+": "+(Array.isArray(v)?v.join(', '):v)); }
-L.push("VISIONMECH - SHEET METAL DAILY LOG");
+L.push("VISION MECHANICAL - DAILY FIELD LOG");
 L.push("Template "+VERSION);
 L.push("========================================");
-line("Date",a.date); line("Project",a.project); line("Submitted By",a.submittedBy); line("Foreman/Super",a.foreman);
+line("Date",a.date); line("Project",a.project); line("Submitted By",a.submittedBy); line("Craft(s)",a.craft); line("Foreman/Super",a.foreman);
 L.push("");
 L.push("-- SITE CONDITIONS --");
 line("Weather",a.weather); line("Temperature",a.temp); line("Weather Impacted Work",a.weatherImpact); line("Impact Detail",a.weatherImpactDetail);
@@ -541,7 +542,7 @@ var f={
 LateSubmission:_late,
 Title:(a.date||"")+" | "+(a.project||"")+" | "+(a.submittedBy||""),
 LogDate:a.date?(a.date+"T12:00:00Z"):null,
-Project:spVal("project"),SubmittedBy:spVal("submittedBy"),ForemanSuper:spVal("foreman"),
+Project:spVal("project"),SubmittedBy:spVal("submittedBy"),Craft:spVal("craft"),ForemanSuper:spVal("foreman"),
 Weather:spVal("weather"),Temperature:spVal("temp"),WeatherImpactedWork:spVal("weatherImpact"),
 WeatherImpactDetail:spVal("weatherImpactDetail"),CrewOnSite:spVal("crew"),
 TotalWorkers:spNum("crewCount"),RegularManHours:spNum("regHours"),OvertimeManHours:spNum("otHours"),
