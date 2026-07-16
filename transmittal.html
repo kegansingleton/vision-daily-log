@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Transmittal</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:680px;margin:0 auto;padding:14px 12px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .n{background:var(--vm);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=text],textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.opt{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:9px 15px;font-size:14px;cursor:pointer;user-select:none}
+.opt.sel{background:var(--vm);border-color:var(--vm);color:#fff;font-weight:600}
+.req{color:var(--vm)}
+.photobtns{display:flex;gap:8px;flex-wrap:wrap}
+.pbtn{flex:1 1 0;min-width:140px;text-align:center;border:1.5px dashed var(--vm);color:var(--vm2);background:#fff;border-radius:10px;padding:14px 10px;font-size:14px;font-weight:600;cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumb{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.5}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:680px;margin:0 auto}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:6px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Transmittal. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Transmittal</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="card">
+    <h2><span class="n">1</span> Hand-off info</h2>
+    <div class="grid2">
+      <div><label>Date <span class="req">*</span></label><input type="date" id="tDate"></div>
+      <div><label>From (you)</label><input type="text" id="fromPerson"></div>
+    </div>
+    <label>Received by <span class="req">*</span></label><input type="text" id="receivedBy" placeholder="Person and/or company who received it">
+    <label>Who are they?</label>
+    <div class="opts" id="partyOpts"></div>
+    <label style="margin-top:10px">Job / Project</label><input type="text" id="jobProject" placeholder="Job name or number">
+  </div>
+  <div class="card">
+    <h2><span class="n">2</span> What was handed off <span class="req">*</span></h2>
+    <textarea id="items" placeholder="e.g. 2 filters (20x25x2), 1 blower motor, box of fasteners"></textarea>
+    <label>Left at / Handed to</label>
+    <input type="text" id="leftAt" placeholder="Where you left it, or the name of who took it">
+  </div>
+  <div class="card">
+    <h2><span class="n">3</span> Photo(s) <span class="req">*</span></h2>
+    <p class="desc">Snap a photo of where it was left, or who took it. Add more than one if you need.</p>
+    <div class="photobtns">
+      <label class="pbtn" for="camIn">&#128247; Take a photo</label>
+      <label class="pbtn" for="fileIn">&#128193; Upload from photos</label>
+    </div>
+    <input id="camIn" type="file" accept="image/*" capture="environment" multiple style="display:none">
+    <input id="fileIn" type="file" accept="image/*" multiple style="display:none">
+    <div class="thumbs" id="thumbs"></div>
+    <div class="hint" id="photoHint"></div>
+  </div>
+  <div class="card">
+    <h2><span class="n">4</span> Notes</h2>
+    <textarea id="notes" placeholder="Anything else worth recording (optional)"></textarea>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<div class="foot" id="foot" style="display:none"><div class="inner"><button class="btn" id="submitBtn">Submit transmittal</button></div></div>
+<script>
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST="285967c3-0300-4899-9ea1-4d28011b7b5e";
+var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
+var PARTIES=["Client","Subcontractor","Vendor","Other Vision crew","Other"];var partyType="";
+var photos=[];
+function E(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().slice(0,10);}
+function renderParties(){var h="";PARTIES.forEach(function(t){h+='<div class="opt'+(partyType===t?' sel':'')+'" data-t="'+t+'">'+t+'</div>';});E("partyOpts").innerHTML=h;E("partyOpts").querySelectorAll(".opt").forEach(function(o){o.onclick=function(){partyType=o.getAttribute("data-t");renderParties();};});}
+function renderThumbs(){var h="";photos.forEach(function(p,i){h+='<div class="thumb"><img src="'+p+'"><div class="x" data-i="'+i+'">&times;</div></div>';});E("thumbs").innerHTML=h;E("thumbs").querySelectorAll(".x").forEach(function(x){x.onclick=function(){photos.splice(parseInt(x.getAttribute("data-i"),10),1);renderThumbs();};});E("photoHint").textContent=photos.length?(photos.length+" photo"+(photos.length>1?"s":"")+" added"):"";}
+function addFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var max=900,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);photos.push(c.toDataURL("image/jpeg",0.55));renderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
+E("camIn").onchange=function(){addFiles(this.files);this.value="";};
+E("fileIn").onchange=function(){addFiles(this.files);this.value="";};
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("fromPerson").value)E("fromPerson").value=(a.name||"").trim();if(!E("tDate").value)E("tDate").value=today();renderParties();renderThumbs();}
+function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
+E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
+function buildText(a){var L=["VISION MECHANICAL - TRANSMITTAL","========================================","Date: "+a.tDate,"From: "+a.fromPerson,"Received by: "+a.receivedBy+(a.partyType?"  ("+a.partyType+")":""),"Job / Project: "+a.jobProject,"","Items transmitted:","  "+a.items,"","Left at / Handed to: "+a.leftAt,"","Notes: "+a.notes,"","Submitted: "+a.submittedAt+" by "+a.loginEmail,"========================================"];var t=L.join("\n");if(photos.length){t+="\n\n-- PHOTOS --";photos.forEach(function(p){t+="\n<img src=\""+p+"\" style=\"max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;\">";});}return t;}
+function submitReport(){
+  var msg=E("msg"),btn=E("submitBtn");
+  if(!E("tDate").value){msg.className="msg err";msg.textContent="Pick the date";return;}
+  if(!E("receivedBy").value.trim()){msg.className="msg err";msg.textContent="Enter who received it";return;}
+  if(!E("items").value.trim()){msg.className="msg err";msg.textContent="List what was handed off";return;}
+  if(!photos.length){msg.className="msg err";msg.textContent="Add at least one photo";return;}
+  var a={tDate:E("tDate").value,fromPerson:E("fromPerson").value.trim(),receivedBy:E("receivedBy").value.trim(),partyType:partyType,jobProject:E("jobProject").value.trim(),items:E("items").value.trim(),leftAt:E("leftAt").value.trim(),notes:E("notes").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
+  var fields={Title:a.tDate+" | "+a.receivedBy+" | "+a.items.slice(0,40),TransmittalDate:a.tDate+"T12:00:00Z",FromPerson:a.fromPerson,ReceivedBy:a.receivedBy,PartyType:a.partyType,JobProject:a.jobProject,ItemsTransmitted:a.items,LeftAtHandedTo:a.leftAt,Notes:a.notes,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
+  btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting transmittal...";
+  var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
+  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msg.className="msg ok";msg.textContent="Confirming your sign-in…";msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){msg.className="msg ok";msg.textContent="Submitted. A PDF has been sent to the office.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+}
+E("submitBtn").onclick=submitReport;start();
+</script>
+</body>
+</html>

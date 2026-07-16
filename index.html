@@ -11,6 +11,13 @@
 --good:#15803d; --warn:#b45309; --shadow:0 1px 3px rgba(0,0,0,.06);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.photobtns{display:flex;gap:8px;flex-wrap:wrap}
+.pbtn{flex:1 1 0;min-width:140px;text-align:center;border:1.5px dashed var(--vm);color:var(--vm2);background:#fff;border-radius:10px;padding:14px 10px;font-size:14px;font-weight:600;cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumb{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
+.photohint{font-size:12px;color:var(--muted);margin-top:6px}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 background:var(--bg);color:var(--text);line-height:1.5;-webkit-text-size-adjust:100%}
 .wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
@@ -142,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.2 (Jul 2026)";
+var VERSION = "v1.3 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -209,7 +216,7 @@ var QUESTIONS = [
 {id:"lookStatus",sec:"Look Ahead",type:"select",label:"What is the look-ahead status?",help:"Readiness for the next work day.",options:LOOK_STATUS,req:true},
 {id:"lookAhead",sec:"Look Ahead",type:"textarea",label:"What is the plan for the next work day?",help:"What the crew will tackle next and anything needed.",req:true,ph:"e.g., Continue duct mains east wing; need lift returned and 90 deg elbows"},
 
-{id:"photos",sec:"Documentation & Sign-off",type:"text",label:"Were photos taken? How many and of what?",help:"Photos strengthen the record.",req:false,ph:"e.g., 6 photos of completed duct run"},
+{id:"photos",sec:"Documentation & Sign-off",type:"photos",label:"Photos (take or upload)",help:"Snap photos or add from your camera roll - they'll be included in the log PDF.",req:false},
 {id:"notes",sec:"Documentation & Sign-off",type:"textarea",label:"Any additional notes for the record?",help:"Anything else worth documenting.",req:false,ph:"Optional"},
 {id:"certify",sec:"Documentation & Sign-off",type:"confirm",label:"Certification",help:"Please confirm before signing.",confirmText:"I certify that the information in this daily log is true, complete, and accurate to the best of my knowledge.",req:true},
 {id:"signature",sec:"Documentation & Sign-off",type:"text",label:"Type your full name to sign this log.",help:"Your typed name serves as your signature.",req:true,ph:"Full name"}
@@ -320,10 +327,14 @@ if(q.type==='confirm') spoken=q.label+". "+q.confirmText;
 speak(spoken);
 }
 
+var dailyPhotos=[];
+function dAddFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var max=900,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);dailyPhotos.push(c.toDataURL("image/jpeg",0.55));dRenderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
+function dRenderThumbs(){var el=E('dthumbs');if(!el)return;var h="";dailyPhotos.forEach(function(p,i){h+='<div class="thumb"><img src="'+p+'"><div class="x" data-i="'+i+'">&times;</div></div>';});el.innerHTML=h;el.querySelectorAll(".x").forEach(function(x){x.onclick=function(){dailyPhotos.splice(parseInt(x.getAttribute("data-i"),10),1);dRenderThumbs();};});var hint=E('dphotohint');if(hint)hint.textContent=dailyPhotos.length?(dailyPhotos.length+" photo"+(dailyPhotos.length>1?"s":"")+" added"):"";}
 function buildInput(q){
 var v=answers[q.id];
 switch(q.type){
 case 'date': return '<input type="date" id="f" max="'+today()+'" value="'+(v||"")+'">';
+case 'photos': return '<div class="photobtns"><label class="pbtn" for="dcam">&#128247; Take a photo</label><label class="pbtn" for="dfile">&#128193; Upload from photos</label></div><input id="dcam" type="file" accept="image/*" capture="environment" multiple style="display:none"><input id="dfile" type="file" accept="image/*" multiple style="display:none"><div class="thumbs" id="dthumbs"></div><div class="photohint" id="dphotohint"></div>';
 case 'number': return micWrap('<input type="number" id="f" inputmode="decimal" value="'+(v||'')+'" placeholder="'+(q.ph||'')+'">');
 case 'text': return micWrap('<input type="text" id="f" value="'+(v?esc(v):'')+'" placeholder="'+(q.ph||'')+'">');
 case 'textarea': return micWrap('<textarea id="f" placeholder="'+(q.ph||'')+'">'+(v?esc(v):'')+'</textarea>');
@@ -380,6 +391,7 @@ if(q.type==='confirm'){
 var chk=E('fchk');
 chk.onchange=function(){ E('f').classList.toggle('sel',chk.checked); };
 }
+if(q.type==='photos'){ E('dcam').onchange=function(){dAddFiles(this.files);this.value='';}; E('dfile').onchange=function(){dAddFiles(this.files);this.value='';}; dRenderThumbs(); }
 setTimeout(function(){ var el=E('f'); if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')&&el.type!=='checkbox') el.focus(); },60);
 }
 
@@ -394,6 +406,7 @@ var o=E('fother'); if(o&&o.value.trim()) arr=arr.concat(o.value.split(',').map(f
 return arr;
 }
 case 'confirm': return E('fchk').checked;
+case 'photos': return dailyPhotos.length?(dailyPhotos.length+' photo'+(dailyPhotos.length>1?'s':'')+' attached'):'';
 case 'number': return E('f').value;
 default: return E('f').value.trim();
 }
@@ -484,6 +497,7 @@ L.push("-- DOCUMENTATION & SIGN-OFF --");
 line("Photos",a.photos); line("Additional Notes",a.notes);
 L.push("Certification: "+(a.certify?"Certified true & accurate by signer":"NOT CERTIFIED"));
 line("Signed",a.signature);
+if(dailyPhotos.length){ L.push(""); L.push("-- PHOTOS --"); dailyPhotos.forEach(function(p){ L.push('<img src="'+p+'" style="max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;">'); }); }
 L.push("========================================");
 return L.join("\n");
 }
@@ -581,7 +595,7 @@ msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});
 });
 };
 E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
-E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; idx=0; render(); } };
+E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; idx=0; render(); } };
 E('voiceOn').onchange=function(){ if(!E('voiceOn').checked&&window.speechSynthesis) window.speechSynthesis.cancel(); };
 
 document.addEventListener('keydown',function(e){
