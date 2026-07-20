@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.5 (Jul 2026)";
+var VERSION = "v1.6 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -510,6 +510,8 @@ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&am
 /* ---------- Microsoft login + direct-to-SharePoint (Graph) ---------- */
 var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/bccd1165-a999-41b4-9cae-394d0766fb4a/items";
+/* Live job list - same source the timecards pull from (Job Tasks list). Distinct active JobNo/JobName. */
+var JOBS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
 var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
 /* ---------- Draft persistence: a redirect sign-in must never lose a filled-in log ---------- */
@@ -527,6 +529,7 @@ loginEmail=acct.username||"";
 hideGate();
 if(restoreDraft()){ idx=999; render(); var m=E('okMsg'); if(m){ m.style.color=""; m.textContent="You're signed in — tap Submit to file your log."; } }
 else { render(); }
+loadJobs();
 }).catch(function(e){
 var g=E("authGate"); if(g) g.innerHTML="<div style='max-width:340px'>Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
 });
@@ -565,6 +568,27 @@ return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{"Authorization":"Bearer "+a
 if(!resp.ok) return resp.text().then(function(t){throw new Error("HTTP "+resp.status+" "+t.slice(0,200));});
 return resp.json();
 });
+}
+
+/* ---------- Load the live job list (same jobs the timecards use) ---------- */
+function loadJobs(){
+var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
+if(!acct)return;
+msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+var seen={},arr=[];
+function page(u){
+return fetch(u,{headers:{"Authorization":"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){
+(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+((fl.JobName||"").trim()).trim());});
+if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);
+});
+}
+return page(JOBS_URL).then(function(){
+if(!arr.length)return;
+arr.sort();
+PROJECTS.length=0;arr.forEach(function(s){PROJECTS.push(s.trim());});
+var qi=visible[idx];if(qi!=null&&QUESTIONS[qi]&&QUESTIONS[qi].id==="project")render();
+});
+}).catch(function(){/* keep hardcoded list as fallback */});
 }
 
 /* ---------- Wire up ---------- */

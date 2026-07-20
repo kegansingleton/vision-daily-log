@@ -65,7 +65,7 @@ textarea{min-height:80px;resize:vertical}
     <label>Received by <span class="req">*</span></label><input type="text" id="receivedBy" placeholder="Person and/or company who received it">
     <label>Who are they?</label>
     <div class="opts" id="partyOpts"></div>
-    <label style="margin-top:10px">Job / Project</label><input type="text" id="jobProject" placeholder="Job name or number">
+    <label style="margin-top:10px">Job / Project</label><input type="text" id="jobProject" list="joblist" placeholder="Pick from list or type"><datalist id="joblist"></datalist>
   </div>
   <div class="card">
     <h2><span class="n">2</span> What was handed off <span class="req">*</span></h2>
@@ -97,6 +97,10 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="285967c3-0300-4899-9ea1-4d28011b7b5e";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* --- Live job list (same source the timecards pull from) --- */
+var JOBS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
+function fillJobList(arr){var dl=document.getElementById("joblist");if(!dl)return;dl.innerHTML=arr.map(function(s){return '<option value="'+String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"></option>';}).join("");}
+function loadJobPicks(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];if(!acct)return;msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){var seen={},arr=[];function page(u){return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);});}return page(JOBS_URL).then(function(){arr.sort();fillJobList(arr);});}).catch(function(){});}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
 var PARTIES=["Client","Subcontractor","Vendor","Other Vision crew","Other"];var partyType="";
@@ -108,7 +112,7 @@ function renderThumbs(){var h="";photos.forEach(function(p,i){h+='<div class="th
 function addFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var max=900,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);photos.push(c.toDataURL("image/jpeg",0.55));renderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
 E("camIn").onchange=function(){addFiles(this.files);this.value="";};
 E("fileIn").onchange=function(){addFiles(this.files);this.value="";};
-function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("fromPerson").value)E("fromPerson").value=(a.name||"").trim();if(!E("tDate").value)E("tDate").value=today();renderParties();renderThumbs();}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("fromPerson").value)E("fromPerson").value=(a.name||"").trim();if(!E("tDate").value)E("tDate").value=today();renderParties();renderThumbs();loadJobPicks();}
 function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
 E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
 function buildText(a){var L=["VISION MECHANICAL - TRANSMITTAL","========================================","Date: "+a.tDate,"From: "+a.fromPerson,"Received by: "+a.receivedBy+(a.partyType?"  ("+a.partyType+")":""),"Job / Project: "+a.jobProject,"","Items transmitted:","  "+a.items,"","Left at / Handed to: "+a.leftAt,"","Notes: "+a.notes,"","Submitted: "+a.submittedAt+" by "+a.loginEmail,"========================================"];var t=L.join("\n");if(photos.length){t+="\n\n-- PHOTOS --";photos.forEach(function(p){t+="\n<img src=\""+p+"\" style=\"max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;\">";});}return t;}

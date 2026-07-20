@@ -73,6 +73,10 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="706e5ee9-648a-4ee0-abe9-187cf44df9cc";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* --- Live job list (same source the timecards pull from) --- */
+var JOBS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
+function fillJobList(arr){var dl=document.getElementById("joblist");if(!dl){dl=document.createElement("datalist");dl.id="joblist";document.body.appendChild(dl);}dl.innerHTML=arr.map(function(s){return '<option value="'+String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"></option>';}).join("");}
+function loadJobPicks(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];if(!acct)return;msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){var seen={},arr=[];function page(u){return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);});}return page(JOBS_URL).then(function(){arr.sort();fillJobList(arr);});}).catch(function(){});}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
 var formType="Expense";var items=[];
@@ -87,7 +91,7 @@ function render(){
     h+='<div class="item"><div class="top"><b>Item '+(i+1)+'</b><button class="btn-x" data-del="'+i+'">&times;</button></div>'+
       '<div class="grid2"><div><label>Date</label><input type="date" data-f="date" data-i="'+i+'" value="'+esc(it.date)+'"></div>'+
       '<div><label>Amount ($)</label><input type="number" inputmode="decimal" data-f="amount" data-i="'+i+'" value="'+esc(it.amount)+'"></div></div>'+
-      '<div class="grid2"><div><label>Project no.</label><input type="text" data-f="project" data-i="'+i+'" value="'+esc(it.project)+'"></div>'+
+      '<div class="grid2"><div><label>Project no.</label><input type="text" list="joblist" data-f="project" data-i="'+i+'" value="'+esc(it.project)+'"></div>'+
       '<div><label>Cost code</label><input type="text" data-f="code" data-i="'+i+'" value="'+esc(it.code)+'"></div></div>'+
       '<label>Description</label><input type="text" data-f="desc" data-i="'+i+'" value="'+esc(it.desc)+'">'+
       '<label>Receipt #</label><input type="text" data-f="receipt" data-i="'+i+'" value="'+esc(it.receipt)+'"></div>';
@@ -98,7 +102,7 @@ function render(){
   total();
 }
 function total(){var t=0;items.forEach(function(it){t+=parseFloat(it.amount)||0;});E("tot").textContent="$"+t.toFixed(2);}
-function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("name").value)E("name").value=(a.name||"").trim();if(!E("fdate").value)E("fdate").value=today();document.querySelectorAll(".toggle .t").forEach(function(el){el.onclick=function(){setType(el.getAttribute("data-type"));};});if(items.length===0)addItem();}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("name").value)E("name").value=(a.name||"").trim();if(!E("fdate").value)E("fdate").value=today();document.querySelectorAll(".toggle .t").forEach(function(el){el.onclick=function(){setType(el.getAttribute("data-type"));};});if(items.length===0)addItem();loadJobPicks();}
 function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
 E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
 E("addItem").onclick=addItem;

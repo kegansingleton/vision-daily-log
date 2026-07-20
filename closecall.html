@@ -53,7 +53,7 @@ textarea{min-height:100px;resize:vertical}
     </div>
     <div class="grid2">
       <div><label>Supervisor</label><input type="text" id="sup"></div>
-      <div><label>Jobsite</label><input type="text" id="site"></div>
+      <div><label>Jobsite</label><input type="text" id="site" list="joblist"><datalist id="joblist"></datalist></div>
     </div>
   </div>
   <div class="card">
@@ -79,11 +79,15 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="9e3404f0-5749-4c17-a93a-81130123b70a";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* --- Live job list (same source the timecards pull from) --- */
+var JOBS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
+function fillJobList(arr){var dl=document.getElementById("joblist");if(!dl)return;dl.innerHTML=arr.map(function(s){return '<option value="'+String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"></option>';}).join("");}
+function loadJobPicks(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];if(!acct)return;msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){var seen={},arr=[];function page(u){return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);});}return page(JOBS_URL).then(function(){arr.sort();fillJobList(arr);});}).catch(function(){});}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
 function E(id){return document.getElementById(id);}
 function today(){return new Date().toISOString().slice(0,10);}
-function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("worker").value)E("worker").value=(a.name||"").trim();if(!E("ccDate").value)E("ccDate").value=today();}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("worker").value)E("worker").value=(a.name||"").trim();if(!E("ccDate").value)E("ccDate").value=today();loadJobPicks();}
 function start(){msal_i.handleRedirectPromise().then(function(){var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
 E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
 function buildText(a){var L=["VISION MECHANICAL - SAFETY CLOSE-CALL REPORT","========================================","Worker: "+a.worker,"Date: "+a.ccDate,"Supervisor: "+a.sup,"Jobsite: "+a.site,"","-- INJURY --","Type: "+a.injType+"   Body part: "+a.bodyPart,"Details: "+a.injDetails,"","-- INCIDENT / CLOSE-CALL --","Type: "+a.accType,"Details: "+a.incDetails,"","Submitted: "+a.submittedAt+" by "+a.loginEmail,"========================================"];return L.join("\n");}
