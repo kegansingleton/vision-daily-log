@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.6 (Jul 2026)";
+var VERSION = "v1.7 (Jul 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -512,6 +512,9 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/bccd1165-a999-41b4-9cae-394d0766fb4a/items";
 /* Live job list - same source the timecards pull from (Job Tasks list). Distinct active JobNo/JobName. */
 var JOBS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
+var RTOKEN=null; /* fresh Graph token from the mobile redirect sign-in */
+function jobsCacheGet(){try{var r=localStorage.getItem("vm_jobs_v1");if(r){var a=JSON.parse(r);if(Array.isArray(a)&&a.length)return a;}}catch(e){}return null;}
+function jobsCacheSet(a){try{localStorage.setItem("vm_jobs_v1",JSON.stringify(a));}catch(e){}}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
 var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
 /* ---------- Draft persistence: a redirect sign-in must never lose a filled-in log ---------- */
@@ -521,7 +524,8 @@ function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
 function restoreDraft(){ try{ var raw=localStorage.getItem(DRAFT_KEY); if(!raw) return false; var d=JSON.parse(raw); if(d&&d.answers){ for(var k in d.answers){ answers[k]=d.answers[k]; } return !!d.resume; } }catch(e){} return false; }
 function hideGate(){var g=E("authGate");if(g)g.style.display="none";}
 function startAuth(){
-msalInstance.handleRedirectPromise().then(function(){
+msalInstance.handleRedirectPromise().then(function(resp){
+RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null;
 var acct=msalInstance.getAllAccounts()[0];
 if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); return; }
 msalInstance.setActiveAccount(acct);
@@ -571,24 +575,25 @@ return resp.json();
 }
 
 /* ---------- Load the live job list (same jobs the timecards use) ---------- */
+function applyProjects(arr){if(!arr||!arr.length)return;PROJECTS.length=0;arr.forEach(function(s){PROJECTS.push(s);});var qi=visible[idx];if(qi!=null&&QUESTIONS[qi]&&QUESTIONS[qi].id==="project")render();}
 function loadJobs(){
+var cached=jobsCacheGet();if(cached)applyProjects(cached);
 var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
 if(!acct)return;
-msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+var gp=RTOKEN?Promise.resolve({accessToken:RTOKEN}):msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct});
+gp.then(function(tok){
 var seen={},arr=[];
 function page(u){
 return fetch(u,{headers:{"Authorization":"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){
-(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+((fl.JobName||"").trim()).trim());});
+(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});
 if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);
 });
 }
 return page(JOBS_URL).then(function(){
 if(!arr.length)return;
-arr.sort();
-PROJECTS.length=0;arr.forEach(function(s){PROJECTS.push(s.trim());});
-var qi=visible[idx];if(qi!=null&&QUESTIONS[qi]&&QUESTIONS[qi].id==="project")render();
+arr.sort();applyProjects(arr);jobsCacheSet(arr);
 });
-}).catch(function(){/* keep hardcoded list as fallback */});
+}).catch(function(){/* keep cached/fallback list */});
 }
 
 /* ---------- Wire up ---------- */
