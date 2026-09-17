@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.7 (Jul 2026)";
+var VERSION = "v1.8 (Sep 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -567,11 +567,31 @@ SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail,LogText:buildText(
 Object.keys(f).forEach(function(k){if(f[k]===null)delete f[k];});
 return f;
 }
-function postLog(accessToken){
-return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{"Authorization":"Bearer "+accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})}).then(function(resp){
-if(!resp.ok) return resp.text().then(function(t){throw new Error("HTTP "+resp.status+" "+t.slice(0,200));});
+function postLogOnce(accessToken,timeoutMs){
+var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+var to=ctrl?setTimeout(function(){ctrl.abort();},timeoutMs):null;
+var opts={method:"POST",headers:{"Authorization":"Bearer "+accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})};
+if(ctrl)opts.signal=ctrl.signal;
+return fetch(GRAPH_ITEMS_URL,opts).then(function(resp){
+if(to)clearTimeout(to);
+if(!resp.ok) return resp.text().then(function(t){var err=new Error("HTTP "+resp.status+" "+t.slice(0,200));err.httpStatus=resp.status;throw err;});
 return resp.json();
+},function(e){ if(to)clearTimeout(to); throw e; });
+}
+function postLog(accessToken){
+var attempts=0,maxAttempts=3;
+function tryOnce(){
+attempts++;
+return postLogOnce(accessToken,20000).catch(function(e){
+var status=e.httpStatus;
+var transient=(status===undefined)||(status>=500)||(status===429); /* network/timeout, server, or throttle -> worth retrying */
+if(transient&&attempts<maxAttempts){
+return new Promise(function(res){setTimeout(res,1200*attempts);}).then(tryOnce);
+}
+throw e;
 });
+}
+return tryOnce();
 }
 
 /* ---------- Load the live job list (same jobs the timecards use) ---------- */
@@ -610,14 +630,16 @@ navigator.clipboard.writeText(t.value).then(function(){E('okMsg').textContent="C
 };
 E('emailBtn').onclick=function(){
 var btn=this,msg=E('okMsg');
+saveDraft(); /* preserve the entry before doing anything - survives signal drops, page closes, and sign-in redirects */
+if(navigator.onLine===false){ msg.style.color="#b8462b"; msg.textContent="You're offline right now — your entry is saved. Move to better signal and tap Submit again."; return; }
 msg.style.color="";msg.textContent="Saving your log to SharePoint...";btn.disabled=true;
 var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
 msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
 postLog(tok.accessToken).then(function(){
-msg.style.color="#15803d";msg.textContent="Submitted. Your daily log has been filed to SharePoint.";
+msg.style.color="#15803d";msg.textContent="Submitted. Your daily log has been filed to SharePoint. Tap \u201cStart New Log\u201d to file another.";
 btn.textContent="Submitted"; clearDraft();
 }).catch(function(e){
-msg.style.color="#b8462b";msg.textContent="Could not submit ("+e.message+"). Tap Copy and email it to "+REPORTS_TO+" as a backup.";
+msg.style.color="#b8462b";msg.textContent="Couldn't submit yet ("+e.message+"). Your entry is saved — move to better signal and tap Submit again, or tap Copy and email it to "+REPORTS_TO+" as a backup.";
 btn.disabled=false;
 });
 }).catch(function(){
@@ -628,7 +650,7 @@ msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});
 });
 };
 E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
-E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; idx=0; render(); } };
+E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; clearDraft(); var sb=E('emailBtn'); if(sb){ sb.disabled=false; sb.textContent="\u2709 Submit Log"; } var m=E('okMsg'); if(m) m.textContent=""; idx=0; render(); } };
 E('voiceOn').onchange=function(){ if(!E('voiceOn').checked&&window.speechSynthesis) window.speechSynthesis.cancel(); };
 
 document.addEventListener('keydown',function(e){
