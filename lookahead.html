@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — 2-Week Look-Ahead</title>
+<style>
+:root{
+--vm:#c0392b; --vm2:#7f1d1d; --accent:#e0533f; --gold:#c8932a;
+--bg:#f4f5f7; --card:#ffffff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280;
+--good:#15803d; --warn:#b45309; --shadow:0 1px 3px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.photobtns{display:flex;gap:8px;flex-wrap:wrap}
+.pbtn{flex:1 1 0;min-width:140px;text-align:center;border:1.5px dashed var(--vm);color:var(--vm2);background:#fff;border-radius:10px;padding:14px 10px;font-size:14px;font-weight:600;cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumb{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
+.photohint{font-size:12px;color:var(--muted);margin-top:6px}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+background:var(--bg);color:var(--text);line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;
+padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.app img.logo{height:56px;width:auto;background:#fff;border-radius:10px;padding:6px 10px;
+box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:10px}
+header.app h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.3px}
+header.app .sub{font-size:12px;opacity:.9;margin-top:3px}
+.lock{font-size:11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+border-radius:8px;padding:6px 10px;margin:10px auto 0;max-width:680px;line-height:1.45}
+.lock b{color:#ffe0a3}
+.progress{height:8px;background:#e3e8ef;border-radius:99px;margin:18px 0 6px;overflow:hidden}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--vm),var(--gold));width:0;transition:width .3s}
+.meta-line{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+box-shadow:var(--shadow);padding:22px 20px;margin-top:8px}
+.section-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;
+text-transform:uppercase;color:var(--vm2);background:#fdecea;border-radius:6px;padding:3px 9px;margin-bottom:12px}
+.q-num{font-size:12px;color:var(--muted);margin-bottom:4px}
+.q-label{font-size:19px;font-weight:600;margin:0 0 4px}
+.q-help{font-size:13px;color:var(--muted);margin:0 0 16px}
+.req{color:var(--vm);font-weight:700}
+input[type=text],input[type=date],input[type=number],select,textarea{
+width:100%;font-size:16px;font-family:inherit;color:var(--text);
+border:1.5px solid var(--line);border-radius:10px;padding:12px 13px;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--vm);box-shadow:0 0 0 3px rgba(192,57,43,.15)}
+textarea{min-height:120px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:9px 15px;
+font-size:15px;cursor:pointer;user-select:none;transition:.15s}
+.chip.sel{background:var(--vm);border-color:var(--vm);color:#fff;font-weight:600}
+.yn{display:flex;gap:10px}
+.yn .chip{flex:1;text-align:center}
+.input-row{display:flex;gap:8px;align-items:flex-start}
+.input-row > *:first-child{flex:1}
+.mic{flex:0 0 auto;width:52px;height:48px;border-radius:10px;border:1.5px solid var(--line);
+background:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mic.live{background:var(--vm);border-color:var(--vm);color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.mic-status{font-size:13px;color:var(--vm2);margin-top:8px;min-height:18px;line-height:1.4}
+.nav{display:flex;gap:10px;margin-top:22px}
+.btn{flex:1;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:14px;cursor:pointer}
+.btn.back{background:#e7ebf1;color:var(--text);flex:0 0 110px}
+.btn.next{background:var(--vm);color:#fff}
+.btn.next:hover{background:var(--vm2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.toolbar{display:flex;justify-content:center;gap:18px;margin-top:14px;font-size:13px;color:var(--muted)}
+.toolbar label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.err{color:var(--warn);font-size:13px;margin-top:8px;min-height:18px}
+.review h2{font-size:18px;margin:0 0 4px}
+.rev-sec{margin-top:18px}
+.rev-sec h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--vm2);
+border-bottom:1px solid var(--line);padding-bottom:5px;margin:0 0 8px}
+.rev-item{display:flex;gap:10px;padding:5px 0;font-size:14px}
+.rev-item .k{flex:0 0 42%;color:var(--muted)}
+.rev-item .v{flex:1;white-space:pre-wrap;font-weight:500}
+.rev-item .v.empty{color:#9aa6b3;font-weight:400;font-style:italic}
+.out{width:100%;min-height:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin-top:14px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.actions .btn{flex:1 1 150px}
+.btn.gold{background:var(--gold);color:#7f1d1d}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
+.ok{color:var(--good);font-weight:600;text-align:center;margin-top:10px;min-height:20px}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:26px;line-height:1.5}
+.hide{display:none!important}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="authGate" style="position:fixed;inset:0;background:linear-gradient(135deg,#c0392b,#7f1d1d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:'Segoe UI',system-ui,Arial,sans-serif;font-size:18px;text-align:center;padding:20px">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical" style="height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)">
+Signing you in with Microsoft&hellip;
+</div>
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Vision Mechanical &mdash; 2-Week Look-Ahead</h1>
+<div class="sub">Forward Planning &bull; Submitted Every Monday</div>
+<div class="lock">
+<b>STANDARDIZED TEMPLATE &mdash; DO NOT MODIFY.</b> This form follows a fixed question set, the same every time.
+Changes to questions, fields, or wording may be made <b>only by Anna Vigil, Kegan Singleton, or Bill Singleton.</b>
+Template <b id="verTag"></b>
+</div>
+</header>
+
+<div class="wrap">
+<div class="progress"><div id="bar"></div></div>
+<div class="meta-line"><span id="stepLabel"></span><span id="pct"></span></div>
+
+<div class="card" id="qcard">
+<span class="section-tag" id="secTag"></span>
+<div class="q-num" id="qnum"></div>
+<h2 class="q-label" id="qlabel"></h2>
+<p class="q-help" id="qhelp"></p>
+<div id="qinput"></div>
+<div class="err" id="qerr"></div>
+<div class="nav">
+<button class="btn back" id="backBtn">&larr; Back</button>
+<button class="btn next" id="nextBtn">Next &rarr;</button>
+</div>
+<div class="toolbar">
+<label><input type="checkbox" id="voiceOn" checked> &#128266; Read questions aloud</label>
+<label><a href="#" id="replay" style="color:var(--vm);text-decoration:none">&#9658; Repeat question</a></label>
+</div>
+</div>
+
+<div class="card review hide" id="reviewCard">
+<span class="section-tag">Review &amp; Submit</span>
+<h2>Daily Log Summary</h2>
+<p class="q-help">Review every entry below. Use <b>Back to Edit</b> to fix anything, then copy or email the completed log.</p>
+<div id="reviewBody"></div>
+<div class="rev-sec">
+<h3>Formatted Log (copy or email this)</h3>
+<textarea class="out" id="outText" readonly></textarea>
+</div>
+<div class="actions">
+<button class="btn gold" id="copyBtn">&#128203; Copy to Clipboard</button>
+<button class="btn next" id="emailBtn">&#9993; Submit Log</button>
+<button class="btn ghost" id="editBtn">&larr; Back to Edit</button>
+<button class="btn ghost" id="newBtn">+ Start New Log</button>
+</div>
+<div class="ok" id="okMsg"></div>
+</div>
+
+<div class="footer">
+Vision Mechanical &bull; 2-Week Look-Ahead &bull; Retain for project records.<br>
+Forward-planning record. Submit every Monday by noon.
+</div>
+</div>
+
+<script>
+var VERSION = "v1.0 (Oct 2026)";
+var REPORTS_TO = "reports@visionmech.net";
+var loginEmail = "";
+
+/* ---- Fixed dropdown sources (from the company Master list) ---- */
+var PROJECTS = [
+"A24105 AVCF Utility","A25101 Leadville WTP","A25102 Ft. Lyon Building 6",
+"A25103 CMHIP 115/116 HVAC Replacement","A25104 Comanche Unit 3",
+"A25105 Centennial Correctional Booster","A25106 SIEA Office Cooling",
+"A25107 Estes Energetics 945 Building","A25108 Building 55 at CMHIP",
+"A25109 Beulah ES Boiler","A26100 Karval","A26101 Voyager Production Complex",
+"A26102 Voyager Process Piping at 945"
+];
+var CREW = ["Mason","Buddie","Shawn","Matt","JC","Trevor","Dom"];
+var WEATHER = ["Fair","Clear","Cloudy","Rain","Snow","Windy","Hot","Cold"];
+var ACT_STATUS = ["In Progress","Complete"];
+var CHAL_STATUS = ["None","Ongoing","Resolved","Escalated to Supervisor"];
+var LOOK_STATUS = ["Ready","Waiting on Material","Need to follow-up","Need Direction"];
+
+/* ---- THE STANDARDIZED, RIGID QUESTION SET ----
+Order and wording are fixed. Edit only with admin approval. */
+var QUESTIONS = [
+{id:"weekOf",sec:"Look-Ahead Setup",type:"date",label:"Week of (Monday date)",help:"The Monday this 2-week look-ahead begins.",req:true},
+{id:"project",sec:"Look-Ahead Setup",type:"select",label:"Which project is this look-ahead for?",help:"Select the job number and name.",options:PROJECTS,req:true},
+{id:"submittedBy",sec:"Look-Ahead Setup",type:"selectOther",label:"Who is submitting this look-ahead?",help:"The crew lead or person completing it.",options:CREW,req:true},
+{id:"foreman",sec:"Look-Ahead Setup",type:"text",label:"Foreman or superintendent on this job?",help:"Person running the crew.",req:false,ph:"Name"},
+
+{id:"areasW1",sec:"Areas of Work",type:"textarea",label:"WEEK 1 - Where will the crew work this coming week?",help:"Buildings, floors, rooms, or areas for the next 5 working days.",req:true,ph:"e.g., Bldg 6 Level 2 mech room; east wing duct mains"},
+{id:"areasW2",sec:"Areas of Work",type:"textarea",label:"WEEK 2 - Where will the crew work the following week?",help:"Best plan for the week after next.",req:false,ph:"e.g., Roof units; Level 3 branch piping"},
+
+{id:"materialsW1",sec:"Materials Needed",type:"textarea",label:"WEEK 1 - Materials needed, and when?",help:"What to order or stage for the coming week so nothing stalls the crew.",req:false,ph:"e.g., 20 sticks 6in round by Wed; 2 VAV boxes"},
+{id:"materialsW2",sec:"Materials Needed",type:"textarea",label:"WEEK 2 - Materials needed, and when?",help:"Longer-lead items the office should get ahead of now.",req:false,ph:"e.g., Rooftop curb adapters (long lead)"},
+
+{id:"manpowerW1",sec:"Manpower Requests",type:"textarea",label:"WEEK 1 - Manpower needs?",help:"How many, what craft, and when. Note any specialty help.",req:false,ph:"e.g., +2 fitters Mon; welder Thu-Fri"},
+{id:"manpowerW2",sec:"Manpower Requests",type:"textarea",label:"WEEK 2 - Manpower needs?",help:"Crew changes you can see coming for the following week.",req:false,ph:"e.g., +1 plumber starting Monday"},
+
+{id:"drawings",sec:"Drawings & Photos",type:"photos",label:"Photos of drawings, sketches, or markups",help:"Snap marked-up drawings or field sketches - included in the look-ahead PDF.",req:false},
+{id:"drawingNotes",sec:"Drawings & Photos",type:"text",label:"Notes on the drawings or sketches?",help:"What to look at, or what you marked up.",req:false,ph:"Optional"},
+
+{id:"hurdles",sec:"Hurdles & Needs",type:"textarea",label:"What's blocking the crew or needs solved?",help:"Access, RFIs, other trades, owner/GC decisions, equipment, or info needed from the office.",req:true,ph:"e.g., Need Mech Rm 2 access from GC; RFI 112 answer; lift returned"},
+
+{id:"status",sec:"Status & Sign-off",type:"select",label:"Overall look-ahead status?",help:"Readiness heading into the next two weeks.",options:LOOK_STATUS,req:true},
+{id:"notes",sec:"Status & Sign-off",type:"textarea",label:"Any additional notes for the office?",help:"Anything else the PM or scheduler should know.",req:false,ph:"Optional"},
+{id:"certify",sec:"Status & Sign-off",type:"confirm",label:"Certification",help:"Please confirm before signing.",confirmText:"I certify this 2-week look-ahead is accurate and complete to the best of my knowledge.",req:true},
+{id:"signature",sec:"Status & Sign-off",type:"text",label:"Type your full name to sign.",help:"Your typed name serves as your signature.",req:true,ph:"Full name"}
+];
+
+/* ---------- State ---------- */
+var answers = {};
+var idx = 0;
+var visible = [];
+
+function applicable(q){ return !q.showIf || q.showIf(answers); }
+function rebuildVisible(){ visible = QUESTIONS.map(function(q,i){return i;}).filter(function(i){return applicable(QUESTIONS[i]);}); }
+
+/* ---------- Text-to-speech ---------- */
+function speak(text){
+if(!document.getElementById('voiceOn').checked) return;
+if(!('speechSynthesis' in window)) return;
+window.speechSynthesis.cancel();
+var u=new SpeechSynthesisUtterance(text);
+u.rate=1; u.pitch=1;
+window.speechSynthesis.speak(u);
+}
+
+/* ---------- Speech-to-text (dictation) ---------- */
+var recog=null, recogActive=false, micPermok=null;
+function micSupported(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
+
+function ensureMicPermission(){
+if(micPermok===true) return Promise.resolve(true);
+if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+return navigator.mediaDevices.getUserMedia({audio:true})
+.then(function(s){ s.getTracks().forEach(function(t){t.stop();}); micPermok=true; return true; })
+.catch(function(){ micPermok=false; return false; });
+}
+return Promise.resolve(true);
+}
+
+function startDictation(){
+var mic=E('micBtn'), target=E('f'), status=E('micStatus');
+if(!target) return;
+if(!micSupported()){
+status.textContent='Voice input is not supported in this browser. Use Chrome or Edge, or type your answer.';
+return;
+}
+if(recogActive){ try{recog.stop();}catch(e){} return; }
+if(window.speechSynthesis) window.speechSynthesis.cancel();
+
+var base = target.value ? target.value.trim() : '';
+status.textContent='Requesting microphone...';
+
+ensureMicPermission().then(function(ok){
+if(ok===false){
+status.innerHTML='Microphone permission was denied. Click the <b>lock / camera icon</b> in the address bar, set Microphone to <b>Allow</b>, then tap the mic again. (On phones, allow mic for this site.)';
+return;
+}
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false; recog.maxAlternatives=1;
+recog.onstart=function(){ recogActive=true; mic.classList.add('live'); status.textContent='Listening... speak now. Tap the mic again to stop.'; };
+recog.onresult=function(e){
+var finalT='', interim='';
+for(var i=0;i<e.results.length;i++){
+var tr=e.results[i][0].transcript;
+if(e.results[i].isFinal) finalT+=tr; else interim+=tr;
+}
+target.value=(base?base+' ':'')+(finalT||interim);
+target.dispatchEvent(new Event('input'));
+};
+recog.onerror=function(ev){
+recogActive=false; mic.classList.remove('live');
+var msg={
+'not-allowed':'Microphone blocked. Click the lock / camera icon in the address bar, set Microphone to Allow, then retry.',
+'service-not-allowed':'Microphone blocked by the browser. Allow mic access for this page and retry.',
+'no-speech':'Did not catch anything; tap the mic and speak again.',
+'audio-capture':'No microphone detected. Check that a mic is connected and enabled.',
+'network':'Voice recognition needs an internet connection. Reconnect and retry, or type your answer.',
+'aborted':''
+};
+status.textContent = (ev.error in msg) ? msg[ev.error] : ('Voice error: '+ev.error+'. You can type your answer instead.');
+};
+recog.onend=function(){ recogActive=false; mic.classList.remove('live'); if(status.textContent.indexOf('Listening')>-1) status.textContent=''; };
+try{ recog.start(); }
+catch(e){ try{recog.stop();}catch(_){ } }
+});
+}
+
+/* ---------- Render ---------- */
+function E(id){ return document.getElementById(id); }
+function render(){
+rebuildVisible();
+if(idx>=visible.length){ showReview(); return; }
+E('reviewCard').classList.add('hide'); E('qcard').classList.remove('hide');
+var qi=visible[idx], q=QUESTIONS[qi];
+var pos=idx+1, total=visible.length;
+E('bar').style.width=Math.round((idx)/total*100)+"%";
+E('pct').textContent=pos+" of "+total;
+E('stepLabel').textContent=q.sec;
+E('secTag').textContent=q.sec;
+E('qnum').textContent="Question "+pos;
+E('qlabel').innerHTML=esc(q.label)+(q.req?' <span class="req">*</span>':'');
+E('qhelp').textContent=q.help||'';
+E('qerr').textContent='';
+E('qinput').innerHTML=buildInput(q);
+wireInput(q);
+E('backBtn').disabled = idx===0;
+E('nextBtn').textContent = (idx===total-1)?'Review':'Next';
+var spoken=q.label.replace(/[*]/g,'');
+if(q.type==='confirm') spoken=q.label+". "+q.confirmText;
+speak(spoken);
+}
+
+var dailyPhotos=[];
+function dAddFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var max=900,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);dailyPhotos.push(c.toDataURL("image/jpeg",0.55));dRenderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
+function dRenderThumbs(){var el=E('dthumbs');if(!el)return;var h="";dailyPhotos.forEach(function(p,i){h+='<div class="thumb"><img src="'+p+'"><div class="x" data-i="'+i+'">&times;</div></div>';});el.innerHTML=h;el.querySelectorAll(".x").forEach(function(x){x.onclick=function(){dailyPhotos.splice(parseInt(x.getAttribute("data-i"),10),1);dRenderThumbs();};});var hint=E('dphotohint');if(hint)hint.textContent=dailyPhotos.length?(dailyPhotos.length+" photo"+(dailyPhotos.length>1?"s":"")+" added"):"";}
+function buildInput(q){
+var v=answers[q.id];
+switch(q.type){
+case 'date': return '<input type="date" id="f" max="'+today()+'" value="'+(v||"")+'">';
+case 'photos': return '<div class="photobtns"><label class="pbtn" for="dcam">&#128247; Take a photo</label><label class="pbtn" for="dfile">&#128193; Upload from photos</label></div><input id="dcam" type="file" accept="image/*" capture="environment" multiple style="display:none"><input id="dfile" type="file" accept="image/*" multiple style="display:none"><div class="thumbs" id="dthumbs"></div><div class="photohint" id="dphotohint"></div>';
+case 'number': return micWrap('<input type="number" id="f" inputmode="decimal" value="'+(v||'')+'" placeholder="'+(q.ph||'')+'">');
+case 'text': return micWrap('<input type="text" id="f" value="'+(v?esc(v):'')+'" placeholder="'+(q.ph||'')+'">');
+case 'textarea': return micWrap('<textarea id="f" placeholder="'+(q.ph||'')+'">'+(v?esc(v):'')+'</textarea>');
+case 'select': return selHTML(q.options,v);
+case 'selectOther': return selHTML(q.options,v,true);
+case 'yesno': return '<div class="yn" id="f">'+
+'<div class="chip '+(v==='Yes'?'sel':'')+'" data-val="Yes">Yes</div>'+
+'<div class="chip '+(v==='No'?'sel':'')+'" data-val="No">No</div></div>';
+case 'multi': {
+var sel=Array.isArray(v)?v:[];
+var h='<div class="chips" id="f">';
+q.options.forEach(function(o){ h+='<div class="chip '+(sel.indexOf(o)>-1?'sel':'')+'" data-val="'+esc(o)+'">'+esc(o)+'</div>'; });
+h+='</div>';
+if(q.allowOther) h+='<div style="margin-top:10px"><input type="text" id="fother" placeholder="Add other names (comma separated)" value="'+otherVals(sel,q.options)+'"></div>';
+return h;
+}
+case 'confirm': return '<label class="chip '+(v?'sel':'')+'" id="f" style="display:block;text-align:left;line-height:1.4">'+
+'<input type="checkbox" id="fchk" '+(v?'checked':'')+' style="width:auto;margin-right:8px;transform:scale(1.3)"> '+esc(q.confirmText)+'</label>';
+}
+}
+function selHTML(opts,v,other){
+var h='<select id="f"><option value="">-- Select --</option>';
+opts.forEach(function(o){ h+='<option '+(v===o?'selected':'')+'>'+esc(o)+'</option>'; });
+if(other) h+='<option value="__other" '+(v&&opts.indexOf(v)<0?'selected':'')+'>Other...</option>';
+h+='</select>';
+if(other) h+='<div id="otherWrap" class="'+((v&&opts.indexOf(v)<0)?'':'hide')+'" style="margin-top:10px"><input type="text" id="fother" placeholder="Enter name" value="'+((v&&opts.indexOf(v)<0)?esc(v):'')+'"></div>';
+return h;
+}
+function micWrap(inner){
+if(!micSupported()) return inner;
+return '<div class="input-row">'+inner+'<button type="button" class="mic" id="micBtn" title="Tap to speak your answer">&#127908;</button></div><div class="mic-status" id="micStatus"></div>';
+}
+function otherVals(sel,opts){ return sel.filter(function(s){return opts.indexOf(s)<0;}).join(", "); }
+
+function wireInput(q){
+var f=E('f');
+var mic=E('micBtn');
+if(mic){ mic.onclick=startDictation; }
+if(q.type==='select'||q.type==='selectOther'){
+f.onchange=function(){
+var ow=E('otherWrap');
+if(ow) ow.classList.toggle('hide', f.value!=='__other');
+};
+}
+if(q.type==='yesno'||q.type==='multi'){
+f.querySelectorAll('.chip').forEach(function(c){
+c.onclick=function(){
+if(q.type==='yesno'){ f.querySelectorAll('.chip').forEach(function(x){x.classList.remove('sel');}); c.classList.add('sel'); }
+else c.classList.toggle('sel');
+};
+});
+}
+if(q.type==='confirm'){
+var chk=E('fchk');
+chk.onchange=function(){ E('f').classList.toggle('sel',chk.checked); };
+}
+if(q.type==='photos'){ E('dcam').onchange=function(){dAddFiles(this.files);this.value='';}; E('dfile').onchange=function(){dAddFiles(this.files);this.value='';}; dRenderThumbs(); }
+setTimeout(function(){ var el=E('f'); if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')&&el.type!=='checkbox') el.focus(); },60);
+}
+
+function collect(q){
+switch(q.type){
+case 'select': return E('f').value;
+case 'selectOther':{ var v=E('f').value; return v==='__other'?(E('fother').value.trim()):v; }
+case 'yesno':{ var s=E('f').querySelector('.chip.sel'); return s?s.getAttribute('data-val'):''; }
+case 'multi':{
+var arr=[].slice.call(E('f').querySelectorAll('.chip.sel')).map(function(c){return c.getAttribute('data-val');});
+var o=E('fother'); if(o&&o.value.trim()) arr=arr.concat(o.value.split(',').map(function(s){return s.trim();}).filter(Boolean));
+return arr;
+}
+case 'confirm': return E('fchk').checked;
+case 'photos': return dailyPhotos.length?(dailyPhotos.length+' photo'+(dailyPhotos.length>1?'s':'')+' attached'):'';
+case 'number': return E('f').value;
+default: return E('f').value.trim();
+}
+}
+function isEmpty(q,v){
+if(q.type==='multi') return !v||v.length===0;
+if(q.type==='confirm') return !v;
+return v===''||v===undefined||v===null;
+}
+
+/* ---------- Nav ---------- */
+function next(){
+var qi=visible[idx], q=QUESTIONS[qi];
+var v=collect(q);
+if(q.req&&isEmpty(q,v)){
+E('qerr').textContent = q.type==='confirm' ? 'You must certify to continue.' : 'This field is required.';
+speak("This field is required.");
+return;
+}
+answers[q.id]=v;
+idx++;
+rebuildVisible();
+render();
+}
+function back(){ if(idx>0){ idx--; render(); } }
+
+/* ---------- Review & Output ---------- */
+function showReview(){
+if(window.speechSynthesis) window.speechSynthesis.cancel();
+E('qcard').classList.add('hide'); E('reviewCard').classList.remove('hide');
+E('bar').style.width='100%'; E('pct').textContent='Complete';
+E('stepLabel').textContent='Review & Submit';
+var secs=[]; var seen={};
+QUESTIONS.forEach(function(q){ if(!applicable(q))return; if(!seen[q.sec]){seen[q.sec]=[];secs.push(q.sec);} seen[q.sec].push(q); });
+var h='';
+secs.forEach(function(s){
+h+='<div class="rev-sec"><h3>'+esc(s)+'</h3>';
+seen[s].forEach(function(q){
+var val=answers[q.id];
+if(Array.isArray(val)) val=val.join(', ');
+if(q.type==='confirm') val=val?'Certified':'';
+var empty=val===''||val===undefined||val===null;
+h+='<div class="rev-item"><div class="k">'+esc(q.label.replace(/\?.*/,'?'))+'</div>'+
+'<div class="v '+(empty?'empty':'')+'">'+(empty?'--':esc(String(val)))+'</div></div>';
+});
+h+='</div>';
+});
+E('reviewBody').innerHTML=h;
+E('outText').value=buildText();
+}
+
+function buildText(){
+var a=answers; var L=[];
+function line(k,v){ if(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))return; L.push(k+": "+(Array.isArray(v)?v.join(', '):v)); }
+L.push("VISION MECHANICAL - 2-WEEK LOOK-AHEAD");
+L.push("Template "+VERSION);
+L.push("========================================");
+line("Week Of (Mon)",a.weekOf); line("Project",a.project); line("Submitted By",a.submittedBy); line("Foreman/Super",a.foreman);
+L.push("");
+L.push("-- AREAS OF WORK --");
+line("Week 1",a.areasW1); line("Week 2",a.areasW2);
+L.push("");
+L.push("-- MATERIALS NEEDED --");
+line("Week 1",a.materialsW1); line("Week 2",a.materialsW2);
+L.push("");
+L.push("-- MANPOWER REQUESTS --");
+line("Week 1",a.manpowerW1); line("Week 2",a.manpowerW2);
+L.push("");
+L.push("-- DRAWINGS & PHOTOS --");
+line("Notes",a.drawingNotes); line("Photos",a.drawings);
+L.push("");
+L.push("-- HURDLES & NEEDS --");
+line("Needs Solved",a.hurdles);
+L.push("");
+L.push("-- STATUS & SIGN-OFF --");
+line("Status",a.status); line("Additional Notes",a.notes);
+L.push("Certification: "+(a.certify?"Certified true & accurate by signer":"NOT CERTIFIED"));
+line("Signed",a.signature);
+if(dailyPhotos.length){ L.push(""); L.push("-- PHOTOS --"); dailyPhotos.forEach(function(p){ L.push('<img src="'+p+'" style="max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;">'); }); }
+L.push("========================================");
+return L.join("
+");
+}
+
+/* ---------- Helpers ---------- */
+function today(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+/* ---------- Microsoft login + direct-to-SharePoint (Graph) ---------- */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/3c787f11-c841-4fc9-a4c1-d04e11b6cd2c/items";
+/* Live job list - same source the timecards pull from (Job Tasks list). Distinct active JobNo/JobName. */
+var JOBS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
+var RTOKEN=null; /* fresh Graph token from the mobile redirect sign-in */
+function jobsCacheGet(){try{var r=localStorage.getItem("vm_jobs_v1");if(r){var a=JSON.parse(r);if(Array.isArray(a)&&a.length)return a;}}catch(e){}return null;}
+function jobsCacheSet(a){try{localStorage.setItem("vm_jobs_v1",JSON.stringify(a));}catch(e){}}
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname).replace(/index\.html$/,"")},cache:{cacheLocation:"localStorage"}};
+var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
+/* ---------- Draft persistence: a redirect sign-in must never lose a filled-in log ---------- */
+var DRAFT_KEY="la2w_draft_v1";
+function saveDraft(){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify({answers:answers, resume:true, ts:Date.now()})); }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+function restoreDraft(){ try{ var raw=localStorage.getItem(DRAFT_KEY); if(!raw) return false; var d=JSON.parse(raw); if(d&&d.answers){ for(var k in d.answers){ answers[k]=d.answers[k]; } return !!d.resume; } }catch(e){} return false; }
+function hideGate(){var g=E("authGate");if(g)g.style.display="none";}
+function startAuth(){
+msalInstance.handleRedirectPromise().then(function(resp){
+RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null;
+var acct=msalInstance.getAllAccounts()[0];
+if(!acct){ msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); return; }
+msalInstance.setActiveAccount(acct);
+loginEmail=acct.username||"";
+hideGate();
+if(restoreDraft()){ idx=999; render(); var m=E('okMsg'); if(m){ m.style.color=""; m.textContent="You're signed in — tap Submit to file your log."; } }
+else { render(); }
+loadJobs();
+}).catch(function(e){
+var g=E("authGate"); if(g) g.innerHTML="<div style='max-width:340px'>Sign-in problem:<br>"+String(e)+"<br><br>Please refresh the page.</div>";
+});
+}
+function spVal(id){var v=answers[id];if(Array.isArray(v))return v.join(", ");return (v===undefined||v===null)?"":v;}
+function spNum(id){var n=parseFloat(answers[id]);return isNaN(n)?null:n;}
+function spYN(v){return v===true?"Yes":(v||"");}
+function buildFields(){
+var a=answers;
+var _now=new Date();var _pad=function(n){return (n<10?'0':'')+n;};var _todayStr=_now.getFullYear()+'-'+_pad(_now.getMonth()+1)+'-'+_pad(_now.getDate());
+/* Due Monday by noon - flag late if submitted after the week-of Monday at noon */
+var _late=((a.weekOf&&a.weekOf<_todayStr)||(a.weekOf===_todayStr&&_now.getHours()>=12))?"Yes":"No";
+var f={
+LateSubmission:_late,
+Title:(a.weekOf||"")+" | "+(a.project||"")+" | "+(a.submittedBy||""),
+WeekOf:a.weekOf?(a.weekOf+"T12:00:00Z"):null,
+Project:spVal("project"),SubmittedBy:spVal("submittedBy"),ForemanSuper:spVal("foreman"),
+AreasWeek1:spVal("areasW1"),AreasWeek2:spVal("areasW2"),
+MaterialsWeek1:spVal("materialsW1"),MaterialsWeek2:spVal("materialsW2"),
+ManpowerWeek1:spVal("manpowerW1"),ManpowerWeek2:spVal("manpowerW2"),
+DrawingNotes:spVal("drawingNotes"),Photos:spVal("drawings"),
+Hurdles:spVal("hurdles"),LookAheadStatus:spVal("status"),
+AdditionalNotes:spVal("notes"),Certified:spYN(a.certify),Signature:spVal("signature"),
+SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail,LogText:buildText()
+};
+Object.keys(f).forEach(function(k){if(f[k]===null)delete f[k];});
+return f;
+}
+function postLogOnce(accessToken,timeoutMs){
+var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+var to=ctrl?setTimeout(function(){ctrl.abort();},timeoutMs):null;
+var opts={method:"POST",headers:{"Authorization":"Bearer "+accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:buildFields()})};
+if(ctrl)opts.signal=ctrl.signal;
+return fetch(GRAPH_ITEMS_URL,opts).then(function(resp){
+if(to)clearTimeout(to);
+if(!resp.ok) return resp.text().then(function(t){var err=new Error("HTTP "+resp.status+" "+t.slice(0,200));err.httpStatus=resp.status;throw err;});
+return resp.json();
+},function(e){ if(to)clearTimeout(to); throw e; });
+}
+function postLog(accessToken){
+var attempts=0,maxAttempts=3;
+function tryOnce(){
+attempts++;
+return postLogOnce(accessToken,20000).catch(function(e){
+var status=e.httpStatus;
+var transient=(status===undefined)||(status>=500)||(status===429); /* network/timeout, server, or throttle -> worth retrying */
+if(transient&&attempts<maxAttempts){
+return new Promise(function(res){setTimeout(res,1200*attempts);}).then(tryOnce);
+}
+throw e;
+});
+}
+return tryOnce();
+}
+
+/* ---------- Load the live job list (same jobs the timecards use) ---------- */
+function applyProjects(arr){if(!arr||!arr.length)return;PROJECTS.length=0;arr.forEach(function(s){PROJECTS.push(s);});var qi=visible[idx];if(qi!=null&&QUESTIONS[qi]&&QUESTIONS[qi].id==="project")render();}
+function loadJobs(){
+var cached=jobsCacheGet();if(cached)applyProjects(cached);
+var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
+if(!acct)return;
+var gp=RTOKEN?Promise.resolve({accessToken:RTOKEN}):msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct});
+gp.then(function(tok){
+var seen={},arr=[];
+function page(u){
+return fetch(u,{headers:{"Authorization":"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){
+(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});
+if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);
+});
+}
+return page(JOBS_URL).then(function(){
+if(!arr.length)return;
+arr.sort();applyProjects(arr);jobsCacheSet(arr);
+});
+}).catch(function(){/* keep cached/fallback list */});
+}
+
+/* ---------- Wire up ---------- */
+E('verTag').textContent=VERSION;
+E('nextBtn').onclick=next;
+E('backBtn').onclick=back;
+E('replay').onclick=function(e){ e.preventDefault(); var qi=visible[idx]; if(qi!=null) speak(QUESTIONS[qi].label.replace(/[*]/g,'')); };
+E('copyBtn').onclick=function(){
+var t=E('outText');
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(t.value).then(function(){E('okMsg').textContent="Copied to clipboard.";})
+.catch(function(){ t.select(); document.execCommand('copy'); E('okMsg').textContent="Copied."; });
+} else { t.select(); document.execCommand('copy'); E('okMsg').textContent="Copied."; }
+};
+E('emailBtn').onclick=function(){
+var btn=this,msg=E('okMsg');
+saveDraft(); /* preserve the entry before doing anything - survives signal drops, page closes, and sign-in redirects */
+if(navigator.onLine===false){ msg.style.color="#b8462b"; msg.textContent="You're offline right now — your entry is saved. Move to better signal and tap Submit again."; return; }
+msg.style.color="";msg.textContent="Saving your log to SharePoint...";btn.disabled=true;
+var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
+msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+postLog(tok.accessToken).then(function(){
+msg.style.color="#15803d";msg.textContent="Submitted. Your daily log has been filed to SharePoint. Tap \u201cStart New Log\u201d to file another.";
+btn.textContent="Submitted"; clearDraft();
+}).catch(function(e){
+msg.style.color="#b8462b";msg.textContent="Couldn't submit yet ("+e.message+"). Your entry is saved — move to better signal and tap Submit again, or tap Copy and email it to "+REPORTS_TO+" as a backup.";
+btn.disabled=false;
+});
+}).catch(function(){
+/* Silent token failed -> refresh the sign-in with a full-page REDIRECT (works on phones; no popup, so no block_nested_popups). The log is saved and restored automatically on return. */
+saveDraft();
+msg.style.color="";msg.textContent="Confirming your sign-in…";
+msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});
+});
+};
+E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
+E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; clearDraft(); var sb=E('emailBtn'); if(sb){ sb.disabled=false; sb.textContent="\u2709 Submit Log"; } var m=E('okMsg'); if(m) m.textContent=""; idx=0; render(); } };
+E('voiceOn').onchange=function(){ if(!E('voiceOn').checked&&window.speechSynthesis) window.speechSynthesis.cancel(); };
+
+document.addEventListener('keydown',function(e){
+if(e.key==='Enter'&&!E('qcard').classList.contains('hide')){
+var t=document.activeElement;
+if(t&&t.tagName==='TEXTAREA')return;
+e.preventDefault(); next();
+}
+});
+
+startAuth();
+/* build v1.1 - mobile redirect auth */
+</script>
+</body>
+</html>
