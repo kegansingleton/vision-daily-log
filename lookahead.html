@@ -461,8 +461,7 @@ L.push("Certification: "+(a.certify?"Certified true & accurate by signer":"NOT C
 line("Signed",a.signature);
 if(dailyPhotos.length){ L.push(""); L.push("-- PHOTOS --"); dailyPhotos.forEach(function(p){ L.push('<img src="'+p+'" style="max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;">'); }); }
 L.push("========================================");
-return L.join("
-");
+return L.join("\n");
 }
 
 /* ---------- Helpers ---------- */
