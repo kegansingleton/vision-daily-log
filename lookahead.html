@@ -508,7 +508,7 @@ var _now=new Date();var _pad=function(n){return (n<10?'0':'')+n;};var _todayStr=
 /* Due Monday by noon - flag late if submitted after the week-of Monday at noon */
 var _late=((a.weekOf&&a.weekOf<_todayStr)||(a.weekOf===_todayStr&&_now.getHours()>=12))?"Yes":"No";
 var f={
-LateSubmission:_late,
+LateFlag:_late,
 Title:(a.weekOf||"")+" | "+(a.project||"")+" | "+(a.submittedBy||""),
 WeekOf:a.weekOf?(a.weekOf+"T12:00:00Z"):null,
 Project:spVal("project"),SubmittedBy:spVal("submittedBy"),ForemanSuper:spVal("foreman"),
