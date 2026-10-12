@@ -49,6 +49,18 @@ td.wrap-cell{white-space:normal}
 .headline.bad{background:var(--badbg);color:var(--bad)}
 .dataline{font-size:12px;color:var(--muted);margin:4px 2px}
 .btn.gold{background:var(--gold);color:var(--vm2)}
+.tabs{display:flex;gap:6px;margin:16px 0 10px;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;text-align:center;font-size:14px;font-weight:700;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;background:#eef0f2;color:var(--muted);cursor:pointer}
+.tab.on{background:var(--vm);color:#fff;border-color:var(--vm)}
+.browseFilter{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:15px;font-family:inherit;margin-bottom:10px}
+.browseFilter:focus{border-color:var(--vm);outline:none}
+.btable{border-collapse:collapse;width:100%;font-size:13.5px}
+.btable th,.btable td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.btable th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.viewbtn{font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 11px;cursor:pointer;color:var(--vm2)}
+.detail{background:#faf9f9;border:1px solid var(--line);border-radius:8px;margin:2px 0 8px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;overflow-x:auto}
+.detail img{max-width:100%}
+.bempty{padding:24px;text-align:center;color:var(--muted)}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
@@ -78,11 +90,18 @@ td.wrap-cell{white-space:normal}
   </div>
   <div class="note">Logs &amp; look-aheads are measured against the timecards: whoever entered time for a day/job owes a log for it (and a look-ahead for that job that week). Weekends excluded. Monthly rate = trailing 30 days.</div>
 
+  <div class="tabs">
+    <div class="tab on" data-tab="comp">Compliance</div>
+    <div class="tab" data-tab="logs">All Daily Logs</div>
+    <div class="tab" data-tab="look">All Look-Aheads</div>
+  </div>
+
+  <div id="loading" class="loading">Pick a week and tap Load.</div>
+
+  <div class="tabpanel" id="panel-comp">
   <div id="headline" class="headline" style="display:none"></div>
   <div id="dataline" class="dataline" style="display:none"></div>
   <div id="nudgeRow" style="display:none;margin:8px 0 2px"><button class="btn gold" id="nudgeBtn">&#128203; Copy nudge list</button> <span id="nudgeMsg" class="note" style="margin-left:6px"></span></div>
-
-  <div id="loading" class="loading">Pick a week and tap Load.</div>
 
   <div class="card" id="cardTC" style="display:none">
     <h2>Timecards — missing time <span class="pill" id="pillTC"></span></h2>
@@ -102,6 +121,17 @@ td.wrap-cell{white-space:normal}
   <div class="card" id="cardLook" style="display:none">
     <h2>2-Week Look-Aheads — worked but didn't submit <span class="pill" id="pillLook"></span></h2>
     <div class="pad"><div class="tablewrap"><table id="lookTbl"></table></div></div>
+  </div>
+  </div><!-- /panel-comp -->
+
+  <div class="tabpanel" id="panel-logs" style="display:none">
+    <input type="text" id="logsFilter" class="browseFilter" placeholder="Search daily logs — foreman, job, status…">
+    <div class="card"><div class="tablewrap" id="browseLogs"><div class="bempty">Load a range to see daily logs.</div></div></div>
+  </div>
+
+  <div class="tabpanel" id="panel-look" style="display:none">
+    <input type="text" id="lookFilter" class="browseFilter" placeholder="Search look-aheads — foreman, job, status…">
+    <div class="card"><div class="tablewrap" id="browseLook"><div class="bempty">Load a range to see look-aheads.</div></div></div>
   </div>
 </div>
 
@@ -124,7 +154,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="";
-var LOADED={}, NAMES={}, RESULTS={tc:[],log:{},look:{}}, SUMMARY_RANGE={};
+var LOADED={}, NAMES={}, RESULTS={tc:[],log:{},look:{}}, SUMMARY_RANGE={}, BROWSE={logs:[],look:[]};
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
@@ -189,6 +219,7 @@ async function run(){
     computeLogs(tc,logs,from,to);
     computeLook(tc,look,from,to);
     renderSummary(from,to);
+    loadBrowse(from,to);
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
 }
 
@@ -306,6 +337,52 @@ function buildNudge(){
 }
 function fallbackCopy(txt){ var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); }
 
+/* ===== Browse tabs: all daily logs / all look-aheads ===== */
+document.querySelectorAll(".tab").forEach(function(t){
+  t.onclick=function(){
+    document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on");}); t.classList.add("on");
+    var id=t.getAttribute("data-tab");
+    E("panel-comp").style.display=id==="comp"?"block":"none";
+    E("panel-logs").style.display=id==="logs"?"block":"none";
+    E("panel-look").style.display=id==="look"?"block":"none";
+  };
+});
+async function getRangeWithId(listId,dateField,fromISO,toISO,select){
+  var token=await getToken(); var base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/"+dateField+" ge '"+fromISO+"T00:00:00Z' and fields/"+dateField+" le '"+toISO+"T23:59:59Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){var k=dkey(r.f[dateField]);return k>=fromISO&&k<=toISO;}); }
+  return out;
+}
+async function loadBrowse(from,to){
+  E("browseLogs").innerHTML='<div class="bempty">Loading…</div>'; E("browseLook").innerHTML='<div class="bempty">Loading…</div>';
+  try{ var lg=await getRangeWithId(LOGS,"LogDate",from,to,"LogDate,Project,SubmittedBy,LoginEmail,ActivityStatus"); lg.sort(function(a,b){return dkey(b.f.LogDate).localeCompare(dkey(a.f.LogDate));}); BROWSE.logs=lg; renderBrowse("logs"); }
+  catch(e){ E("browseLogs").innerHTML='<div class="bempty">Could not load: '+esc(e.message||e)+'</div>'; }
+  try{ var lk=await getRangeWithId(LOOK,"WeekOf",from,to,"WeekOf,Project,SubmittedBy,LoginEmail,LookAheadStatus"); lk.sort(function(a,b){return dkey(b.f.WeekOf).localeCompare(dkey(a.f.WeekOf));}); BROWSE.look=lk; renderBrowse("look"); }
+  catch(e){ E("browseLook").innerHTML='<div class="bempty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function renderBrowse(which){
+  var cfg = which==="logs"
+    ? {rows:BROWSE.logs,el:"browseLogs",flt:"logsFilter",df:"LogDate",dh:"Date",st:"ActivityStatus",list:LOGS,label:"daily logs"}
+    : {rows:BROWSE.look,el:"browseLook",flt:"lookFilter",df:"WeekOf",dh:"Week of",st:"LookAheadStatus",list:LOOK,label:"look-aheads"};
+  if(!cfg.rows.length){ E(cfg.el).innerHTML='<div class="bempty">No '+cfg.label+' in this range.</div>'; return; }
+  var q=(E(cfg.flt).value||"").toLowerCase().trim();
+  var rows=cfg.rows.filter(function(r){ if(!q) return true; var f=r.f; return [f[cfg.df],f.Project,f.SubmittedBy,f.LoginEmail,f[cfg.st]].some(function(x){return String(x==null?"":x).toLowerCase().indexOf(q)>-1;}); });
+  if(!rows.length){ E(cfg.el).innerHTML='<div class="bempty">No matches.</div>'; return; }
+  var h='<table class="btable"><thead><tr><th>'+cfg.dh+'</th><th>Submitted by</th><th>Project</th><th>Status</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r,i){ var f=r.f; h+='<tr><td>'+esc(shortD(f[cfg.df]))+'</td><td>'+esc(f.SubmittedBy||f.LoginEmail||"")+'</td><td>'+esc(f.Project||"")+'</td><td>'+esc(f[cfg.st]||"")+'</td><td><button class="viewbtn">View</button></td></tr><tr id="'+cfg.el+'-d'+i+'" style="display:none"><td colspan="5"><div class="detail" id="'+cfg.el+'-det'+i+'">Loading…</div></td></tr>'; });
+  h+='</tbody></table>'; E(cfg.el).innerHTML=h;
+  E(cfg.el).querySelectorAll(".viewbtn").forEach(function(b,i){ b.onclick=function(){ toggleDetail(cfg.el,i,b,rows[i].id,cfg.list); }; });
+}
+async function toggleDetail(elBase,i,btn,id,listId){
+  var dr=E(elBase+"-d"+i), det=E(elBase+"-det"+i);
+  if(dr.style.display!=="none"){ dr.style.display="none"; btn.textContent="View"; return; }
+  dr.style.display="table-row"; btn.textContent="Hide";
+  if(det.getAttribute("data-loaded")==="1") return;
+  try{ var token=await getToken(); var j=await fetch(GRAPH+listId+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); det.innerHTML=(j.fields&&j.fields.LogText)?j.fields.LogText:"(no detail saved)"; det.setAttribute("data-loaded","1"); }
+  catch(e){ det.textContent="Could not load detail: "+(e.message||e); }
+}
+
 /* ===== wiring ===== */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 E("nudgeBtn").onclick=function(){
@@ -315,6 +392,8 @@ E("nudgeBtn").onclick=function(){
 };
 E("loadBtn").onclick=run;
 E("thisWk").onclick=function(){ var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end); run(); };
+E("logsFilter").oninput=function(){ renderBrowse("logs"); };
+E("lookFilter").oninput=function(){ renderBrowse("look"); };
 </script>
 </body>
 </html>
