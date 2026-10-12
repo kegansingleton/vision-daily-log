@@ -44,6 +44,11 @@ td.wrap-cell{white-space:normal}
 .empty{color:var(--good);font-weight:600;padding:6px 0}
 .miss{color:var(--bad)}
 .loading{padding:30px;text-align:center;color:var(--muted)}
+.headline{font-size:16px;font-weight:700;border-radius:10px;padding:12px 14px;margin:12px 0 2px}
+.headline.ok{background:var(--goodbg);color:var(--good)}
+.headline.bad{background:var(--badbg);color:var(--bad)}
+.dataline{font-size:12px;color:var(--muted);margin:4px 2px}
+.btn.gold{background:var(--gold);color:var(--vm2)}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
@@ -72,6 +77,10 @@ td.wrap-cell{white-space:normal}
     <button class="btn ghost" id="thisWk">This pay week</button>
   </div>
   <div class="note">Logs &amp; look-aheads are measured against the timecards: whoever entered time for a day/job owes a log for it (and a look-ahead for that job that week). Weekends excluded. Monthly rate = trailing 30 days.</div>
+
+  <div id="headline" class="headline" style="display:none"></div>
+  <div id="dataline" class="dataline" style="display:none"></div>
+  <div id="nudgeRow" style="display:none;margin:8px 0 2px"><button class="btn gold" id="nudgeBtn">&#128203; Copy nudge list</button> <span id="nudgeMsg" class="note" style="margin-left:6px"></span></div>
 
   <div id="loading" class="loading">Pick a week and tap Load.</div>
 
@@ -115,6 +124,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="";
+var LOADED={}, NAMES={}, RESULTS={tc:[],log:{},look:{}}, SUMMARY_RANGE={};
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
@@ -173,9 +183,12 @@ async function run(){
     var look=await getRange(LOOK,"WeekOf",iso(addDays(parseISO(loadFrom),-7)),to,"WeekOf,Project,LoginEmail,SubmittedBy");
     var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active")).filter(function(e){return (e.Active||"Yes")!=="No";});
     E("loading").style.display="none";
+    NAMES=foremanNames(tc);
+    LOADED={tc:tc.length,logs:logs.length,look:look.length,at:new Date()};
     computeTimecards(emps,tc,from,to);
     computeLogs(tc,logs,from,to);
     computeLook(tc,look,from,to);
+    renderSummary(from,to);
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
 }
 
@@ -192,6 +205,7 @@ function computeTimecards(emps,tc,from,to){
     if(miss.length) rows.push({num:e.EmployeeNumber,name:e.EmployeeName,miss:miss});
   });
   rows.sort(function(a,b){return b.miss.length-a.miss.length||String(a.name).localeCompare(String(b.name));});
+  RESULTS.tc=rows;
   var pill=E("pillTC");
   if(!rows.length){ pill.className="pill ok"; pill.textContent="All "+emps.length+" in"; E("tcTbl").innerHTML='<tr><td class="empty">Everyone with an active record has time on every weekday in range.</td></tr>'; }
   else { pill.className="pill bad"; pill.textContent=rows.length+" missing"; 
@@ -216,6 +230,7 @@ function computeLogs(tc,logs,from,to){
   var owedWk=owedFromTC(tc,from,to);
   var missByForeman={};
   owedWk.forEach(function(o){ if(!submitted[o.fe+"|"+o.day+"|"+o.job]){ (missByForeman[o.fe]=missByForeman[o.fe]||[]).push(o); } });
+  RESULTS.log=missByForeman;
   var fes=Object.keys(missByForeman).sort(function(a,b){return missByForeman[b].length-missByForeman[a].length;});
   var pill=E("pillLog");
   if(!fes.length){ pill.className="pill ok"; pill.textContent="All logs in"; E("logWeekTbl").innerHTML='<tr><td class="empty">Every worked job/day this week has a daily log.</td></tr>'; }
@@ -248,6 +263,7 @@ function computeLook(tc,look,from,to){
   var submitted={}; look.forEach(function(r){ var k=(r.LoginEmail||"").toLowerCase()+"|"+mondayOf(parseISO(dkey(r.WeekOf)))+"|"+jobNo(r.Project); submitted[k]=true; });
   var missBy={};
   list.forEach(function(o){ if(!submitted[o.fe+"|"+o.wk+"|"+o.job]){ (missBy[o.fe]=missBy[o.fe]||[]).push(o); } });
+  RESULTS.look=missBy;
   var fes=Object.keys(missBy).sort(function(a,b){return missBy[b].length-missBy[a].length;});
   var pill=E("pillLook");
   if(!fes.length){ pill.className="pill ok"; pill.textContent="All in"; E("lookTbl").innerHTML='<tr><td class="empty">Every job worked this period has a look-ahead.</td></tr>'; }
@@ -259,8 +275,44 @@ function computeLook(tc,look,from,to){
   E("cardLook").style.display="block";
 }
 
+/* ===== Summary: headline + data line + nudge ===== */
+function renderSummary(from,to){
+  var tcN=RESULTS.tc.length, logN=Object.keys(RESULTS.log).length, lookN=Object.keys(RESULTS.look).length;
+  var hl=E("headline");
+  if(tcN+logN+lookN===0){ hl.className="headline ok"; hl.textContent="\u2713 All clear this week — nothing missing."; }
+  else { hl.className="headline bad"; hl.innerHTML="This week: <b>"+tcN+"</b> missing time &nbsp;&middot;&nbsp; <b>"+logN+"</b> behind on logs &nbsp;&middot;&nbsp; <b>"+lookN+"</b> behind on look-aheads"; }
+  hl.style.display="block";
+  var t=LOADED.at?LOADED.at.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"";
+  var dl=E("dataline"); dl.textContent="Loaded "+LOADED.logs+" logs, "+LOADED.tc+" timecard entries, "+LOADED.look+" look-aheads \u00b7 as of "+t; dl.style.display="block";
+  SUMMARY_RANGE={from:from,to:to};
+  E("nudgeRow").style.display="block"; E("nudgeMsg").textContent="";
+}
+function buildNudge(){
+  var NL=String.fromCharCode(10), L=[];
+  L.push("Vision Mechanical — Compliance (week of "+shortD(SUMMARY_RANGE.from)+")"); L.push("");
+  L.push("MISSING TIME:");
+  if(!RESULTS.tc.length) L.push("  (none)");
+  else RESULTS.tc.forEach(function(r){ L.push("  - "+r.name+" ("+r.miss.length+" day"+(r.miss.length>1?"s":"")+")"); });
+  L.push(""); L.push("BEHIND ON DAILY LOGS:");
+  var lk=Object.keys(RESULTS.log);
+  if(!lk.length) L.push("  (none)");
+  else lk.sort(function(a,b){return RESULTS.log[b].length-RESULTS.log[a].length;}).forEach(function(fe){ L.push("  - "+(NAMES[fe]||fe)+" ("+RESULTS.log[fe].length+")"); });
+  L.push(""); L.push("BEHIND ON 2-WEEK LOOK-AHEADS:");
+  var kk=Object.keys(RESULTS.look);
+  if(!kk.length) L.push("  (none)");
+  else kk.sort(function(a,b){return RESULTS.look[b].length-RESULTS.look[a].length;}).forEach(function(fe){ L.push("  - "+(NAMES[fe]||fe)+" ("+RESULTS.look[fe].length+")"); });
+  L.push(""); L.push("Dashboard: https://dailylog.visionmech.net/compliance.html");
+  return L.join(NL);
+}
+function fallbackCopy(txt){ var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); }
+
 /* ===== wiring ===== */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+E("nudgeBtn").onclick=function(){
+  var txt=buildNudge(), done=function(){ E("nudgeMsg").textContent="Copied — paste into an email or text."; };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done).catch(function(){ fallbackCopy(txt); done(); }); }
+  else { fallbackCopy(txt); done(); }
+};
 E("loadBtn").onclick=run;
 E("thisWk").onclick=function(){ var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end); run(); };
 </script>
