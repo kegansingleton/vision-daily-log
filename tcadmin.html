@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Timecard Admin</title>
+<style>
+:root{
+--vm:#c0392b; --vm2:#7f1d1d; --gold:#c8932a;
+--bg:#f4f5f7; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280;
+--good:#15803d; --shadow:0 1px 3px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:0 12px 60px}
+header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.app img.logo{height:46px;background:#fff;border-radius:10px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:8px}
+header.app h1{margin:0;font-size:19px;font-weight:700}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.95;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:72px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate button{margin-top:16px;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:16px 0 8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.fld input{font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
+.fld input:focus{border-color:var(--vm);outline:none}
+.fld.search{flex:1;min-width:200px}
+.btn{font-size:14px;font-weight:600;border:none;border-radius:9px;padding:10px 16px;cursor:pointer}
+.btn.red{background:var(--vm);color:#fff}
+.btn.gold{background:var(--gold);color:var(--vm2)}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
+.summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 2px 6px;font-size:14px;color:var(--muted)}
+.summary b{color:var(--text)}
+.tablecard{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0}
+th .arr{opacity:.5;font-size:10px}
+td.num,th.num{text-align:right}
+tr:hover td{background:#fcfcfd}
+tfoot td{font-weight:700;border-top:2px solid var(--line);background:#fafafa}
+.loading,.empty{padding:28px;text-align:center;color:var(--muted)}
+.msg{margin-top:10px;font-size:13px;min-height:16px}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+<div>Vision Mechanical — Timecard Admin</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Timecard Admin</h1>
+<div class="sub">All time entries &bull; export for Viewpoint</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+<div class="controls">
+<div class="fld"><label>From</label><input type="date" id="from"></div>
+<div class="fld"><label>To</label><input type="date" id="to"></div>
+<button class="btn red" id="loadBtn">Load</button>
+<button class="btn ghost" id="thisWk">This pay week</button>
+<div class="fld search"><label>Filter (employee, job, foreman&hellip;)</label><input type="text" id="filter" placeholder="Type to search the loaded rows"></div>
+<button class="btn gold" id="csvBtn">&#11015; Download CSV (Viewpoint)</button>
+</div>
+<div class="summary"><div id="rangeNote"></div><div id="totals"></div></div>
+<div class="tablecard"><div class="loading" id="loading">Choose a range and tap Load.</div></div>
+<div class="msg" id="msg"></div>
+</div>
+
+<div class="footer">
+Vision Mechanical &bull; Timecard Admin &bull; Read-only. The CSV matches the daily 7 AM payroll file. Pay week runs Wednesday–Tuesday.
+</div>
+
+<script>
+/* ===== Access: only these logins can open this page ===== */
+var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","ksingleton@visionmech.net","nsingleton@visionmech.net"];
+
+/* ===== Config (same app + site as the timecard form) ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="";
+function E(id){return document.getElementById(id);}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginEmail=(acct.username||"").toLowerCase();
+  E("gate").style.display="none";
+  if(ALLOW.indexOf(loginEmail)<0){
+    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This page is limited to payroll/accounting. You are signed in as <b>'+esc(loginEmail)+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
+    return;
+  }
+  E("app").style.display="block"; E("who").textContent=loginEmail;
+  var wk=payWeek(new Date());
+  E("from").value=iso(wk.start); E("to").value=iso(wk.end);
+  load();
+}
+async function getToken(){
+  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
+  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
+}
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){
+  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
+  if(acct) afterLogin(acct);
+}).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Dates ===== */
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function payWeek(d){ /* Wed(3) through Tue */
+  var x=new Date(d); var diff=(x.getDay()-3+7)%7; var start=addDays(x,-diff); start.setHours(0,0,0,0);
+  return {start:start,end:addDays(start,6)};
+}
+
+/* ===== Data ===== */
+var rows=[];               /* loaded entries for the chosen range */
+var sortKey="WorkDate", sortDir=1;
+var FIELDS="WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail";
+
+async function load(){
+  var f=E("from").value, t=E("to").value;
+  if(!f||!t){ return; }
+  E("rangeNote").textContent="Loading "+f+" → "+t+"…";
+  document.querySelector(".tablecard").innerHTML='<div class="loading">Loading…</div>';
+  try{
+    var token=await getToken();
+    var base=GRAPH+TC+"/items?$expand=fields($select="+FIELDS+")&$top=999";
+    var out=[];
+    async function page(url,headers){
+      while(url){
+        var j=await fetch(url,{headers:headers}).then(function(r){return r.json();});
+        if(j.error) throw new Error(j.error.message);
+        (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); });
+        url=j["@odata.nextLink"]||null;
+      }
+    }
+    var filt="&$filter=fields/WorkDate ge '"+f+"T00:00:00Z' and fields/WorkDate le '"+t+"T23:59:59Z'";
+    try{
+      await page(base+filt,{Authorization:"Bearer "+token, Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"});
+    }catch(e){
+      out.length=0;
+      await page(base,{Authorization:"Bearer "+token});
+      out=out.filter(function(r){var k=(r.WorkDate||"").slice(0,10);return k>=f&&k<=t;});
+    }
+    rows=out;
+    E("rangeNote").innerHTML='Showing <b>'+f+'</b> → <b>'+t+'</b>';
+    render();
+  }catch(e){
+    document.querySelector(".tablecard").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>';
+  }
+}
+
+function filtered(){
+  var q=(E("filter").value||"").toLowerCase().trim();
+  var v=rows.slice();
+  if(q){
+    v=v.filter(function(r){
+      return [r.EmployeeName,r.EmployeeNumber,r.JobNo,r.JobName,r.Foreman,r.PayType,r.PhaseCode]
+        .some(function(x){return String(x==null?"":x).toLowerCase().indexOf(q)>-1;});
+    });
+  }
+  v.sort(function(a,b){
+    var x=a[sortKey], y=b[sortKey];
+    if(sortKey==="Hours"||sortKey==="LineNum"){ x=parseFloat(x)||0; y=parseFloat(y)||0; return (x-y)*sortDir; }
+    x=String(x==null?"":x).toLowerCase(); y=String(y==null?"":y).toLowerCase();
+    return (x<y?-1:x>y?1:0)*sortDir;
+  });
+  return v;
+}
+
+var COLS=[
+  {k:"WorkDateText",h:"Date",s:"WorkDate"},
+  {k:"EmployeeNumber",h:"Emp #"},
+  {k:"EmployeeName",h:"Employee"},
+  {k:"JobNo",h:"Job No."},
+  {k:"JobName",h:"Job Name"},
+  {k:"PhaseCode",h:"Phase"},
+  {k:"LineNum",h:"Line#",num:true},
+  {k:"PayType",h:"Type"},
+  {k:"Hours",h:"Hours",num:true},
+  {k:"Foreman",h:"Foreman"}
+];
+
+function render(){
+  var v=filtered();
+  if(!rows.length){ document.querySelector(".tablecard").innerHTML='<div class="empty">No entries in this range.</div>'; E("totals").textContent=""; return; }
+  var h='<table><thead><tr>';
+  COLS.forEach(function(c){
+    var key=c.s||c.k; var arr=(sortKey===key)?(sortDir>0?' <span class="arr">▲</span>':' <span class="arr">▼</span>'):'';
+    h+='<th class="'+(c.num?'num':'')+'" data-k="'+key+'">'+c.h+arr+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  var tot=0;
+  v.forEach(function(r){
+    h+='<tr>';
+    COLS.forEach(function(c){ h+='<td class="'+(c.num?'num':'')+'">'+esc(r[c.k]==null?"":r[c.k])+'</td>'; });
+    h+='</tr>';
+    tot+=parseFloat(r.Hours)||0;
+  });
+  h+='</tbody><tfoot><tr><td colspan="8">Total (shown)</td><td class="num">'+(Math.round(tot*100)/100)+'</td><td></td></tr></tfoot></table>';
+  document.querySelector(".tablecard").innerHTML=h;
+  E("totals").innerHTML='<b>'+v.length+'</b> rows shown &bull; <b>'+(Math.round(tot*100)/100)+'</b> hours';
+  document.querySelectorAll("th[data-k]").forEach(function(th){
+    th.onclick=function(){ var k=th.getAttribute("data-k"); if(sortKey===k) sortDir=-sortDir; else {sortKey=k;sortDir=1;} render(); };
+  });
+}
+
+/* ===== CSV export — byte-for-byte the 7 AM payroll file (full loaded range) ===== */
+function csvValue(x){ return (x==null)?"":String(x); }
+function buildCSV(){
+  var HEADER="Date,Hours,Job No.,,Job Name,,Phase Code,Line#,Employee Number,,,Employee Name";
+  var CRLF="\r\n";
+  var lines=rows.map(function(r){
+    return [csvValue(r.WorkDateText),csvValue(r.Hours),csvValue(r.JobNo),"",csvValue(r.JobName),"",csvValue(r.PhaseCode),csvValue(r.LineNum),csvValue(r.EmployeeNumber),"","",csvValue(r.EmployeeName)].join(",");
+  });
+  return HEADER+CRLF+lines.join(CRLF)+CRLF;
+}
+E("csvBtn").onclick=function(){
+  if(!rows.length){ E("msg").textContent="Nothing to export — load a range first."; return; }
+  var csv=buildCSV();
+  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url; a.download="VisionMech_Timecard_"+E("from").value+"_to_"+E("to").value+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+rows.length+" entries for "+E("from").value+" → "+E("to").value+" (full range).";
+};
+
+/* ===== helpers + wiring ===== */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+E("loadBtn").onclick=load;
+E("thisWk").onclick=function(){ var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end); load(); };
+E("filter").oninput=function(){ render(); };
+</script>
+</body>
+</html>
