@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Compliance Dashboard</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--goodbg:#dcfce7;--bad:#b91c1c;--badbg:#fde8e8;--warn:#92400e;--warnbg:#fef3c7;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:0 12px 70px}
+header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.app img.logo{height:46px;background:#fff;border-radius:10px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:8px}
+header.app h1{margin:0;font-size:19px;font-weight:700}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.95;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:72px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate button{margin-top:16px;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:16px 0 4px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.fld input{font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
+.btn{font-size:14px;font-weight:600;border:none;border-radius:9px;padding:10px 16px;cursor:pointer}
+.btn.red{background:var(--vm);color:#fff}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
+.note{font-size:12px;color:var(--muted);margin:8px 2px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-top:16px;overflow:hidden}
+.card h2{font-size:15px;margin:0;padding:14px 16px;border-bottom:1px solid var(--line);color:var(--vm2);text-transform:uppercase;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px}
+.pill.ok{background:var(--goodbg);color:var(--good)}
+.pill.bad{background:var(--badbg);color:var(--bad)}
+.pad{padding:14px 16px}
+.sub2{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin:16px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td.wrap-cell{white-space:normal}
+.tablewrap{overflow-x:auto}
+.rate{font-weight:700}
+.rate.lo{color:var(--bad)} .rate.mid{color:var(--warn)} .rate.hi{color:var(--good)}
+.empty{color:var(--good);font-weight:600;padding:6px 0}
+.miss{color:var(--bad)}
+.loading{padding:30px;text-align:center;color:var(--muted)}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+<div>Vision Mechanical — Compliance Dashboard</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Compliance Dashboard</h1>
+<div class="sub">Timecards &bull; Daily Logs &bull; 2-Week Look-Aheads</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="controls">
+    <div class="fld"><label>Week from</label><input type="date" id="from"></div>
+    <div class="fld"><label>Week to</label><input type="date" id="to"></div>
+    <button class="btn red" id="loadBtn">Load</button>
+    <button class="btn ghost" id="thisWk">This pay week</button>
+  </div>
+  <div class="note">Logs &amp; look-aheads are measured against the timecards: whoever entered time for a day/job owes a log for it (and a look-ahead for that job that week). Weekends excluded. Monthly rate = trailing 30 days.</div>
+
+  <div id="loading" class="loading">Pick a week and tap Load.</div>
+
+  <div class="card" id="cardTC" style="display:none">
+    <h2>Timecards — missing time <span class="pill" id="pillTC"></span></h2>
+    <div class="pad"><div class="tablewrap"><table id="tcTbl"></table></div></div>
+  </div>
+
+  <div class="card" id="cardLog" style="display:none">
+    <h2>Daily Logs — worked but didn't log <span class="pill" id="pillLog"></span></h2>
+    <div class="pad">
+      <div class="sub2">This week — missing logs (by job/day)</div>
+      <div class="tablewrap"><table id="logWeekTbl"></table></div>
+      <div class="sub2">Past 30 days — per-foreman compliance rate</div>
+      <div class="tablewrap"><table id="logRateTbl"></table></div>
+    </div>
+  </div>
+
+  <div class="card" id="cardLook" style="display:none">
+    <h2>2-Week Look-Aheads — worked but didn't submit <span class="pill" id="pillLook"></span></h2>
+    <div class="pad"><div class="tablewrap"><table id="lookTbl"></table></div></div>
+  </div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Compliance Dashboard &bull; Admin only. Read-only — cross-references live SharePoint data.</div>
+
+<script>
+/* ===== Admin access ===== */
+var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+
+/* ===== Config ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";       /* Timecard Entries */
+var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a";     /* Daily Field Logs */
+var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";     /* Weekly 2-Week Look Ahead */
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";      /* Employee Master */
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="";
+function E(id){return document.getElementById(id);}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
+  E("gate").style.display="none";
+  if(ALLOW.indexOf(loginEmail)<0){
+    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This dashboard is limited to admins. You are signed in as <b>'+esc(loginEmail)+'</b>.</p></div>';
+    return;
+  }
+  E("app").style.display="block"; E("who").textContent=loginEmail;
+  var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end);
+  run();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Dates ===== */
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function payWeek(d){var x=new Date(d);var diff=(x.getDay()-3+7)%7;var start=addDays(x,-diff);start.setHours(0,0,0,0);return {start:start,end:addDays(start,6)};}
+function mondayOf(d){var x=new Date(d);var diff=(x.getDay()+6)%7;return iso(addDays(x,-diff));}
+function isWeekday(isoStr){var g=parseISO(isoStr).getDay();return g>=1&&g<=5;}
+function weekdaysBetween(fromISO,toISO){var out=[],d=parseISO(fromISO),end=parseISO(toISO);while(d<=end){var k=iso(d);if(isWeekday(k))out.push(k);d=addDays(d,1);}return out;}
+function dkey(v){return String(v||"").slice(0,10);}
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
+function shortD(isoStr){var p=String(isoStr).slice(0,10).split("-");return p.length===3?(+p[1]+"/"+ +p[2]):isoStr;}
+
+/* ===== Data ===== */
+async function getRange(listId,dateField,fromISO,toISO,select){
+  var token=await getToken();
+  var base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999";
+  var out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/"+dateField+" ge '"+fromISO+"T00:00:00Z' and fields/"+dateField+" le '"+toISO+"T23:59:59Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){var k=dkey(r[dateField]);return k>=fromISO&&k<=toISO;}); }
+  return out;
+}
+async function getAll(listId,select){
+  var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999"; var out=[];
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+  return out;
+}
+
+/* ===== Run ===== */
+async function run(){
+  var from=E("from").value, to=E("to").value; if(!from||!to) return;
+  E("loading").style.display="block"; E("loading").textContent="Loading…";
+  ["cardTC","cardLog","cardLook"].forEach(function(c){E(c).style.display="none";});
+  try{
+    var loadFrom=iso(addDays(parseISO(to),-32));          /* enough for 30-day rate */
+    if(loadFrom>from) loadFrom=from;
+    var tc=await getRange(TC,"WorkDate",loadFrom,to,"WorkDate,JobNo,EmployeeNumber,EmployeeName,Hours,Foreman,ForemanEmail");
+    var logs=await getRange(LOGS,"LogDate",loadFrom,to,"LogDate,Project,LoginEmail,SubmittedBy");
+    var look=await getRange(LOOK,"WeekOf",iso(addDays(parseISO(loadFrom),-7)),to,"WeekOf,Project,LoginEmail,SubmittedBy");
+    var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active")).filter(function(e){return (e.Active||"Yes")!=="No";});
+    E("loading").style.display="none";
+    computeTimecards(emps,tc,from,to);
+    computeLogs(tc,logs,from,to);
+    computeLook(tc,look,from,to);
+  }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
+}
+
+/* foreman email -> display name (from timecards) */
+function foremanNames(tc){ var m={}; tc.forEach(function(r){ var e=(r.ForemanEmail||"").toLowerCase(); if(e&&r.Foreman&&!m[e]) m[e]=r.Foreman; }); return m; }
+
+/* ===== Section 1: Timecards missing (weekdays in range) ===== */
+function computeTimecards(emps,tc,from,to){
+  var days=weekdaysBetween(from,to);
+  var have={}; tc.forEach(function(r){ var k=(r.EmployeeNumber||"")+"|"+dkey(r.WorkDate); have[k]=true; });
+  var rows=[];
+  emps.forEach(function(e){
+    var miss=days.filter(function(d){ return !have[(e.EmployeeNumber||"")+"|"+d]; });
+    if(miss.length) rows.push({num:e.EmployeeNumber,name:e.EmployeeName,miss:miss});
+  });
+  rows.sort(function(a,b){return b.miss.length-a.miss.length||String(a.name).localeCompare(String(b.name));});
+  var pill=E("pillTC");
+  if(!rows.length){ pill.className="pill ok"; pill.textContent="All "+emps.length+" in"; E("tcTbl").innerHTML='<tr><td class="empty">Everyone with an active record has time on every weekday in range.</td></tr>'; }
+  else { pill.className="pill bad"; pill.textContent=rows.length+" missing"; 
+    var h='<thead><tr><th>Emp #</th><th>Employee</th><th>Missing weekday(s)</th></tr></thead><tbody>';
+    rows.forEach(function(r){ h+='<tr><td>'+esc(r.num)+'</td><td>'+esc(r.name)+'</td><td class="miss wrap-cell">'+r.miss.map(shortD).join(", ")+'</td></tr>'; });
+    E("tcTbl").innerHTML=h+'</tbody>';
+  }
+  E("cardTC").style.display="block";
+}
+
+/* ===== Section 2: Daily logs (per foreman-day-job) ===== */
+function owedFromTC(tc,fromISO,toISO){ /* distinct foremanEmail|day|job on weekdays */
+  var set={}, list=[];
+  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<fromISO||d>toISO||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn) return; var k=fe+"|"+d+"|"+jn; if(!set[k]){set[k]=1;list.push({fe:fe,day:d,job:jn});} });
+  return list;
+}
+function computeLogs(tc,logs,from,to){
+  var names=foremanNames(tc);
+  var submitted={}; logs.forEach(function(r){ var k=(r.LoginEmail||"").toLowerCase()+"|"+dkey(r.LogDate)+"|"+jobNo(r.Project); submitted[k]=true; });
+
+  /* this-week gaps */
+  var owedWk=owedFromTC(tc,from,to);
+  var missByForeman={};
+  owedWk.forEach(function(o){ if(!submitted[o.fe+"|"+o.day+"|"+o.job]){ (missByForeman[o.fe]=missByForeman[o.fe]||[]).push(o); } });
+  var fes=Object.keys(missByForeman).sort(function(a,b){return missByForeman[b].length-missByForeman[a].length;});
+  var pill=E("pillLog");
+  if(!fes.length){ pill.className="pill ok"; pill.textContent="All logs in"; E("logWeekTbl").innerHTML='<tr><td class="empty">Every worked job/day this week has a daily log.</td></tr>'; }
+  else { pill.className="pill bad"; pill.textContent=fes.length+" behind";
+    var h='<thead><tr><th>Foreman</th><th>Missing (day / job)</th></tr></thead><tbody>';
+    fes.forEach(function(fe){ var items=missByForeman[fe].sort(function(a,b){return a.day.localeCompare(b.day);}).map(function(o){return shortD(o.day)+" · "+o.job;}); h+='<tr><td>'+esc(names[fe]||fe)+'</td><td class="miss wrap-cell">'+items.join(", ")+'</td></tr>'; });
+    E("logWeekTbl").innerHTML=h+'</tbody>';
+  }
+
+  /* 30-day rate */
+  var r30from=iso(addDays(parseISO(to),-29));
+  var owed30=owedFromTC(tc,r30from,to);
+  var tally={}; owed30.forEach(function(o){ var t=tally[o.fe]=tally[o.fe]||{owed:0,done:0}; t.owed++; if(submitted[o.fe+"|"+o.day+"|"+o.job]) t.done++; });
+  var rrows=Object.keys(tally).map(function(fe){ var t=tally[fe]; return {fe:fe,owed:t.owed,done:t.done,rate:t.owed?Math.round(t.done/t.owed*100):100}; });
+  rrows.sort(function(a,b){return a.rate-b.rate;});
+  if(!rrows.length){ E("logRateTbl").innerHTML='<tr><td class="empty">No worked job/days in the past 30 days.</td></tr>'; }
+  else { var h2='<thead><tr><th>Foreman</th><th>Logged</th><th>Owed</th><th>Rate</th></tr></thead><tbody>';
+    rrows.forEach(function(r){ var cls=r.rate>=95?"hi":(r.rate>=80?"mid":"lo"); h2+='<tr><td>'+esc(names[r.fe]||r.fe)+'</td><td>'+r.done+'</td><td>'+r.owed+'</td><td class="rate '+cls+'">'+r.rate+'%</td></tr>'; });
+    E("logRateTbl").innerHTML=h2+'</tbody>';
+  }
+  E("cardLog").style.display="block";
+}
+
+/* ===== Section 3: Look-aheads (per foreman-week-job) ===== */
+function computeLook(tc,look,from,to){
+  var names=foremanNames(tc);
+  /* owed: distinct foremanEmail | weekMonday | job, for weeks touched by the range */
+  var owed={}, list=[];
+  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<from||d>to||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn) return; var wk=mondayOf(parseISO(d)); var k=fe+"|"+wk+"|"+jn; if(!owed[k]){owed[k]=1;list.push({fe:fe,wk:wk,job:jn});} });
+  var submitted={}; look.forEach(function(r){ var k=(r.LoginEmail||"").toLowerCase()+"|"+mondayOf(parseISO(dkey(r.WeekOf)))+"|"+jobNo(r.Project); submitted[k]=true; });
+  var missBy={};
+  list.forEach(function(o){ if(!submitted[o.fe+"|"+o.wk+"|"+o.job]){ (missBy[o.fe]=missBy[o.fe]||[]).push(o); } });
+  var fes=Object.keys(missBy).sort(function(a,b){return missBy[b].length-missBy[a].length;});
+  var pill=E("pillLook");
+  if(!fes.length){ pill.className="pill ok"; pill.textContent="All in"; E("lookTbl").innerHTML='<tr><td class="empty">Every job worked this period has a look-ahead.</td></tr>'; }
+  else { pill.className="pill bad"; pill.textContent=fes.length+" behind";
+    var h='<thead><tr><th>Foreman</th><th>Missing look-ahead (week of / job)</th></tr></thead><tbody>';
+    fes.forEach(function(fe){ var items=missBy[fe].sort(function(a,b){return a.wk.localeCompare(b.wk);}).map(function(o){return shortD(o.wk)+" · "+o.job;}); h+='<tr><td>'+esc(names[fe]||fe)+'</td><td class="miss wrap-cell">'+items.join(", ")+'</td></tr>'; });
+    E("lookTbl").innerHTML=h+'</tbody>';
+  }
+  E("cardLook").style.display="block";
+}
+
+/* ===== wiring ===== */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+E("loadBtn").onclick=run;
+E("thisWk").onclick=function(){ var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end); run(); };
+</script>
+</body>
+</html>
