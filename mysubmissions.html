@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — My Submissions</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--gap:#fdecea;--gaptext:#b8462b;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding:0 12px 60px}
+header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.app img.logo{height:46px;background:#fff;border-radius:10px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:8px}
+header.app h1{margin:0;font-size:19px;font-weight:700}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.95;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:72px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate button{margin-top:16px;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.tabs{display:flex;gap:6px;margin:16px 0 0;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;text-align:center;font-size:14px;font-weight:700;padding:11px 10px;border:1.5px solid var(--line);border-bottom:none;border-radius:10px 10px 0 0;background:#eef0f2;color:var(--muted);cursor:pointer}
+.tab.on{background:#fff;color:var(--vm2);border-color:var(--line)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:0 10px 10px 10px;box-shadow:var(--shadow);padding:14px;min-height:140px}
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.navbar .wk{font-size:15px;font-weight:700;text-align:center;flex:1}
+.navbar button{font-size:13px;font-weight:600;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer}
+.navbar button.today{background:var(--vm);color:#fff;border-color:var(--vm)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px}
+th,td{padding:9px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+th.name,td.name{position:sticky;left:0;background:#fff;font-weight:600}
+th.name{background:#faf7f7}
+td.gap{background:var(--gap);color:var(--gaptext);font-weight:700}
+td.gap::after{content:" ⚠"}
+td.tot,th.tot{font-weight:700;background:#fbfbe9;text-align:right}
+td.num,th.num{text-align:right}
+tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa}
+.viewbtn{font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 11px;cursor:pointer;color:var(--vm2)}
+.detail{background:#faf9f9;border:1px solid var(--line);border-radius:8px;margin:2px 0 8px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;overflow-x:auto}
+.detail img{max-width:100%}
+.legend{font-size:12px;color:var(--muted);margin-top:10px}
+.empty{color:var(--muted);padding:22px;text-align:center}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+<div>Vision Mechanical — My Submissions</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>My Submissions</h1>
+<div class="sub">Your timecards, daily logs &amp; look-aheads &bull; read-only</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="tabs">
+    <div class="tab on" data-tab="tc">Timecards</div>
+    <div class="tab" data-tab="logs">Daily Logs</div>
+    <div class="tab" data-tab="look">Look-Aheads</div>
+  </div>
+
+  <div class="panel" id="panel-tc">
+    <div class="navbar"><button id="prev">&larr; Prev</button><div class="wk" id="wkLabel"></div><button id="next">Next &rarr;</button><button class="today" id="thisWk">This Week</button></div>
+    <div class="tablewrap" id="tcGrid"><div class="empty">Loading…</div></div>
+    <div class="legend">Hours you entered, by day. <b>Shaded ⚠</b> = a weekday with no hours for that person.</div>
+  </div>
+
+  <div class="panel" id="panel-logs" style="display:none">
+    <div class="tablewrap" id="logsTbl"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="panel" id="panel-look" style="display:none">
+    <div class="tablewrap" id="lookTbl"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; My Submissions &bull; Read-only view of what you've turned in. Submit or correct on the forms.</div>
+
+<script>
+/* ===== Config ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a";
+var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", loginName="";
+function E(id){return document.getElementById(id);}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username||"";
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=loginName;
+  loadTC(); loadLogs(); loadLook();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Tabs ===== */
+document.querySelectorAll(".tab").forEach(function(t){
+  t.onclick=function(){
+    document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on");}); t.classList.add("on");
+    var id=t.getAttribute("data-tab");
+    E("panel-tc").style.display=id==="tc"?"block":"none";
+    E("panel-logs").style.display=id==="logs"?"block":"none";
+    E("panel-look").style.display=id==="look"?"block":"none";
+  };
+});
+
+/* ===== Helpers ===== */
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function mondayOf(d){var x=new Date(d);var diff=(x.getDay()+6)%7;return addDays(x,-diff);}
+function dkey(v){return String(v||"").slice(0,10);}
+function shortD(v){var p=String(v).slice(0,10).split("-");return p.length===3?(+p[1]+"/"+ +p[2]):v;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function hoursNum(h){var n=parseFloat(h);return isNaN(n)?0:n;}
+var DOW=["Mon","Tue","Wed","Thu","Fri"];
+
+async function getMine(listId,dateField,emailField,fromISO,select){
+  var token=await getToken();
+  var base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999";
+  var out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/"+dateField+" ge '"+fromISO+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){return dkey(r[dateField])>=fromISO;}); }
+  return out.filter(function(r){ return String(r[emailField]||"").toLowerCase()===loginEmail; });
+}
+
+/* ===== Timecards (weekly grid) ===== */
+var tcRows=[], selMon=mondayOf(new Date());
+async function loadTC(){
+  try{ tcRows=await getMine(TC,"WorkDate","ForemanEmail",iso(addDays(mondayOf(new Date()),-35)),"WorkDate,EmployeeName,EmployeeNumber,JobNo,Hours,ForemanEmail"); renderTC(); }
+  catch(e){ E("tcGrid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function renderTC(){
+  var days=[]; for(var i=0;i<5;i++) days.push(iso(addDays(selMon,i)));
+  E("wkLabel").textContent="Week of "+shortD(iso(selMon))+" – "+shortD(iso(addDays(selMon,4)));
+  var prevStart=iso(addDays(selMon,-7)), prevEnd=iso(addDays(selMon,-3)), ws=days[0], we=days[4];
+  var byEmp={}, rel={};
+  tcRows.forEach(function(r){ var k=dkey(r.WorkDate), emp=r.EmployeeName||r.EmployeeNumber||"—"; (byEmp[emp]=byEmp[emp]||{}); byEmp[emp][k]=(byEmp[emp][k]||0)+hoursNum(r.Hours); if(k>=ws&&k<=we) rel[emp]=1; if(k>=prevStart&&k<=prevEnd) rel[emp]=1; });
+  var emps=Object.keys(rel).sort();
+  if(!emps.length){ E("tcGrid").innerHTML='<div class="empty">No time entered for this week.</div>'; return; }
+  var dayTot=[0,0,0,0,0], grand=0;
+  var h='<table><thead><tr><th class="name">Employee</th>';
+  for(var d=0;d<5;d++) h+='<th>'+DOW[d]+'<br><span style="font-weight:400;color:#9aa6b3">'+shortD(days[d])+'</span></th>';
+  h+='<th class="tot">Week</th></tr></thead><tbody>';
+  emps.forEach(function(emp){ h+='<tr><td class="name">'+esc(emp)+'</td>'; var wk=0; for(var d=0;d<5;d++){ var hv=(byEmp[emp][days[d]]||0); wk+=hv; dayTot[d]+=hv; h+= hv>0 ? '<td class="num">'+(Math.round(hv*100)/100)+'</td>' : '<td class="gap">0</td>'; } grand+=wk; h+='<td class="tot">'+(Math.round(wk*100)/100)+'</td></tr>'; });
+  h+='<tr class="totals"><td class="name">Daily total</td>'; for(var d2=0;d2<5;d2++) h+='<td class="num">'+(Math.round(dayTot[d2]*100)/100)+'</td>'; h+='<td class="tot">'+(Math.round(grand*100)/100)+'</td></tr></tbody></table>';
+  E("tcGrid").innerHTML=h;
+}
+E("prev").onclick=function(){ selMon=addDays(selMon,-7); renderTC(); };
+E("next").onclick=function(){ selMon=addDays(selMon,7); renderTC(); };
+E("thisWk").onclick=function(){ selMon=mondayOf(new Date()); renderTC(); };
+
+/* ===== Daily Logs (list + expand) ===== */
+async function loadLogs(){
+  try{
+    var rows=await getMine(LOGS,"LogDate","LoginEmail",iso(addDays(new Date(),-120)),"LogDate,Project,ActivityStatus,LogText");
+    rows.sort(function(a,b){return dkey(b.LogDate).localeCompare(dkey(a.LogDate));});
+    renderList("logsTbl",rows,"LogDate","Date",function(r){return r.ActivityStatus||"";});
+  }catch(e){ E("logsTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+/* ===== Look-Aheads (list + expand) ===== */
+async function loadLook(){
+  try{
+    var rows=await getMine(LOOK,"WeekOf","LoginEmail",iso(addDays(new Date(),-150)),"WeekOf,Project,LookAheadStatus,LogText");
+    rows.sort(function(a,b){return dkey(b.WeekOf).localeCompare(dkey(a.WeekOf));});
+    renderList("lookTbl",rows,"WeekOf","Week of",function(r){return r.LookAheadStatus||"";});
+  }catch(e){ E("lookTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function renderList(elId,rows,dateField,dateHdr,statusFn){
+  if(!rows.length){ E(elId).innerHTML='<div class="empty">Nothing submitted yet.</div>'; return; }
+  var h='<table><thead><tr><th>'+dateHdr+'</th><th>Project</th><th>Status</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    h+='<tr><td>'+esc(shortD(r[dateField]))+'</td><td>'+esc(r.Project||"")+'</td><td>'+esc(statusFn(r))+'</td><td><button class="viewbtn" data-i="'+i+'">View</button></td></tr>';
+    h+='<tr id="'+elId+'-d'+i+'" style="display:none"><td colspan="4"><div class="detail">'+(r.LogText?r.LogText:"(no detail saved)")+'</div></td></tr>';
+  });
+  h+='</tbody></table>';
+  E(elId).innerHTML=h;
+  E(elId).querySelectorAll(".viewbtn").forEach(function(b){ b.onclick=function(){ var dr=E(elId+"-d"+b.getAttribute("data-i")); var show=dr.style.display==="none"; dr.style.display=show?"table-row":"none"; b.textContent=show?"Hide":"View"; }; });
+}
+</script>
+</body>
+</html>
