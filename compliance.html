@@ -225,6 +225,7 @@ async function run(){
     LOADED={tc:tc.length,logs:logs.length,look:look.length,at:new Date()};
     computeTimecards(emps,tc,from,to);
     computeLogs(tc,logs,from,to);
+    compute30Day();
     computeLook(tc,look,from,to);
     renderSummary(from,to);
     loadBrowse(from,to);
@@ -280,18 +281,33 @@ function computeLogs(tc,logs,from,to){
     E("logWeekTbl").innerHTML=h+'</tbody>';
   }
 
-  /* 30-day rate */
-  var r30from=iso(addDays(parseISO(to),-29));
-  var owed30=owedFromTC(tc,r30from,to);
-  var tally={}; owed30.forEach(function(o){ var t=tally[o.fe]=tally[o.fe]||{owed:0,done:0}; t.owed++; if(submitted[o.fe+"|"+o.day+"|"+o.job]) t.done++; });
-  var rrows=Object.keys(tally).map(function(fe){ var t=tally[fe]; return {fe:fe,owed:t.owed,done:t.done,rate:t.owed?Math.round(t.done/t.owed*100):100}; });
-  rrows.sort(function(a,b){return a.rate-b.rate;});
-  if(!rrows.length){ E("logRateTbl").innerHTML='<tr><td class="empty">No worked job/days in the past 30 days.</td></tr>'; }
-  else { var h2='<thead><tr><th>Foreman</th><th>Logged</th><th>Owed</th><th>Rate</th></tr></thead><tbody>';
-    rrows.forEach(function(r){ var cls=r.rate>=95?"hi":(r.rate>=80?"mid":"lo"); h2+='<tr><td>'+esc(names[r.fe]||r.fe)+'</td><td>'+r.done+'</td><td>'+r.owed+'</td><td class="rate '+cls+'">'+r.rate+'%</td></tr>'; });
-    E("logRateTbl").innerHTML=h2+'</tbody>';
-  }
+  /* 30-day rate is computed separately in compute30Day() — always the trailing 30 days from today, every roster foreman, independent of the date range above */
   E("cardLog").style.display="block";
+}
+
+/* ===== 30-day compliance rate — ALWAYS trailing 30 days from today, ALL roster foremen ===== */
+async function compute30Day(){
+  E("logRateTbl").innerHTML='<tr><td class="empty">Loading 30-day rates…</td></tr>';
+  try{
+    var today=iso(new Date()), from30=iso(addDays(new Date(),-29));
+    var tc=await getRange(TC,"WorkDate",from30,today,"WorkDate,JobNo,ForemanEmail,Foreman");
+    var logs=await getRange(LOGS,"LogDate",from30,today,"LogDate,Project,LoginEmail");
+    var submitted={}; logs.forEach(function(r){ submitted[(r.LoginEmail||"").toLowerCase()+"|"+dkey(r.LogDate)+"|"+jobNo(r.Project)]=true; });
+    var owed={}; /* fe -> {day|job:true} */
+    tc.forEach(function(r){ var d=dkey(r.WorkDate); if(!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn||!ROSTER_EMAILS[fe]) return; (owed[fe]=owed[fe]||{})[d+"|"+jn]=true; });
+    var rows=Object.keys(ROSTER_EMAILS).map(function(fe){
+      var items=owed[fe]?Object.keys(owed[fe]):[]; var o=items.length, done=0;
+      items.forEach(function(k){ if(submitted[fe+"|"+k]) done++; });
+      return {name:(ROSTER_NAMES[fe]||fe), owed:o, done:done, rate:(o?Math.round(done/o*100):null)};
+    });
+    rows.sort(function(a,b){ var ra=(a.rate===null)?999:a.rate, rb=(b.rate===null)?999:b.rate; return ra-rb || a.name.localeCompare(b.name); });
+    var h='<thead><tr><th>Foreman</th><th>Logged</th><th>Owed</th><th>Rate (30d)</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var cell = (r.rate===null) ? '<td class="rate" style="color:#9aa6b3">— no work</td>' : '<td class="rate '+(r.rate>=95?"hi":(r.rate>=80?"mid":"lo"))+'">'+r.rate+'%</td>';
+      h+='<tr><td>'+esc(r.name)+'</td><td>'+r.done+'</td><td>'+r.owed+'</td>'+cell+'</tr>';
+    });
+    E("logRateTbl").innerHTML=h+'</tbody>';
+  }catch(e){ E("logRateTbl").innerHTML='<tr><td class="empty">Could not load 30-day rates: '+esc(e.message||e)+'</td></tr>'; }
 }
 
 /* ===== Section 3: Look-aheads (per foreman-week-job) ===== */
