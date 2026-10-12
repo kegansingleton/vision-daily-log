@@ -152,12 +152,14 @@ var TC="91c4a3db-97f6-4b52-a855-516d5c414124";       /* Timecard Entries */
 var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a";     /* Daily Field Logs */
 var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";     /* Weekly 2-Week Look Ahead */
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";      /* Employee Master */
+var ROSTER="c9a37022-3250-4d80-9f26-e8fe94160bc8";   /* Field Log Roster — the people who owe daily logs */
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="";
 var LOADED={}, NAMES={}, RESULTS={tc:[],log:{},look:{}}, SUMMARY_RANGE={}, BROWSE={logs:[],look:[]};
+var ROSTER_EMAILS={}, ROSTER_NAMES={};
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
@@ -215,6 +217,9 @@ async function run(){
     var logs=await getRange(LOGS,"LogDate",loadFrom,to,"LogDate,Project,LoginEmail,SubmittedBy");
     var look=await getRange(LOOK,"WeekOf",iso(addDays(parseISO(loadFrom),-7)),to,"WeekOf,Project,LoginEmail,SubmittedBy");
     var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active,OfficeStaff")).filter(function(e){return (e.Active||"Yes")!=="No";});
+    var roster=await getAll(ROSTER,"Title,Email");
+    ROSTER_EMAILS={}; ROSTER_NAMES={};
+    roster.forEach(function(r){ var e=(r.Email||"").toLowerCase().trim(); if(e){ ROSTER_EMAILS[e]=1; ROSTER_NAMES[e]=r.Title||e; } });
     E("loading").style.display="none";
     NAMES=foremanNames(tc);
     LOADED={tc:tc.length,logs:logs.length,look:look.length,at:new Date()};
@@ -227,7 +232,7 @@ async function run(){
 }
 
 /* foreman email -> display name (from timecards) */
-function foremanNames(tc){ var m={}; tc.forEach(function(r){ var e=(r.ForemanEmail||"").toLowerCase(); if(e&&r.Foreman&&!m[e]) m[e]=r.Foreman; }); return m; }
+function foremanNames(tc){ var m={}; tc.forEach(function(r){ var e=(r.ForemanEmail||"").toLowerCase(); if(e&&r.Foreman&&!m[e]) m[e]=r.Foreman; }); for(var k in ROSTER_NAMES){ m[k]=ROSTER_NAMES[k]; } return m; }
 
 /* ===== Section 1: Timecards missing (weekdays in range) ===== */
 function computeTimecards(emps,tc,from,to){
@@ -254,7 +259,7 @@ function computeTimecards(emps,tc,from,to){
 /* ===== Section 2: Daily logs (per foreman-day-job) ===== */
 function owedFromTC(tc,fromISO,toISO){ /* distinct foremanEmail|day|job on weekdays */
   var set={}, list=[];
-  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<fromISO||d>toISO||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn) return; var k=fe+"|"+d+"|"+jn; if(!set[k]){set[k]=1;list.push({fe:fe,day:d,job:jn});} });
+  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<fromISO||d>toISO||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn||!ROSTER_EMAILS[fe]) return; var k=fe+"|"+d+"|"+jn; if(!set[k]){set[k]=1;list.push({fe:fe,day:d,job:jn});} });
   return list;
 }
 function computeLogs(tc,logs,from,to){
@@ -294,7 +299,7 @@ function computeLook(tc,look,from,to){
   var names=foremanNames(tc);
   /* owed: distinct foremanEmail | weekMonday | job, for weeks touched by the range */
   var owed={}, list=[];
-  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<from||d>to||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn) return; var wk=mondayOf(parseISO(d)); var k=fe+"|"+wk+"|"+jn; if(!owed[k]){owed[k]=1;list.push({fe:fe,wk:wk,job:jn});} });
+  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<from||d>to||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn||!ROSTER_EMAILS[fe]) return; var wk=mondayOf(parseISO(d)); var k=fe+"|"+wk+"|"+jn; if(!owed[k]){owed[k]=1;list.push({fe:fe,wk:wk,job:jn});} });
   var submitted={}; look.forEach(function(r){ var k=(r.LoginEmail||"").toLowerCase()+"|"+mondayOf(parseISO(dkey(r.WeekOf)))+"|"+jobNo(r.Project); submitted[k]=true; });
   var missBy={};
   list.forEach(function(o){ if(!submitted[o.fe+"|"+o.wk+"|"+o.job]){ (missBy[o.fe]=missBy[o.fe]||[]).push(o); } });
