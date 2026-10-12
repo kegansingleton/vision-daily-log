@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Add Phase Codes</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:0 12px 60px}
+header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header.app img.logo{height:46px;background:#fff;border-radius:10px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:8px}
+header.app h1{margin:0;font-size:19px;font-weight:700}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.95;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:72px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate button{margin-top:16px;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px;margin-top:14px}
+.card h2{font-size:15px;color:var(--vm2);margin:0 0 12px;text-transform:uppercase;letter-spacing:.4px}
+label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;font-size:16px;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font-family:inherit}
+input:focus{border-color:var(--vm);outline:none;box-shadow:0 0 0 3px rgba(192,57,43,.12)}
+.req{color:var(--vm)}
+.row2{display:flex;gap:12px;flex-wrap:wrap}
+.row2>div{flex:1;min-width:140px}
+.btn{font-size:16px;font-weight:600;border:none;border-radius:10px;padding:13px 18px;cursor:pointer}
+.btn.red{background:var(--vm);color:#fff;width:100%;margin-top:16px}
+.btn.red:disabled{opacity:.5;cursor:not-allowed}
+.msg{margin-top:12px;font-size:14px;min-height:18px}
+.job-head{font-size:15px;font-weight:700;margin:2px 0 2px}
+table{border-collapse:collapse;width:100%;margin-top:6px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
+th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td.num,th.num{text-align:right}
+.tablewrap{overflow-x:auto}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+<div>Vision Mechanical — Add Phase Codes</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Add Phase Codes</h1>
+<div class="sub">Add a phase/line to an existing job</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+
+  <div class="card">
+    <h2>1. Pick the job</h2>
+    <label>Job number</label>
+    <input list="jobsList" id="jobPick" placeholder="Start typing a job number or name" autocomplete="off">
+    <datalist id="jobsList"></datalist>
+    <div class="hint" id="jobHint">Loading job list…</div>
+  </div>
+
+  <div class="card" id="existingCard" style="display:none">
+    <h2>Current phase codes on this job</h2>
+    <div class="job-head" id="jobHead"></div>
+    <div class="tablewrap"><table id="existing"><tbody></tbody></table></div>
+  </div>
+
+  <div class="card" id="addCard" style="display:none">
+    <h2>2. Add a phase code</h2>
+    <label>Phase code <span class="req">*</span></label>
+    <input type="text" id="phase" placeholder="e.g. 22.02">
+    <label>Phase description</label>
+    <input type="text" id="phaseDesc" placeholder="e.g. Pipe fabrication">
+    <div class="row2">
+      <div>
+        <label>Line #</label>
+        <input type="text" id="line" placeholder="e.g. 10">
+      </div>
+      <div>
+        <label>Budget hours</label>
+        <input type="number" id="budget" inputmode="decimal" placeholder="e.g. 40">
+      </div>
+    </div>
+    <label>Line description</label>
+    <input type="text" id="lineDesc" placeholder="e.g. Level 2 branch piping">
+    <button class="btn red" id="addBtn">+ Add phase code to this job</button>
+    <div class="msg" id="msg"></div>
+    <div class="hint">Adds one row. The form keeps the job selected so you can add several in a row.</div>
+  </div>
+
+</div>
+
+<div class="footer">
+Vision Mechanical &bull; Add Phase Codes &bull; Writes to the Job Tasks list the timecards read from. For a brand-new job's full schedule, use Job Setup.
+</div>
+
+<script>
+/* ===== Admin access (same list as the other admin pages) ===== */
+var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net"];
+
+/* ===== Config ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var LIST={jobTasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",jobs:"836523ba-cd20-4736-98ce-5716668b8973"};
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="";
+function E(id){return document.getElementById(id);}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct);
+  loginEmail=(acct.username||"").toLowerCase();
+  E("gate").style.display="none";
+  if(ALLOW.indexOf(loginEmail)<0){
+    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This page is limited to office admins. You are signed in as <b>'+esc(loginEmail)+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
+    return;
+  }
+  E("app").style.display="block"; E("who").textContent=loginEmail;
+  loadJobs();
+}
+async function getToken(){
+  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
+  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
+}
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){
+  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
+  if(acct) afterLogin(acct);
+}).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Graph helpers ===== */
+async function getAll(listId, select, filter){
+  var token=await getToken();
+  var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999"+(filter?("&$filter="+filter):"");
+  var out=[];
+  while(url){
+    var j=await fetch(url,{headers:{Authorization:"Bearer "+token, Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(function(r){return r.json();});
+    if(j.error) throw new Error(j.error.message);
+    (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); });
+    url=j["@odata.nextLink"]||null;
+  }
+  return out;
+}
+
+/* ===== Jobs ===== */
+var JOBS=[], jobByNo={};
+async function loadJobs(){
+  try{
+    var items=await getAll(LIST.jobs,"JobNo,JobName,Active");
+    JOBS=items.filter(function(j){return (j.Active||"Yes")!=="No";});
+    JOBS.sort(function(a,b){return String(a.JobNo).localeCompare(String(b.JobNo));});
+    var dl=E("jobsList"); var h="";
+    JOBS.forEach(function(j){ jobByNo[j.JobNo]=j; h+='<option value="'+esc(j.JobNo)+' '+esc(j.JobName||"")+'">'; });
+    dl.innerHTML=h;
+    E("jobHint").textContent=JOBS.length+" active jobs. Pick one to see its phase codes.";
+  }catch(e){ E("jobHint").textContent="Could not load jobs: "+(e.message||e); }
+}
+function resolveJob(txt){
+  txt=(txt||"").trim(); if(!txt) return null;
+  var no=txt.split(" ")[0];               /* datalist value is "JobNo JobName" */
+  if(jobByNo[no]) return jobByNo[no];
+  /* fallback: exact JobNo typed, or contains match */
+  var hit=JOBS.filter(function(j){return String(j.JobNo)===no;})[0];
+  if(hit) return hit;
+  return JOBS.filter(function(j){return (j.JobNo+" "+(j.JobName||"")).toLowerCase().indexOf(txt.toLowerCase())===0;})[0]||null;
+}
+
+var currentJob=null;
+E("jobPick").onchange=function(){ pickJob(); };
+E("jobPick").onblur=function(){ pickJob(); };
+function pickJob(){
+  var j=resolveJob(E("jobPick").value);
+  if(!j){ E("existingCard").style.display="none"; E("addCard").style.display="none"; currentJob=null; return; }
+  currentJob=j;
+  E("jobHead").textContent=j.JobNo+" — "+(j.JobName||"");
+  E("addCard").style.display="block";
+  loadExisting(j.JobNo);
+}
+
+async function loadExisting(jobNo){
+  E("existingCard").style.display="block";
+  E("existing").querySelector("tbody").innerHTML='<tr><td>Loading…</td></tr>';
+  try{
+    var items=await getAll(LIST.jobTasks,"JobNo,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,Active","fields/JobNo eq '"+jobNo.replace(/'/g,"''")+"'");
+    items=items.filter(function(t){return t.JobNo===jobNo;});
+    items.sort(function(a,b){return String(a.PhaseCode).localeCompare(String(b.PhaseCode))||String(a.LineNum).localeCompare(String(b.LineNum));});
+    currentTasks=items;
+    var h='<thead><tr><th>Phase</th><th>Phase Desc</th><th>Line#</th><th>Line Desc</th><th class="num">Budget</th></tr></thead><tbody>';
+    if(!items.length){ h+='<tr><td colspan="5" style="color:#9aa6b3">No phase codes on this job yet.</td></tr>'; }
+    items.forEach(function(t){
+      h+='<tr><td>'+esc(t.PhaseCode)+'</td><td>'+esc(t.PhaseDesc||"")+'</td><td>'+esc(t.LineNum||"")+'</td><td>'+esc(t.LineDesc||"")+'</td><td class="num">'+esc(t.BudgetHours||"")+'</td></tr>';
+    });
+    h+='</tbody>';
+    E("existing").innerHTML=h;
+  }catch(e){ E("existing").querySelector("tbody").innerHTML='<tr><td>Could not load: '+esc(e.message||e)+'</td></tr>'; }
+}
+
+/* ===== Add a phase code ===== */
+var currentTasks=[];
+E("addBtn").onclick=async function(){
+  var btn=this, msg=E("msg");
+  if(!currentJob){ msg.style.color="#b8462b"; msg.textContent="Pick a job first."; return; }
+  var phase=(E("phase").value||"").trim();
+  var pdesc=(E("phaseDesc").value||"").trim();
+  var line=(E("line").value||"").trim();
+  var ldesc=(E("lineDesc").value||"").trim();
+  var budget=parseFloat(E("budget").value)||0;
+  if(!phase){ msg.style.color="#b8462b"; msg.textContent="Phase code is required."; return; }
+  /* duplicate guard */
+  var dup=currentTasks.some(function(t){return String(t.PhaseCode)===phase && String(t.LineNum||"")===line;});
+  if(dup && !confirm("Phase "+phase+(line?(" line "+line):"")+" already exists on this job. Add it again anyway?")) return;
+
+  btn.disabled=true; msg.style.color=""; msg.textContent="Adding…";
+  try{
+    var token=await getToken();
+    var body={fields:{
+      Title:currentJob.JobNo+" "+phase+(line?(" "+line):""),
+      JobNo:currentJob.JobNo, JobName:currentJob.JobName||"",
+      PhaseCode:phase, PhaseDesc:pdesc, LineNum:line, LineDesc:ldesc,
+      BudgetHours:budget, Active:"Yes"
+    }};
+    var resp=await fetch(GRAPH+LIST.jobTasks+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!resp.ok){ var t=await resp.text(); throw new Error("HTTP "+resp.status+" "+t.slice(0,180)); }
+    msg.style.color="#15803d"; msg.textContent="Added "+phase+(line?(" / line "+line):"")+" to "+currentJob.JobNo+".";
+    E("phase").value=""; E("phaseDesc").value=""; E("line").value=""; E("lineDesc").value=""; E("budget").value="";
+    E("phase").focus();
+    loadExisting(currentJob.JobNo);
+  }catch(e){
+    msg.style.color="#b8462b"; msg.textContent="Could not add: "+(e.message||e);
+  }
+  btn.disabled=false;
+};
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+</script>
+</body>
+</html>
