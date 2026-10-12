@@ -40,7 +40,14 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 .gate p{opacity:.9;font-size:14px;margin:0 0 20px}
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .mut{color:var(--mut);font-size:13px}
-.preview{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.preview{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.mini{font-size:12px;font-weight:600;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+.mini.danger{color:#b91c1c;border-color:#f3c0c0}
+.mini:hover{filter:brightness(.97)}
+.addbtn{background:var(--vm);color:#fff;border-color:var(--vm);padding:11px 14px;font-size:14px;white-space:nowrap;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+#rosterCard input{width:100%;padding:10px;border:1.5px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit}
+#rosterCard input:focus{border-color:var(--vm);outline:none}
+#rosterFilter{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -56,13 +63,26 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
   <div style="display:flex;align-items:center;gap:12px">
     <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical" style="height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto">
     <div>
-      <h1>Employee Setup — Crew List Refresh</h1>
+      <h1>Employee Setup — Manage Crew List</h1>
       <div class="who" id="who"></div>
     </div>
   </div>
 </header>
 
 <div class="wrap" id="app" style="display:none">
+  <div class="card" id="rosterCard">
+    <h2>Current crew list</h2>
+    <div class="stat" id="rosterStat"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 10px">
+      <div style="flex:1;min-width:110px"><div class="mut" style="margin-bottom:3px">Emp #</div><input id="addNum" placeholder="Number"></div>
+      <div style="flex:2;min-width:160px"><div class="mut" style="margin-bottom:3px">Name</div><input id="addName" placeholder="Last, First"></div>
+      <button class="addbtn" id="addEmpBtn">+ Add employee</button>
+    </div>
+    <input id="rosterFilter" placeholder="Filter by name or number…">
+    <div class="msg" id="rosterMsg"></div>
+    <div class="preview"><table id="rosterTbl"></table></div>
+  </div>
+
   <div class="card">
     <h2>Refresh the crew list from Vista</h2>
     <p class="help">Export the <b>PR Employee List (Active Only)</b> from Vista as a CSV and drop it below. This reads every active employee's number and name and <b>replaces</b> the crew list — new hires appear, terminated employees drop off. Past timecards keep their names, so nothing is lost.</p>
@@ -95,16 +115,23 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginName="";
+var account=null, loginName="", loginEmail="";
+var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net"];
 var PARSED=null; // [{num,name}]
 
 /* ===== AUTH ===== */
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginName=acct.name||acct.username||"";
+  loginEmail=(acct.username||"").toLowerCase();
   document.getElementById("gate").style.display="none";
+  if(ALLOW.indexOf(loginEmail)<0){
+    document.body.innerHTML='<div style="max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px 24px;font-family:system-ui,Arial"><h2 style="color:#7f1d1d;margin:0 0 8px">Not authorized</h2><p>This page is limited to office admins. You are signed in as <b>'+loginEmail+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
+    return;
+  }
   document.getElementById("app").style.display="block";
   document.getElementById("who").textContent=loginName;
+  loadRoster();
 }
 async function getToken(){
   try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
@@ -115,6 +142,94 @@ msalApp.handleRedirectPromise().then(function(resp){
   var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
   if(acct) afterLogin(acct);
 }).catch(function(e){ document.getElementById("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== ROSTER: view / add / edit / deactivate / delete ===== */
+var ROSTER=[];
+function rMsg(cls,txt){ var m=document.getElementById("rosterMsg"); m.className="msg "+cls; m.style.display="block"; m.textContent=txt; }
+function escA(s){ return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+async function loadRoster(){
+  try{
+    var token=await getToken();
+    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeNumber,EmployeeName,Active)&$top=999";
+    var out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message);
+      (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,num:it.fields.EmployeeNumber||"",name:it.fields.EmployeeName||"",active:(it.fields.Active||"Yes")}); });
+      url=j["@odata.nextLink"]||null;
+    }
+    out.sort(function(a,b){ return ((parseInt(a.num)||0)-(parseInt(b.num)||0)) || String(a.name).localeCompare(String(b.name)); });
+    ROSTER=out; renderRoster();
+  }catch(e){ document.getElementById("rosterTbl").innerHTML='<tr><td>Could not load crew list: '+esc(e.message||e)+'</td></tr>'; }
+}
+function renderRoster(){
+  var q=(document.getElementById("rosterFilter").value||"").toLowerCase().trim();
+  var list=ROSTER.filter(function(e){ return !q || (e.num+" "+e.name).toLowerCase().indexOf(q)>-1; });
+  var active=ROSTER.filter(function(e){return e.active!=="No";}).length;
+  document.getElementById("rosterStat").innerHTML='<div><b>'+active+'</b><span>Active</span></div><div><b>'+ROSTER.length+'</b><span>Total on file</span></div>';
+  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th style="text-align:right">Actions</th></tr>';
+  if(!list.length){ h+='<tr><td colspan="4" class="mut">No matches.</td></tr>'; }
+  list.forEach(function(e){
+    var badge = e.active==="No" ? '<span style="color:#b91c1c;font-weight:600">Inactive</span>' : '<span style="color:#15803d;font-weight:600">Active</span>';
+    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td>'+
+       '<td style="text-align:right;white-space:nowrap"><button class="mini" data-act="edit">Edit</button> '+
+       '<button class="mini" data-act="toggle">'+(e.active==="No"?"Activate":"Deactivate")+'</button> '+
+       '<button class="mini danger" data-act="del">Delete</button></td></tr>';
+  });
+  var tbl=document.getElementById("rosterTbl"); tbl.innerHTML=h;
+  tbl.querySelectorAll("button[data-act]").forEach(function(b){
+    b.onclick=function(){ var tr=b.closest("tr"), id=tr.getAttribute("data-id"), act=b.getAttribute("data-act");
+      if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="edit") editRow(tr,id);
+    };
+  });
+}
+document.getElementById("addEmpBtn").onclick=async function(){
+  var num=(document.getElementById("addNum").value||"").trim(), name=(document.getElementById("addName").value||"").trim();
+  if(!num||!name){ rMsg("err","Enter both a number and a name."); return; }
+  if(ROSTER.some(function(e){return String(e.num)===num;}) && !confirm("Employee #"+num+" already exists. Add another row anyway?")) return;
+  this.disabled=true;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:num,EmployeeNumber:num,EmployeeName:name,Active:"Yes"}})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
+    document.getElementById("addNum").value=""; document.getElementById("addName").value="";
+    rMsg("ok","Added "+name+"."); loadRoster();
+  }catch(e){ rMsg("err","Add failed: "+e.message); }
+  this.disabled=false;
+};
+async function delEmp(id){
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  if(!confirm("Delete "+e.name+" (#"+e.num+") from the crew list? Past timecards keep their name.")) return;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    if(!r.ok && r.status!==204) throw new Error("HTTP "+r.status);
+    rMsg("ok","Deleted "+e.name+"."); loadRoster();
+  }catch(err){ rMsg("err","Delete failed: "+err.message); }
+}
+async function toggleEmp(id){
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  var to=(e.active==="No")?"Yes":"No";
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Active:to})});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    rMsg("ok",e.name+" set "+(to==="No"?"inactive":"active")+"."); loadRoster();
+  }catch(err){ rMsg("err","Update failed: "+err.message); }
+}
+function editRow(tr,id){
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  tr.querySelector(".c-num").innerHTML='<input value="'+escA(e.num)+'">';
+  tr.querySelector(".c-name").innerHTML='<input value="'+escA(e.name)+'">';
+  var cell=tr.querySelector("td:last-child");
+  cell.innerHTML='<button class="mini" data-s="save">Save</button> <button class="mini" data-s="cancel">Cancel</button>';
+  cell.querySelector('[data-s="save"]').onclick=async function(){
+    var num=(tr.querySelector(".c-num input").value||"").trim(), name=(tr.querySelector(".c-name input").value||"").trim();
+    if(!num||!name){ rMsg("err","Number and name are both required."); return; }
+    try{ var token=await getToken();
+      var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({EmployeeNumber:num,EmployeeName:name,Title:num})});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      rMsg("ok","Updated."); loadRoster();
+    }catch(err){ rMsg("err","Save failed: "+err.message); }
+  };
+  cell.querySelector('[data-s="cancel"]').onclick=function(){ renderRoster(); };
+}
+document.getElementById("rosterFilter").oninput=function(){ renderRoster(); };
 
 /* ===== CSV PARSER ===== */
 function parseCSV(text){
@@ -218,7 +333,7 @@ document.getElementById("loadBtn").onclick=async function(){
       if(bad.length) throw new Error("Write failed ("+bad[0].status+"): "+JSON.stringify(bad[0].body).slice(0,160));
       done+=chunk.length; fill.style.width=Math.round(done/PARSED.length*100)+"%";
     }
-    msg.className="msg ok"; msg.textContent="✓ Crew list refreshed — "+PARSED.length+" active employees are now available on timecards.";
+    msg.className="msg ok"; msg.textContent="✓ Crew list refreshed — "+PARSED.length+" active employees are now available on timecards."; loadRoster();
   }catch(e){ msg.className="msg err"; msg.textContent="Refresh failed: "+e.message; }
   finally{ btn.disabled=false; }
 };
