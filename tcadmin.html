@@ -5,14 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vision Mechanical — Timecard Admin</title>
 <style>
-:root{
---vm:#c0392b; --vm2:#7f1d1d; --gold:#c8932a;
---bg:#f4f5f7; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280;
---good:#15803d; --shadow:0 1px 3px rgba(0,0,0,.06);
-}
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);--wknd:#f1f3f5;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-.wrap{max-width:1200px;margin:0 auto;padding:0 12px 60px}
+.wrap{max-width:1300px;margin:0 auto;padding:0 12px 70px}
 header.app{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 header.app img.logo{height:46px;background:#fff;border-radius:10px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin-bottom:8px}
 header.app h1{margin:0;font-size:19px;font-weight:700}
@@ -23,36 +19,44 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .gate button{margin-top:16px;font-size:16px;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
 .denied{max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
 .denied h2{color:var(--vm2);margin:0 0 8px}
-.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:16px 0 8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
-.fld{display:flex;flex-direction:column;gap:4px}
-.fld label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
-.fld input{font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
-.fld input:focus{border-color:var(--vm);outline:none}
-.fld.search{flex:1;min-width:200px}
-.btn{font-size:14px;font-weight:600;border:none;border-radius:9px;padding:10px 16px;cursor:pointer}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 6px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.btn{font-size:14px;font-weight:600;border:none;border-radius:9px;padding:9px 14px;cursor:pointer}
 .btn.red{background:var(--vm);color:#fff}
 .btn.gold{background:var(--gold);color:var(--vm2)}
 .btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--text)}
-.summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 2px 6px;font-size:14px;color:var(--muted)}
-.summary b{color:var(--text)}
-.tablecard{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
-.ebtn{font-size:12px;font-weight:600;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--vm2);cursor:pointer;margin-left:3px}
+.wklabel{font-size:15px;font-weight:700;color:var(--vm2);min-width:190px;text-align:center}
+.filter{flex:1;min-width:160px;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
+.filter:focus{border-color:var(--vm);outline:none}
+#jump{font-size:14px;border:1.5px solid var(--line);border-radius:9px;padding:8px}
+.note{font-size:12px;color:var(--muted);margin:6px 2px 0}
+.gridwrap{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto;margin-top:12px}
+table.grid{border-collapse:collapse;width:100%;min-width:900px;font-size:13.5px}
+table.grid th,table.grid td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+table.grid th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0}
+table.grid th .dow{display:block;font-weight:400;color:#9aa6b3}
+th.name,td.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:600;min-width:170px;cursor:pointer}
+th.name{background:#faf7f7}
+td.name:hover{color:var(--vm)}
+td.name .caret{color:#9aa6b3;font-weight:400;margin-right:4px;font-size:11px}
+td.tot,th.tot{font-weight:700;color:var(--vm2);background:#fbfbe9}
+td.wknd,th.wknd{background:var(--wknd)}
+td.hrs{font-variant-numeric:tabular-nums}
+td.z{color:#c9ced6}
+tr.emprow:hover td{background:#fcfcfd}
+tr.emprow.open td.name{color:var(--vm)}
+.detail{background:#faf9f9;padding:10px 14px}
+.detail h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
+table.ent{border-collapse:collapse;width:100%;font-size:13px}
+table.ent th,table.ent td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.ent th{color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
+.ebtn{font-size:12px;font-weight:600;padding:4px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--vm2);cursor:pointer;margin-left:3px}
 .ebtn.danger{color:#b91c1c;border-color:#f3c0c0}
-.efgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:12px;background:#faf9f9;border:1px solid var(--line);border-radius:8px}
-.efgrid label{display:flex;flex-direction:column;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);gap:4px}
-.efgrid input,.efgrid select{font-size:14px;font-family:inherit;padding:8px;border:1.5px solid var(--line);border-radius:7px;font-weight:400;text-transform:none;color:var(--text)}
-.efbtns{padding:10px 2px 2px}
-.tablecard input,.tablecard select{padding:4px 6px;border:1.5px solid var(--vm);border-radius:6px;font-size:13px;font-family:inherit}
-table{border-collapse:collapse;width:100%;min-width:900px}
-th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
-th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0}
-th .arr{opacity:.5;font-size:10px}
-td.num,th.num{text-align:right}
-tr:hover td{background:#fcfcfd}
-tfoot td{font-weight:700;border-top:2px solid var(--line);background:#fafafa}
+.efgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:8px;margin:4px 0}
+.efgrid label{display:flex;flex-direction:column;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);gap:4px}
+.efgrid input,.efgrid select{font-size:14px;font-family:inherit;padding:7px;border:1.5px solid var(--line);border-radius:7px;font-weight:400;text-transform:none;color:var(--text)}
 .loading,.empty{padding:28px;text-align:center;color:var(--muted)}
 .msg{margin-top:10px;font-size:13px;min-height:16px}
-.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -68,217 +72,175 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);background:#fafafa}
 <header class="app">
 <img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
 <h1>Timecard Admin</h1>
-<div class="sub">All time entries &bull; export for Viewpoint</div>
+<div class="sub">Weekly grid &bull; click a name to edit &bull; export for Viewpoint</div>
 <div id="who"></div>
 </header>
 
 <div class="wrap" id="app" style="display:none">
-<div class="controls">
-<div class="fld"><label>From</label><input type="date" id="from"></div>
-<div class="fld"><label>To</label><input type="date" id="to"></div>
-<button class="btn red" id="loadBtn">Load</button>
-<button class="btn ghost" id="thisWk">This pay week</button>
-<div class="fld search"><label>Filter (employee, job, foreman&hellip;)</label><input type="text" id="filter" placeholder="Type to search the loaded rows"></div>
-<button class="btn gold" id="csvBtn">&#11015; Download CSV (Viewpoint)</button>
-</div>
-<div class="summary"><div id="rangeNote"></div><div id="totals"></div></div>
-<div class="tablecard"><div class="loading" id="loading">Choose a range and tap Load.</div></div>
-<div class="msg" id="msg"></div>
+  <div class="controls">
+    <button class="btn ghost" id="prev">&larr; Prev</button>
+    <div class="wklabel" id="wkLabel"></div>
+    <button class="btn ghost" id="next">Next &rarr;</button>
+    <button class="btn red" id="thisWk">This pay week</button>
+    <input type="date" id="jump" title="Jump to the pay week containing this date">
+    <input type="text" id="filter" class="filter" placeholder="Find an employee…">
+    <button class="btn gold" id="csvBtn">&#11015; Download CSV (Viewpoint)</button>
+  </div>
+  <div class="note">Pay week runs Wednesday–Tuesday. Click any employee's name to open their entries and edit (date, employee, job, phase/line, hours, pay type) or delete. Jobs &amp; phase codes come from your lists — if one's missing, add it in Job Setup / Add Phase Codes first.</div>
+  <div class="gridwrap" id="grid"><div class="loading">Loading…</div></div>
+  <div class="msg" id="msg"></div>
 </div>
 
-<div class="footer">
-Vision Mechanical &bull; Timecard Admin &bull; Read-only. The CSV matches the daily 7 AM payroll file. Pay week runs Wednesday–Tuesday.
-</div>
+<div class="footer">Vision Mechanical &bull; Timecard Admin &bull; Admin only. Edits write to the live SharePoint list. Fixing a week after the CSV was pulled means re-pulling or adjusting in Viewpoint.</div>
 
 <script>
-/* ===== Access: only these logins can open this page ===== */
+/* ===== Access ===== */
 var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
 
-/* ===== Config (same app + site as the timecard form) ===== */
+/* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var PAYTYPES=["Regular","Sick","Vacation","Holiday"];
+var DOW=["Wed","Thu","Fri","Sat","Sun","Mon","Tue"];
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="";
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
-  account=acct; msalApp.setActiveAccount(acct);
-  loginEmail=(acct.username||"").toLowerCase();
+  account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
   E("gate").style.display="none";
-  if(ALLOW.indexOf(loginEmail)<0){
-    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This page is limited to payroll/accounting. You are signed in as <b>'+esc(loginEmail)+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
-    return;
-  }
+  if(ALLOW.indexOf(loginEmail)<0){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Limited to payroll/accounting. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginEmail;
-  var wk=payWeek(new Date());
-  E("from").value=iso(wk.start); E("to").value=iso(wk.end);
-  loadRef();
-  load();
+  weekStart=payWeek(new Date()).start;
+  loadRef(); loadWeek();
 }
-async function getToken(){
-  try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
-  catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
-}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
-msalApp.handleRedirectPromise().then(function(resp){
-  var acct=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null);
-  if(acct) afterLogin(acct);
-}).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
 
 /* ===== Dates ===== */
 function pad(n){return (n<10?"0":"")+n;}
 function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
-function payWeek(d){ /* Wed(3) through Tue */
-  var x=new Date(d); var diff=(x.getDay()-3+7)%7; var start=addDays(x,-diff); start.setHours(0,0,0,0);
-  return {start:start,end:addDays(start,6)};
-}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function payWeek(d){var x=new Date(d);var diff=(x.getDay()-3+7)%7;var start=addDays(x,-diff);start.setHours(0,0,0,0);return {start:start,end:addDays(start,6)};}
+function dkey(v){return String(v||"").slice(0,10);}
+function shortD(v){var p=String(v).slice(0,10).split("-");return p.length===3?(+p[1]+"/"+ +p[2]):v;}
+function fmtHM(h){ if(!h) return ""; var hh=Math.floor(h), mm=Math.round((h-hh)*60); if(mm===60){hh++;mm=0;} return hh+"h"+(mm?(" "+mm+"m"):""); }
+function lastName(n){ var p=String(n||"").trim().split(/\s+/); return (p[p.length-1]||"").toLowerCase(); }
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
-/* ===== Data ===== */
-var rows=[];               /* loaded entries for the chosen range */
-var VIEW=[], PAYTYPES=["Regular","Sick","Vacation","Holiday"];
-var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
+/* ===== Reference data (dropdowns) ===== */
 var JOBS=[], EMPLIST=[], TASKS_BY_JOB={};
-var sortKey="WorkDate", sortDir=1;
-var FIELDS="WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail";
-
-async function load(){
-  var f=E("from").value, t=E("to").value;
-  if(!f||!t){ return; }
-  E("rangeNote").textContent="Loading "+f+" → "+t+"…";
-  document.querySelector(".tablecard").innerHTML='<div class="loading">Loading…</div>';
-  try{
-    var token=await getToken();
-    var base=GRAPH+TC+"/items?$expand=fields($select="+FIELDS+")&$top=999";
-    var out=[];
-    async function page(url,headers){
-      while(url){
-        var j=await fetch(url,{headers:headers}).then(function(r){return r.json();});
-        if(j.error) throw new Error(j.error.message);
-        (j.value||[]).forEach(function(it){ if(it.fields){ it.fields.__id=it.id; out.push(it.fields); } });
-        url=j["@odata.nextLink"]||null;
-      }
-    }
-    var filt="&$filter=fields/WorkDate ge '"+f+"T00:00:00Z' and fields/WorkDate le '"+t+"T23:59:59Z'";
-    try{
-      await page(base+filt,{Authorization:"Bearer "+token, Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"});
-    }catch(e){
-      out.length=0;
-      await page(base,{Authorization:"Bearer "+token});
-      out=out.filter(function(r){var k=(r.WorkDate||"").slice(0,10);return k>=f&&k<=t;});
-    }
-    rows=out;
-    E("rangeNote").innerHTML='Showing <b>'+f+'</b> → <b>'+t+'</b>';
-    render();
-  }catch(e){
-    document.querySelector(".tablecard").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>';
-  }
-}
-
-function filtered(){
-  var q=(E("filter").value||"").toLowerCase().trim();
-  var v=rows.slice();
-  if(q){
-    v=v.filter(function(r){
-      return [r.EmployeeName,r.EmployeeNumber,r.JobNo,r.JobName,r.Foreman,r.PayType,r.PhaseCode]
-        .some(function(x){return String(x==null?"":x).toLowerCase().indexOf(q)>-1;});
-    });
-  }
-  v.sort(function(a,b){
-    var x=a[sortKey], y=b[sortKey];
-    if(sortKey==="Hours"||sortKey==="LineNum"){ x=parseFloat(x)||0; y=parseFloat(y)||0; return (x-y)*sortDir; }
-    x=String(x==null?"":x).toLowerCase(); y=String(y==null?"":y).toLowerCase();
-    return (x<y?-1:x>y?1:0)*sortDir;
-  });
-  return v;
-}
-
-var COLS=[
-  {k:"WorkDateText",h:"Date",s:"WorkDate"},
-  {k:"EmployeeNumber",h:"Emp #"},
-  {k:"EmployeeName",h:"Employee"},
-  {k:"JobNo",h:"Job No."},
-  {k:"JobName",h:"Job Name"},
-  {k:"PhaseCode",h:"Phase"},
-  {k:"LineNum",h:"Line#",num:true},
-  {k:"PayType",h:"Type"},
-  {k:"Hours",h:"Hours",num:true},
-  {k:"Foreman",h:"Foreman"}
-];
-
-function render(){
-  var v=filtered(); VIEW=v;
-  if(!rows.length){ document.querySelector(".tablecard").innerHTML='<div class="empty">No entries in this range.</div>'; E("totals").textContent=""; return; }
-  var h='<table><thead><tr>';
-  COLS.forEach(function(c){
-    var key=c.s||c.k; var arr=(sortKey===key)?(sortDir>0?' <span class="arr">▲</span>':' <span class="arr">▼</span>'):'';
-    h+='<th class="'+(c.num?'num':'')+'" data-k="'+key+'">'+c.h+arr+'</th>';
-  });
-  h+='<th></th></tr></thead><tbody>';
-  var tot=0;
-  v.forEach(function(r,i){
-    h+='<tr id="ta-r'+i+'">';
-    COLS.forEach(function(c){ var cls=(c.num?'num ':'')+(c.k==="Hours"?'e-hr':(c.k==="PayType"?'e-pt':'')); h+='<td class="'+cls.trim()+'">'+esc(r[c.k]==null?"":r[c.k])+'</td>'; });
-    h+='<td style="white-space:nowrap;text-align:right"><button class="ebtn" data-a="edit" data-i="'+i+'">Edit</button><button class="ebtn danger" data-a="del" data-i="'+i+'">Delete</button></td></tr>';
-    tot+=parseFloat(r.Hours)||0;
-  });
-  h+='</tbody><tfoot><tr><td colspan="8">Total (shown)</td><td class="num">'+(Math.round(tot*100)/100)+'</td><td></td><td></td></tr></tfoot></table>';
-  document.querySelector(".tablecard").innerHTML=h;
-  E("totals").innerHTML='<b>'+v.length+'</b> rows shown &bull; <b>'+(Math.round(tot*100)/100)+'</b> hours';
-  document.querySelectorAll("th[data-k]").forEach(function(th){
-    th.onclick=function(){ var k=th.getAttribute("data-k"); if(sortKey===k) sortDir=-sortDir; else {sortKey=k;sortDir=1;} render(); };
-  });
-  document.querySelectorAll("button[data-a]").forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute("data-i"), a=b.getAttribute("data-a"); if(a==="del") delRow(i); else editRow(i); }; });
-}
-
-/* ===== Edit / delete a timecard entry (admins, any week) ===== */
-/* reference data for the dropdowns */
+async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=2000", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields){it.fields.__id=it.id;out.push(it.fields);}}); url=j["@odata.nextLink"]||null; } return out; }
 async function loadRef(){
   try{
-    var token=await getToken();
-    async function pull(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
     var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,Active");
     var seen={}; JOBS=[]; TASKS_BY_JOB={};
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn) return; if(!seen[jn]){ seen[jn]=1; JOBS.push({no:jn,name:(t.JobName||"").trim()}); } (TASKS_BY_JOB[jn]=TASKS_BY_JOB[jn]||[]).push({phase:(t.PhaseCode||""),line:(t.LineNum||""),pdesc:(t.PhaseDesc||"")}); });
     JOBS.sort(function(a,b){return a.no.localeCompare(b.no);});
     var emps=await pull(EMPL,"EmployeeNumber,EmployeeName,Active");
-    EMPLIST=emps.filter(function(e){return (e.Active||"Yes")!=="No";}).map(function(e){return {num:e.EmployeeNumber,name:e.EmployeeName};}).sort(function(a,b){return (parseInt(a.num)||0)-(parseInt(b.num)||0);});
-  }catch(e){ /* dropdowns may be empty if this fails */ }
+    EMPLIST=emps.filter(function(e){return (e.Active||"Yes")!=="No";}).map(function(e){return {num:e.EmployeeNumber,name:e.EmployeeName};});
+  }catch(e){ /* dropdowns/rows may be limited if this fails */ }
 }
-function fmtDateText(iso){ var p=String(iso).slice(0,10).split("-"); return parseInt(p[1])+"/"+parseInt(p[2])+"/"+p[0]; }
+
+/* ===== Load the pay week's entries ===== */
+var weekStart=payWeek(new Date()).start;
+var ENTRIES=[];
+async function loadWeek(){
+  E("grid").innerHTML='<div class="loading">Loading…</div>';
+  var ws=iso(weekStart), we=iso(addDays(weekStart,6));
+  E("wkLabel").innerHTML=shortD(ws)+" &ndash; "+shortD(we);
+  try{
+    var token=await getToken();
+    var base=GRAPH+TC+"/items?$expand=fields($select=WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail)&$top=2000";
+    var out=[];
+    async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields){it.fields.__id=it.id;out.push(it.fields);}}); url=j["@odata.nextLink"]||null; } }
+    try{ await page(base+"&$filter=fields/WorkDate ge '"+ws+"T00:00:00Z' and fields/WorkDate le '"+we+"T23:59:59Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+    catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){var d=dkey(r.WorkDate);return d>=ws&&d<=we;}); }
+    ENTRIES=out; renderGrid();
+  }catch(e){ E("grid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+
+/* ===== Grid ===== */
+var openEmp=null;
+function renderGrid(){
+  var days=[]; for(var d=0;d<7;d++) days.push(iso(addDays(weekStart,d)));
+  var byEmpDay={}, byEmp={}, nameByNum={};
+  ENTRIES.forEach(function(e){ var num=String(e.EmployeeNumber||""), day=dkey(e.WorkDate); byEmpDay[num+"|"+day]=(byEmpDay[num+"|"+day]||0)+(parseFloat(e.Hours)||0); (byEmp[num]=byEmp[num]||[]).push(e); if(e.EmployeeName) nameByNum[num]=e.EmployeeName; });
+  /* rows: all active employees + anyone with entries this week not on the active list */
+  var roster=EMPLIST.slice();
+  var known={}; roster.forEach(function(e){known[String(e.num)]=1;});
+  Object.keys(byEmp).forEach(function(num){ if(!known[num]) roster.push({num:num,name:nameByNum[num]||("#"+num)}); });
+  var q=(E("filter").value||"").toLowerCase().trim();
+  var list=roster.filter(function(e){ return !q || ((e.name||"")+" "+e.num).toLowerCase().indexOf(q)>-1; });
+  list.sort(function(a,b){ return lastName(a.name).localeCompare(lastName(b.name)) || String(a.name).localeCompare(String(b.name)); });
+
+  var h='<table class="grid"><thead><tr><th class="name">Employee</th><th class="tot">Total</th>';
+  for(var c=0;c<7;c++){ var wknd=(c===3||c===4); h+='<th class="'+(wknd?"wknd":"")+'">'+shortD(days[c])+'<span class="dow">'+DOW[c]+'</span></th>'; }
+  h+='</tr></thead><tbody>';
+  list.forEach(function(emp){
+    var num=String(emp.num), wk=0;
+    var cells="";
+    for(var c=0;c<7;c++){ var hv=byEmpDay[num+"|"+days[c]]||0; wk+=hv; var wknd=(c===3||c===4); cells+='<td class="hrs '+(wknd?"wknd ":"")+(hv?"":"z")+'">'+(hv?fmtHM(hv):"-")+'</td>'; }
+    var hasEntries=!!(byEmp[num]&&byEmp[num].length);
+    var isOpen=(openEmp===num);
+    h+='<tr class="emprow'+(isOpen?" open":"")+'" data-num="'+esc(num)+'"><td class="name">'+(hasEntries?'<span class="caret">'+(isOpen?"\u25be":"\u25b8")+'</span>':'<span class="caret" style="visibility:hidden">\u25b8</span>')+esc(emp.name||("#"+num))+'</td><td class="tot">'+(wk?fmtHM(wk):"--")+'</td>'+cells+'</tr>';
+    if(isOpen && hasEntries){ h+='<tr class="detrow"><td colspan="9" class="detail" id="det-'+esc(num)+'"></td></tr>'; }
+  });
+  h+='</tbody></table>';
+  E("grid").innerHTML=h;
+  E("grid").querySelectorAll("td.name").forEach(function(td){ var tr=td.closest("tr"); if(!tr.classList.contains("emprow")) return; td.onclick=function(){ var num=tr.getAttribute("data-num"); openEmp=(openEmp===num)?null:num; renderGrid(); }; });
+  if(openEmp && byEmp[openEmp]) renderDetail(openEmp, byEmp[openEmp]);
+}
+
+/* ===== Per-employee detail + edit ===== */
+function entryIndex(e){ return ENTRIES.indexOf(e); }
+function renderDetail(num, entries){
+  entries=entries.slice().sort(function(a,b){return dkey(a.WorkDate).localeCompare(dkey(b.WorkDate));});
+  var h='<h4>'+esc(entries[0].EmployeeName||("#"+num))+" — entries this week</h4><table class='ent'><thead><tr><th>Date</th><th>Job</th><th>Phase/Line</th><th>Type</th><th>Hrs</th><th></th></tr></thead><tbody>";
+  entries.forEach(function(e){ var i=entryIndex(e);
+    h+='<tr id="ent-'+i+'"><td>'+esc(shortD(e.WorkDate))+'</td><td>'+esc(e.JobNo||"")+'</td><td>'+esc((e.PhaseCode||"")+(e.LineNum?(" / "+e.LineNum):""))+'</td><td>'+esc(e.PayType||"")+'</td><td>'+esc(e.Hours==null?"":e.Hours)+'</td><td style="text-align:right;white-space:nowrap"><button class="ebtn" data-a="edit" data-i="'+i+'">Edit</button><button class="ebtn danger" data-a="del" data-i="'+i+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  E("det-"+num).innerHTML=h;
+  E("det-"+num).querySelectorAll("button[data-a]").forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute("data-i"), a=b.getAttribute("data-a"); if(a==="del") delEntry(i); else editEntry(i); }; });
+}
 function opt(v,label,sel){ return '<option value="'+esc(v)+'"'+(sel?" selected":"")+'>'+esc(label)+'</option>'; }
 function phaseLineOptions(jobNo,curPhase,curLine){
   var list=TASKS_BY_JOB[jobNo]||[];
-  if(!list.length) return '<option value="">(no phase/line codes for this job — add them in Add Phase Codes first)</option>';
+  if(!list.length) return '<option value="">(no phase/line codes — add them in Add Phase Codes)</option>';
   return list.map(function(t){ var v=t.phase+"|"+t.line; var lbl=t.phase+(t.line?(" / "+t.line):"")+(t.pdesc?(" — "+t.pdesc):""); return opt(v,lbl,(t.phase===curPhase&&String(t.line)===String(curLine))); }).join("");
 }
-function editRow(i){
-  if(E("ta-edit"+i)) return;
-  var tr=E("ta-r"+i), r=VIEW[i];
+function fmtDateText(iso){ var p=String(iso).slice(0,10).split("-"); return parseInt(p[1])+"/"+parseInt(p[2])+"/"+p[0]; }
+function editEntry(i){
+  if(E("ef-row"+i)) { return; }
+  var r=ENTRIES[i], row=E("ent-"+i);
   var dateVal=(r.WorkDate||"").slice(0,10);
   var empOpts=EMPLIST.map(function(e){return opt(e.num,e.name+" (#"+e.num+")",String(e.num)===String(r.EmployeeNumber));}).join("");
   var jobOpts=JOBS.map(function(j){return opt(j.no,j.no+" "+j.name,j.no===r.JobNo);}).join("");
   var ptOpts=PAYTYPES.map(function(p){return opt(p,p,p===r.PayType);}).join("");
-  var html='<div class="efgrid">'+
+  var html='<td colspan="6"><div class="efgrid">'+
     '<label>Date<input type="date" id="ef-date'+i+'" value="'+dateVal+'"></label>'+
     '<label>Employee<select id="ef-emp'+i+'">'+empOpts+'</select></label>'+
     '<label>Job<select id="ef-job'+i+'">'+jobOpts+'</select></label>'+
     '<label>Phase / Line<select id="ef-pl'+i+'">'+phaseLineOptions(r.JobNo,r.PhaseCode,r.LineNum)+'</select></label>'+
     '<label>Hours<input type="number" step="0.25" id="ef-hr'+i+'" value="'+esc(r.Hours==null?"":r.Hours)+'"></label>'+
     '<label>Pay Type<select id="ef-pt'+i+'">'+ptOpts+'</select></label>'+
-    '</div><div class="efbtns"><button class="ebtn" id="ef-save'+i+'">Save changes</button><button class="ebtn" id="ef-cancel'+i+'">Cancel</button></div>';
-  var panel=document.createElement("tr"); panel.id="ta-edit"+i;
-  var cell=document.createElement("td"); cell.colSpan=11; cell.innerHTML=html; panel.appendChild(cell);
-  tr.parentNode.insertBefore(panel, tr.nextSibling);
+    '</div><div style="padding:2px 0 6px"><button class="ebtn" id="ef-save'+i+'">Save changes</button><button class="ebtn" id="ef-cancel'+i+'">Cancel</button></div></td>';
+  var ef=document.createElement("tr"); ef.id="ef-row"+i; ef.innerHTML=html;
+  row.parentNode.insertBefore(ef, row.nextSibling);
   E("ef-job"+i).onchange=function(){ E("ef-pl"+i).innerHTML=phaseLineOptions(E("ef-job"+i).value,"",""); };
-  E("ef-save"+i).onclick=function(){ saveEdit(i); };
-  E("ef-cancel"+i).onclick=function(){ var p=E("ta-edit"+i); if(p) p.parentNode.removeChild(p); };
+  E("ef-save"+i).onclick=function(){ saveEntry(i); };
+  E("ef-cancel"+i).onclick=function(){ var x=E("ef-row"+i); if(x) x.parentNode.removeChild(x); };
 }
-async function saveEdit(i){
+async function saveEntry(i){
   var dateV=E("ef-date"+i).value;
   var empNum=E("ef-emp"+i).value, emp=EMPLIST.filter(function(e){return String(e.num)===String(empNum);})[0]||{};
   var jobNo=E("ef-job"+i).value, job=JOBS.filter(function(j){return j.no===jobNo;})[0]||{};
@@ -288,48 +250,42 @@ async function saveEdit(i){
   if(isNaN(hh)){ alert("Enter a number of hours."); return; }
   var fields={ WorkDate:dateV, WorkDateText:fmtDateText(dateV), EmployeeNumber:(emp.num||empNum), EmployeeName:(emp.name||""), JobNo:jobNo, JobName:(job.name||""), PhaseCode:phase, LineNum:line, Hours:hh, PayType:pay };
   try{ var token=await getToken();
-    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(fields)});
+    var resp=await fetch(GRAPH+TC+"/items/"+ENTRIES[i].__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(fields)});
     if(!resp.ok) throw new Error("HTTP "+resp.status+" "+(await resp.text()).slice(0,140));
-    load();
+    loadWeek();
   }catch(e){ alert("Save failed: "+(e.message||e)); }
 }
-async function delRow(i){
-  var r=VIEW[i];
-  if(!confirm("Delete this timecard entry?\n"+(r.WorkDateText||r.WorkDate||"")+" · "+(r.EmployeeName||"")+" · "+(r.JobNo||"")+" · "+(r.Hours||"")+" hrs")) return;
+async function delEntry(i){
+  var r=ENTRIES[i];
+  if(!confirm("Delete this entry?\n"+(r.WorkDateText||shortD(r.WorkDate))+" · "+(r.EmployeeName||"")+" · "+(r.JobNo||"")+" · "+(r.Hours||"")+" hrs")) return;
   try{ var token=await getToken();
-    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    var resp=await fetch(GRAPH+TC+"/items/"+ENTRIES[i].__id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
     if(!resp.ok&&resp.status!==204) throw new Error("HTTP "+resp.status);
-    load();
+    loadWeek();
   }catch(e){ alert("Delete failed: "+(e.message||e)); }
 }
 
-/* ===== CSV export — byte-for-byte the 7 AM payroll file (full loaded range) ===== */
-function csvValue(x){ return (x==null)?"":String(x); }
+/* ===== CSV (Viewpoint) — the shown pay week ===== */
+function cv(x){return (x==null)?"":String(x);}
 function buildCSV(){
-  var HEADER="Date,Hours,Job No.,,Job Name,,Phase Code,Line#,Employee Number,,,Employee Name";
-  var CRLF="\r\n";
-  var lines=rows.map(function(r){
-    return [csvValue(r.WorkDateText),csvValue(r.Hours),csvValue(r.JobNo),"",csvValue(r.JobName),"",csvValue(r.PhaseCode),csvValue(r.LineNum),csvValue(r.EmployeeNumber),"","",csvValue(r.EmployeeName)].join(",");
-  });
+  var HEADER="Date,Hours,Job No.,,Job Name,,Phase Code,Line#,Employee Number,,,Employee Name", CRLF="\r\n";
+  var lines=ENTRIES.map(function(r){ return [cv(r.WorkDateText),cv(r.Hours),cv(r.JobNo),"",cv(r.JobName),"",cv(r.PhaseCode),cv(r.LineNum),cv(r.EmployeeNumber),"","",cv(r.EmployeeName)].join(","); });
   return HEADER+CRLF+lines.join(CRLF)+CRLF;
 }
 E("csvBtn").onclick=function(){
-  if(!rows.length){ E("msg").textContent="Nothing to export — load a range first."; return; }
-  var csv=buildCSV();
-  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");
-  a.href=url; a.download="VisionMech_Timecard_"+E("from").value+"_to_"+E("to").value+".csv";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+rows.length+" entries for "+E("from").value+" → "+E("to").value+" (full range).";
+  if(!ENTRIES.length){ E("msg").textContent="Nothing to export for this week."; return; }
+  var blob=new Blob([buildCSV()],{type:"text/csv;charset=utf-8"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download="VisionMech_Timecard_"+iso(weekStart)+"_to_"+iso(addDays(weekStart,6))+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+ENTRIES.length+" entries for the week of "+shortD(iso(weekStart))+".";
 };
 
-/* ===== helpers + wiring ===== */
-function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-E("loadBtn").onclick=load;
-E("thisWk").onclick=function(){ var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end); load(); };
-E("filter").oninput=function(){ render(); };
+/* ===== Wiring ===== */
+E("prev").onclick=function(){ weekStart=addDays(weekStart,-7); openEmp=null; loadWeek(); };
+E("next").onclick=function(){ weekStart=addDays(weekStart,7); openEmp=null; loadWeek(); };
+E("thisWk").onclick=function(){ weekStart=payWeek(new Date()).start; openEmp=null; loadWeek(); };
+E("jump").onchange=function(){ if(E("jump").value){ weekStart=payWeek(parseISO(E("jump").value)).start; openEmp=null; loadWeek(); } };
+E("filter").oninput=function(){ renderGrid(); };
 </script>
 </body>
 </html>
