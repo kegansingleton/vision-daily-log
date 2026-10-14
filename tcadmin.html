@@ -27,7 +27,8 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .wklabel{font-size:15px;font-weight:700;color:var(--vm2);min-width:190px;text-align:center}
 .filter{flex:1;min-width:160px;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
 .filter:focus{border-color:var(--vm);outline:none}
-#jump{font-size:14px;border:1.5px solid var(--line);border-radius:9px;padding:8px}
+#rfrom,#rto{font-size:13px;border:1.5px solid var(--line);border-radius:8px;padding:7px}
+.rangebox{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 .note{font-size:12px;color:var(--muted);margin:6px 2px 0}
 .gridwrap{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto;margin-top:12px}
 table.grid{border-collapse:collapse;width:100%;min-width:900px;font-size:13.5px}
@@ -82,7 +83,7 @@ table.ent th{color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-s
     <div class="wklabel" id="wkLabel"></div>
     <button class="btn ghost" id="next">Next &rarr;</button>
     <button class="btn red" id="thisWk">This pay week</button>
-    <input type="date" id="jump" title="Jump to the pay week containing this date">
+    <span class="rangebox">From <input type="date" id="rfrom"> To <input type="date" id="rto"> <button class="btn ghost" id="apply">Apply range</button></span>
     <input type="text" id="filter" class="filter" placeholder="Find an employee…">
     <button class="btn gold" id="csvBtn">&#11015; Download CSV (Viewpoint)</button>
   </div>
@@ -152,11 +153,14 @@ async function loadRef(){
 
 /* ===== Load the pay week's entries ===== */
 var weekStart=payWeek(new Date()).start;
+var RS=payWeek(new Date()).start, RE=addDays(RS,6);
+var WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 var ENTRIES=[];
 async function loadWeek(){
   E("grid").innerHTML='<div class="loading">Loading…</div>';
-  var ws=iso(weekStart), we=iso(addDays(weekStart,6));
+  var ws=iso(RS), we=iso(RE);
   E("wkLabel").innerHTML=shortD(ws)+" &ndash; "+shortD(we);
+  E("rfrom").value=ws; E("rto").value=we;
   try{
     var token=await getToken();
     var base=GRAPH+TC+"/items?$expand=fields($select=WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail)&$top=2000";
@@ -164,40 +168,60 @@ async function loadWeek(){
     async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields){it.fields.__id=it.id;out.push(it.fields);}}); url=j["@odata.nextLink"]||null; } }
     try{ await page(base+"&$filter=fields/WorkDate ge '"+ws+"T00:00:00Z' and fields/WorkDate le '"+we+"T23:59:59Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
     catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){var d=dkey(r.WorkDate);return d>=ws&&d<=we;}); }
-    ENTRIES=out; renderGrid();
+    ENTRIES=out; renderView();
   }catch(e){ E("grid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
 
 /* ===== Grid ===== */
 var openEmp=null;
-function renderGrid(){
-  var days=[]; for(var d=0;d<7;d++) days.push(iso(addDays(weekStart,d)));
-  var byEmpDay={}, byEmp={}, nameByNum={};
-  ENTRIES.forEach(function(e){ var num=String(e.EmployeeNumber||""), day=dkey(e.WorkDate); byEmpDay[num+"|"+day]=(byEmpDay[num+"|"+day]||0)+(parseFloat(e.Hours)||0); (byEmp[num]=byEmp[num]||[]).push(e); if(e.EmployeeName) nameByNum[num]=e.EmployeeName; });
-  /* rows: all active employees + anyone with entries this week not on the active list */
-  var roster=EMPLIST.slice();
-  var known={}; roster.forEach(function(e){known[String(e.num)]=1;});
+function daysInRange(){ var out=[], d=new Date(RS); while(d<=RE){ out.push(iso(d)); d=addDays(d,1); } return out; }
+function spanDays(){ return Math.round((parseISO(iso(RE))-parseISO(iso(RS)))/86400000)+1; }
+function isWknd(isoD){ var g=parseISO(isoD).getDay(); return g===0||g===6; }
+function caret(has,open){ return has?('<span class="caret">'+(open?"\u25be":"\u25b8")+'</span>'):'<span class="caret" style="visibility:hidden">\u25b8</span>'; }
+function rosterList(byEmp,nameByNum){
+  var roster=EMPLIST.slice(), known={}; roster.forEach(function(e){known[String(e.num)]=1;});
   Object.keys(byEmp).forEach(function(num){ if(!known[num]) roster.push({num:num,name:nameByNum[num]||("#"+num)}); });
   var q=(E("filter").value||"").toLowerCase().trim();
-  var list=roster.filter(function(e){ return !q || ((e.name||"")+" "+e.num).toLowerCase().indexOf(q)>-1; });
-  list.sort(function(a,b){ return lastName(a.name).localeCompare(lastName(b.name)) || String(a.name).localeCompare(String(b.name)); });
+  roster=roster.filter(function(e){ return !q||((e.name||"")+" "+e.num).toLowerCase().indexOf(q)>-1; });
+  roster.sort(function(a,b){ return lastName(a.name).localeCompare(lastName(b.name))||String(a.name).localeCompare(String(b.name)); });
+  return roster;
+}
+function wireRows(){ E("grid").querySelectorAll("td.name").forEach(function(td){ var tr=td.closest("tr"); if(!tr.classList.contains("emprow")) return; td.onclick=function(){ var num=tr.getAttribute("data-num"); openEmp=(openEmp===num)?null:num; renderView(); }; }); }
 
+function renderView(){ if(spanDays()<=14) renderGrid(); else renderSummary(); }
+
+function renderGrid(){
+  var days=daysInRange();
+  var byEmpDay={}, byEmp={}, nameByNum={};
+  ENTRIES.forEach(function(e){ var num=String(e.EmployeeNumber||""), day=dkey(e.WorkDate); byEmpDay[num+"|"+day]=(byEmpDay[num+"|"+day]||0)+(parseFloat(e.Hours)||0); (byEmp[num]=byEmp[num]||[]).push(e); if(e.EmployeeName) nameByNum[num]=e.EmployeeName; });
+  var roster=rosterList(byEmp,nameByNum);
   var h='<table class="grid"><thead><tr><th class="name">Employee</th><th class="tot">Total</th>';
-  for(var c=0;c<7;c++){ var wknd=(c===3||c===4); h+='<th class="'+(wknd?"wknd":"")+'">'+shortD(days[c])+'<span class="dow">'+DOW[c]+'</span></th>'; }
+  days.forEach(function(dy){ var w=isWknd(dy); h+='<th class="'+(w?"wknd":"")+'">'+shortD(dy)+'<span class="dow">'+WD[parseISO(dy).getDay()]+'</span></th>'; });
   h+='</tr></thead><tbody>';
-  list.forEach(function(emp){
-    var num=String(emp.num), wk=0;
-    var cells="";
-    for(var c=0;c<7;c++){ var hv=byEmpDay[num+"|"+days[c]]||0; wk+=hv; var wknd=(c===3||c===4); cells+='<td class="hrs '+(wknd?"wknd ":"")+(hv?"":"z")+'">'+(hv?fmtHM(hv):"-")+'</td>'; }
-    var hasEntries=!!(byEmp[num]&&byEmp[num].length);
-    var isOpen=(openEmp===num);
-    h+='<tr class="emprow'+(isOpen?" open":"")+'" data-num="'+esc(num)+'"><td class="name">'+(hasEntries?'<span class="caret">'+(isOpen?"\u25be":"\u25b8")+'</span>':'<span class="caret" style="visibility:hidden">\u25b8</span>')+esc(emp.name||("#"+num))+'</td><td class="tot">'+(wk?fmtHM(wk):"--")+'</td>'+cells+'</tr>';
-    if(isOpen && hasEntries){ h+='<tr class="detrow"><td colspan="9" class="detail" id="det-'+esc(num)+'"></td></tr>'; }
+  roster.forEach(function(emp){
+    var num=String(emp.num), wk=0, cells="";
+    days.forEach(function(dy){ var hv=byEmpDay[num+"|"+dy]||0; wk+=hv; var w=isWknd(dy); cells+='<td class="hrs '+(w?"wknd ":"")+(hv?"":"z")+'">'+(hv?fmtHM(hv):"-")+'</td>'; });
+    var hasEntries=!!(byEmp[num]&&byEmp[num].length), isOpen=(openEmp===num);
+    h+='<tr class="emprow'+(isOpen?" open":"")+'" data-num="'+esc(num)+'"><td class="name">'+caret(hasEntries,isOpen)+esc(emp.name||("#"+num))+'</td><td class="tot">'+(wk?fmtHM(wk):"--")+'</td>'+cells+'</tr>';
+    if(isOpen&&hasEntries){ h+='<tr class="detrow"><td colspan="'+(2+days.length)+'" class="detail" id="det-'+esc(num)+'"></td></tr>'; }
   });
   h+='</tbody></table>';
-  E("grid").innerHTML=h;
-  E("grid").querySelectorAll("td.name").forEach(function(td){ var tr=td.closest("tr"); if(!tr.classList.contains("emprow")) return; td.onclick=function(){ var num=tr.getAttribute("data-num"); openEmp=(openEmp===num)?null:num; renderGrid(); }; });
-  if(openEmp && byEmp[openEmp]) renderDetail(openEmp, byEmp[openEmp]);
+  E("grid").innerHTML=h; wireRows();
+  if(openEmp&&byEmp[openEmp]) renderDetail(openEmp,byEmp[openEmp]);
+}
+
+function renderSummary(){
+  var byEmp={}, nameByNum={};
+  ENTRIES.forEach(function(e){ var num=String(e.EmployeeNumber||""); (byEmp[num]=byEmp[num]||[]).push(e); if(e.EmployeeName)nameByNum[num]=e.EmployeeName; });
+  var roster=rosterList(byEmp,nameByNum);
+  var h='<table class="grid"><thead><tr><th class="name">Employee</th><th class="tot">Total hrs ('+shortD(iso(RS))+'–'+shortD(iso(RE))+')</th><th>Entries</th></tr></thead><tbody>';
+  roster.forEach(function(emp){ var num=String(emp.num), ents=byEmp[num]||[], tot=0; ents.forEach(function(e){tot+=parseFloat(e.Hours)||0;}); var isOpen=(openEmp===num);
+    h+='<tr class="emprow'+(isOpen?" open":"")+'" data-num="'+esc(num)+'"><td class="name">'+caret(ents.length,isOpen)+esc(emp.name||("#"+num))+'</td><td class="tot">'+(tot?fmtHM(tot):"--")+'</td><td>'+(ents.length||"-")+'</td></tr>';
+    if(isOpen&&ents.length){ h+='<tr class="detrow"><td colspan="3" class="detail" id="det-'+esc(num)+'"></td></tr>'; }
+  });
+  h+='</tbody></table>';
+  E("grid").innerHTML=h; wireRows();
+  if(openEmp&&byEmp[openEmp]) renderDetail(openEmp,byEmp[openEmp]);
 }
 
 /* ===== Per-employee detail + edit ===== */
@@ -275,17 +299,18 @@ function buildCSV(){
 E("csvBtn").onclick=function(){
   if(!ENTRIES.length){ E("msg").textContent="Nothing to export for this week."; return; }
   var blob=new Blob([buildCSV()],{type:"text/csv;charset=utf-8"}), url=URL.createObjectURL(blob), a=document.createElement("a");
-  a.href=url; a.download="VisionMech_Timecard_"+iso(weekStart)+"_to_"+iso(addDays(weekStart,6))+".csv";
+  a.href=url; a.download="VisionMech_Timecard_"+iso(RS)+"_to_"+iso(RE)+".csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+ENTRIES.length+" entries for the week of "+shortD(iso(weekStart))+".";
+  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+ENTRIES.length+" entries for "+shortD(iso(RS))+" – "+shortD(iso(RE))+".";
 };
 
 /* ===== Wiring ===== */
-E("prev").onclick=function(){ weekStart=addDays(weekStart,-7); openEmp=null; loadWeek(); };
-E("next").onclick=function(){ weekStart=addDays(weekStart,7); openEmp=null; loadWeek(); };
-E("thisWk").onclick=function(){ weekStart=payWeek(new Date()).start; openEmp=null; loadWeek(); };
-E("jump").onchange=function(){ if(E("jump").value){ weekStart=payWeek(parseISO(E("jump").value)).start; openEmp=null; loadWeek(); } };
-E("filter").oninput=function(){ renderGrid(); };
+function setWeek(ws){ weekStart=ws; RS=ws; RE=addDays(ws,6); openEmp=null; E("rfrom").value=iso(RS); E("rto").value=iso(RE); loadWeek(); }
+E("prev").onclick=function(){ setWeek(addDays(weekStart,-7)); };
+E("next").onclick=function(){ setWeek(addDays(weekStart,7)); };
+E("thisWk").onclick=function(){ setWeek(payWeek(new Date()).start); };
+E("apply").onclick=function(){ var f=E("rfrom").value,t=E("rto").value; if(!f||!t){ alert("Pick both a From and To date."); return; } if(t<f){ alert("The To date must be on or after From."); return; } RS=parseISO(f); RE=parseISO(t); openEmp=null; loadWeek(); };
+E("filter").oninput=function(){ renderView(); };
 </script>
 </body>
 </html>
