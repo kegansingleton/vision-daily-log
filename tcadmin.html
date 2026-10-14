@@ -36,6 +36,9 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 2px 6px;font-size:14px;color:var(--muted)}
 .summary b{color:var(--text)}
 .tablecard{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
+.ebtn{font-size:12px;font-weight:600;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--vm2);cursor:pointer;margin-left:3px}
+.ebtn.danger{color:#b91c1c;border-color:#f3c0c0}
+.tablecard input,.tablecard select{padding:4px 6px;border:1.5px solid var(--vm);border-radius:6px;font-size:13px;font-family:inherit}
 table{border-collapse:collapse;width:100%;min-width:900px}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
 th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0}
@@ -132,6 +135,7 @@ function payWeek(d){ /* Wed(3) through Tue */
 
 /* ===== Data ===== */
 var rows=[];               /* loaded entries for the chosen range */
+var VIEW=[], PAYTYPES=["Regular","Sick","Vacation","Holiday"];
 var sortKey="WorkDate", sortDir=1;
 var FIELDS="WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail";
 
@@ -148,7 +152,7 @@ async function load(){
       while(url){
         var j=await fetch(url,{headers:headers}).then(function(r){return r.json();});
         if(j.error) throw new Error(j.error.message);
-        (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); });
+        (j.value||[]).forEach(function(it){ if(it.fields){ it.fields.__id=it.id; out.push(it.fields); } });
         url=j["@odata.nextLink"]||null;
       }
     }
@@ -200,27 +204,57 @@ var COLS=[
 ];
 
 function render(){
-  var v=filtered();
+  var v=filtered(); VIEW=v;
   if(!rows.length){ document.querySelector(".tablecard").innerHTML='<div class="empty">No entries in this range.</div>'; E("totals").textContent=""; return; }
   var h='<table><thead><tr>';
   COLS.forEach(function(c){
     var key=c.s||c.k; var arr=(sortKey===key)?(sortDir>0?' <span class="arr">▲</span>':' <span class="arr">▼</span>'):'';
     h+='<th class="'+(c.num?'num':'')+'" data-k="'+key+'">'+c.h+arr+'</th>';
   });
-  h+='</tr></thead><tbody>';
+  h+='<th></th></tr></thead><tbody>';
   var tot=0;
-  v.forEach(function(r){
-    h+='<tr>';
-    COLS.forEach(function(c){ h+='<td class="'+(c.num?'num':'')+'">'+esc(r[c.k]==null?"":r[c.k])+'</td>'; });
-    h+='</tr>';
+  v.forEach(function(r,i){
+    h+='<tr id="ta-r'+i+'">';
+    COLS.forEach(function(c){ var cls=(c.num?'num ':'')+(c.k==="Hours"?'e-hr':(c.k==="PayType"?'e-pt':'')); h+='<td class="'+cls.trim()+'">'+esc(r[c.k]==null?"":r[c.k])+'</td>'; });
+    h+='<td style="white-space:nowrap;text-align:right"><button class="ebtn" data-a="edit" data-i="'+i+'">Edit</button><button class="ebtn danger" data-a="del" data-i="'+i+'">Delete</button></td></tr>';
     tot+=parseFloat(r.Hours)||0;
   });
-  h+='</tbody><tfoot><tr><td colspan="8">Total (shown)</td><td class="num">'+(Math.round(tot*100)/100)+'</td><td></td></tr></tfoot></table>';
+  h+='</tbody><tfoot><tr><td colspan="8">Total (shown)</td><td class="num">'+(Math.round(tot*100)/100)+'</td><td></td><td></td></tr></tfoot></table>';
   document.querySelector(".tablecard").innerHTML=h;
   E("totals").innerHTML='<b>'+v.length+'</b> rows shown &bull; <b>'+(Math.round(tot*100)/100)+'</b> hours';
   document.querySelectorAll("th[data-k]").forEach(function(th){
     th.onclick=function(){ var k=th.getAttribute("data-k"); if(sortKey===k) sortDir=-sortDir; else {sortKey=k;sortDir=1;} render(); };
   });
+  document.querySelectorAll("button[data-a]").forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute("data-i"), a=b.getAttribute("data-a"); if(a==="del") delRow(i); else editRow(i); }; });
+}
+
+/* ===== Edit / delete a timecard entry (admins, any week) ===== */
+function editRow(i){
+  var tr=E("ta-r"+i), r=VIEW[i];
+  tr.querySelector(".e-hr").innerHTML='<input type="number" step="0.25" value="'+esc(r.Hours==null?"":r.Hours)+'" style="width:64px">';
+  tr.querySelector(".e-pt").innerHTML='<select>'+PAYTYPES.map(function(p){return '<option'+(p===r.PayType?" selected":"")+'>'+p+'</option>';}).join("")+'</select>';
+  var cell=tr.querySelector("td:last-child");
+  cell.innerHTML='<button class="ebtn" data-s="save">Save</button><button class="ebtn" data-s="cancel">Cancel</button>';
+  cell.querySelector('[data-s="save"]').onclick=function(){ saveRow(i,tr); };
+  cell.querySelector('[data-s="cancel"]').onclick=function(){ render(); };
+}
+async function saveRow(i,tr){
+  var hv=tr.querySelector(".e-hr input").value, pay=tr.querySelector(".e-pt select").value, hh=parseFloat(hv);
+  if(isNaN(hh)){ alert("Enter a number of hours."); return; }
+  try{ var token=await getToken();
+    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Hours:hh,PayType:pay})});
+    if(!resp.ok) throw new Error("HTTP "+resp.status+" "+(await resp.text()).slice(0,120));
+    load();
+  }catch(e){ alert("Save failed: "+(e.message||e)); }
+}
+async function delRow(i){
+  var r=VIEW[i];
+  if(!confirm("Delete this timecard entry?\n"+(r.WorkDateText||r.WorkDate||"")+" · "+(r.EmployeeName||"")+" · "+(r.JobNo||"")+" · "+(r.Hours||"")+" hrs")) return;
+  try{ var token=await getToken();
+    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    if(!resp.ok&&resp.status!==204) throw new Error("HTTP "+resp.status);
+    load();
+  }catch(e){ alert("Delete failed: "+(e.message||e)); }
 }
 
 /* ===== CSV export — byte-for-byte the 7 AM payroll file (full loaded range) ===== */
