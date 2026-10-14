@@ -40,6 +40,13 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
 .detail{background:#faf9f9;border:1px solid var(--line);border-radius:8px;margin:2px 0 8px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;overflow-x:auto}
 .detail img{max-width:100%}
 .legend{font-size:12px;color:var(--muted);margin-top:10px}
+.editwrap{margin-top:18px;border-top:2px solid var(--line);padding-top:12px}
+.edithdr{font-size:14px;font-weight:700;color:var(--vm2);margin-bottom:8px}
+.editnote{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.mut{color:var(--muted);font-weight:400}
+.mini{font-size:12px;font-weight:600;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--vm2);cursor:pointer;margin-left:2px}
+.mini.danger{color:#b91c1c;border-color:#f3c0c0}
+#editList input,#editList select{padding:5px 6px;border:1.5px solid var(--vm);border-radius:6px;font-size:13px;font-family:inherit}
 .empty{color:var(--muted);padding:22px;text-align:center}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
 </style>
@@ -72,6 +79,11 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="navbar"><button id="prev">&larr; Prev</button><div class="wk" id="wkLabel"></div><button id="next">Next &rarr;</button><button class="today" id="thisWk">This Week</button></div>
     <div class="tablewrap" id="tcGrid"><div class="empty">Loading…</div></div>
     <div class="legend">Hours you entered, by day. <b>Shaded ⚠</b> = a weekday with no hours for that person.</div>
+    <div class="editwrap">
+      <div class="edithdr">Edit this pay week's entries <span class="mut" id="payWkLabel"></span></div>
+      <div class="tablewrap" id="editList"><div class="empty">Loading…</div></div>
+      <div class="editnote">You can fix hours / pay type or delete your own entries for the <b>current pay week (Wed–Tue)</b>. Once payroll runs Wednesday, past weeks lock — ask the office for any changes after that. Wrong job or phase? Delete the entry and re-enter it on the Timecard form.</div>
+    </div>
   </div>
 
   <div class="panel" id="panel-logs" style="display:none">
@@ -103,7 +115,7 @@ function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username||"";
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=loginName;
-  loadTC(); loadLogs(); loadLook();
+  loadTC(); loadEditable(); loadLogs(); loadLook();
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
@@ -167,6 +179,65 @@ function renderTC(){
 E("prev").onclick=function(){ selMon=addDays(selMon,-7); renderTC(); };
 E("next").onclick=function(){ selMon=addDays(selMon,7); renderTC(); };
 E("thisWk").onclick=function(){ selMon=mondayOf(new Date()); renderTC(); };
+
+/* ===== Edit current pay week (Wed–Tue): hours / pay type + delete ===== */
+var PAYTYPES=["Regular","Sick","Vacation","Holiday"];
+var EDIT=[];
+function payWeek(d){var x=new Date(d);var diff=(x.getDay()-3+7)%7;var start=addDays(x,-diff);start.setHours(0,0,0,0);return {start:start,end:addDays(start,6)};}
+async function getMineId(listId,dateField,emailField,fromISO,select){
+  var token=await getToken(); var base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/"+dateField+" ge '"+fromISO+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){return dkey(r.f[dateField])>=fromISO;}); }
+  return out.filter(function(r){ return String(r.f[emailField]||"").toLowerCase()===loginEmail; });
+}
+async function loadEditable(){
+  var wk=payWeek(new Date()), ps=iso(wk.start), pe=iso(wk.end);
+  E("payWkLabel").textContent="("+shortD(ps)+" – "+shortD(pe)+")";
+  try{
+    var rows=await getMineId(TC,"WorkDate","ForemanEmail",ps,"WorkDate,JobNo,JobName,EmployeeName,EmployeeNumber,PhaseCode,LineNum,Hours,PayType,ForemanEmail");
+    rows=rows.filter(function(r){var d=dkey(r.f.WorkDate);return d>=ps&&d<=pe;});
+    rows.sort(function(a,b){return dkey(a.f.WorkDate).localeCompare(dkey(b.f.WorkDate))||String(a.f.EmployeeName).localeCompare(String(b.f.EmployeeName));});
+    EDIT=rows; renderEditList();
+  }catch(e){ E("editList").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function renderEditList(){
+  if(!EDIT.length){ E("editList").innerHTML='<div class="empty">No entries for this pay week yet.</div>'; return; }
+  var h='<table><thead><tr><th>Date</th><th>Employee</th><th>Job</th><th>Phase/Line</th><th>Type</th><th class="num">Hrs</th><th></th></tr></thead><tbody>';
+  EDIT.forEach(function(r,i){ var f=r.f;
+    h+='<tr id="er'+i+'"><td>'+esc(shortD(f.WorkDate))+'</td><td>'+esc(f.EmployeeName||"")+'</td><td>'+esc(f.JobNo||"")+'</td><td>'+esc((f.PhaseCode||"")+(f.LineNum?(" / "+f.LineNum):""))+'</td><td class="pt">'+esc(f.PayType||"")+'</td><td class="num hr">'+esc(f.Hours||"")+'</td><td style="white-space:nowrap;text-align:right"><button class="mini" data-a="edit" data-i="'+i+'">Edit</button><button class="mini danger" data-a="del" data-i="'+i+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  E("editList").innerHTML=h;
+  E("editList").querySelectorAll("button[data-a]").forEach(function(b){ b.onclick=function(){ var i=+b.getAttribute("data-i"), a=b.getAttribute("data-a"); if(a==="del") delEntry(i); else editEntry(i); }; });
+}
+function editEntry(i){
+  var tr=E("er"+i), f=EDIT[i].f;
+  tr.querySelector(".hr").innerHTML='<input type="number" step="0.25" value="'+esc(f.Hours||"")+'" style="width:64px">';
+  tr.querySelector(".pt").innerHTML='<select>'+PAYTYPES.map(function(p){return '<option'+(p===f.PayType?" selected":"")+'>'+p+'</option>';}).join("")+'</select>';
+  var cell=tr.querySelector("td:last-child");
+  cell.innerHTML='<button class="mini" data-s="save">Save</button><button class="mini" data-s="cancel">Cancel</button>';
+  cell.querySelector('[data-s="save"]').onclick=function(){ saveEntry(i,tr); };
+  cell.querySelector('[data-s="cancel"]').onclick=function(){ renderEditList(); };
+}
+async function saveEntry(i,tr){
+  var hv=tr.querySelector(".hr input").value, pay=tr.querySelector(".pt select").value, h=parseFloat(hv);
+  if(isNaN(h)){ alert("Enter a number of hours."); return; }
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+TC+"/items/"+EDIT[i].id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Hours:h,PayType:pay})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    loadEditable(); loadTC();
+  }catch(e){ alert("Save failed: "+(e.message||e)); }
+}
+async function delEntry(i){
+  var f=EDIT[i].f;
+  if(!confirm("Delete this entry?\n"+shortD(f.WorkDate)+" · "+(f.EmployeeName||"")+" · "+(f.JobNo||"")+" · "+(f.Hours||"")+" hrs")) return;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+TC+"/items/"+EDIT[i].id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    if(!r.ok&&r.status!==204) throw new Error("HTTP "+r.status);
+    loadEditable(); loadTC();
+  }catch(e){ alert("Delete failed: "+(e.message||e)); }
+}
 
 /* ===== Daily Logs (list + expand) ===== */
 async function loadLogs(){
