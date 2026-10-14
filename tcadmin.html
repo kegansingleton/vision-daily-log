@@ -38,6 +38,10 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .tablecard{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
 .ebtn{font-size:12px;font-weight:600;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--vm2);cursor:pointer;margin-left:3px}
 .ebtn.danger{color:#b91c1c;border-color:#f3c0c0}
+.efgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:12px;background:#faf9f9;border:1px solid var(--line);border-radius:8px}
+.efgrid label{display:flex;flex-direction:column;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);gap:4px}
+.efgrid input,.efgrid select{font-size:14px;font-family:inherit;padding:8px;border:1.5px solid var(--line);border-radius:7px;font-weight:400;text-transform:none;color:var(--text)}
+.efbtns{padding:10px 2px 2px}
 .tablecard input,.tablecard select{padding:4px 6px;border:1.5px solid var(--vm);border-radius:6px;font-size:13px;font-family:inherit}
 table{border-collapse:collapse;width:100%;min-width:900px}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
@@ -112,6 +116,7 @@ function afterLogin(acct){
   E("app").style.display="block"; E("who").textContent=loginEmail;
   var wk=payWeek(new Date());
   E("from").value=iso(wk.start); E("to").value=iso(wk.end);
+  loadRef();
   load();
 }
 async function getToken(){
@@ -136,6 +141,8 @@ function payWeek(d){ /* Wed(3) through Tue */
 /* ===== Data ===== */
 var rows=[];               /* loaded entries for the chosen range */
 var VIEW=[], PAYTYPES=["Regular","Sick","Vacation","Holiday"];
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var JOBS=[], EMPLIST=[], TASKS_BY_JOB={};
 var sortKey="WorkDate", sortDir=1;
 var FIELDS="WorkDate,WorkDateText,EmployeeNumber,EmployeeName,PayType,JobNo,JobName,PhaseCode,LineNum,Hours,Foreman,ForemanEmail";
 
@@ -229,21 +236,60 @@ function render(){
 }
 
 /* ===== Edit / delete a timecard entry (admins, any week) ===== */
-function editRow(i){
-  var tr=E("ta-r"+i), r=VIEW[i];
-  tr.querySelector(".e-hr").innerHTML='<input type="number" step="0.25" value="'+esc(r.Hours==null?"":r.Hours)+'" style="width:64px">';
-  tr.querySelector(".e-pt").innerHTML='<select>'+PAYTYPES.map(function(p){return '<option'+(p===r.PayType?" selected":"")+'>'+p+'</option>';}).join("")+'</select>';
-  var cell=tr.querySelector("td:last-child");
-  cell.innerHTML='<button class="ebtn" data-s="save">Save</button><button class="ebtn" data-s="cancel">Cancel</button>';
-  cell.querySelector('[data-s="save"]').onclick=function(){ saveRow(i,tr); };
-  cell.querySelector('[data-s="cancel"]').onclick=function(){ render(); };
+/* reference data for the dropdowns */
+async function loadRef(){
+  try{
+    var token=await getToken();
+    async function pull(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+    var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,Active");
+    var seen={}; JOBS=[]; TASKS_BY_JOB={};
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn) return; if(!seen[jn]){ seen[jn]=1; JOBS.push({no:jn,name:(t.JobName||"").trim()}); } (TASKS_BY_JOB[jn]=TASKS_BY_JOB[jn]||[]).push({phase:(t.PhaseCode||""),line:(t.LineNum||""),pdesc:(t.PhaseDesc||"")}); });
+    JOBS.sort(function(a,b){return a.no.localeCompare(b.no);});
+    var emps=await pull(EMPL,"EmployeeNumber,EmployeeName,Active");
+    EMPLIST=emps.filter(function(e){return (e.Active||"Yes")!=="No";}).map(function(e){return {num:e.EmployeeNumber,name:e.EmployeeName};}).sort(function(a,b){return (parseInt(a.num)||0)-(parseInt(b.num)||0);});
+  }catch(e){ /* dropdowns may be empty if this fails */ }
 }
-async function saveRow(i,tr){
-  var hv=tr.querySelector(".e-hr input").value, pay=tr.querySelector(".e-pt select").value, hh=parseFloat(hv);
+function fmtDateText(iso){ var p=String(iso).slice(0,10).split("-"); return parseInt(p[1])+"/"+parseInt(p[2])+"/"+p[0]; }
+function opt(v,label,sel){ return '<option value="'+esc(v)+'"'+(sel?" selected":"")+'>'+esc(label)+'</option>'; }
+function phaseLineOptions(jobNo,curPhase,curLine){
+  var list=TASKS_BY_JOB[jobNo]||[];
+  if(!list.length) return '<option value="">(no phase/line codes for this job — add them in Add Phase Codes first)</option>';
+  return list.map(function(t){ var v=t.phase+"|"+t.line; var lbl=t.phase+(t.line?(" / "+t.line):"")+(t.pdesc?(" — "+t.pdesc):""); return opt(v,lbl,(t.phase===curPhase&&String(t.line)===String(curLine))); }).join("");
+}
+function editRow(i){
+  if(E("ta-edit"+i)) return;
+  var tr=E("ta-r"+i), r=VIEW[i];
+  var dateVal=(r.WorkDate||"").slice(0,10);
+  var empOpts=EMPLIST.map(function(e){return opt(e.num,e.name+" (#"+e.num+")",String(e.num)===String(r.EmployeeNumber));}).join("");
+  var jobOpts=JOBS.map(function(j){return opt(j.no,j.no+" "+j.name,j.no===r.JobNo);}).join("");
+  var ptOpts=PAYTYPES.map(function(p){return opt(p,p,p===r.PayType);}).join("");
+  var html='<div class="efgrid">'+
+    '<label>Date<input type="date" id="ef-date'+i+'" value="'+dateVal+'"></label>'+
+    '<label>Employee<select id="ef-emp'+i+'">'+empOpts+'</select></label>'+
+    '<label>Job<select id="ef-job'+i+'">'+jobOpts+'</select></label>'+
+    '<label>Phase / Line<select id="ef-pl'+i+'">'+phaseLineOptions(r.JobNo,r.PhaseCode,r.LineNum)+'</select></label>'+
+    '<label>Hours<input type="number" step="0.25" id="ef-hr'+i+'" value="'+esc(r.Hours==null?"":r.Hours)+'"></label>'+
+    '<label>Pay Type<select id="ef-pt'+i+'">'+ptOpts+'</select></label>'+
+    '</div><div class="efbtns"><button class="ebtn" id="ef-save'+i+'">Save changes</button><button class="ebtn" id="ef-cancel'+i+'">Cancel</button></div>';
+  var panel=document.createElement("tr"); panel.id="ta-edit"+i;
+  var cell=document.createElement("td"); cell.colSpan=11; cell.innerHTML=html; panel.appendChild(cell);
+  tr.parentNode.insertBefore(panel, tr.nextSibling);
+  E("ef-job"+i).onchange=function(){ E("ef-pl"+i).innerHTML=phaseLineOptions(E("ef-job"+i).value,"",""); };
+  E("ef-save"+i).onclick=function(){ saveEdit(i); };
+  E("ef-cancel"+i).onclick=function(){ var p=E("ta-edit"+i); if(p) p.parentNode.removeChild(p); };
+}
+async function saveEdit(i){
+  var dateV=E("ef-date"+i).value;
+  var empNum=E("ef-emp"+i).value, emp=EMPLIST.filter(function(e){return String(e.num)===String(empNum);})[0]||{};
+  var jobNo=E("ef-job"+i).value, job=JOBS.filter(function(j){return j.no===jobNo;})[0]||{};
+  var pl=(E("ef-pl"+i).value||"").split("|"), phase=pl[0]||"", line=pl[1]||"";
+  var hh=parseFloat(E("ef-hr"+i).value), pay=E("ef-pt"+i).value;
+  if(!dateV){ alert("Pick a date."); return; }
   if(isNaN(hh)){ alert("Enter a number of hours."); return; }
+  var fields={ WorkDate:dateV, WorkDateText:fmtDateText(dateV), EmployeeNumber:(emp.num||empNum), EmployeeName:(emp.name||""), JobNo:jobNo, JobName:(job.name||""), PhaseCode:phase, LineNum:line, Hours:hh, PayType:pay };
   try{ var token=await getToken();
-    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Hours:hh,PayType:pay})});
-    if(!resp.ok) throw new Error("HTTP "+resp.status+" "+(await resp.text()).slice(0,120));
+    var resp=await fetch(GRAPH+TC+"/items/"+VIEW[i].__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(fields)});
+    if(!resp.ok) throw new Error("HTTP "+resp.status+" "+(await resp.text()).slice(0,140));
     load();
   }catch(e){ alert("Save failed: "+(e.message||e)); }
 }
