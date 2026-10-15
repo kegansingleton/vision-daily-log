@@ -70,16 +70,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
     <label class="f">Fab phase code</label>
     <select id="phase"><option value="">Pick a job first</option></select>
 
-    <div class="row">
-      <div>
-        <label class="f" id="outLbl">Pounds</label>
-        <input type="number" id="output" inputmode="decimal" step="any" placeholder="0">
-      </div>
-      <div>
-        <label class="f">Hours</label>
-        <input type="number" id="hours" inputmode="decimal" step="0.25" placeholder="0">
+    <div id="catWrap">
+      <label class="f">Category</label>
+      <div class="typ" id="catSeg" style="margin-top:5px">
+        <button data-c="Duct" class="on">Duct</button>
+        <button data-c="Fittings">Fittings</button>
       </div>
     </div>
+
+    <label class="f" id="outLbl">Pounds</label>
+    <input type="number" id="output" inputmode="decimal" step="any" placeholder="0">
 
     <label class="f" id="matLbl">Material / gauge</label>
     <select id="material"></select>
@@ -102,16 +102,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
       <input type="text" id="pipesize" placeholder='e.g. 2"'>
     </div>
 
-    <div class="row">
+    <label class="f">Run date</label>
+    <input type="date" id="rundate">
+
+    <div class="row" style="margin-top:14px">
       <div>
-        <label class="f">Run date</label>
-        <input type="date" id="rundate">
+        <label class="f">Hours (from timecards)</label>
+        <input type="text" id="hoursAuto" readonly style="background:#faf9f9;font-weight:700" value="—">
       </div>
       <div>
-        <label class="f">Rate (auto)</label>
+        <label class="f">Rate (live)</label>
         <input type="text" id="rate" readonly style="background:#faf9f9;font-weight:700" value="—">
       </div>
     </div>
+    <div id="hoursHint" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
 
     <label class="f">Notes (optional)</label>
     <textarea id="notes" rows="2" placeholder="Anything worth noting…"></textarea>
@@ -140,6 +144,7 @@ var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
 var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* ===== Dropdown options ===== */
@@ -148,7 +153,7 @@ var MAT={
   "Pipe":["Copper — sweat","Sch 40 steel — weld","Sch 40 steel — thread","Sch 40 steel — Victaulic","Sch 80 steel — weld","Sch 80 steel — thread","Sch 80 steel — Victaulic","PVC Sch 40 — glue","Cast iron — no-hub (bands)","PEX-A — expansion","PEX — crimp"],
   "Fixture":["Lavatory","Water closet","Drinking fountain","Shower valve","Urinal","Mop / service basin"]
 };
-var PREFIX={"Sheet Metal":["12","13"],"Pipe":["16","17","18"],"Fixture":["16","17","18"]};
+var PREFIX={"Sheet Metal":["12"],"Pipe":["18"],"Fixture":["18"]};
 var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)"};
 var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
 
@@ -176,6 +181,8 @@ function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
 
 /* ===== Type toggle ===== */
 E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setType(b.getAttribute("data-t")); }; });
+var CAT="Duct";
+E("catSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ CAT=b.getAttribute("data-c"); E("catSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); }; });
 function setType(t){
   fabType=t;
   E("typSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-t")===t); });
@@ -184,7 +191,8 @@ function setType(t){
   E("material").innerHTML=MAT[t].map(function(m){return '<option>'+esc(m)+'</option>';}).join("");
   E("smExtra").className = t==="Sheet Metal" ? "" : "hide";
   E("pipeExtra").className = t==="Pipe" ? "" : "hide";
-  fillPhases(); calcRate();
+  E("catWrap").className = t==="Sheet Metal" ? "" : "hide";
+  fillPhases();
 }
 
 /* ===== Jobs + phase codes ===== */
@@ -218,42 +226,66 @@ function fillPhases(){
   if(!jn){ E("phase").innerHTML='<option value="">Pick a job first</option>'; return; }
   var pref=PREFIX[fabType]||[];
   var filtered=list.filter(function(x){ return pref.some(function(p){return x.phase.indexOf(p)===0;}); });
-  var use=filtered.length?filtered:list;
-  if(!use.length){ E("phase").innerHTML='<option value="">No phase codes on this job</option>'; return; }
-  E("phase").innerHTML=use.map(function(x){return '<option value="'+esc(x.phase)+'">'+esc(x.phase+(x.desc?(" — "+x.desc):""))+'</option>';}).join("");
+  if(!filtered.length){ E("phase").innerHTML='<option value="">No shop-fab phase codes on this job</option>'; lookupHours(); return; }
+  E("phase").innerHTML=filtered.map(function(x){return '<option value="'+esc(x.phase)+'">'+esc(x.phase+(x.desc?(" — "+x.desc):""))+'</option>';}).join("");
+  lookupHours();
 }
 
-/* ===== Live rate ===== */
-["output","hours"].forEach(function(id){ E(id).oninput=calcRate; });
-function calcRate(){ var o=parseFloat(E("output").value), h=parseFloat(E("hours").value); if(o>0&&h>0){ E("rate").value=(Math.round(o/h*10)/10)+" "+RATEUNIT[fabType]; } else { E("rate").value="—"; } }
+/* ===== Live hours from timecards (Job + PhaseCode + date) ===== */
+var curHours=null, hoursCache={}, lookupSeq=0;
+E("output").oninput=renderRate;
+E("phase").addEventListener("change", lookupHours);
+E("rundate").addEventListener("change", lookupHours);
+function renderRate(){ var o=parseFloat(E("output").value); E("rate").value=(o>0 && curHours>0)?((Math.round(o/curHours*10)/10)+" "+RATEUNIT[fabType]):"—"; }
+async function lookupHours(){
+  curHours=null; renderRate();
+  var jn=E("job").value, phase=E("phase").value, dt=E("rundate").value;
+  if(!jn||!phase||!dt){ E("hoursAuto").value="—"; E("hoursHint").textContent=""; return; }
+  var key=jn+"|"+phase+"|"+dt;
+  if(key in hoursCache){ curHours=hoursCache[key]; showHours(jn,phase,dt); return; }
+  E("hoursAuto").value="…"; E("hoursHint").textContent="Reading timecards…"; var seq=++lookupSeq;
+  try{
+    var rows;
+    try{ rows=await pull(TC,"JobNo,PhaseCode,WorkDate,Hours","fields/JobNo eq '"+jn.replace(/'/g,"''")+"'"); }
+    catch(e1){ rows=await pull(TC,"JobNo,PhaseCode,WorkDate,Hours"); }
+    if(seq!==lookupSeq) return;
+    var tot=0; rows.forEach(function(f){ if(f.JobNo===jn && f.PhaseCode===phase && String(f.WorkDate||"").slice(0,10)===dt) tot+=parseFloat(f.Hours)||0; });
+    curHours=tot; hoursCache[key]=tot; showHours(jn,phase,dt);
+  }catch(e){ if(seq===lookupSeq){ E("hoursAuto").value="—"; E("hoursHint").textContent="Couldn't read timecards: "+(e.message||e); } }
+}
+function showHours(jn,phase,dt){
+  E("hoursAuto").value=(curHours>0?curHours+" h":"0 h");
+  E("hoursHint").textContent = curHours>0 ? ("All crew hours on "+jn+" / "+phase+" for "+dt+".") : "No shop time logged to this job/phase for this day yet — rate fills in once the hours post.";
+  renderRate();
+}
 
 /* ===== Submit ===== */
 E("logBtn").onclick=async function(){
   var jn=E("job").value, jname=(E("job").selectedOptions[0]&&E("job").selectedOptions[0].getAttribute("data-name"))||"";
-  var phase=E("phase").value, output=parseFloat(E("output").value), hours=parseFloat(E("hours").value), material=E("material").value;
+  var phase=E("phase").value, output=parseFloat(E("output").value), material=E("material").value;
   var rundate=E("rundate").value, notes=E("notes").value.trim();
   if(!jn){ return fail("Pick a job."); }
   if(!phase){ return fail("Pick a phase code."); }
   if(!(output>0)){ return fail("Enter the "+OUTLABEL[fabType].toLowerCase()+"."); }
-  if(!(hours>0)){ return fail("Enter hours."); }
   if(!rundate){ return fail("Pick a run date."); }
-  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, Hours:hours, Material:material, LoggedBy:loginName, Notes:notes };
-  if(fabType==="Sheet Metal"){ fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
+  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, Material:material, LoggedBy:loginName, Notes:notes };
+  if(fabType==="Sheet Metal"){ fields.Category=CAT; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
   if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); }
   E("logBtn").disabled=true; E("msg").className="msg"; E("msg").textContent="Saving…";
   try{ var token=await getToken();
     var r=await fetch(GRAPH+SHOP+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
     E("form").className="card hide";
-    E("doneDetail").textContent=jn+" · "+fabType+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+" in "+hours+" h ("+(Math.round(output/hours*10)/10)+" "+RATEUNIT[fabType]+")";
+    var rt=(curHours>0)?(" ("+(Math.round(output/curHours*10)/10)+" "+RATEUNIT[fabType]+")"):" (rate fills in once hours post)";
+    E("doneDetail").textContent=jn+" · "+fabType+(fabType==="Sheet Metal"?(" · "+CAT):"")+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+rt;
     E("done").className="card done";
   }catch(e){ E("logBtn").disabled=false; fail("Save failed: "+(e.message||e)); }
 };
 function fail(m){ E("msg").className="msg err"; E("msg").textContent=m; }
 E("newRun").onclick=function(){
-  E("output").value=""; E("hours").value=""; E("stretch").value=""; E("pipesize").value=""; E("notes").value=""; E("rate").value="—"; E("liner").selectedIndex=0;
+  E("output").value=""; E("stretch").value=""; E("pipesize").value=""; E("notes").value=""; E("rate").value="—"; E("hoursAuto").value="—"; E("hoursHint").textContent=""; E("liner").selectedIndex=0; curHours=null;
   E("rundate").value=todayISO(); E("msg").textContent=""; E("logBtn").disabled=false;
-  E("done").className="card done hide"; E("form").className="card";
+  E("done").className="card done hide"; E("form").className="card"; lookupHours();
 };
 </script>
 </body>
