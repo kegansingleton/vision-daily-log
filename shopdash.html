@@ -66,6 +66,7 @@ th.l,td.l{text-align:left}
     <button data-t="Sheet Metal" class="on">Sheet Metal</button>
     <button data-t="Pipe">Pipe</button>
     <button data-t="Fixture">Fixture</button>
+    <button data-t="Hangers">Hangers</button>
   </div>
   <div class="kpis" id="kpis"></div>
 
@@ -87,7 +88,7 @@ th.l,td.l{text-align:left}
 
   <div class="card">
     <h2>Runs</h2>
-    <div class="cap">Every logged batch, newest first. Rate blank = crew hours not posted yet.</div>
+    <div class="cap">Every logged batch, newest first. Blank rate = crew hours not posted yet. <b>~</b> = that day's hours split by pounds across the runs on the same job/phase/day.</div>
     <div class="tablewrap"><table id="runsTbl"></table></div>
   </div>
 
@@ -104,9 +105,9 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
-var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
+var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea","Hangers":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr","Hangers":"ea/hr"};
 var BAND={"Sheet Metal":[600,3500]};
-var PHASE_NAME={"1210":"Pre-assembly","1220":"Fittings","1230":"Duct","1240":"Welded steel","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm"};
+var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, RUNS=[], fabType="Sheet Metal", scatterChart=null;
@@ -123,6 +124,10 @@ E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
 msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
 
 function dkey(v){return String(v||"").slice(0,10);}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function payWeekStart(d){var x=new Date(d);var diff=(x.getDay()-3+7)%7;var s=addDays(x,-diff);s.setHours(0,0,0,0);return s;}
 function shortD(v){var p=dkey(v).split("-");return p.length===3?(+p[1]+"/"+ +p[2]+"/"+String(p[0]).slice(2)):v;}
 function n1(n){return (Math.round((n||0)*10)/10).toLocaleString();}
 function n0(n){return Math.round(n||0).toLocaleString();}
@@ -134,7 +139,10 @@ async function load(){
     var runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy");
     var tc=await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours");
     var hrs={}; tc.forEach(function(f){ var k=(f.JobNo||"")+"|"+(f.PhaseCode||"")+"|"+dkey(f.WorkDate); hrs[k]=(hrs[k]||0)+(parseFloat(f.Hours)||0); });
-    RUNS=runs.map(function(r){ var h=hrs[(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate)]||0; var o=parseFloat(r.Output)||0; return {f:r, out:o, hrs:h, rate:(h>0?o/h:null)}; });
+    /* total output + run count per job|phase|day, so the day's hours split across runs by pound-share */
+    var outByKey={}, cntByKey={};
+    runs.forEach(function(r){ var k=(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate); outByKey[k]=(outByKey[k]||0)+(parseFloat(r.Output)||0); cntByKey[k]=(cntByKey[k]||0)+1; });
+    RUNS=runs.map(function(r){ var k=(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate); var H=hrs[k]||0, o=parseFloat(r.Output)||0, tot=outByKey[k]||0; var h=(tot>0)?(H*(o/tot)):0; return {f:r, out:o, hrs:h, rate:(h>0?o/h:null), mixed:(cntByKey[k]>1)}; });
     RUNS.sort(function(a,b){return dkey(b.f.RunDate).localeCompare(dkey(a.f.RunDate));});
     E("loading").style.display="none"; render();
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
@@ -152,7 +160,11 @@ function render(){
   /* KPIs */
   var k="";
   var all=blended(rows);
-  k+=kpi(all!=null?n1(all):"—","Avg "+u,rated.length+" rated runs","hi");
+  var ws=iso(payWeekStart(new Date())), we=iso(addDays(payWeekStart(new Date()),6));
+  var wkRows=rows.filter(function(r){ var d=dkey(r.f.RunDate); return d>=ws && d<=we; });
+  var wk=blended(wkRows);
+  k+=kpi(wk!=null?n1(wk):"—","This week "+u,(wk!=null&&all!=null?((wk>=all?"▲":"▼")+" vs "+n1(all)+" all-time"):"this pay week"),(wk!=null&&all!=null?(wk>=all?"hi":"lo"):""));
+  k+=kpi(all!=null?n1(all):"—","All-time "+u,rated.length+" rated runs");
   if(fabType==="Sheet Metal"){
     var unl=rows.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=rows.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
     k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u);
@@ -174,7 +186,7 @@ function render(){
   if(!rows.length){ E("runsTbl").innerHTML='<tbody><tr><td class="l empty">No '+fabType.toLowerCase()+' runs logged yet.</td></tr></tbody>'; return; }
   var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Liner / gauge":(fabType==="Pipe"?"Size":"Detail"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th></tr></thead><tbody>';
   rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? (f.PipeSize||"") : "");
-    rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td><td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?n1(r.rate):'<span style="color:#b91c1c">pending</span>')+'</b></td></tr>'; });
+    rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td><td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?(n1(r.rate)+(r.mixed?' <span style="color:var(--muted);font-weight:400" title="Hours split by pounds across multiple runs this day">~</span>':'')):'<span style="color:#b91c1c">pending</span>')+'</b></td></tr>'; });
   E("runsTbl").innerHTML=rh+'</tbody>';
 }
 function cr(v){ return v!=null?n1(v):"—"; }
