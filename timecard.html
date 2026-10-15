@@ -181,8 +181,20 @@ function buildMap(jt){
     if(r.LineNum && String(r.LineNum).trim()!==""){ map[j].phases[p].lines.push({line:r.LineNum, ldesc:r.LineDesc||""}); }
   });
   jobs.sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
+  /* Universal shop-fab codes — always selectable on any job. Their line options come from
+     the job's real rollup-target code (12xx -> 1211 lines, 18xx -> 1800 lines), so the line
+     entered is already valid for payroll. Not injected if the job already has that code. */
+  var SHOP_SM=[["1210","Shop · Pre-assembly"],["1220","Shop · Fittings"],["1230","Shop · Duct"],["1240","Shop · Welded steel"]];
+  var SHOP_PL=[["1810","Shop · Steel pipe"],["1820","Shop · Copper"],["1830","Shop · PVC"],["1840","Shop · Cast iron"],["1850","Shop · Aquatherm"],["1860","Shop · Fixture fab"]];
   Object.keys(map).forEach(function(j){
-    map[j].phaseList.sort();
+    var m=map[j];
+    var smLines=(m.phases["1211"]?m.phases["1211"].lines.slice():[]);
+    var plLines=(m.phases["1800"]?m.phases["1800"].lines.slice():[]);
+    SHOP_SM.forEach(function(sc){ if(!m.phases[sc[0]]){ m.phases[sc[0]]={desc:sc[1],lines:smLines.slice()}; m.phaseList.push(sc[0]); } });
+    SHOP_PL.forEach(function(sc){ if(!m.phases[sc[0]]){ m.phases[sc[0]]={desc:sc[1],lines:plLines.slice()}; m.phaseList.push(sc[0]); } });
+  });
+  Object.keys(map).forEach(function(j){
+    map[j].phaseList.sort(function(a,b){return (parseInt(a)||0)-(parseInt(b)||0)||String(a).localeCompare(String(b));});
     Object.keys(map[j].phases).forEach(function(p){ map[j].phases[p].lines.sort(function(a,b){return (parseInt(a.line)||0)-(parseInt(b.line)||0);}); });
   });
   return {map:map, jobs:jobs};
