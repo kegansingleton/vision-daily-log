@@ -234,7 +234,9 @@ function computeProjection(){
   if(!PROJDATA) return;
   var jobs=PROJDATA.jobs, byJob=PROJDATA.byJob;
   if(!jobs.length){ if(projChart){projChart.destroy();projChart=null;} E("projNote").textContent="No jobs have both a start and finish date yet — set them in Job Dates and this fills in."; return; }
-  var startWk=payWeekStart(new Date());
+  var starts=jobs.map(function(j){return parseISO(dkey(j.StartDate));});
+  var minStart=starts.reduce(function(m,d){return d<m?d:m;}, starts[0]);
+  var startWk=payWeekStart(minStart);
   var maxFin=jobs.reduce(function(m,j){ var f=parseISO(dkey(j.FinishDate)); return f>m?f:m; }, startWk);
   var weeks=[]; var d=new Date(startWk); while(d<=maxFin){ weeks.push(new Date(d)); d=addDays(d,7); }
   var sm=weeks.map(function(){return 0;}), pl=weeks.map(function(){return 0;}), svc=weeks.map(function(){return 0;});
@@ -253,7 +255,9 @@ function computeProjection(){
       if(pct>=0.75) svc[i]+= svcFlat;
     });
   });
-  drawProjection(weeks.map(function(w){return shortD(iso(w));}), sm, pl, svc, jobs.length);
+  var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var mlabels=weeks.map(function(w,i){ var mm=w.getMonth(); return (i===0||weeks[i-1].getMonth()!==mm)?(MON[mm]+" "+String(w.getFullYear()).slice(2)):""; });
+  drawProjection(mlabels, sm, pl, svc, jobs.length);
 }
 function drawProjection(labels, sm, pl, svc, nJobs){
   var smPk=Math.max.apply(null,sm.concat([0])), plPk=Math.max.apply(null,pl.concat([0])), svPk=Math.max.apply(null,svc.concat([0]));
@@ -265,7 +269,7 @@ function drawProjection(labels, sm, pl, svc, nJobs){
     {label:"Service",data:svc.map(r1),borderColor:"#f2a65a",backgroundColor:"rgba(242,166,90,.12)",fill:true,tension:.25,pointRadius:0,borderWidth:2.5}
   ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
     plugins:{legend:{labels:{color:tickC}},tooltip:{callbacks:{label:function(i){return i.dataset.label+": "+Math.round(i.parsed.y)+" men";},footer:function(items){var t=0;items.forEach(function(x){t+=x.parsed.y;});return "Total: "+Math.round(t)+" men";}}}},
-    scales:{x:{grid:{display:false},ticks:{color:tickC,maxTicksLimit:18,autoSkip:true}},y:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0,callback:function(v){return v+" men";}}}}}});
+    scales:{x:{grid:{display:false},ticks:{color:tickC,autoSkip:false,maxRotation:0,minRotation:0}},y:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0,callback:function(v){return v+" men";}}}}}});
 }
 E("hpwSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ E("hpwSeg").querySelectorAll("button").forEach(function(x){x.classList.remove("on");}); b.classList.add("on"); HPW=+b.getAttribute("data-h"); computeProjection(); }; });
 
