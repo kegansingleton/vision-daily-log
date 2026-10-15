@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Job Dates</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px 60px}
+header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;text-align:center;box-shadow:var(--shadow)}
+header.app img.logo{height:46px;background:#fff;border-radius:11px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
+header.app h1{margin:0;font-size:20px;font-weight:800}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.9;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:76px;background:#fff;border-radius:13px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gate button{margin-top:16px;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.note{font-size:13px;color:var(--muted);margin:16px 2px}
+.filter{width:100%;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;margin-bottom:12px}
+.filter:focus{border-color:var(--vm);outline:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+input[type=date]{font-size:14px;border:1.5px solid var(--line);border-radius:7px;padding:6px 8px;font-family:inherit}
+input[type=date]:focus{border-color:var(--vm);outline:none}
+td.wks{color:var(--muted);font-variant-numeric:tabular-nums}
+.loading,.empty{padding:34px;text-align:center;color:var(--muted)}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:150,m/qt=q:92" alt="Vision Mechanical">
+<div style="font-size:18px">Vision Mechanical — Job Dates</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Job Dates</h1>
+<div class="sub">Start &amp; finish dates drive the manpower projection</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="note">Set each job's anticipated <b>start</b> and <b>finish</b> dates. The Manpower Load projection uses these to spread each job's remaining budget hours across its schedule (ramp up → peak → taper). Changes save automatically.</div>
+  <input type="text" id="filter" class="filter" placeholder="Find a job…">
+  <div class="card"><div id="list"><div class="loading">Loading jobs…</div></div></div>
+  <div id="msg" class="note"></div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Job Dates &bull; Project Managers &amp; admins.</div>
+
+<script>
+var PM=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net","avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", JOBLIST=[];
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
+  E("gate").style.display="none";
+  if(PM.indexOf(loginEmail)<0){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Job Dates is limited to Project Managers and admins. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
+  E("app").style.display="block"; E("who").textContent=acct.name||acct.username; load();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+function d10(v){return v?String(v).slice(0,10):"";}
+function weeksBetween(s,f){ if(!s||!f) return ""; var a=new Date(s), b=new Date(f); var w=Math.round((b-a)/6048e5); return (w>0?w+" wks":""); }
+async function load(){
+  try{
+    var token=await getToken();
+    var url=GRAPH+JOBS+"/items?$expand=fields($select=JobNo,JobName,Active,StartDate,FinishDate)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields){it.fields.__id=it.id;out.push(it.fields);}}); url=j["@odata.nextLink"]||null; }
+    JOBLIST=out.filter(function(r){return (r.Active||"Yes")!=="No";}).sort(function(a,b){return String(a.JobNo).localeCompare(String(b.JobNo));});
+    render();
+  }catch(e){ E("list").innerHTML='<div class="empty">Could not load jobs: '+esc(e.message||e)+'</div>'; }
+}
+function render(){
+  var q=(E("filter").value||"").toLowerCase().trim();
+  var rows=JOBLIST.filter(function(r){ return !q || ((r.JobNo||"")+" "+(r.JobName||"")).toLowerCase().indexOf(q)>-1; });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">No jobs'+(q?" match.":" found — set them up in Job Setup first.")+'</div>'; return; }
+  var h='<table><thead><tr><th>Job</th><th>Name</th><th>Start</th><th>Finish</th><th>Duration</th></tr></thead><tbody>';
+  rows.forEach(function(r){ var i=JOBLIST.indexOf(r);
+    h+='<tr><td><b>'+esc(r.JobNo||"")+'</b></td><td style="color:var(--muted)">'+esc(r.JobName||"")+'</td>'+
+       '<td><input type="date" value="'+d10(r.StartDate)+'" data-i="'+i+'" data-f="StartDate"></td>'+
+       '<td><input type="date" value="'+d10(r.FinishDate)+'" data-i="'+i+'" data-f="FinishDate"></td>'+
+       '<td class="wks" id="wk-'+i+'">'+weeksBetween(r.StartDate,r.FinishDate)+'</td></tr>';
+  });
+  h+='</tbody></table>'; E("list").innerHTML=h;
+  E("list").querySelectorAll("input[type=date]").forEach(function(inp){ inp.onchange=function(){ saveDate(inp); }; });
+}
+async function saveDate(inp){
+  var i=+inp.getAttribute("data-i"), f=inp.getAttribute("data-f"), v=inp.value, job=JOBLIST[i];
+  var body={}; body[f]=v?(v+"T12:00:00Z"):null;
+  inp.style.borderColor="#15803d";
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+JOBS+"/items/"+job.__id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    job[f]=v; E("wk-"+i).textContent=weeksBetween(job.StartDate,job.FinishDate);
+    E("msg").style.color="#15803d"; E("msg").textContent=(job.JobNo||"")+" "+(f==="StartDate"?"start":"finish")+" date saved.";
+  }catch(e){ inp.style.borderColor="#b91c1c"; E("msg").style.color="#b91c1c"; E("msg").textContent="Save failed: "+(e.message||e); }
+}
+E("filter").oninput=function(){ render(); };
+</script>
+</body>
+</html>
