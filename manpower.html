@@ -80,6 +80,16 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
   <div class="kpis" id="kpis"></div>
 
   <div class="panel">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h2>Manpower Load Projection</h2><div class="cap">Forecast crew by division through the furthest job finish date — ramp up, peak, taper down.</div></div>
+      <div class="spacer"></div>
+      <div class="seg" id="hpwSeg"><button data-h="40" class="on">40 h/wk</button><button data-h="45">45 h/wk</button><button data-h="50">50 h/wk</button></div>
+    </div>
+    <div class="chartbox" style="height:380px"><canvas id="projChart"></canvas></div>
+    <div class="cap" id="projNote"></div>
+  </div>
+
+  <div class="panel">
     <h2>Weekly man-hours by job</h2>
     <div class="cap">Worked field hours each pay week (Wed–Tue), stacked by job. Sick/vacation/holiday excluded.</div>
     <div class="chartbox"><canvas id="loadChart"></canvas></div>
@@ -109,6 +119,8 @@ var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var PALETTE=["#ff6b57","#f2a65a","#ffd166","#06d6a0","#4cc9f0","#8a7dff","#f472b6","#c0392b","#2dd4bf","#fb923c","#a3e635","#60a5fa","#e879f9","#facc15"];
 
@@ -116,7 +128,7 @@ var PALETTE=["#ff6b57","#f2a65a","#ffd166","#06d6a0","#4cc9f0","#8a7dff","#f472b
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null;
 function E(id){return document.getElementById(id);}
-function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username; run(); }
+function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username; run(); loadProjection(); }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
 msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
@@ -204,6 +216,58 @@ function compute(rows, fromWk, curWk){
   h+='</tbody>'; E("jobTable").innerHTML=h;
 }
 function kpi(v,l,s,accent){ return '<div class="kpi"><div class="v'+(accent?" accent":"")+'">'+v+'</div><div class="l">'+l+'</div><div class="s">'+s+'</div></div>'; }
+
+/* ===== Manpower projection (trapezoid load curves by division) ===== */
+var HPW=40, projChart=null, PROJDATA=null;
+function divOf(phase){ var p=String(phase||"").trim(); if(/^12/.test(p)||/^13/.test(p)) return "sm"; if(/^16/.test(p)) return "svc"; if(/^17/.test(p)||/^18/.test(p)) return "pl"; return null; }
+async function pullAll(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=5000", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+async function loadProjection(){
+  try{
+    var jobs=await pullAll(JOBS,"JobNo,JobName,StartDate,FinishDate,Active");
+    jobs=jobs.filter(function(j){ return (j.Active||"Yes")!=="No" && j.StartDate && j.FinishDate; });
+    var tasks=await pullAll(JOBTASKS,"JobNo,PhaseCode,BudgetHours,Active");
+    var byJob={}; tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var d=divOf(t.PhaseCode); if(!d) return; var jn=(t.JobNo||"").trim(); var o=byJob[jn]=byJob[jn]||{sm:0,pl:0,svc:0}; o[d]+=(parseFloat(t.BudgetHours)||0); });
+    PROJDATA={jobs:jobs,byJob:byJob}; computeProjection();
+  }catch(e){ E("projNote").textContent="Could not load projection: "+(e.message||e); }
+}
+function computeProjection(){
+  if(!PROJDATA) return;
+  var jobs=PROJDATA.jobs, byJob=PROJDATA.byJob;
+  if(!jobs.length){ if(projChart){projChart.destroy();projChart=null;} E("projNote").textContent="No jobs have both a start and finish date yet — set them in Job Dates and this fills in."; return; }
+  var startWk=payWeekStart(new Date());
+  var maxFin=jobs.reduce(function(m,j){ var f=parseISO(dkey(j.FinishDate)); return f>m?f:m; }, startWk);
+  var weeks=[]; var d=new Date(startWk); while(d<=maxFin){ weeks.push(new Date(d)); d=addDays(d,7); }
+  var sm=weeks.map(function(){return 0;}), pl=weeks.map(function(){return 0;}), svc=weeks.map(function(){return 0;});
+  jobs.forEach(function(j){
+    var s=parseISO(dkey(j.StartDate)), f=parseISO(dkey(j.FinishDate)); if(f<=s) return;
+    var Wweeks=Math.max(1,Math.round((f-s)/6048e5));
+    var b=byJob[(j.JobNo||"").trim()]||{sm:0,pl:0,svc:0};
+    var smPeak=(b.sm/HPW)/(0.75*Wweeks), plPeak=(b.pl/HPW)/(0.75*Wweeks);
+    var svcFlat=(b.svc>0)?((b.svc/HPW)/(0.25*Wweeks)):0;
+    weeks.forEach(function(w,i){
+      if(w<s||w>f) return;
+      var pct=(w-s)/(f-s);
+      var tf = pct<0.25 ? (pct/0.25) : (pct<=0.75 ? 1 : (1-pct)/0.25);
+      sm[i]+= smPeak*tf;
+      pl[i]+= plPeak*tf;
+      if(pct>=0.75) svc[i]+= svcFlat;
+    });
+  });
+  drawProjection(weeks.map(function(w){return shortD(iso(w));}), sm, pl, svc, jobs.length);
+}
+function drawProjection(labels, sm, pl, svc, nJobs){
+  var smPk=Math.max.apply(null,sm.concat([0])), plPk=Math.max.apply(null,pl.concat([0])), svPk=Math.max.apply(null,svc.concat([0]));
+  E("projNote").textContent=nJobs+" dated job"+(nJobs===1?"":"s")+" · "+HPW+" hrs/man-week · peak ≈ "+Math.round(smPk)+" sheet metal, "+Math.round(plPk)+" plumbing, "+Math.round(svPk)+" service · ramp 0–25%, full 25–75%, taper 75–100%, service in final 25%.";
+  if(projChart) projChart.destroy();
+  projChart=new Chart(E("projChart").getContext("2d"),{type:"line",data:{labels:labels,datasets:[
+    {label:"Sheet Metal",data:sm.map(r1),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,.12)",fill:true,tension:.25,pointRadius:0,borderWidth:2.5},
+    {label:"Plumbing",data:pl.map(r1),borderColor:"#a78bfa",backgroundColor:"rgba(167,139,250,.12)",fill:true,tension:.25,pointRadius:0,borderWidth:2.5},
+    {label:"Service",data:svc.map(r1),borderColor:"#f2a65a",backgroundColor:"rgba(242,166,90,.12)",fill:true,tension:.25,pointRadius:0,borderWidth:2.5}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+    plugins:{legend:{labels:{color:tickC}},tooltip:{callbacks:{label:function(i){return i.dataset.label+": "+Math.round(i.parsed.y)+" men";},footer:function(items){var t=0;items.forEach(function(x){t+=x.parsed.y;});return "Total: "+Math.round(t)+" men";}}}},
+    scales:{x:{grid:{display:false},ticks:{color:tickC,maxTicksLimit:18,autoSkip:true}},y:{beginAtZero:true,grid:{color:gridC},ticks:{color:tickC,precision:0,callback:function(v){return v+" men";}}}}}});
+}
+E("hpwSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ E("hpwSeg").querySelectorAll("button").forEach(function(x){x.classList.remove("on");}); b.classList.add("on"); HPW=+b.getAttribute("data-h"); computeProjection(); }; });
 
 var gridC="rgba(255,255,255,.07)", tickC="#9aa7b4";
 function drawLoad(labels,datasets){
