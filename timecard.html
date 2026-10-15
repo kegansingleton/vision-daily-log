@@ -184,13 +184,16 @@ function buildMap(jt){
   /* Universal shop-fab codes — always selectable on any job. Their line options come from
      the job's real rollup-target code (12xx -> 1211 lines, 18xx -> 1800 lines), so the line
      entered is already valid for payroll. Not injected if the job already has that code. */
-  var SHOP_SM=[["1210","Shop · Pre-assembly"],["1220","Shop · Fittings"],["1230","Shop · Duct"],["1240","Shop · Welded steel"]];
+  var SHOP_SM=[["1210","Shop · Pre-assembly"],["1230","Shop · Duct"],["1240","Shop · Welded steel"],["1250","Shop · Fittings"]];
+  var SHOP_HANGER=[["1220","Shop · Hanger fab"]];
   var SHOP_PL=[["1810","Shop · Steel pipe"],["1820","Shop · Copper"],["1830","Shop · PVC"],["1840","Shop · Cast iron"],["1850","Shop · Aquatherm"],["1860","Shop · Fixture fab"]];
   Object.keys(map).forEach(function(j){
     var m=map[j];
     var smLines=(m.phases["1211"]?m.phases["1211"].lines.slice():[]);
+    var hgLines=(m.phases["1220"]?m.phases["1220"].lines.slice():[]);
     var plLines=(m.phases["1800"]?m.phases["1800"].lines.slice():[]);
     SHOP_SM.forEach(function(sc){ if(!m.phases[sc[0]]){ m.phases[sc[0]]={desc:sc[1],lines:smLines.slice()}; m.phaseList.push(sc[0]); } });
+    SHOP_HANGER.forEach(function(sc){ if(!m.phases[sc[0]]){ m.phases[sc[0]]={desc:sc[1],lines:hgLines.slice()}; m.phaseList.push(sc[0]); } });
     SHOP_PL.forEach(function(sc){ if(!m.phases[sc[0]]){ m.phases[sc[0]]={desc:sc[1],lines:plLines.slice()}; m.phaseList.push(sc[0]); } });
   });
   Object.keys(map).forEach(function(j){
