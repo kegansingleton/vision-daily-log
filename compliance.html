@@ -152,7 +152,7 @@ var TC="91c4a3db-97f6-4b52-a855-516d5c414124";       /* Timecard Entries */
 var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a";     /* Daily Field Logs */
 var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";     /* Weekly 2-Week Look Ahead */
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";      /* Employee Master */
-var ROSTER="c9a37022-3250-4d80-9f26-e8fe94160bc8";   /* Field Log Roster — the people who owe daily logs */
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* ===== Auth ===== */
@@ -216,10 +216,10 @@ async function run(){
     var tc=await getRange(TC,"WorkDate",loadFrom,to,"WorkDate,JobNo,EmployeeNumber,EmployeeName,Hours,Foreman,ForemanEmail");
     var logs=await getRange(LOGS,"LogDate",loadFrom,to,"LogDate,Project,LoginEmail,SubmittedBy");
     var look=await getRange(LOOK,"WeekOf",iso(addDays(parseISO(loadFrom),-7)),to,"WeekOf,Project,LoginEmail,SubmittedBy");
-    var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active,OfficeStaff")).filter(function(e){return (e.Active||"Yes")!=="No";});
-    var roster=await getAll(ROSTER,"Title,Email");
+    var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail")).filter(function(e){return (e.Active||"Yes")!=="No";});
+    /* Who owes daily logs & look-aheads = employees flagged Foreman in Employee Master. Match on LoginEmail (auto from name if blank). */
     ROSTER_EMAILS={}; ROSTER_NAMES={};
-    roster.forEach(function(r){ var e=(r.Email||"").toLowerCase().trim(); if(e){ ROSTER_EMAILS[e]=1; ROSTER_NAMES[e]=r.Title||e; } });
+    emps.forEach(function(e){ var isF=(e.Foreman===true||e.Foreman==="Yes"||e.Foreman==="true"); if(!isF) return; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); if(em){ ROSTER_EMAILS[em]=1; ROSTER_NAMES[em]=e.EmployeeName||em; } });
     E("loading").style.display="none";
     NAMES=foremanNames(tc);
     LOADED={tc:tc.length,logs:logs.length,look:look.length,at:new Date()};
