@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Task Schedule</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--goodbg:#dcfce7;--warn:#92400e;--warnbg:#fef3c7;--bad:#b91c1c;--badbg:#fde2e2;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1300px;margin:0 auto;padding:0 14px 70px}
+header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;box-shadow:var(--shadow)}
+header.app .inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;gap:14px}
+header.app img.logo{height:48px;background:#fff;border-radius:11px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+header.app h1{margin:0;font-size:21px;font-weight:800}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.9;margin-left:auto;text-align:right}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:76px;background:#fff;border-radius:13px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gate button{margin-top:16px;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0 4px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.controls label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
+#jobPick{flex:1;min-width:240px;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
+.rolepill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--goodbg);color:var(--good)}
+.rolepill.view{background:#eef2f7;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .v{font-size:26px;font-weight:800;line-height:1}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:6px;font-weight:700}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-top:16px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;text-align:right;position:sticky;top:0}
+th.l,td.l{text-align:left}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.phase td{background:#f3eeee;font-weight:800;color:var(--vm2);border-top:2px solid var(--line)}
+tr.sub td{background:#fbfbf4;font-weight:700;border-top:1px solid var(--line)}
+tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
+.pbar{display:inline-block;width:64px;height:8px;border-radius:5px;background:var(--line);overflow:hidden;vertical-align:middle;margin-right:6px}
+.pbar>div{height:100%;background:var(--vm)}
+.pctin{width:56px;font-size:13px;border:1.5px solid var(--line);border-radius:6px;padding:4px 6px;text-align:right;font-family:inherit}
+.pctin:focus{border-color:var(--vm);outline:none}
+.tag{font-weight:700;padding:2px 8px;border-radius:6px;font-size:12px}
+.tag.g{background:var(--goodbg);color:var(--good)} .tag.w{background:var(--warnbg);color:var(--warn)} .tag.b{background:var(--badbg);color:var(--bad)} .tag.m{color:var(--muted)}
+.loading,.empty{padding:40px;text-align:center;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:10px 2px}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:150,m/qt=q:92" alt="Vision Mechanical">
+<div style="font-size:18px">Vision Mechanical — Task Schedule</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app"><div class="inner">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:120,m/qt=q:92" alt="Vision Mechanical">
+<div><h1>Task Schedule</h1><div class="sub">Budget vs. earned hours by phase &amp; area &bull; live from timecards</div></div>
+<div id="who"></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="controls">
+    <label>Job</label>
+    <select id="jobPick"></select>
+    <span class="rolepill" id="rolePill"></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><div id="sched"><div class="loading">Pick a job…</div></div></div>
+  <div class="note" id="roleNote"></div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Task Schedule &bull; Budget &amp; % complete from Job Tasks; actual hours live from timecards.</div>
+
+<script>
+/* ===== Security ===== */
+var ADMIN=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var PM=ADMIN.concat(["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"]);
+
+/* ===== Config ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", isPM=false;
+function E(id){return document.getElementById(id);}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
+  isPM=(PM.indexOf(loginEmail)>-1);
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username;
+  E("rolePill").textContent=isPM?"Project Manager — can edit %":"View only";
+  E("rolePill").className="rolepill"+(isPM?"":" view");
+  E("roleNote").textContent=isPM?"You can edit % Complete — type a value and it saves automatically.":"% Complete is editable by Project Managers and admins.";
+  loadJobs();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Helpers ===== */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function n1(n){return (Math.round((n||0)*10)/10).toLocaleString();}
+async function pull(listId,select,filter){
+  var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=5000"+(filter?("&$filter="+filter):""); var out=[];
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields){it.fields.__id=it.id;out.push(it.fields);}}); url=j["@odata.nextLink"]||null; }
+  return out;
+}
+
+/* ===== Jobs ===== */
+async function loadJobs(){
+  try{
+    var tasks=await pull(JOBTASKS,"JobNo,JobName,Active");
+    var seen={}, jobs=[];
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn])return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
+    jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
+    E("jobPick").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
+    E("jobPick").onchange=function(){ if(E("jobPick").value) loadSchedule(E("jobPick").value); };
+  }catch(e){ E("sched").innerHTML='<div class="empty">Could not load jobs: '+esc(e.message||e)+'</div>'; }
+}
+
+/* ===== Schedule ===== */
+function esc1(s){return String(s||"").replace(/'/g,"''");}
+async function loadSchedule(jobNo){
+  E("sched").innerHTML='<div class="loading">Loading '+esc(jobNo)+'…</div>'; E("kpis").innerHTML="";
+  try{
+    var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,PercentComplete","fields/JobNo eq '"+esc1(jobNo)+"'");
+    tasks=tasks.filter(function(t){return t.JobNo===jobNo;});
+    /* actual hours from timecards, keyed phase|line */
+    var tc=await pull(TC,"JobNo,PhaseCode,LineNum,Hours","fields/JobNo eq '"+esc1(jobNo)+"'");
+    var act={}; tc.forEach(function(r){ if(r.JobNo!==jobNo) return; var k=(r.PhaseCode||"")+"|"+(r.LineNum||""); act[k]=(act[k]||0)+(parseFloat(r.Hours)||0); });
+    render(jobNo, tasks, act);
+  }catch(e){ E("sched").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function pf(earned,actual){ return actual>0 ? earned/actual : null; }
+function forecast(actual,pct){ return pct>0 ? actual/(pct/100) : (actual>0?null:0); }
+function pfTag(v){ if(v==null) return '<span class="tag m">—</span>'; var c=v>=1?"g":(v>=0.9?"w":"b"); return '<span class="tag '+c+'">'+(Math.round(v*100)/100).toFixed(2)+'</span>'; }
+function varTag(v){ if(v==null) return '<span class="tag m">—</span>'; var c=v>=0?"g":"b"; return '<span class="tag '+c+'">'+(v>=0?"+":"")+n1(v)+'</span>'; }
+
+function render(jobNo, tasks, act){
+  var jobName=(tasks[0]&&tasks[0].JobName)||"";
+  /* group by phase code */
+  var byPhase={}, phaseOrder=[];
+  tasks.forEach(function(t){ var p=(t.PhaseCode||"").trim(); if(!byPhase[p]){byPhase[p]={desc:t.PhaseDesc||"",rows:[]};phaseOrder.push(p);} byPhase[p].rows.push(t); });
+  phaseOrder.sort();
+  var JB=0,AC=0,EA=0;
+  var h='<table><thead><tr><th class="l">Phase / Area</th><th class="l">Description</th><th>Budget</th><th>Actual</th><th>Δ</th><th>% Compl</th><th>Earned</th><th>P.F.</th><th>Proj @ Compl</th><th>Variance</th></tr></thead><tbody>';
+  phaseOrder.forEach(function(p){
+    var g=byPhase[p]; g.rows.sort(function(a,b){return String(a.LineNum).localeCompare(String(b.LineNum));});
+    var pB=0,pA=0,pE=0;
+    h+='<tr class="phase"><td class="l" colspan="2">'+esc(p)+'  '+esc(g.desc)+'</td><td colspan="8"></td></tr>';
+    g.rows.forEach(function(t){
+      var b=parseFloat(t.BudgetHours)||0, a=act[(t.PhaseCode||"")+"|"+(t.LineNum||"")]||0, pct=parseFloat(t.PercentComplete)||0;
+      var earned=b*pct/100, f=forecast(a,pct), vf=pf(earned,a), vr=(f==null)?null:(b-f);
+      pB+=b; pA+=a; pE+=earned; JB+=b; AC+=a; EA+=earned;
+      var pctCell=isPM
+        ? '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span><input class="pctin" type="number" min="0" max="100" value="'+(pct||"")+'" data-id="'+esc(t.__id)+'">'
+        : '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span>'+pct+'%';
+      h+='<tr><td class="l">'+esc(t.LineNum||"")+'</td><td class="l" style="color:var(--muted)">'+esc(t.LineDesc||g.desc)+'</td>'+
+         '<td class="num">'+n1(b)+'</td><td class="num">'+n1(a)+'</td><td class="num '+((b-a)<0?"":"")+'">'+varTag(b-a)+'</td>'+
+         '<td class="num">'+pctCell+'</td><td class="num">'+n1(earned)+'</td><td class="num">'+pfTag(vf)+'</td>'+
+         '<td class="num">'+(f==null?'<span class="tag m">—</span>':n1(f))+'</td><td class="num">'+varTag(vr)+'</td></tr>';
+    });
+    var pPct=pB>0?(pE/pB*100):0, pPF=pf(pE,pA);
+    h+='<tr class="sub"><td class="l" colspan="2">'+esc(g.desc||p)+' subtotal</td><td class="num">'+n1(pB)+'</td><td class="num">'+n1(pA)+'</td><td class="num">'+varTag(pB-pA)+'</td><td class="num">'+Math.round(pPct)+'%</td><td class="num">'+n1(pE)+'</td><td class="num">'+pfTag(pPF)+'</td><td></td><td></td></tr>';
+  });
+  var JPct=JB>0?(EA/JB*100):0, JPF=pf(EA,AC), JForecast=(JPct>0?AC/(JPct/100):null), JVar=(JForecast==null?null:JB-JForecast);
+  h+='<tr class="total"><td class="l" colspan="2">JOB TOTAL — '+esc(jobNo)+' '+esc(jobName)+'</td><td class="num">'+n1(JB)+'</td><td class="num">'+n1(AC)+'</td><td class="num">'+(JB-AC>=0?"+":"")+n1(JB-AC)+'</td><td class="num">'+Math.round(JPct)+'%</td><td class="num">'+n1(EA)+'</td><td class="num">'+(JPF==null?"—":(Math.round(JPF*100)/100).toFixed(2))+'</td><td class="num">'+(JForecast==null?"—":n1(JForecast))+'</td><td class="num">'+(JVar==null?"—":((JVar>=0?"+":"")+n1(JVar)))+'</td></tr>';
+  h+='</tbody></table>';
+  E("sched").innerHTML=h;
+
+  /* KPI cards */
+  E("kpis").innerHTML=
+    kpi(n1(JB),"Budget hrs")+
+    kpi(n1(AC),"Actual hrs")+
+    kpi(Math.round(JPct)+"%","% Complete")+
+    kpi((JPF==null?"—":(Math.round(JPF*100)/100).toFixed(2)),"Performance")+
+    kpi((JForecast==null?"—":n1(JForecast)),"Forecast hrs")+
+    kpi((JVar==null?"—":((JVar>=0?"+":"")+n1(JVar))),"Variance @ compl");
+
+  /* wire % edits */
+  if(isPM){ E("sched").querySelectorAll(".pctin").forEach(function(inp){ inp.onchange=function(){ savePct(inp); }; }); }
+}
+function kpi(v,l){ return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+async function savePct(inp){
+  var id=inp.getAttribute("data-id"), v=inp.value.trim();
+  var num=(v===""?0:parseFloat(v));
+  if(isNaN(num)||num<0||num>100){ inp.style.borderColor="#b91c1c"; return; }
+  inp.style.borderColor="#15803d";
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+JOBTASKS+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({PercentComplete:num})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    /* refresh the schedule so earned/PF/forecast recompute */
+    loadSchedule(E("jobPick").value);
+  }catch(e){ inp.style.borderColor="#b91c1c"; alert("Save failed: "+(e.message||e)); }
+}
+</script>
+</body>
+</html>
