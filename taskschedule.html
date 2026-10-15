@@ -102,10 +102,10 @@ function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
   isPM=(PM.indexOf(loginEmail)>-1); isAdmin=(ADMIN.indexOf(loginEmail)>-1);
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username;
-  E("rolePill").textContent=isAdmin?"Admin — edit % and adjustments":(isPM?"Project Manager — can edit %":"View only");
-  E("rolePill").className="rolepill"+((isAdmin||isPM)?"":" view");
-  E("roleNote").textContent=isAdmin?"You can edit % Complete and set an Adjustment (hours burned before the portal, or any correction). Actual = Adjustment + logged time. Saves automatically."
-    :(isPM?"You can edit % Complete — type a value and it saves automatically.":"% Complete is editable by PMs; the Adjustment by admins.");
+  E("rolePill").textContent=isPM?"Project Manager — edit % and adjustments":"View only";
+  E("rolePill").className="rolepill"+(isPM?"":" view");
+  E("roleNote").textContent=isPM?"You can edit % Complete and the Adjustment (hours burned before the portal, or any correction). Actual = Adjustment + logged time. Saves automatically."
+    :"% Complete and the Adjustment are editable by Project Managers and admins.";
   loadJobs();
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
@@ -171,7 +171,7 @@ function render(jobNo, tasks, act){
       var pctCell=isPM
         ? '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span><input class="pctin" type="number" min="0" max="100" value="'+(pct||"")+'" data-id="'+esc(t.__id)+'">'
         : '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span>'+pct+'%';
-      var priorCell=isAdmin
+      var priorCell=isPM
         ? '<input class="priorin" type="number" step="0.5" min="0" value="'+(prior||"")+'" data-id="'+esc(t.__id)+'" title="One-time hours adjustment">'
         : n1(prior);
       h+='<tr><td class="l">'+esc(t.LineNum||"")+'</td><td class="l" style="color:var(--muted)">'+esc(t.LineDesc||g.desc)+'</td>'+
@@ -200,7 +200,7 @@ function render(jobNo, tasks, act){
 
   /* wire edits */
   if(isPM){ E("sched").querySelectorAll(".pctin").forEach(function(inp){ inp.onchange=function(){ savePct(inp); }; }); }
-  if(isAdmin){ E("sched").querySelectorAll(".priorin").forEach(function(inp){ inp.onchange=function(){ savePrior(inp); }; }); }
+  if(isPM){ E("sched").querySelectorAll(".priorin").forEach(function(inp){ inp.onchange=function(){ savePrior(inp); }; }); }
 }
 function kpi(v,l){ return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
 function drawPhaseChart(labels,bud,act,ern){
