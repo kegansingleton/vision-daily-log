@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Shop Production</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1150px;margin:0 auto;padding:0 14px 70px}
+header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;box-shadow:var(--shadow)}
+header.app .inner{max-width:1150px;margin:0 auto;display:flex;align-items:center;gap:14px}
+header.app img.logo{height:48px;background:#fff;border-radius:11px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+header.app h1{margin:0;font-size:21px;font-weight:800}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.9;margin-left:auto;text-align:right}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:76px;background:#fff;border-radius:13px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gate button{margin-top:16px;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.typ{display:flex;gap:8px;margin:16px 0 4px}
+.typ button{flex:1;font-size:15px;font-weight:800;padding:12px 8px;border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--muted);cursor:pointer}
+.typ button.on{border-color:var(--vm);background:var(--vm);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .v{font-size:25px;font-weight:800;line-height:1}
+.kpi .v.hi{color:var(--good)} .kpi .v.lo{color:#b91c1c}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:6px;font-weight:700}
+.kpi .s{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-top:16px;padding:16px}
+.card h2{margin:0 0 2px;font-size:16px;font-weight:700}
+.card .cap{font-size:12px;color:var(--muted);margin-bottom:12px}
+.chartbox{position:relative;height:340px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:#faf7f7;color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
+th.l,td.l{text-align:left}
+.bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;min-width:70px;display:inline-block;vertical-align:middle}
+.bar>div{height:100%;background:var(--vm)}
+.tablewrap{overflow-x:auto}
+.loading,.empty{padding:34px;text-align:center;color:var(--muted)}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:150,m/qt=q:92" alt="Vision Mechanical">
+<div style="font-size:18px">Vision Mechanical — Shop Production</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app"><div class="inner">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:120,m/qt=q:92" alt="Vision Mechanical">
+<div><h1>Shop Production</h1><div class="sub">Fabrication rates &amp; optimal batch size — live from timecards</div></div>
+<div id="who"></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="typ" id="typSeg">
+    <button data-t="Sheet Metal" class="on">Sheet Metal</button>
+    <button data-t="Pipe">Pipe</button>
+    <button data-t="Fixture">Fixture</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2 id="chartTitle">Rate vs. batch size</h2>
+    <div class="cap" id="chartCap"></div>
+    <div class="chartbox"><canvas id="scatter"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2 id="brkTitle">Rate breakdown</h2>
+    <div class="tablewrap"><table id="brkTbl"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Runs</h2>
+    <div class="cap">Every logged batch, newest first. Rate blank = crew hours not posted yet.</div>
+    <div class="tablewrap"><table id="runsTbl"></table></div>
+  </div>
+
+  <div class="loading" id="loading">Loading shop production…</div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Shop Production &bull; Rates = output ÷ crew hours on that job/phase/day (live).</div>
+
+<script>
+var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net","nholliday@visionmech.net","avigil@visionmech.net"];
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
+var BAND={"Sheet Metal":[600,3500]};
+
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, RUNS=[], fabType="Sheet Metal", scatterChart=null;
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct); var em=(acct.username||"").toLowerCase();
+  E("gate").style.display="none";
+  if(ALLOW.indexOf(em)<0){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Production is limited to admins and shop leads. Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
+  E("app").style.display="block"; E("who").textContent=acct.name||acct.username; load();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+function dkey(v){return String(v||"").slice(0,10);}
+function shortD(v){var p=dkey(v).split("-");return p.length===3?(+p[1]+"/"+ +p[2]+"/"+String(p[0]).slice(2)):v;}
+function n1(n){return (Math.round((n||0)*10)/10).toLocaleString();}
+function n0(n){return Math.round(n||0).toLocaleString();}
+async function pullAll(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=5000", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+
+async function load(){
+  E("loading").style.display="block";
+  try{
+    var runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy");
+    var tc=await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours");
+    var hrs={}; tc.forEach(function(f){ var k=(f.JobNo||"")+"|"+(f.PhaseCode||"")+"|"+dkey(f.WorkDate); hrs[k]=(hrs[k]||0)+(parseFloat(f.Hours)||0); });
+    RUNS=runs.map(function(r){ var h=hrs[(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate)]||0; var o=parseFloat(r.Output)||0; return {f:r, out:o, hrs:h, rate:(h>0?o/h:null)}; });
+    RUNS.sort(function(a,b){return dkey(b.f.RunDate).localeCompare(dkey(a.f.RunDate));});
+    E("loading").style.display="none"; render();
+  }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
+}
+
+E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ fabType=b.getAttribute("data-t"); E("typSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); render(); }; });
+
+function blended(list){ var o=0,h=0; list.forEach(function(r){ if(r.rate!=null){ o+=r.out; h+=r.hrs; } }); return h>0?o/h:null; }
+function kpi(v,l,s,cls){ return '<div class="kpi"><div class="v'+(cls?(" "+cls):"")+'">'+v+'</div><div class="l">'+l+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>'; }
+
+function render(){
+  var rows=RUNS.filter(function(r){return r.f.FabType===fabType;});
+  var rated=rows.filter(function(r){return r.rate!=null;});
+  var u=RATEU[fabType], unit=OUT[fabType];
+  /* KPIs */
+  var k="";
+  var all=blended(rows);
+  k+=kpi(all!=null?n1(all):"—","Avg "+u,rated.length+" rated runs","hi");
+  if(fabType==="Sheet Metal"){
+    var unl=rows.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=rows.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
+    var duct=rows.filter(function(r){return r.f.Category==="Duct";}), fit=rows.filter(function(r){return r.f.Category==="Fittings";});
+    k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u)+kpi(cr(blended(duct)),"Duct "+u)+kpi(cr(blended(fit)),"Fittings "+u);
+  }
+  k+=kpi(n0(rows.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(rows.length,"Runs logged");
+  E("kpis").innerHTML=k;
+
+  /* scatter */
+  E("chartTitle").textContent=u+" vs. batch size ("+unit+")";
+  E("chartCap").textContent = BAND[fabType] ? ("Each dot = one run. Shaded band = measured optimal range ("+BAND[fabType][0]+"–"+BAND[fabType][1]+" "+unit+").") : "Each dot = one run. Optimal band fills in as the study builds.";
+  drawScatter(rated, unit, u);
+
+  /* breakdown by material */
+  var byMat={};
+  rows.forEach(function(r){ var m=r.f.Material||"(none)"; (byMat[m]=byMat[m]||[]).push(r); });
+  var mats=Object.keys(byMat).map(function(m){ var l=byMat[m]; return {m:m, rate:blended(l), runs:l.length, out:l.reduce(function(s,r){return s+r.out;},0)}; }).filter(function(x){return x.rate!=null;}).sort(function(a,b){return b.rate-a.rate;});
+  E("brkTitle").textContent = fabType==="Sheet Metal" ? "Rate by material / gauge" : (fabType==="Pipe" ? "Rate by material / method" : "Rate by fixture type");
+  if(!mats.length){ E("brkTbl").innerHTML='<tbody><tr><td class="l empty">No rated runs yet.</td></tr></tbody>'; }
+  else { var mx=Math.max.apply(null,mats.map(function(x){return x.rate;}));
+    var h='<thead><tr><th class="l">'+(fabType==="Fixture"?"Type":"Material")+'</th><th>Avg '+u+'</th><th>Runs</th><th>Total '+unit+'</th><th style="width:28%">&nbsp;</th></tr></thead><tbody>';
+    mats.forEach(function(x){ h+='<tr><td class="l">'+esc(x.m)+'</td><td><b>'+n1(x.rate)+'</b></td><td>'+x.runs+'</td><td>'+n0(x.out)+'</td><td><span class="bar" style="width:100%"><div style="width:'+Math.round(x.rate/mx*100)+'%"></div></span></td></tr>'; });
+    E("brkTbl").innerHTML=h+'</tbody>';
+  }
+
+  /* runs table */
+  if(!rows.length){ E("runsTbl").innerHTML='<tbody><tr><td class="l empty">No '+fabType.toLowerCase()+' runs logged yet.</td></tr></tbody>'; return; }
+  var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Cat / Liner / Material":(fabType==="Pipe"?"Material / size":"Type"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th></tr></thead><tbody>';
+  rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Category||"")+" · "+(f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? ((f.Material||"")+(f.PipeSize?(" · "+f.PipeSize):"")) : (f.Material||""));
+    rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td><td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?n1(r.rate):'<span style="color:#b91c1c">pending</span>')+'</b></td></tr>'; });
+  E("runsTbl").innerHTML=rh+'</tbody>';
+}
+function cr(v){ return v!=null?n1(v):"—"; }
+
+var bandPlugin={id:"band",beforeDatasetsDraw:function(chart){ var b=chart.$band; if(!b) return; var a=chart.chartArea, s=chart.scales.x; if(!a||!s) return; var x1=s.getPixelForValue(b[0]), x2=s.getPixelForValue(b[1]); var ctx=chart.ctx; ctx.save(); ctx.fillStyle="rgba(21,128,61,.09)"; ctx.fillRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.strokeStyle="rgba(21,128,61,.35)"; ctx.setLineDash([4,4]); ctx.strokeRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.restore(); }};
+function drawScatter(rated, unit, u){
+  var pts;
+  if(fabType==="Sheet Metal"){
+    var duct=rated.filter(function(r){return r.f.Category==="Duct";}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};});
+    var fit=rated.filter(function(r){return r.f.Category==="Fittings";}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};});
+    pts=[{label:"Duct",data:duct,backgroundColor:"#4cc9f0",pointRadius:5},{label:"Fittings",data:fit,backgroundColor:"#c0392b",pointRadius:5}];
+  } else {
+    pts=[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
+  }
+  if(scatterChart) scatterChart.destroy();
+  scatterChart=new Chart(E("scatter").getContext("2d"),{type:"scatter",data:{datasets:pts},plugins:[bandPlugin],
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:fabType==="Sheet Metal"},tooltip:{callbacks:{label:function(i){return n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
+      scales:{x:{title:{display:true,text:"Batch size ("+unit+")"},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true},y:{title:{display:true,text:u},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true}}}});
+  scatterChart.$band=BAND[fabType]||null; scatterChart.update();
+}
+</script>
+</body>
+</html>
