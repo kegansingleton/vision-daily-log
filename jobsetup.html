@@ -45,7 +45,8 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 .gate p{opacity:.9;font-size:14px;margin:0 0 20px}
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .mut{color:var(--mut);font-size:13px}
-.preview{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.preview{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.preview th{position:sticky;top:0;background:#faf7f7;z-index:1}
 </style>
 </head>
 <body>
@@ -218,11 +219,9 @@ function renderPreview(jobs){
   var pills='';
   jobNos.forEach(function(jn){ pills+='<span class="pill">'+jn+' — '+ (jobs[jn].name||'') +'</span>'; });
   document.getElementById("phasePills").innerHTML=pills;
-  // table preview (first 40)
+  // table preview (all rows — the box scrolls)
   var tbl='<tr><th>Job</th><th>Phase</th><th>Phase Desc</th><th>Line</th><th>Line Desc</th></tr>';
-  var shown=0;
-  jobNos.forEach(function(jn){ jobs[jn].rows.forEach(function(x){ if(shown<40){ tbl+='<tr><td>'+jn+'</td><td>'+x.phase+'</td><td>'+esc(x.pdesc)+'</td><td>'+x.line+'</td><td>'+esc(x.ldesc)+'</td></tr>'; shown++; } }); });
-  if(totalRows>40) tbl+='<tr><td colspan="5" class="mut">…and '+(totalRows-40)+' more</td></tr>';
+  jobNos.forEach(function(jn){ jobs[jn].rows.forEach(function(x){ tbl+='<tr><td>'+jn+'</td><td>'+x.phase+'</td><td>'+esc(x.pdesc)+'</td><td>'+x.line+'</td><td>'+esc(x.ldesc)+'</td></tr>'; }); });
   document.getElementById("previewTbl").innerHTML=tbl;
   document.getElementById("msg").style.display="none";
 }
