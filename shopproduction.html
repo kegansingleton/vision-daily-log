@@ -147,7 +147,11 @@ var MAT={
   "Pipe":["Copper — sweat","Sch 40 steel — weld","Sch 40 steel — thread","Sch 40 steel — Victaulic","Sch 80 steel — weld","Sch 80 steel — thread","Sch 80 steel — Victaulic","PVC Sch 40 — glue","Cast iron — no-hub (bands)","PEX-A — expansion","PEX — crimp"],
   "Fixture":["Lavatory","Water closet","Drinking fountain","Shower valve","Urinal","Mop / service basin"]
 };
-var PREFIX={"Sheet Metal":["12"],"Pipe":["18"],"Fixture":["18"]};
+var SHOP_PHASES={
+  "Sheet Metal":[["1210","Pre-assembly"],["1220","Fittings"],["1230","Duct"],["1240","Welded steel"]],
+  "Pipe":[["1810","Steel pipe"],["1820","Copper"],["1830","PVC"],["1840","Cast iron"],["1850","Aquatherm"]],
+  "Fixture":[["1860","Fixture fab"]]
+};
 var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)"};
 var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
 
@@ -201,26 +205,12 @@ async function loadJobs(){
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
     jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
     E("job").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
-    E("job").onchange=function(){ var jn=E("job").value; if(jn && !PHASES_BY_JOB[jn]) loadPhases(jn); else fillPhases(); };
+    E("job").onchange=function(){ lookupHours(); };
   }catch(e){ E("msg").className="msg err"; E("msg").textContent="Could not load jobs: "+(e.message||e); }
 }
-async function loadPhases(jn){
-  E("phase").innerHTML='<option value="">Loading…</option>';
-  try{
-    var rows=await pull(JOBTASKS,"JobNo,PhaseCode,PhaseDesc","fields/JobNo eq '"+String(jn).replace(/'/g,"''")+"'");
-    var seen={}, list=[];
-    rows.forEach(function(r){ if(r.JobNo!==jn) return; var p=(r.PhaseCode||"").trim(); if(!p||seen[p]) return; seen[p]=1; list.push({phase:p,desc:(r.PhaseDesc||"")}); });
-    list.sort(function(a,b){return a.phase.localeCompare(b.phase);});
-    PHASES_BY_JOB[jn]=list; fillPhases();
-  }catch(e){ E("phase").innerHTML='<option value="">Could not load phases</option>'; }
-}
 function fillPhases(){
-  var jn=E("job").value, list=PHASES_BY_JOB[jn]||[];
-  if(!jn){ E("phase").innerHTML='<option value="">Pick a job first</option>'; return; }
-  var pref=PREFIX[fabType]||[];
-  var filtered=list.filter(function(x){ return pref.some(function(p){return x.phase.indexOf(p)===0;}); });
-  if(!filtered.length){ E("phase").innerHTML='<option value="">No shop-fab phase codes on this job</option>'; lookupHours(); return; }
-  E("phase").innerHTML=filtered.map(function(x){return '<option value="'+esc(x.phase)+'">'+esc(x.phase+(x.desc?(" — "+x.desc):""))+'</option>';}).join("");
+  var list=SHOP_PHASES[fabType]||[];
+  E("phase").innerHTML=list.map(function(p){return '<option value="'+esc(p[0])+'">'+esc(p[0]+" — "+p[1])+'</option>';}).join("");
   lookupHours();
 }
 
