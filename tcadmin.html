@@ -91,6 +91,7 @@ table.ent th{color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-s
   <div class="note">Pay week runs Wednesday–Tuesday. Click any employee's name to open their entries and edit (date, employee, job, phase/line, hours, pay type) or delete. Jobs &amp; phase codes come from your lists — if one's missing, add it in Job Setup / Add Phase Codes first.</div>
   <div class="gridwrap" id="grid"><div class="loading">Loading…</div></div>
   <div class="msg" id="msg"></div>
+  <div id="linePick" style="display:none"></div>
 </div>
 
 <div class="footer">Vision Mechanical &bull; Timecard Admin &bull; Admin only. Edits write to the live SharePoint list. Fixing a week after the CSV was pulled means re-pulling or adjusting in Viewpoint.</div>
@@ -298,17 +299,39 @@ async function delEntry(i){
 function cv(x){return (x==null)?"":String(x);}
 function regularEntries(){ return ENTRIES.filter(function(r){ return (r.PayType||"Regular")==="Regular"; }); }
 function rollupPhase(p){ p=String(p||"").trim(); if(/^12/.test(p)) return "1210"; if(/^18/.test(p)) return "1800"; return p; }
+/* lines that phase rp (1210/1800) has for a job, from Job Tasks */
+function rollLines(job, rp){ var ts=TASKS_BY_JOB[job]||[], out=[], seen={}; ts.forEach(function(t){ if(String(t.phase).trim()===rp && !seen[String(t.line)]){ seen[String(t.line)]=1; out.push(t.line); } }); return out; }
+var LINECHOICE={};  /* job|rp -> chosen line, when a job has several */
+function resolveLine(job, rp, orig){ var ls=rollLines(job,rp); if(ls.length===1) return ls[0]; if(ls.length>1){ var c=LINECHOICE[job+"|"+rp]; return (c!=null&&c!=="")?c:ls[0]; } return orig; }
 function buildCSV(){
   var HEADER="Date,Hours,Job No.,,Job Name,,Phase Code,Line#,Employee Number,,,Employee Name", CRLF="\r\n";
-  var lines=regularEntries().map(function(r){ return [cv(r.WorkDateText),cv(r.Hours),cv(r.JobNo),"",cv(r.JobName),"",cv(rollupPhase(r.PhaseCode)),cv(r.LineNum),cv(r.EmployeeNumber),"","",cv(r.EmployeeName)].join(","); });
+  var lines=regularEntries().map(function(r){ var rp=rollupPhase(r.PhaseCode); var ln=(rp!==String(r.PhaseCode).trim())?resolveLine(r.JobNo,rp,r.LineNum):r.LineNum; return [cv(r.WorkDateText),cv(r.Hours),cv(r.JobNo),"",cv(r.JobName),"",cv(rp),cv(ln),cv(r.EmployeeNumber),"","",cv(r.EmployeeName)].join(","); });
   return HEADER+CRLF+lines.join(CRLF)+CRLF;
 }
-E("csvBtn").onclick=function(){
-  if(!ENTRIES.length){ E("msg").textContent="Nothing to export for this week."; return; }
+/* jobs whose rolled-up fab time could land on >1 line and need a pick */
+function ambiguousRolls(){
+  var need={};
+  regularEntries().forEach(function(r){ var rp=rollupPhase(r.PhaseCode); if(rp===String(r.PhaseCode).trim()) return; var key=r.JobNo+"|"+rp; if(key in need) return; if(rollLines(r.JobNo,rp).length>1 && (LINECHOICE[key]==null||LINECHOICE[key]==="")) need[key]={job:r.JobNo,rp:rp,lines:rollLines(r.JobNo,rp)}; });
+  return Object.keys(need).map(function(k){return need[k];});
+}
+function doDownload(){
   var blob=new Blob([buildCSV()],{type:"text/csv;charset=utf-8"}), url=URL.createObjectURL(blob), a=document.createElement("a");
   a.href=url; a.download="VisionMech_Timecard_"+iso(RS)+"_to_"+iso(RE)+".csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+regularEntries().length+" worked-hour entries for "+shortD(iso(RS))+" – "+shortD(iso(RE))+" (sick/vacation/holiday excluded).";
+  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+regularEntries().length+" worked-hour entries for "+shortD(iso(RS))+" – "+shortD(iso(RE))+" (12xx→1210, 18xx→1800; sick/vac/holiday excluded).";
+}
+E("csvBtn").onclick=function(){
+  if(!ENTRIES.length){ E("msg").textContent="Nothing to export for this week."; return; }
+  var amb=ambiguousRolls();
+  if(amb.length){
+    var h='<div style="background:#fff;border:1.5px solid var(--vm);border-radius:10px;padding:14px;margin-top:10px"><b>Pick the payroll line for rolled-up fab time</b><div style="font-size:12px;color:var(--muted);margin:4px 0 10px">These jobs have more than one line under the rolled-up phase. Choose which line that job\'s fab hours should land on.</div>';
+    amb.forEach(function(a){ h+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="min-width:140px;font-weight:600">'+esc(a.job)+' &rarr; '+a.rp+'</span><select data-key="'+esc(a.job+"|"+a.rp)+'">'+a.lines.map(function(l){return '<option value="'+esc(l)+'">Line '+esc(l)+'</option>';}).join("")+'</select></div>'; });
+    h+='<button class="btn red" id="pickDone" style="margin-top:10px">Apply &amp; download</button></div>';
+    E("linePick").innerHTML=h; E("linePick").style.display="block";
+    E("pickDone").onclick=function(){ E("linePick").querySelectorAll("select[data-key]").forEach(function(s){ LINECHOICE[s.getAttribute("data-key")]=s.value; }); E("linePick").style.display="none"; E("linePick").innerHTML=""; doDownload(); };
+    return;
+  }
+  doDownload();
 };
 
 /* ===== Wiring ===== */
