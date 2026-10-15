@@ -62,6 +62,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
       <button data-t="Sheet Metal" class="on">Sheet Metal</button>
       <button data-t="Pipe">Pipe</button>
       <button data-t="Fixture">Fixture</button>
+      <button data-t="Hangers">Hangers</button>
     </div>
 
     <label class="f">Job</label>
@@ -148,12 +149,13 @@ var MAT={
   "Fixture":["Lavatory","Water closet","Drinking fountain","Shower valve","Urinal","Mop / service basin"]
 };
 var SHOP_PHASES={
-  "Sheet Metal":[["1210","Pre-assembly"],["1220","Fittings"],["1230","Duct"],["1240","Welded steel"]],
+  "Sheet Metal":[["1210","Pre-assembly"],["1230","Duct"],["1240","Welded steel"],["1250","Fittings"]],
   "Pipe":[["1810","Steel pipe"],["1820","Copper"],["1830","PVC"],["1840","Cast iron"],["1850","Aquatherm"]],
-  "Fixture":[["1860","Fixture fab"]]
+  "Fixture":[["1860","Fixture fab"]],
+  "Hangers":[["1220","Hanger fab"]]
 };
-var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)"};
-var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
+var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)","Hangers":"Count (each)"};
+var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr","Hangers":"ea/hr"};
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
