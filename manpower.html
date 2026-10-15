@@ -90,19 +90,6 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
   </div>
 
   <div class="panel">
-    <h2>Weekly man-hours by job</h2>
-    <div class="cap">Worked field hours each pay week (Wed–Tue), stacked by job. Sick/vacation/holiday excluded.</div>
-    <div class="chartbox"><canvas id="loadChart"></canvas></div>
-    <div class="legend" id="legend"></div>
-  </div>
-
-  <div class="panel">
-    <h2>Workforce on the tools</h2>
-    <div class="cap">Distinct people who logged field time each week.</div>
-    <div class="chartbox sm"><canvas id="crewChart"></canvas></div>
-  </div>
-
-  <div class="panel">
     <h2>Hours by job — selected range</h2>
     <div class="cap">Total worked man-hours per job across the window.</div>
     <div style="overflow-x:auto"><table class="jobtable" id="jobTable"></table></div>
@@ -198,20 +185,6 @@ function compute(rows, fromWk, curWk){
     kpi(r1(peak).toLocaleString()+"h","Peak week","Busiest in range")+
     kpi(r1(rangeTotal).toLocaleString()+"h","Range total","All jobs, "+WEEKS+" wks");
   E("updated").textContent="Updated "+new Date().toLocaleString();
-
-  /* stacked bar: weeks x jobs */
-  var labels=weeks.map(shortD);
-  var TOPN=8, topJobs=jobs.slice(0,TOPN), rest=jobs.slice(TOPN);
-  var datasets=topJobs.map(function(jn,i){ var c=PALETTE[i%PALETTE.length]; return {label:jn,data:weeks.map(function(k){return r1((byWeekJob[jn][k])||0);}),backgroundColor:c,borderRadius:3,borderSkipped:false,stack:"s"}; });
-  if(rest.length){ var od=weeks.map(function(k){ var s=0; rest.forEach(function(jn){s+=(byWeekJob[jn][k])||0;}); return r1(s); }); datasets.push({label:"Other ("+rest.length+")",data:od,backgroundColor:"#5b6673",borderRadius:3,borderSkipped:false,stack:"s"}); }
-  drawLoad(labels,datasets);
-  /* legend — top jobs + Other, names trimmed */
-  var leg=topJobs.map(function(jn,i){ var nm=jobName[jn]||""; if(nm.length>22) nm=nm.slice(0,22)+"…"; return '<span><span class="dot" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+esc(jn)+(nm?(" "+esc(nm)):"")+'</span>'; });
-  if(rest.length) leg.push('<span><span class="dot" style="background:#5b6673"></span>Other ('+rest.length+' jobs)</span>');
-  E("legend").innerHTML=leg.join("");
-
-  /* crew line */
-  drawCrew(labels, weeks.map(function(k){return Object.keys(crewByWeek[k]||{}).length;}));
 
   /* job table */
   var maxJob=Math.max.apply(null,jobs.map(function(jn){return totByJob[jn];}).concat([1]));
