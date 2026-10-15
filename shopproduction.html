@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Shop Fab Run</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px 70px}
+header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;text-align:center;box-shadow:var(--shadow)}
+header.app img.logo{height:46px;background:#fff;border-radius:11px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
+header.app h1{margin:0;font-size:20px;font-weight:800}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.9;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:76px;background:#fff;border-radius:13px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gate button{margin-top:16px;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
+.denied h2{color:var(--vm2);margin:0 0 8px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-top:16px}
+.typ{display:flex;gap:8px;margin-bottom:4px}
+.typ button{flex:1;font-size:15px;font-weight:800;padding:14px 8px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);cursor:pointer}
+.typ button.on{border-color:var(--vm);background:var(--vm);color:#fff}
+label.f{display:block;margin-top:14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
+input,select,textarea{width:100%;font-size:17px;font-family:inherit;padding:12px;border:1.5px solid var(--line);border-radius:10px;margin-top:5px;background:#fff;color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
+.row{display:flex;gap:10px}
+.row>div{flex:1}
+.hide{display:none}
+.submit{width:100%;margin-top:20px;font-size:18px;font-weight:800;border:none;border-radius:12px;padding:16px;background:var(--vm);color:#fff;cursor:pointer}
+.submit:disabled{opacity:.5}
+.msg{margin-top:14px;font-size:15px;text-align:center;min-height:20px;font-weight:600}
+.ok{color:var(--good)} .err{color:#b91c1c}
+.done{text-align:center;padding:24px}
+.done .big{font-size:40px}
+.newbtn{margin-top:16px;font-size:16px;font-weight:700;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:12px 20px;cursor:pointer;color:var(--vm2)}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:150,m/qt=q:92" alt="Vision Mechanical">
+<div style="font-size:18px">Vision Mechanical — Shop Fab Run</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Shop Fab Run</h1>
+<div class="sub">Log a completed fabrication batch</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="card" id="form">
+    <div class="typ" id="typSeg">
+      <button data-t="Sheet Metal" class="on">Sheet Metal</button>
+      <button data-t="Pipe">Pipe</button>
+      <button data-t="Fixture">Fixture</button>
+    </div>
+
+    <label class="f">Job</label>
+    <select id="job"><option value="">Loading jobs…</option></select>
+
+    <label class="f">Fab phase code</label>
+    <select id="phase"><option value="">Pick a job first</option></select>
+
+    <div class="row">
+      <div>
+        <label class="f" id="outLbl">Pounds</label>
+        <input type="number" id="output" inputmode="decimal" step="any" placeholder="0">
+      </div>
+      <div>
+        <label class="f">Hours</label>
+        <input type="number" id="hours" inputmode="decimal" step="0.25" placeholder="0">
+      </div>
+    </div>
+
+    <label class="f" id="matLbl">Material / gauge</label>
+    <select id="material"></select>
+
+    <div id="smExtra">
+      <div class="row">
+        <div>
+          <label class="f">Liner</label>
+          <select id="liner"><option>None</option><option>1/2"</option><option>1"</option><option>1-1/2"</option><option>2"</option></select>
+        </div>
+        <div>
+          <label class="f">Stretch-out (ft)</label>
+          <input type="number" id="stretch" inputmode="decimal" step="any" placeholder="e.g. 4">
+        </div>
+      </div>
+    </div>
+
+    <div id="pipeExtra" class="hide">
+      <label class="f">Pipe size</label>
+      <input type="text" id="pipesize" placeholder='e.g. 2"'>
+    </div>
+
+    <div class="row">
+      <div>
+        <label class="f">Run date</label>
+        <input type="date" id="rundate">
+      </div>
+      <div>
+        <label class="f">Rate (auto)</label>
+        <input type="text" id="rate" readonly style="background:#faf9f9;font-weight:700" value="—">
+      </div>
+    </div>
+
+    <label class="f">Notes (optional)</label>
+    <textarea id="notes" rows="2" placeholder="Anything worth noting…"></textarea>
+
+    <button class="submit" id="logBtn">Log run</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card done hide" id="done">
+    <div class="big">✅</div>
+    <div style="font-size:18px;font-weight:700;margin-top:6px">Run logged</div>
+    <div id="doneDetail" style="color:var(--muted);margin-top:4px"></div>
+    <button class="newbtn" id="newRun">Log another run</button>
+  </div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Shop Fab Run &bull; Each entry = one completed batch.</div>
+
+<script>
+/* ===== Access ===== */
+var ALLOW=["nholliday@visionmech.net","avigil@visionmech.net","kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+
+/* ===== Config ===== */
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+/* ===== Dropdown options ===== */
+var MAT={
+  "Sheet Metal":["26 ga galv","24 ga galv","22 ga galv","20 ga galv","18 ga galv","16 ga galv","12 ga galv",'1/8" MS plate','1/4" MS plate','3/8" MS plate','1/2" MS plate',"Light gauge SS",'1/4" SS plate'],
+  "Pipe":["Copper — sweat","Sch 40 steel — weld","Sch 40 steel — thread","Sch 40 steel — Victaulic","Sch 80 steel — weld","Sch 80 steel — thread","Sch 80 steel — Victaulic","PVC Sch 40 — glue","Cast iron — no-hub (bands)","PEX-A — expansion","PEX — crimp"],
+  "Fixture":["Lavatory","Water closet","Drinking fountain","Shower valve","Urinal","Mop / service basin"]
+};
+var PREFIX={"Sheet Metal":["12","13"],"Pipe":["16","17","18"],"Fixture":["16","17","18"]};
+var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)"};
+var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
+
+/* ===== Auth ===== */
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", loginName="", fabType="Sheet Metal", PHASES_BY_JOB={};
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function afterLogin(acct){
+  account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username;
+  E("gate").style.display="none";
+  if(ALLOW.indexOf(loginEmail)<0){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Fab Run is limited to shop staff. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
+  E("app").style.display="block"; E("who").textContent=loginName;
+  E("rundate").value=todayISO();
+  setType("Sheet Metal"); loadJobs();
+}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+/* ===== Helpers ===== */
+function pad(n){return (n<10?"0":"")+n;}
+function todayISO(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
+
+/* ===== Type toggle ===== */
+E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setType(b.getAttribute("data-t")); }; });
+function setType(t){
+  fabType=t;
+  E("typSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-t")===t); });
+  E("outLbl").textContent=OUTLABEL[t];
+  E("matLbl").textContent = t==="Fixture" ? "Fixture type" : (t==="Pipe" ? "Material / method" : "Material / gauge");
+  E("material").innerHTML=MAT[t].map(function(m){return '<option>'+esc(m)+'</option>';}).join("");
+  E("smExtra").className = t==="Sheet Metal" ? "" : "hide";
+  E("pipeExtra").className = t==="Pipe" ? "" : "hide";
+  fillPhases(); calcRate();
+}
+
+/* ===== Jobs + phase codes ===== */
+async function pull(listId,select,filter){
+  var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=5000"+(filter?("&$filter="+filter):""), out=[];
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+  return out;
+}
+async function loadJobs(){
+  try{
+    var tasks=await pull(JOBTASKS,"JobNo,JobName,Active");
+    var seen={}, jobs=[];
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
+    jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
+    E("job").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
+    E("job").onchange=function(){ var jn=E("job").value; if(jn && !PHASES_BY_JOB[jn]) loadPhases(jn); else fillPhases(); };
+  }catch(e){ E("msg").className="msg err"; E("msg").textContent="Could not load jobs: "+(e.message||e); }
+}
+async function loadPhases(jn){
+  E("phase").innerHTML='<option value="">Loading…</option>';
+  try{
+    var rows=await pull(JOBTASKS,"JobNo,PhaseCode,PhaseDesc","fields/JobNo eq '"+String(jn).replace(/'/g,"''")+"'");
+    var seen={}, list=[];
+    rows.forEach(function(r){ if(r.JobNo!==jn) return; var p=(r.PhaseCode||"").trim(); if(!p||seen[p]) return; seen[p]=1; list.push({phase:p,desc:(r.PhaseDesc||"")}); });
+    list.sort(function(a,b){return a.phase.localeCompare(b.phase);});
+    PHASES_BY_JOB[jn]=list; fillPhases();
+  }catch(e){ E("phase").innerHTML='<option value="">Could not load phases</option>'; }
+}
+function fillPhases(){
+  var jn=E("job").value, list=PHASES_BY_JOB[jn]||[];
+  if(!jn){ E("phase").innerHTML='<option value="">Pick a job first</option>'; return; }
+  var pref=PREFIX[fabType]||[];
+  var filtered=list.filter(function(x){ return pref.some(function(p){return x.phase.indexOf(p)===0;}); });
+  var use=filtered.length?filtered:list;
+  if(!use.length){ E("phase").innerHTML='<option value="">No phase codes on this job</option>'; return; }
+  E("phase").innerHTML=use.map(function(x){return '<option value="'+esc(x.phase)+'">'+esc(x.phase+(x.desc?(" — "+x.desc):""))+'</option>';}).join("");
+}
+
+/* ===== Live rate ===== */
+["output","hours"].forEach(function(id){ E(id).oninput=calcRate; });
+function calcRate(){ var o=parseFloat(E("output").value), h=parseFloat(E("hours").value); if(o>0&&h>0){ E("rate").value=(Math.round(o/h*10)/10)+" "+RATEUNIT[fabType]; } else { E("rate").value="—"; } }
+
+/* ===== Submit ===== */
+E("logBtn").onclick=async function(){
+  var jn=E("job").value, jname=(E("job").selectedOptions[0]&&E("job").selectedOptions[0].getAttribute("data-name"))||"";
+  var phase=E("phase").value, output=parseFloat(E("output").value), hours=parseFloat(E("hours").value), material=E("material").value;
+  var rundate=E("rundate").value, notes=E("notes").value.trim();
+  if(!jn){ return fail("Pick a job."); }
+  if(!phase){ return fail("Pick a phase code."); }
+  if(!(output>0)){ return fail("Enter the "+OUTLABEL[fabType].toLowerCase()+"."); }
+  if(!(hours>0)){ return fail("Enter hours."); }
+  if(!rundate){ return fail("Pick a run date."); }
+  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, Hours:hours, Material:material, LoggedBy:loginName, Notes:notes };
+  if(fabType==="Sheet Metal"){ fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
+  if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); }
+  E("logBtn").disabled=true; E("msg").className="msg"; E("msg").textContent="Saving…";
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+SHOP+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
+    E("form").className="card hide";
+    E("doneDetail").textContent=jn+" · "+fabType+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+" in "+hours+" h ("+(Math.round(output/hours*10)/10)+" "+RATEUNIT[fabType]+")";
+    E("done").className="card done";
+  }catch(e){ E("logBtn").disabled=false; fail("Save failed: "+(e.message||e)); }
+};
+function fail(m){ E("msg").className="msg err"; E("msg").textContent=m; }
+E("newRun").onclick=function(){
+  E("output").value=""; E("hours").value=""; E("stretch").value=""; E("pipesize").value=""; E("notes").value=""; E("rate").value="—"; E("liner").selectedIndex=0;
+  E("rundate").value=todayISO(); E("msg").textContent=""; E("logBtn").disabled=false;
+  E("done").className="card done hide"; E("form").className="card";
+};
+</script>
+</body>
+</html>
