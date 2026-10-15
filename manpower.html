@@ -83,7 +83,7 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div><h2>Manpower Load Projection</h2><div class="cap">Forecast crew by division through the furthest job finish date — ramp up, peak, taper down.</div></div>
       <div class="spacer"></div>
-      <div class="seg" id="hpwSeg"><button data-h="40" class="on">40 h/wk</button><button data-h="45">45 h/wk</button><button data-h="50">50 h/wk</button></div>
+      <div class="seg" id="hpwSeg"><button data-h="40" class="on">40 h/wk</button><button data-h="50">50 h/wk</button><button data-h="60">60 h/wk</button></div>
     </div>
     <div class="chartbox" style="height:380px"><canvas id="projChart"></canvas></div>
     <div class="cap" id="projNote"></div>
@@ -201,10 +201,14 @@ function compute(rows, fromWk, curWk){
 
   /* stacked bar: weeks x jobs */
   var labels=weeks.map(shortD);
-  var datasets=jobs.map(function(jn,i){ var c=PALETTE[i%PALETTE.length]; return {label:jn,data:weeks.map(function(k){return r1((byWeekJob[jn][k])||0);}),backgroundColor:c,borderRadius:3,borderSkipped:false,stack:"s"}; });
+  var TOPN=8, topJobs=jobs.slice(0,TOPN), rest=jobs.slice(TOPN);
+  var datasets=topJobs.map(function(jn,i){ var c=PALETTE[i%PALETTE.length]; return {label:jn,data:weeks.map(function(k){return r1((byWeekJob[jn][k])||0);}),backgroundColor:c,borderRadius:3,borderSkipped:false,stack:"s"}; });
+  if(rest.length){ var od=weeks.map(function(k){ var s=0; rest.forEach(function(jn){s+=(byWeekJob[jn][k])||0;}); return r1(s); }); datasets.push({label:"Other ("+rest.length+")",data:od,backgroundColor:"#5b6673",borderRadius:3,borderSkipped:false,stack:"s"}); }
   drawLoad(labels,datasets);
-  /* legend */
-  E("legend").innerHTML=jobs.map(function(jn,i){ return '<span><span class="dot" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+esc(jn)+(jobName[jn]?(" "+esc(jobName[jn])):"")+'</span>'; }).join("");
+  /* legend — top jobs + Other, names trimmed */
+  var leg=topJobs.map(function(jn,i){ var nm=jobName[jn]||""; if(nm.length>22) nm=nm.slice(0,22)+"…"; return '<span><span class="dot" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+esc(jn)+(nm?(" "+esc(nm)):"")+'</span>'; });
+  if(rest.length) leg.push('<span><span class="dot" style="background:#5b6673"></span>Other ('+rest.length+' jobs)</span>');
+  E("legend").innerHTML=leg.join("");
 
   /* crew line */
   drawCrew(labels, weeks.map(function(k){return Object.keys(crewByWeek[k]||{}).length;}));
