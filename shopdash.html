@@ -76,8 +76,13 @@ th.l,td.l{text-align:left}
   </div>
 
   <div class="card">
-    <h2 id="brkTitle">Rate breakdown</h2>
+    <h2 id="brkTitle">Rate by phase</h2>
     <div class="tablewrap"><table id="brkTbl"></table></div>
+  </div>
+
+  <div class="card" id="brk2Card" style="display:none">
+    <h2 id="brk2Title">Rate by gauge</h2>
+    <div class="tablewrap"><table id="brk2Tbl"></table></div>
   </div>
 
   <div class="card">
@@ -101,6 +106,7 @@ var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr"};
 var BAND={"Sheet Metal":[600,3500]};
+var PHASE_NAME={"1210":"Pre-assembly","1220":"Fittings","1230":"Duct","1240":"Welded steel","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm"};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, RUNS=[], fabType="Sheet Metal", scatterChart=null;
@@ -149,8 +155,7 @@ function render(){
   k+=kpi(all!=null?n1(all):"—","Avg "+u,rated.length+" rated runs","hi");
   if(fabType==="Sheet Metal"){
     var unl=rows.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=rows.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
-    var duct=rows.filter(function(r){return r.f.Category==="Duct";}), fit=rows.filter(function(r){return r.f.Category==="Fittings";});
-    k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u)+kpi(cr(blended(duct)),"Duct "+u)+kpi(cr(blended(fit)),"Fittings "+u);
+    k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u);
   }
   k+=kpi(n0(rows.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(rows.length,"Runs logged");
   E("kpis").innerHTML=k;
@@ -160,41 +165,36 @@ function render(){
   E("chartCap").textContent = BAND[fabType] ? ("Each dot = one run. Shaded band = measured optimal range ("+BAND[fabType][0]+"–"+BAND[fabType][1]+" "+unit+").") : "Each dot = one run. Optimal band fills in as the study builds.";
   drawScatter(rated, unit, u);
 
-  /* breakdown by material */
-  var byMat={};
-  rows.forEach(function(r){ var m=r.f.Material||"(none)"; (byMat[m]=byMat[m]||[]).push(r); });
-  var mats=Object.keys(byMat).map(function(m){ var l=byMat[m]; return {m:m, rate:blended(l), runs:l.length, out:l.reduce(function(s,r){return s+r.out;},0)}; }).filter(function(x){return x.rate!=null;}).sort(function(a,b){return b.rate-a.rate;});
-  E("brkTitle").textContent = fabType==="Sheet Metal" ? "Rate by material / gauge" : (fabType==="Pipe" ? "Rate by material / method" : "Rate by fixture type");
-  if(!mats.length){ E("brkTbl").innerHTML='<tbody><tr><td class="l empty">No rated runs yet.</td></tr></tbody>'; }
-  else { var mx=Math.max.apply(null,mats.map(function(x){return x.rate;}));
-    var h='<thead><tr><th class="l">'+(fabType==="Fixture"?"Type":"Material")+'</th><th>Avg '+u+'</th><th>Runs</th><th>Total '+unit+'</th><th style="width:28%">&nbsp;</th></tr></thead><tbody>';
-    mats.forEach(function(x){ h+='<tr><td class="l">'+esc(x.m)+'</td><td><b>'+n1(x.rate)+'</b></td><td>'+x.runs+'</td><td>'+n0(x.out)+'</td><td><span class="bar" style="width:100%"><div style="width:'+Math.round(x.rate/mx*100)+'%"></div></span></td></tr>'; });
-    E("brkTbl").innerHTML=h+'</tbody>';
-  }
+  /* breakdown by phase (phase now carries category/material) */
+  breakdownTable("brkTbl", rows, function(r){return r.f.PhaseCode||"(none)";}, function(key){return key+(PHASE_NAME[key]?(" "+PHASE_NAME[key]):"");}, u, unit, "Phase");
+  if(fabType==="Sheet Metal"){ E("brk2Card").style.display="block"; breakdownTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, function(k){return k;}, u, unit, "Gauge"); }
+  else { E("brk2Card").style.display="none"; }
 
   /* runs table */
   if(!rows.length){ E("runsTbl").innerHTML='<tbody><tr><td class="l empty">No '+fabType.toLowerCase()+' runs logged yet.</td></tr></tbody>'; return; }
-  var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Cat / Liner / Material":(fabType==="Pipe"?"Material / size":"Type"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th></tr></thead><tbody>';
-  rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Category||"")+" · "+(f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? ((f.Material||"")+(f.PipeSize?(" · "+f.PipeSize):"")) : (f.Material||""));
+  var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Liner / gauge":(fabType==="Pipe"?"Size":"Detail"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th></tr></thead><tbody>';
+  rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? (f.PipeSize||"") : "");
     rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td><td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?n1(r.rate):'<span style="color:#b91c1c">pending</span>')+'</b></td></tr>'; });
   E("runsTbl").innerHTML=rh+'</tbody>';
 }
 function cr(v){ return v!=null?n1(v):"—"; }
+function breakdownTable(elId, rows, keyFn, labelFn, u, unit, colName){
+  var by={}; rows.forEach(function(r){ var kk=keyFn(r); (by[kk]=by[kk]||[]).push(r); });
+  var items=Object.keys(by).map(function(kk){ var l=by[kk]; return {k:kk, rate:blended(l), runs:l.length, out:l.reduce(function(s,r){return s+r.out;},0)}; }).filter(function(x){return x.rate!=null;}).sort(function(a,b){return b.rate-a.rate;});
+  if(!items.length){ E(elId).innerHTML='<tbody><tr><td class="l empty">No rated runs yet.</td></tr></tbody>'; return; }
+  var mx=Math.max.apply(null,items.map(function(x){return x.rate;}));
+  var h='<thead><tr><th class="l">'+colName+'</th><th>Avg '+u+'</th><th>Runs</th><th>Total '+unit+'</th><th style="width:28%">&nbsp;</th></tr></thead><tbody>';
+  items.forEach(function(x){ h+='<tr><td class="l">'+esc(labelFn(x.k))+'</td><td><b>'+n1(x.rate)+'</b></td><td>'+x.runs+'</td><td>'+n0(x.out)+'</td><td><span class="bar" style="width:100%"><div style="width:'+Math.round(x.rate/mx*100)+'%"></div></span></td></tr>'; });
+  E(elId).innerHTML=h+'</tbody>';
+}
 
 var bandPlugin={id:"band",beforeDatasetsDraw:function(chart){ var b=chart.$band; if(!b) return; var a=chart.chartArea, s=chart.scales.x; if(!a||!s) return; var x1=s.getPixelForValue(b[0]), x2=s.getPixelForValue(b[1]); var ctx=chart.ctx; ctx.save(); ctx.fillStyle="rgba(21,128,61,.09)"; ctx.fillRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.strokeStyle="rgba(21,128,61,.35)"; ctx.setLineDash([4,4]); ctx.strokeRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.restore(); }};
 function drawScatter(rated, unit, u){
-  var pts;
-  if(fabType==="Sheet Metal"){
-    var duct=rated.filter(function(r){return r.f.Category==="Duct";}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};});
-    var fit=rated.filter(function(r){return r.f.Category==="Fittings";}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};});
-    pts=[{label:"Duct",data:duct,backgroundColor:"#4cc9f0",pointRadius:5},{label:"Fittings",data:fit,backgroundColor:"#c0392b",pointRadius:5}];
-  } else {
-    pts=[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
-  }
+  var pts=[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
   if(scatterChart) scatterChart.destroy();
   scatterChart=new Chart(E("scatter").getContext("2d"),{type:"scatter",data:{datasets:pts},plugins:[bandPlugin],
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:fabType==="Sheet Metal"},tooltip:{callbacks:{label:function(i){return n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
       scales:{x:{title:{display:true,text:"Batch size ("+unit+")"},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true},y:{title:{display:true,text:u},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true}}}});
   scatterChart.$band=BAND[fabType]||null; scatterChart.update();
 }
