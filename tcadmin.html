@@ -297,9 +297,10 @@ async function delEntry(i){
 /* ===== CSV (Viewpoint) — the shown pay week ===== */
 function cv(x){return (x==null)?"":String(x);}
 function regularEntries(){ return ENTRIES.filter(function(r){ return (r.PayType||"Regular")==="Regular"; }); }
+function rollupPhase(p){ p=String(p||"").trim(); if(/^12/.test(p)) return "1210"; if(/^18/.test(p)) return "1800"; return p; }
 function buildCSV(){
   var HEADER="Date,Hours,Job No.,,Job Name,,Phase Code,Line#,Employee Number,,,Employee Name", CRLF="\r\n";
-  var lines=regularEntries().map(function(r){ return [cv(r.WorkDateText),cv(r.Hours),cv(r.JobNo),"",cv(r.JobName),"",cv(r.PhaseCode),cv(r.LineNum),cv(r.EmployeeNumber),"","",cv(r.EmployeeName)].join(","); });
+  var lines=regularEntries().map(function(r){ return [cv(r.WorkDateText),cv(r.Hours),cv(r.JobNo),"",cv(r.JobName),"",cv(rollupPhase(r.PhaseCode)),cv(r.LineNum),cv(r.EmployeeNumber),"","",cv(r.EmployeeName)].join(","); });
   return HEADER+CRLF+lines.join(CRLF)+CRLF;
 }
 E("csvBtn").onclick=function(){
