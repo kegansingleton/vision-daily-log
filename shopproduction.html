@@ -70,19 +70,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
     <label class="f">Fab phase code</label>
     <select id="phase"><option value="">Pick a job first</option></select>
 
-    <div id="catWrap">
-      <label class="f">Category</label>
-      <div class="typ" id="catSeg" style="margin-top:5px">
-        <button data-c="Duct" class="on">Duct</button>
-        <button data-c="Fittings">Fittings</button>
-      </div>
-    </div>
-
     <label class="f" id="outLbl">Pounds</label>
     <input type="number" id="output" inputmode="decimal" step="any" placeholder="0">
 
-    <label class="f" id="matLbl">Material / gauge</label>
-    <select id="material"></select>
+    <div id="matWrap">
+      <label class="f" id="matLbl">Material / gauge</label>
+      <select id="material"></select>
+    </div>
 
     <div id="smExtra">
       <div class="row">
@@ -181,17 +175,16 @@ function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
 
 /* ===== Type toggle ===== */
 E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setType(b.getAttribute("data-t")); }; });
-var CAT="Duct";
-E("catSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ CAT=b.getAttribute("data-c"); E("catSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); }; });
+
 function setType(t){
   fabType=t;
   E("typSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-t")===t); });
   E("outLbl").textContent=OUTLABEL[t];
-  E("matLbl").textContent = t==="Fixture" ? "Fixture type" : (t==="Pipe" ? "Material / method" : "Material / gauge");
-  E("material").innerHTML=MAT[t].map(function(m){return '<option>'+esc(m)+'</option>';}).join("");
-  E("smExtra").className = t==="Sheet Metal" ? "" : "hide";
-  E("pipeExtra").className = t==="Pipe" ? "" : "hide";
-  E("catWrap").className = t==="Sheet Metal" ? "" : "hide";
+  var isSM=(t==="Sheet Metal");
+  E("matWrap").className = isSM ? "" : "hide";
+  if(isSM) E("material").innerHTML=MAT["Sheet Metal"].map(function(m){return '<option>'+esc(m)+'</option>';}).join("");
+  E("smExtra").className = isSM ? "" : "hide";
+  E("pipeExtra").className = (t==="Pipe") ? "" : "hide";
   fillPhases();
 }
 
@@ -262,14 +255,14 @@ function showHours(jn,phase,dt){
 /* ===== Submit ===== */
 E("logBtn").onclick=async function(){
   var jn=E("job").value, jname=(E("job").selectedOptions[0]&&E("job").selectedOptions[0].getAttribute("data-name"))||"";
-  var phase=E("phase").value, output=parseFloat(E("output").value), material=E("material").value;
+  var phase=E("phase").value, output=parseFloat(E("output").value);
   var rundate=E("rundate").value, notes=E("notes").value.trim();
   if(!jn){ return fail("Pick a job."); }
   if(!phase){ return fail("Pick a phase code."); }
   if(!(output>0)){ return fail("Enter the "+OUTLABEL[fabType].toLowerCase()+"."); }
   if(!rundate){ return fail("Pick a run date."); }
-  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, Material:material, LoggedBy:loginName, Notes:notes };
-  if(fabType==="Sheet Metal"){ fields.Category=CAT; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
+  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, LoggedBy:loginName, Notes:notes };
+  if(fabType==="Sheet Metal"){ fields.Material=E("material").value; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
   if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); }
   E("logBtn").disabled=true; E("msg").className="msg"; E("msg").textContent="Saving…";
   try{ var token=await getToken();
@@ -277,7 +270,7 @@ E("logBtn").onclick=async function(){
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
     E("form").className="card hide";
     var rt=(curHours>0)?(" ("+(Math.round(output/curHours*10)/10)+" "+RATEUNIT[fabType]+")"):" (rate fills in once hours post)";
-    E("doneDetail").textContent=jn+" · "+fabType+(fabType==="Sheet Metal"?(" · "+CAT):"")+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+rt;
+    E("doneDetail").textContent=jn+" · "+phase+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+rt;
     E("done").className="card done";
   }catch(e){ E("logBtn").disabled=false; fail("Save failed: "+(e.message||e)); }
 };
