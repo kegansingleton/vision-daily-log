@@ -298,7 +298,7 @@ async function delEntry(i){
 /* ===== CSV (Viewpoint) — the shown pay week ===== */
 function cv(x){return (x==null)?"":String(x);}
 function regularEntries(){ return ENTRIES.filter(function(r){ return (r.PayType||"Regular")==="Regular"; }); }
-function rollupPhase(p){ p=String(p||"").trim(); if(/^12/.test(p)) return "1210"; if(/^18/.test(p)) return "1800"; return p; }
+function rollupPhase(p){ p=String(p||"").trim(); if(/^12/.test(p)) return "1211"; if(/^18/.test(p)) return "1800"; return p; }
 /* lines that phase rp (1210/1800) has for a job, from Job Tasks */
 function rollLines(job, rp){ var ts=TASKS_BY_JOB[job]||[], out=[], seen={}; ts.forEach(function(t){ if(String(t.phase).trim()===rp && !seen[String(t.line)]){ seen[String(t.line)]=1; out.push(t.line); } }); return out; }
 var LINECHOICE={};  /* job|rp -> chosen line, when a job has several */
@@ -318,7 +318,7 @@ function doDownload(){
   var blob=new Blob([buildCSV()],{type:"text/csv;charset=utf-8"}), url=URL.createObjectURL(blob), a=document.createElement("a");
   a.href=url; a.download="VisionMech_Timecard_"+iso(RS)+"_to_"+iso(RE)+".csv";
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+regularEntries().length+" worked-hour entries for "+shortD(iso(RS))+" – "+shortD(iso(RE))+" (12xx→1210, 18xx→1800; sick/vac/holiday excluded).";
+  E("msg").style.color="#15803d"; E("msg").textContent="Downloaded "+regularEntries().length+" worked-hour entries for "+shortD(iso(RS))+" – "+shortD(iso(RE))+" (12xx→1211, 18xx→1800; sick/vac/holiday excluded).";
 }
 E("csvBtn").onclick=function(){
   if(!ENTRIES.length){ E("msg").textContent="Nothing to export for this week."; return; }
