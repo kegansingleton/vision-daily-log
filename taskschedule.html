@@ -40,13 +40,17 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
 .pbar>div{height:100%;background:var(--vm)}
 .pctin{width:56px;font-size:13px;border:1.5px solid var(--line);border-radius:6px;padding:4px 6px;text-align:right;font-family:inherit}
 .pctin:focus{border-color:var(--vm);outline:none}
+.priorin{width:64px;font-size:13px;border:1.5px solid var(--line);border-radius:6px;padding:4px 6px;text-align:right;font-family:inherit}
+.priorin:focus{border-color:var(--vm);outline:none}
 .tag{font-weight:700;padding:2px 8px;border-radius:6px;font-size:12px}
 .tag.g{background:var(--goodbg);color:var(--good)} .tag.w{background:var(--warnbg);color:var(--warn)} .tag.b{background:var(--badbg);color:var(--bad)} .tag.m{color:var(--muted)}
 .loading,.empty{padding:40px;text-align:center;color:var(--muted)}
 .note{font-size:12px;color:var(--muted);margin:10px 2px}
+.chartbox{position:relative;height:300px}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -70,6 +74,7 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
     <span class="rolepill" id="rolePill"></span>
   </div>
   <div class="kpis" id="kpis"></div>
+  <div class="card" id="chartCard" style="display:none;padding:16px"><div class="chartbox"><canvas id="phaseChart"></canvas></div></div>
   <div class="card"><div id="sched"><div class="loading">Pick a job…</div></div></div>
   <div class="note" id="roleNote"></div>
 </div>
@@ -91,15 +96,16 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginEmail="", isPM=false;
+var account=null, loginEmail="", isPM=false, isAdmin=false, phaseChart=null;
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
-  isPM=(PM.indexOf(loginEmail)>-1);
+  isPM=(PM.indexOf(loginEmail)>-1); isAdmin=(ADMIN.indexOf(loginEmail)>-1);
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username;
-  E("rolePill").textContent=isPM?"Project Manager — can edit %":"View only";
-  E("rolePill").className="rolepill"+(isPM?"":" view");
-  E("roleNote").textContent=isPM?"You can edit % Complete — type a value and it saves automatically.":"% Complete is editable by Project Managers and admins.";
+  E("rolePill").textContent=isAdmin?"Admin — edit % and adjustments":(isPM?"Project Manager — can edit %":"View only");
+  E("rolePill").className="rolepill"+((isAdmin||isPM)?"":" view");
+  E("roleNote").textContent=isAdmin?"You can edit % Complete and set an Adjustment (hours burned before the portal, or any correction). Actual = Adjustment + logged time. Saves automatically."
+    :(isPM?"You can edit % Complete — type a value and it saves automatically.":"% Complete is editable by PMs; the Adjustment by admins.");
   loadJobs();
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
@@ -132,7 +138,7 @@ function esc1(s){return String(s||"").replace(/'/g,"''");}
 async function loadSchedule(jobNo){
   E("sched").innerHTML='<div class="loading">Loading '+esc(jobNo)+'…</div>'; E("kpis").innerHTML="";
   try{
-    var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,PercentComplete","fields/JobNo eq '"+esc1(jobNo)+"'");
+    var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,PercentComplete,AdjustHours","fields/JobNo eq '"+esc1(jobNo)+"'");
     tasks=tasks.filter(function(t){return t.JobNo===jobNo;});
     /* actual hours from timecards, keyed phase|line */
     var tc=await pull(TC,"JobNo,PhaseCode,LineNum,Hours","fields/JobNo eq '"+esc1(jobNo)+"'");
@@ -151,31 +157,37 @@ function render(jobNo, tasks, act){
   var byPhase={}, phaseOrder=[];
   tasks.forEach(function(t){ var p=(t.PhaseCode||"").trim(); if(!byPhase[p]){byPhase[p]={desc:t.PhaseDesc||"",rows:[]};phaseOrder.push(p);} byPhase[p].rows.push(t); });
   phaseOrder.sort();
-  var JB=0,AC=0,EA=0;
-  var h='<table><thead><tr><th class="l">Phase / Area</th><th class="l">Description</th><th>Budget</th><th>Actual</th><th>Δ</th><th>% Compl</th><th>Earned</th><th>P.F.</th><th>Proj @ Compl</th><th>Variance</th></tr></thead><tbody>';
+  var JB=0,AC=0,EA=0,JP=0;
+  var cLabels=[],cBud=[],cAct=[],cErn=[];
+  var h='<table><thead><tr><th class="l">Phase / Area</th><th class="l">Description</th><th>Budget</th><th>Adjustment</th><th>Actual</th><th>Δ</th><th>% Compl</th><th>Earned</th><th>P.F.</th><th>Proj @ Compl</th><th>Variance</th></tr></thead><tbody>';
   phaseOrder.forEach(function(p){
     var g=byPhase[p]; g.rows.sort(function(a,b){return String(a.LineNum).localeCompare(String(b.LineNum));});
-    var pB=0,pA=0,pE=0;
-    h+='<tr class="phase"><td class="l" colspan="2">'+esc(p)+'  '+esc(g.desc)+'</td><td colspan="8"></td></tr>';
+    var pB=0,pA=0,pE=0,pP=0;
+    h+='<tr class="phase"><td class="l" colspan="2">'+esc(p)+'  '+esc(g.desc)+'</td><td colspan="9"></td></tr>';
     g.rows.forEach(function(t){
-      var b=parseFloat(t.BudgetHours)||0, a=act[(t.PhaseCode||"")+"|"+(t.LineNum||"")]||0, pct=parseFloat(t.PercentComplete)||0;
+      var b=parseFloat(t.BudgetHours)||0, logged=act[(t.PhaseCode||"")+"|"+(t.LineNum||"")]||0, prior=parseFloat(t.AdjustHours)||0, a=prior+logged, pct=parseFloat(t.PercentComplete)||0;
       var earned=b*pct/100, f=forecast(a,pct), vf=pf(earned,a), vr=(f==null)?null:(b-f);
-      pB+=b; pA+=a; pE+=earned; JB+=b; AC+=a; EA+=earned;
+      pB+=b; pA+=a; pE+=earned; pP+=prior; JB+=b; AC+=a; EA+=earned; JP+=prior;
       var pctCell=isPM
         ? '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span><input class="pctin" type="number" min="0" max="100" value="'+(pct||"")+'" data-id="'+esc(t.__id)+'">'
         : '<span class="pbar"><div style="width:'+Math.min(100,pct)+'%"></div></span>'+pct+'%';
+      var priorCell=isAdmin
+        ? '<input class="priorin" type="number" step="0.5" min="0" value="'+(prior||"")+'" data-id="'+esc(t.__id)+'" title="One-time hours adjustment">'
+        : n1(prior);
       h+='<tr><td class="l">'+esc(t.LineNum||"")+'</td><td class="l" style="color:var(--muted)">'+esc(t.LineDesc||g.desc)+'</td>'+
-         '<td class="num">'+n1(b)+'</td><td class="num">'+n1(a)+'</td><td class="num '+((b-a)<0?"":"")+'">'+varTag(b-a)+'</td>'+
+         '<td class="num">'+n1(b)+'</td><td class="num">'+priorCell+'</td><td class="num"><b>'+n1(a)+'</b></td><td class="num">'+varTag(b-a)+'</td>'+
          '<td class="num">'+pctCell+'</td><td class="num">'+n1(earned)+'</td><td class="num">'+pfTag(vf)+'</td>'+
          '<td class="num">'+(f==null?'<span class="tag m">—</span>':n1(f))+'</td><td class="num">'+varTag(vr)+'</td></tr>';
     });
     var pPct=pB>0?(pE/pB*100):0, pPF=pf(pE,pA);
-    h+='<tr class="sub"><td class="l" colspan="2">'+esc(g.desc||p)+' subtotal</td><td class="num">'+n1(pB)+'</td><td class="num">'+n1(pA)+'</td><td class="num">'+varTag(pB-pA)+'</td><td class="num">'+Math.round(pPct)+'%</td><td class="num">'+n1(pE)+'</td><td class="num">'+pfTag(pPF)+'</td><td></td><td></td></tr>';
+    h+='<tr class="sub"><td class="l" colspan="2">'+esc(g.desc||p)+' subtotal</td><td class="num">'+n1(pB)+'</td><td class="num">'+n1(pP)+'</td><td class="num">'+n1(pA)+'</td><td class="num">'+varTag(pB-pA)+'</td><td class="num">'+Math.round(pPct)+'%</td><td class="num">'+n1(pE)+'</td><td class="num">'+pfTag(pPF)+'</td><td></td><td></td></tr>';
+    cLabels.push(p+(g.desc?(" "+g.desc):"")); cBud.push(Math.round(pB*10)/10); cAct.push(Math.round(pA*10)/10); cErn.push(Math.round(pE*10)/10);
   });
   var JPct=JB>0?(EA/JB*100):0, JPF=pf(EA,AC), JForecast=(JPct>0?AC/(JPct/100):null), JVar=(JForecast==null?null:JB-JForecast);
-  h+='<tr class="total"><td class="l" colspan="2">JOB TOTAL — '+esc(jobNo)+' '+esc(jobName)+'</td><td class="num">'+n1(JB)+'</td><td class="num">'+n1(AC)+'</td><td class="num">'+(JB-AC>=0?"+":"")+n1(JB-AC)+'</td><td class="num">'+Math.round(JPct)+'%</td><td class="num">'+n1(EA)+'</td><td class="num">'+(JPF==null?"—":(Math.round(JPF*100)/100).toFixed(2))+'</td><td class="num">'+(JForecast==null?"—":n1(JForecast))+'</td><td class="num">'+(JVar==null?"—":((JVar>=0?"+":"")+n1(JVar)))+'</td></tr>';
+  h+='<tr class="total"><td class="l" colspan="2">JOB TOTAL — '+esc(jobNo)+' '+esc(jobName)+'</td><td class="num">'+n1(JB)+'</td><td class="num">'+n1(JP)+'</td><td class="num">'+n1(AC)+'</td><td class="num">'+(JB-AC>=0?"+":"")+n1(JB-AC)+'</td><td class="num">'+Math.round(JPct)+'%</td><td class="num">'+n1(EA)+'</td><td class="num">'+(JPF==null?"—":(Math.round(JPF*100)/100).toFixed(2))+'</td><td class="num">'+(JForecast==null?"—":n1(JForecast))+'</td><td class="num">'+(JVar==null?"—":((JVar>=0?"+":"")+n1(JVar)))+'</td></tr>';
   h+='</tbody></table>';
   E("sched").innerHTML=h;
+  drawPhaseChart(cLabels,cBud,cAct,cErn);
 
   /* KPI cards */
   E("kpis").innerHTML=
@@ -186,11 +198,32 @@ function render(jobNo, tasks, act){
     kpi((JForecast==null?"—":n1(JForecast)),"Forecast hrs")+
     kpi((JVar==null?"—":((JVar>=0?"+":"")+n1(JVar))),"Variance @ compl");
 
-  /* wire % edits */
+  /* wire edits */
   if(isPM){ E("sched").querySelectorAll(".pctin").forEach(function(inp){ inp.onchange=function(){ savePct(inp); }; }); }
+  if(isAdmin){ E("sched").querySelectorAll(".priorin").forEach(function(inp){ inp.onchange=function(){ savePrior(inp); }; }); }
 }
 function kpi(v,l){ return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+function drawPhaseChart(labels,bud,act,ern){
+  E("chartCard").style.display="block";
+  if(phaseChart) phaseChart.destroy();
+  phaseChart=new Chart(E("phaseChart").getContext("2d"),{type:"bar",data:{labels:labels,datasets:[
+    {label:"Budget",data:bud,backgroundColor:"#c8932a",borderRadius:3},
+    {label:"Actual",data:act,backgroundColor:"#c0392b",borderRadius:3},
+    {label:"Earned",data:ern,backgroundColor:"#15803d",borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"top"},title:{display:true,text:"Budget vs Actual vs Earned hours — by phase"}},
+    scales:{x:{ticks:{color:"#6b7280",autoSkip:false,maxRotation:55}},y:{beginAtZero:true,ticks:{color:"#6b7280",callback:function(v){return v+"h";}},grid:{color:"#eee"}}}}});
+}
 
+async function savePrior(inp){
+  var id=inp.getAttribute("data-id"), v=inp.value.trim(), num=(v===""?0:parseFloat(v));
+  if(isNaN(num)||num<0){ inp.style.borderColor="#b91c1c"; return; }
+  inp.style.borderColor="#15803d";
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+JOBTASKS+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({AdjustHours:num})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    loadSchedule(E("jobPick").value);
+  }catch(e){ inp.style.borderColor="#b91c1c"; alert("Save failed: "+(e.message||e)); }
+}
 async function savePct(inp){
   var id=inp.getAttribute("data-id"), v=inp.value.trim();
   var num=(v===""?0:parseFloat(v));
