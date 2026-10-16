@@ -91,8 +91,9 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
   </div>
 
   <div class="panel">
-    <h2>Hours by job — selected range</h2>
-    <div class="cap">Actual man-hours worked per job (from timecards) across the range above. Sick, vacation &amp; holiday are excluded.</div>
+    <h2 id="jobHdr">Hours by job — selected range</h2>
+    <div class="cap">Actual man-hours worked per job (from timecards) for the pay weeks shown. Sick, vacation &amp; holiday are excluded.</div>
+    <div class="cap" id="jobNote" style="color:#f2a65a;font-weight:600"></div>
     <div style="overflow-x:auto"><table class="jobtable" id="jobTable"></table></div>
   </div>
 
@@ -134,11 +135,13 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return
 function r1(n){return Math.round(n*10)/10;}
 
 /* ===== Load + compute ===== */
-var WEEKS=12, loadChart=null, crewChart=null;
+var WEEKS=12, loadChart=null, crewChart=null, RUN_SEQ=0;
 E("seg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ E("seg").querySelectorAll("button").forEach(function(x){x.classList.remove("on");}); b.classList.add("on"); WEEKS=+b.getAttribute("data-w"); run(); }; });
 
 async function run(){
+  var seq=++RUN_SEQ;  /* ignore results from an older click that finishes late */
   E("loading").style.display="block"; E("loading").textContent="Loading manpower data…";
+  E("jobHdr").textContent="Hours by job — loading "+WEEKS+" wks…"; E("jobNote").textContent=""; E("jobTable").style.opacity=".35";
   try{
     var curWk=payWeekStart(new Date());
     var fromWk=addDays(curWk,-7*(WEEKS-1));
@@ -149,20 +152,23 @@ async function run(){
     async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } }
     try{ await page(base+"&$filter=fields/WorkDate ge '"+fromISO+"T00:00:00Z' and fields/WorkDate le '"+toISO+"T23:59:59Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
     catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); out=out.filter(function(r){var d=dkey(r.WorkDate);return d>=fromISO&&d<=toISO;}); }
+    if(seq!==RUN_SEQ) return;
     compute(out, fromWk, curWk);
+    E("jobTable").style.opacity="1";
     E("loading").style.display="none";
-  }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
+  }catch(e){ if(seq!==RUN_SEQ) return; E("jobTable").style.opacity="1"; E("loading").textContent="Could not load: "+(e.message||e); }
 }
 
 function compute(rows, fromWk, curWk){
   /* week buckets */
   var weeks=[]; for(var w=0;w<WEEKS;w++) weeks.push(iso(addDays(fromWk,7*w)));
   var wkIndex={}; weeks.forEach(function(k,i){wkIndex[k]=i;});
-  var byWeekJob={}, crewByWeek={}, totByJob={}, jobName={};
+  var byWeekJob={}, crewByWeek={}, totByJob={}, jobName={}, firstDay=null;
   rows.forEach(function(r){
     if((r.PayType||"Regular")!=="Regular") return;          /* burn = worked hours only */
     var wk=iso(payWeekStart(parseISO(dkey(r.WorkDate))));
     if(!(wk in wkIndex)) return;
+    var dd=dkey(r.WorkDate); if(!firstDay||dd<firstDay) firstDay=dd;
     var jn=jobNo(r.JobNo)||"(no job)"; var hrs=parseFloat(r.Hours)||0;
     (byWeekJob[jn]=byWeekJob[jn]||{})[wk]=(byWeekJob[jn][wk]||0)+hrs;
     (crewByWeek[wk]=crewByWeek[wk]||{})[r.EmployeeNumber]=1;
@@ -187,7 +193,15 @@ function compute(rows, fromWk, curWk){
     kpi(r1(rangeTotal).toLocaleString()+"h","Range total","All jobs, "+WEEKS+" wks");
   E("updated").textContent="Updated "+new Date().toLocaleString();
   var rngEnd=addDays(curWk,6), od={month:'short',day:'numeric'};
-  E("rangeCap").textContent=fromWk.toLocaleDateString(undefined,od)+" – "+rngEnd.toLocaleDateString(undefined,od)+", "+rngEnd.getFullYear()+"  ·  "+WEEKS+" wks";
+  var rngTxt=fromWk.toLocaleDateString(undefined,od)+" – "+rngEnd.toLocaleDateString(undefined,od)+", "+rngEnd.getFullYear();
+  E("rangeCap").textContent=rngTxt+"  ·  "+WEEKS+" wks";
+  E("jobHdr").textContent="Hours by job — "+rngTxt+" ("+WEEKS+" pay wks)";
+  var fromKey=iso(fromWk);
+  if(!firstDay){ E("jobNote").textContent="No worked hours in this range."; }
+  else if(firstDay>iso(addDays(fromWk,7))){
+    var wksData=weeks.filter(function(k){return weekTotals[weeks.indexOf(k)]>0;}).length;
+    E("jobNote").textContent="Heads up: earliest timecard in this range is "+parseISO(firstDay).toLocaleDateString(undefined,od)+" — only "+wksData+" of "+WEEKS+" weeks have data, so longer ranges will show the same totals.";
+  } else E("jobNote").textContent="";
 
   /* job table */
   var maxJob=Math.max.apply(null,jobs.map(function(jn){return totByJob[jn];}).concat([1]));
