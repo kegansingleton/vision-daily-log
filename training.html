@@ -82,6 +82,10 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var LIST="5e520b8b-c978-420e-918d-47eb991635fc";
 var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* v1.8: resilient upload - 20s timeout + retry on network/5xx/429 */
+function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPost(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
 /* --- Live job list (same source the timecards pull from) --- */
 var JOBS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
 function fillJobList(arr){var dl=document.getElementById("joblist");if(!dl)return;dl.innerHTML=arr.map(function(s){return '<option value="'+String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"></option>';}).join("");}
@@ -122,8 +126,8 @@ function submitSheet(){
   if(names.length===0){msg.className="msg err";msg.textContent="Check off at least one attendee";return;}
   var a={topic:E("topic").value.trim(),tDate:E("tDate").value,instructor:E("instructor").value.trim(),loc:E("loc").value.trim(),attendees:names,notes:E("notes").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
   var fields={Title:a.tDate+" | "+a.topic,Topic:a.topic,TrainingDate:a.tDate+"T12:00:00Z",TrainingDateText:a.tDate,Instructor:a.instructor,Location:a.loc,Attendees:JSON.stringify(a.attendees),AttendeeCount:a.attendees.length,Notes:a.notes,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
-  btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting sign-in sheet...";
-  tok().then(function(t){return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+t.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Training recorded with "+names.length+" attendees.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+  if(navigator.onLine===false){msg.className="msg err";msg.textContent="You’re offline right now — move to better signal and tap Submit again.";return;}btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting sign-in sheet...";
+  tok().then(function(t){return vmPostRetry(GRAPH_ITEMS_URL,t.accessToken,{fields:fields});}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Training recorded with "+names.length+" attendees.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again.";btn.disabled=false;});
 }
 E("submitBtn").onclick=submitSheet;start();
 </script>
