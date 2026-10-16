@@ -123,6 +123,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 /* ============ CONFIG ============ */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobtasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",tc:"91c4a3db-97f6-4b52-a855-516d5c414124",jobs:"836523ba-cd20-4736-98ce-5716668b8973"};
+/* shop-fab phase codes — logging time to these prompts a shop-run reminder */
+var FAB_CODES={"1210":"Pre-assembly","1220":"Hangers","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
@@ -315,6 +317,15 @@ function renderSummary(){
 /* ============ SUBMIT ============ */
 function fmtDateText(iso){var p=iso.split("-");return parseInt(p[1])+"/"+parseInt(p[2])+"/"+p[0];}
 function uuid(){return 'b-'+Date.now()+'-'+Math.random().toString(16).slice(2,8);}
+function showFabNudge(list){
+  var items=list.map(function(x){return '<li style="margin:4px 0"><b>'+esc(x.job)+'</b> &middot; '+esc(x.phase+" "+x.name)+'</li>';}).join("");
+  var ov=document.createElement("div"); ov.id="fabNudge";
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:430px;width:100%;padding:24px;text-align:center;font-family:inherit"><div style="font-size:34px">\ud83c\udfed</div><h2 style="margin:8px 0 4px;color:#7f1d1d">Got shop production to log?</h2><p style="color:#6b7280;font-size:14px;margin:0 0 8px">You logged fab time on:</p><ul style="text-align:left;display:inline-block;margin:0 0 12px;font-size:14px">'+items+'</ul><p style="color:#6b7280;font-size:13px;margin:0 0 16px">Record the pounds / feet / count for these runs?</p><button id="fabYes" style="width:100%;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:13px;background:#c0392b;color:#fff;cursor:pointer">Yes &mdash; log these runs &rarr;</button><button id="fabNo" style="width:100%;margin-top:8px;font-size:15px;font-weight:600;border:1.5px solid #e5e7eb;border-radius:11px;padding:12px;background:#fff;color:#1f2937;cursor:pointer">Not yet &mdash; I\'ll log it when it\'s done</button></div>';
+  document.body.appendChild(ov);
+  document.getElementById("fabYes").onclick=function(){ window.location.href="/shopproduction.html"; };
+  document.getElementById("fabNo").onclick=function(){ var e=document.getElementById("fabNudge"); if(e&&e.parentNode) e.parentNode.removeChild(e); };
+}
 async function submit(){
   var msg=document.getElementById("msg"); msg.className="msg"; msg.textContent="";
   var iso=document.getElementById("workDate").value;
@@ -357,8 +368,10 @@ async function submit(){
       if(r.ok)ok++; else {var er=await r.json();throw new Error((er.error&&er.error.message)||("HTTP "+r.status));}
     }
     msg.className="msg ok"; msg.textContent="✓ Submitted "+ok+" time lines for "+crew.length+" crew on "+fmtDateText(iso)+". You can close this or enter another day.";
+    var fabSeen={}, fabList=[]; rows.forEach(function(r){ if(FAB_CODES[r.PhaseCode]){ var k=r.JobNo+"|"+r.PhaseCode; if(!fabSeen[k]){ fabSeen[k]=1; fabList.push({job:r.JobNo,phase:r.PhaseCode,name:FAB_CODES[r.PhaseCode]}); } } });
     entries=[]; addEntry(); renderEntries(); renderSummary();
     window.scrollTo({top:0,behavior:"smooth"});
+    if(fabList.length) showFabNudge(fabList);
   }catch(e){ msg.className="msg err"; msg.textContent="Submit failed: "+e.message; }
   finally{ btn.disabled=false; btn.textContent="Submit timecard"; }
 }
