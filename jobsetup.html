@@ -102,6 +102,27 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
     <div class="bar" id="bar"><i></i></div>
     <div class="msg" id="msg"></div>
   </div>
+
+  <div class="card" id="detailsCard">
+    <h2>Job details</h2>
+    <p class="help">Pick a job to set its dates, files link, PM, GC, and address — or archive it when it's closed. Archived jobs drop off timecards, the manpower chart, and the task schedule (history stays). These feed the portal's Field Files.</p>
+    <label>Job</label>
+    <select id="dJob"><option value="">Loading jobs…</option></select>
+    <div id="dFields" style="display:none;margin-top:6px">
+      <div id="pastFlag" style="display:none;margin:8px 0;padding:9px 12px;border-radius:8px;background:#fde2e2;color:#b91c1c;font-weight:600;font-size:13px"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><label>Start date</label><input type="date" id="dStart"></div><div style="flex:1;min-width:150px"><label>Finish date</label><input type="date" id="dFinish"></div></div>
+      <label>Datto files link</label>
+      <input type="text" id="dDatto" placeholder="https://visionmech.workplace.datto.com/filelink/…">
+      <div style="display:flex;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><label>PM name</label><input type="text" id="dPM"></div><div style="flex:1;min-width:150px"><label>GC</label><input type="text" id="dGC"></div></div>
+      <label>Address</label>
+      <input type="text" id="dAddr">
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <button class="btn" id="dSave">Save details</button>
+        <button class="btn" id="dArchive" style="background:#6b7280">Archive job</button>
+        <span id="dMsg" style="font-size:13px"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
@@ -119,14 +140,18 @@ var GENERIC_PHASES=["1110","1115","1151","1211","1210","1310","1335","1600","162
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginName="";
 var PARSED=null; // {jobs:{jobNo:{name, rows:[{phase,pdesc,line,ldesc,budget}]}}}
+var PM=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net","avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
 
 /* ===== AUTH ===== */
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginName=acct.name||acct.username||"";
+  var em=(acct.username||"").toLowerCase();
   document.getElementById("gate").style.display="none";
+  if(PM.indexOf(em)<0){ document.body.innerHTML='<div style="max-width:440px;margin:60px auto;text-align:center;font-family:-apple-system,Segoe UI,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px"><h2 style="color:#7f1d1d">Not authorized</h2><p>Job Setup is limited to Project Managers and admins. Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
   document.getElementById("app").style.display="block";
   document.getElementById("who").textContent=loginName;
+  loadJobDetails();
 }
 async function getToken(){
   try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
@@ -293,19 +318,77 @@ document.getElementById("loadBtn").onclick=async function(){
 
 async function ensureJob(token, jobsRel, jn, name){
   // check if job exists
-  var url="https://graph.microsoft.com"+jobsRel+"?$expand=fields($select=JobNo)&$top=999";
+  var url="https://graph.microsoft.com"+jobsRel+"?$expand=fields($select=Title)&$top=999";
   var exists=false;
   while(url){
     var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(r=>r.json());
-    (j.value||[]).forEach(function(it){ if(it.fields && it.fields.JobNo===jn) exists=true; });
+    (j.value||[]).forEach(function(it){ if(it.fields && String(it.fields.Title).trim()===jn) exists=true; });
     url=j["@odata.nextLink"]||null;
     if(exists) break;
   }
   if(!exists){
     await fetch(GRAPH+LIST.jobs+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
-      body:JSON.stringify({fields:{Title:jn, JobNo:jn, JobName:name, Active:"Yes"}})});
+      body:JSON.stringify({fields:{Title:jn}})});
   }
 }
+
+/* ===== JOB DETAILS (dates, datto, PM, GC, address, archive) ===== */
+var JOBSDATA=[];
+function isArch(v){ return v===true||v==="Yes"||v==="true"; }
+function d10(v){return v?String(v).slice(0,10):"";}
+function todayISO(){var d=new Date();function p(n){return (n<10?"0":"")+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function dmsg(t,m){ var el=document.getElementById("dMsg"); if(!el)return; el.textContent=m; el.style.color=(t==="err"?"#b91c1c":"#15803d"); }
+async function loadJobDetails(){
+  try{ var token=await getToken();
+    var url=GRAPH+LIST.jobs+"/items?$expand=fields($select=Title,StartDate,FinishDate,DattoLink,PMName,GC,Address,Archive)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; }
+    JOBSDATA=out.sort(function(a,b){return String(a.f.Title).localeCompare(String(b.f.Title));});
+    var sel=document.getElementById("dJob");
+    sel.innerHTML='<option value="">— Select a job —</option>'+JOBSDATA.map(function(x,i){ return '<option value="'+i+'">'+esc(x.f.Title||"")+(isArch(x.f.Archive)?"  (archived)":"")+'</option>'; }).join("");
+    sel.onchange=function(){ fillDetails(sel.value); };
+  }catch(e){ var s=document.getElementById("dJob"); if(s) s.innerHTML='<option value="">Could not load: '+esc(e.message||e)+'</option>'; }
+}
+function fillDetails(i){
+  var box=document.getElementById("dFields");
+  if(i===""||i==null){ box.style.display="none"; return; }
+  var x=JOBSDATA[+i].f; box.style.display="block";
+  document.getElementById("dStart").value=d10(x.StartDate);
+  document.getElementById("dFinish").value=d10(x.FinishDate);
+  document.getElementById("dDatto").value=x.DattoLink||"";
+  document.getElementById("dPM").value=x.PMName||"";
+  document.getElementById("dGC").value=x.GC||"";
+  document.getElementById("dAddr").value=x.Address||"";
+  var arch=isArch(x.Archive), ab=document.getElementById("dArchive");
+  ab.textContent=arch?"Un-archive job":"Archive job"; ab.style.background=arch?"#15803d":"#6b7280";
+  var pf=document.getElementById("pastFlag"), fin=d10(x.FinishDate);
+  if(!arch && fin && fin<todayISO()){ pf.style.display="block"; pf.textContent="⚠ Past finish date ("+fin+") — if this job is done, archive it."; } else { pf.style.display="none"; }
+  dmsg("","");
+}
+document.getElementById("dSave").onclick=async function(){
+  var i=document.getElementById("dJob").value; if(i==="") return;
+  var x=JOBSDATA[+i];
+  var sv=document.getElementById("dStart").value, fv=document.getElementById("dFinish").value;
+  var body={ StartDate:(sv?sv+"T12:00:00Z":null), FinishDate:(fv?fv+"T12:00:00Z":null), DattoLink:document.getElementById("dDatto").value.trim(), PMName:document.getElementById("dPM").value.trim(), GC:document.getElementById("dGC").value.trim(), Address:document.getElementById("dAddr").value.trim() };
+  this.disabled=true;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+LIST.jobs+"/items/"+x.id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
+    dmsg("ok","Saved "+(x.f.Title||"")+"."); await loadJobDetails(); document.getElementById("dJob").value=i; fillDetails(i);
+  }catch(e){ dmsg("err","Save failed: "+(e.message||e)); }
+  this.disabled=false;
+};
+document.getElementById("dArchive").onclick=async function(){
+  var i=document.getElementById("dJob").value; if(i==="") return;
+  var x=JOBSDATA[+i], to=isArch(x.f.Archive)?"No":"Yes";
+  if(to==="Yes" && !confirm("Archive "+(x.f.Title||"")+"?\nIt drops off timecards, the manpower chart, and the task schedule. History stays, and you can un-archive anytime.")) return;
+  this.disabled=true;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+LIST.jobs+"/items/"+x.id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Archive:to})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
+    dmsg("ok",(x.f.Title||"")+(to==="Yes"?" archived.":" re-activated.")); await loadJobDetails(); document.getElementById("dJob").value=i; fillDetails(i);
+  }catch(e){ dmsg("err","Update failed: "+(e.message||e)); }
+  this.disabled=false;
+};
 
 /* ===== MANUAL ENTRY (Q/S/T standard codes) ===== */
 (function(){ var el=document.getElementById("genCodes"); if(el) el.innerHTML=GENERIC_PHASES.map(function(p){return '<span>'+p+'</span>';}).join(""); })();
