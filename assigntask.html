@@ -28,7 +28,14 @@ textarea{min-height:80px;resize:vertical}
 .collapse{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .collapse .caret{font-size:12px;color:var(--mut);font-weight:600}
 /* KPI bar */
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}
+@media(max-width:430px){.kpi b{font-size:22px}.kpi span{font-size:9.5px}}
+.kpi.grn b{color:var(--ok)}
+.pill.grn{background:var(--okbg);color:var(--ok)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.seg button{border:none;background:#fff;padding:9px 13px;font-size:13px;font-weight:700;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--vm2);color:#fff}
+.ai .meta .jb{color:var(--vm2);font-weight:600}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .kpi b{display:block;font-size:26px;font-weight:800;line-height:1}
 .kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
@@ -110,8 +117,10 @@ textarea{min-height:80px;resize:vertical}
       <div class="kpi red"><b id="kOver">0</b><span>Overdue</span></div>
       <div class="kpi amb"><b id="kWeek">0</b><span>Due this week</span></div>
       <div class="kpi ink"><b id="kOpen">0</b><span>Open total</span></div>
+      <div class="kpi grn"><b id="kDone">0</b><span id="kDoneLbl">Done since Mon</span></div>
     </div>
     <div class="controls">
+      <div class="seg" id="groupSeg"><button data-g="job">By job</button><button data-g="person">By person</button></div>
       <input type="text" id="search" placeholder="Filter by task, person, or job…">
       <label><input type="checkbox" id="showDone"> show completed</label>
     </div>
@@ -139,6 +148,7 @@ function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPo
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
 var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
+var GROUP=(function(){ try{ return localStorage.getItem("vm_ai_group")||"job"; }catch(e){ return "job"; } })();
 
 function E(id){return document.getElementById(id);}
 function pad2(n){return (n<10?"0":"")+n;}
@@ -150,6 +160,8 @@ function emailOf(e){ return (e.LoginEmail||"").toLowerCase().trim()||autoEmail(e
 function truthy(v){ return v===true||v==="Yes"||v==="true"; }
 function shortDate(iso){ var p=String(iso||"").slice(0,10).split("-"); return p.length===3?(+p[1]+"/"+ +p[2]):iso; }
 function addDaysISO(n){ var d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
+/* most recent Monday strictly before today — on a Monday morning that's last week's meeting */
+function lastMeeting(){ var d=new Date(); var back=((d.getDay()+6)%7)||7; d.setDate(d.getDate()-back); return isoLocal(d); }
 
 async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
 async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
@@ -174,6 +186,7 @@ async function showApp(a){
     if(!E("due").value) E("due").value=today();
     E("submitBtn").onclick=assign;
     E("search").oninput=render; E("showDone").onchange=render;
+    Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-g")===GROUP); b.onclick=function(){ GROUP=b.getAttribute("data-g"); try{ localStorage.setItem("vm_ai_group",GROUP); }catch(e){} Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(x){ x.classList.toggle("on",x===b); }); render(); }; });
     E("formToggle").onclick=function(){ var b=E("formBody"); var hid=b.style.display==="none"; b.style.display=hid?"block":"none"; E("formCaret").innerHTML=hid?"&#9650; hide":"&#9660; assign"; };
     loadJobs(); loadItems();
   }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
@@ -214,36 +227,48 @@ function loadItems(){ E("jobs").innerHTML='<div class="empty">Loading…</div>';
 function render(){
   var q=(E("search").value||"").toLowerCase().trim();
   var showDone=E("showDone").checked;
-  var td=today(), weekEnd=addDaysISO(7);
-  var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); return {
-    id:r.id, task:f.Title||"", who:f.AssignedToName||f.AssignedTo||"",
-    jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
-    due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open") }; });
-  var kOver=0,kWeek=0,kOpen=0;
-  rows.forEach(function(r){ if(r.status==="Done")return; kOpen++; if(r.due&&r.due<td)kOver++; else if(r.due&&r.due<=weekEnd)kWeek++; });
-  E("kOver").textContent=kOver; E("kWeek").textContent=kWeek; E("kOpen").textContent=kOpen;
-  var vis=rows.filter(function(r){ if(r.status==="Done"&&!showDone)return false; if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName).toLowerCase().indexOf(q)>-1; });
+  var td=today(), weekEnd=addDaysISO(7), since=lastMeeting();
+  var byPerson=(GROUP==="person");
+  var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
+    return { id:r.id, task:f.Title||"", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
+      jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
+      due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), doneOn:String(f.CompletedDate||"").slice(0,10) }; });
+  rows.forEach(function(r){ r.recent=(r.status==="Done" && r.doneOn && r.doneOn>=since); });
+  var kOver=0,kWeek=0,kOpen=0,kDone=0;
+  rows.forEach(function(r){ if(r.status==="Done"){ if(r.recent)kDone++; return; } kOpen++; if(r.due&&r.due<td)kOver++; else if(r.due&&r.due<=weekEnd)kWeek++; });
+  E("kOver").textContent=kOver; E("kWeek").textContent=kWeek; E("kOpen").textContent=kOpen; E("kDone").textContent=kDone;
+  E("kDoneLbl").textContent="Done since "+shortDate(since);
+  var match=function(r){ if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName).toLowerCase().indexOf(q)>-1; };
+  /* group: open items + anything done since last meeting (so a person/job with only finished work still gets credit) */
   var groups={};
-  vis.forEach(function(r){ (groups[r.jobKey]=groups[r.jobKey]||{no:r.jobNo,name:r.jobName,items:[]}).items.push(r); });
+  rows.forEach(function(r){
+    if(!match(r)) return;
+    if(r.status==="Done" && !r.recent && !showDone) return;
+    var k=byPerson?r.whoKey:r.jobKey;
+    var g=groups[k]=groups[k]||{key:k,no:r.jobNo,name:r.jobName,who:r.who,items:[],over:0,week:0,open:0,done:0};
+    if(r.status==="Done"){ if(r.recent) g.done++; if(showDone) g.items.push(r); }
+    else { g.items.push(r); g.open++; if(r.due&&r.due<td)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }
+  });
   var keys=Object.keys(groups);
   if(!keys.length){ E("jobs").innerHTML='<div class="empty">'+(q?"Nothing matches that filter.":"No open items yet — assign one above.")+'</div>'; return; }
-  keys.forEach(function(k){ var g=groups[k]; g.over=0; g.week=0; g.open=0; g.items.forEach(function(r){ if(r.status==="Done")return; g.open++; if(r.due&&r.due<td)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }); });
-  keys.sort(function(a,b){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return (ga.no||"").localeCompare(gb.no||""); });
+  keys.sort(function(a,b){ if(!byPerson){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; } var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return byPerson?(ga.who||"").localeCompare(gb.who||""):(ga.no||"").localeCompare(gb.no||""); });
   E("jobs").innerHTML=keys.map(function(k){
     var g=groups[k];
-    var title = k==="__GENERAL__" ? 'General <span class="jn">(no job)</span>' : esc(g.no)+' <span class="jn">'+esc(g.name)+'</span>';
-    var pills=""; if(g.over)pills+='<span class="pill red">'+g.over+' overdue</span> '; if(g.week)pills+='<span class="pill amb">'+g.week+' this week</span> '; pills+='<span class="pill ink">'+g.open+' open</span>';
-    g.items.sort(function(a,b){ var ad=a.status==="Done",bd=b.status==="Done"; if(ad!==bd)return ad?1:-1; if(ad)return (b.due||"").localeCompare(a.due||""); return (a.due||"9999").localeCompare(b.due||"9999"); });
+    var title = byPerson ? esc(g.who||"(unassigned)") : (k==="__GENERAL__" ? 'General <span class="jn">(no job)</span>' : esc(g.no)+' <span class="jn">'+esc(g.name)+'</span>');
+    var pills=""; if(g.over)pills+='<span class="pill red">'+g.over+' overdue</span> '; if(g.week)pills+='<span class="pill amb">'+g.week+' this week</span> '; pills+='<span class="pill ink">'+g.open+' open</span>'; if(g.done)pills+=' <span class="pill grn">&#10003; '+g.done+' done since '+shortDate(since)+'</span>';
+    g.items.sort(function(a,b){ var ad=a.status==="Done",bd=b.status==="Done"; if(ad!==bd)return ad?1:-1; if(ad)return (b.doneOn||"").localeCompare(a.doneOn||""); return (a.due||"9999").localeCompare(b.due||"9999"); });
     var body=g.items.map(function(r){
       var done=r.status==="Done";
       var overdue=!done&&r.due&&r.due<td, soon=!done&&!overdue&&r.due&&r.due<=weekEnd;
       var dtxt=r.due?shortDate(r.due):"no date";
-      var duePart=done?"done":(overdue?'<span class="ov">'+dtxt+' (overdue)</span>':(soon?'<span class="soon">due '+dtxt+'</span>':"due "+dtxt));
+      var duePart=done?("done"+(r.doneOn?" "+shortDate(r.doneOn):"")):(overdue?'<span class="ov">'+dtxt+' (overdue)</span>':(soon?'<span class="soon">due '+dtxt+'</span>':"due "+dtxt));
+      var lead=byPerson?'<span class="jb">'+(r.jobNo?esc(r.jobNo):"General")+'</span>':esc(r.who);
       return '<div class="ai'+(done?" done":"")+'" data-id="'+esc(r.id)+'" data-status="'+esc(r.status)+'">'+
         '<button class="chk" title="'+(done?"Reopen":"Mark done")+'">'+(done?"↩":"✓")+'</button>'+
         '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
-        '<div class="meta">'+esc(r.who)+' · '+duePart+'</div></div></div>';
+        '<div class="meta">'+lead+' · '+duePart+'</div></div></div>';
     }).join("");
+    if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">Nothing open'+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
     return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
   }).join("");
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
@@ -254,7 +279,7 @@ function toggleDone(id,status,btn){
   btn.disabled=true;
   getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
   .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
-  .then(function(){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(it){ it.f.Status=makeDone?"Done":"Open"; } render(); })
+  .then(function(){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(it){ it.f.Status=body.Status; it.f.CompletedDate=body.CompletedDate; it.f.CompletedBy=body.CompletedBy; } render(); })
   .catch(function(e){ btn.disabled=false; alert("Could not update that item: "+(e.message||e)); });
 }
 start();
