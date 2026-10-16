@@ -140,15 +140,26 @@ var GENERIC_PHASES=["1110","1115","1151","1211","1210","1310","1335","1600","162
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginName="";
 var PARSED=null; // {jobs:{jobNo:{name, rows:[{phase,pdesc,line,ldesc,budget}]}}}
-var PM=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net","avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
 
 /* ===== AUTH ===== */
-function afterLogin(acct){
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+async function isAdminUser(em){
+  if(SUPERADMIN.indexOf(em)>-1) return true;
+  try{ var token=await getToken();
+    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
+  }catch(e){ return false; }
+}
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginName=acct.name||acct.username||"";
   var em=(acct.username||"").toLowerCase();
   document.getElementById("gate").style.display="none";
-  if(PM.indexOf(em)<0){ document.body.innerHTML='<div style="max-width:440px;margin:60px auto;text-align:center;font-family:-apple-system,Segoe UI,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px"><h2 style="color:#7f1d1d">Not authorized</h2><p>Job Setup is limited to Project Managers and admins. Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
+  var ok=(NAMED_PM.indexOf(em)>-1)||(await isAdminUser(em));
+  if(!ok){ document.body.innerHTML='<div style="max-width:440px;margin:60px auto;text-align:center;font-family:-apple-system,Segoe UI,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px"><h2 style="color:#7f1d1d">Not authorized</h2><p>Job Setup is limited to Project Managers and admins. Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
   document.getElementById("app").style.display="block";
   document.getElementById("who").textContent=loginName;
   loadJobDetails();
