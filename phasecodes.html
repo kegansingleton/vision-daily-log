@@ -105,7 +105,7 @@ Vision Mechanical &bull; Add Phase Codes &bull; Writes to the Job Tasks list the
 
 <script>
 /* ===== Admin access (same list as the other admin pages) ===== */
-var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 
 /* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
@@ -118,12 +118,22 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="";
 function E(id){return document.getElementById(id);}
-function afterLogin(acct){
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+async function isAdminUser(email){
+  if(SUPERADMIN.indexOf(email)>-1) return true;
+  try{ var token=await getToken();
+    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===email; });
+  }catch(e){ return false; }
+}
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginEmail=(acct.username||"").toLowerCase();
   E("gate").style.display="none";
-  if(ALLOW.indexOf(loginEmail)<0){
-    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This page is limited to office admins. You are signed in as <b>'+esc(loginEmail)+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
+  var ok=await isAdminUser(loginEmail);
+  if(!ok){
+    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This page is limited to admins (set in Employee Setup). You are signed in as <b>'+esc(loginEmail)+'</b>.</p></div>';
     return;
   }
   E("app").style.display="block"; E("who").textContent=loginEmail;
