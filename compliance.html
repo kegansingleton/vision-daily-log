@@ -103,6 +103,16 @@ td.wrap-cell{white-space:normal}
     <h2>&#9888; Jobs past finish date <span class="pill" id="pillOverdue" style="background:#fde2e2;color:#b91c1c"></span></h2>
     <div class="pad"><div class="tablewrap"><table id="overdueTbl"></table></div></div>
   </div>
+  <div class="card" id="taskCard" style="display:none">
+    <h2>&#9745;&#65039; Action Items <span><span class="pill bad" id="pillTaskOver"></span> <span class="pill" id="pillTaskWeek" style="background:#fef3c7;color:#92400e"></span> <a href="/assigntask.html" style="font-size:12px;font-weight:700;color:var(--vm);text-decoration:none;margin-left:6px;text-transform:none;letter-spacing:0">Open board &rarr;</a></span></h2>
+    <div class="pad">
+      <div class="note" style="margin:0 0 8px">Live as of today — not tied to the week picker above.</div>
+      <div style="font-weight:700;color:var(--bad);font-size:13px;margin:2px 0 6px">Past due</div>
+      <div class="tablewrap"><table id="taskOverTbl"></table></div>
+      <div style="font-weight:700;color:var(--warn);font-size:13px;margin:16px 0 6px">Due in the next 7 days — by job</div>
+      <div class="tablewrap"><table id="taskWeekTbl"></table></div>
+    </div>
+  </div>
   <div id="headline" class="headline" style="display:none"></div>
   <div id="dataline" class="dataline" style="display:none"></div>
   <div id="nudgeRow" style="display:none;margin:8px 0 2px"><button class="btn gold" id="nudgeBtn">&#128203; Copy nudge list</button> <span id="nudgeMsg" class="note" style="margin-left:6px"></span></div>
@@ -241,6 +251,7 @@ async function run(){
     renderSummary(from,to);
     loadBrowse(from,to);
     loadOverdue();
+    loadTasks();
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
 }
 
@@ -433,6 +444,38 @@ async function loadOverdue(){
     over.forEach(function(j){ var f=dkey(j.FinishDate); var days=Math.round((parseISO(today)-parseISO(f))/86400000); h+='<tr><td><b>'+esc(j.Title||"")+'</b></td><td>'+esc(j.PMName||"—")+'</td><td>'+esc(shortD(f))+'</td><td style="color:#b91c1c;font-weight:700;text-align:right">'+days+'</td></tr>'; });
     E("overdueTbl").innerHTML=h+'</tbody>';
   }catch(e){ /* non-critical */ }
+}
+
+/* ===== Action Items cards (live, independent of the week picker) ===== */
+var ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8";
+async function loadTasks(){
+  try{
+    var rows=await getAll(ACTIONS,"Title,JobNo,JobName,AssignedTo,AssignedToName,DueDate,Priority,Status");
+    var today=iso(new Date()), wkEnd=iso(addDays(new Date(),7));
+    var open=rows.filter(function(r){ return (r.Status||"Open")!=="Done"; });
+    var over=open.filter(function(r){ var d=dkey(r.DueDate); return d && d<today; }).sort(function(a,b){ return dkey(a.DueDate).localeCompare(dkey(b.DueDate)); });
+    var week=open.filter(function(r){ var d=dkey(r.DueDate); return d && d>=today && d<=wkEnd; });
+    E("taskCard").style.display="block";
+    E("pillTaskOver").textContent=over.length+" past due"; E("pillTaskOver").className="pill "+(over.length?"bad":"ok");
+    E("pillTaskWeek").textContent=week.length+" due this week";
+    var jobLbl=function(r){ var n=String(r.JobNo||"").trim(); return n?(n+(r.JobName?" "+r.JobName:"")):"General"; };
+    if(!over.length) E("taskOverTbl").innerHTML='<tbody><tr><td style="color:var(--good);font-weight:700">&#10003; Nothing past due.</td></tr></tbody>';
+    else{
+      var h='<thead><tr><th>Person</th><th>Task</th><th>Job</th><th>Due</th><th style="text-align:right">Days over</th></tr></thead><tbody>';
+      over.forEach(function(r){ var d=dkey(r.DueDate); var days=Math.round((parseISO(today)-parseISO(d))/86400000); var pri=(r.Priority&&(r.Priority.Value||r.Priority))==="High";
+        h+='<tr><td><b>'+esc(r.AssignedToName||r.AssignedTo||"—")+'</b></td><td class="wrap-cell">'+esc(r.Title||"")+(pri?' <span class="pill bad" style="font-size:10px;padding:1px 6px">HIGH</span>':'')+'</td><td>'+esc(jobLbl(r))+'</td><td>'+esc(shortD(d))+'</td><td style="color:#b91c1c;font-weight:700;text-align:right">'+days+'</td></tr>'; });
+      E("taskOverTbl").innerHTML=h+'</tbody>';
+    }
+    if(!week.length) E("taskWeekTbl").innerHTML='<tbody><tr><td style="color:var(--muted)">Nothing due in the next 7 days.</td></tr></tbody>';
+    else{
+      var g={}; week.forEach(function(r){ var k=String(r.JobNo||"").trim()||"~General"; (g[k]=g[k]||{lbl:jobLbl(r),items:[]}).items.push(r); });
+      var keys=Object.keys(g).sort(function(a,b){ return g[b].items.length-g[a].items.length || a.localeCompare(b); });
+      var h2='<thead><tr><th>Job</th><th style="text-align:right">Due</th><th>Tasks (who · when)</th></tr></thead><tbody>';
+      keys.forEach(function(k){ var it=g[k].items.sort(function(a,b){return dkey(a.DueDate).localeCompare(dkey(b.DueDate));});
+        h2+='<tr><td><b>'+esc(g[k].lbl)+'</b></td><td style="text-align:right;font-weight:700">'+it.length+'</td><td class="wrap-cell">'+it.map(function(r){ return esc(r.Title||"")+' <span style="color:var(--muted)">('+esc((r.AssignedToName||r.AssignedTo||"").split(" ")[0])+' · '+esc(shortD(dkey(r.DueDate)))+')</span>'; }).join("<br>")+'</td></tr>'; });
+      E("taskWeekTbl").innerHTML=h2+'</tbody>';
+    }
+  }catch(e){ /* non-critical — leave card hidden */ }
 }
 
 /* ===== wiring ===== */
