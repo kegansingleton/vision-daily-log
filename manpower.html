@@ -200,8 +200,8 @@ function divOf(phase){ var p=String(phase||"").trim(); if(/^12/.test(p)||/^13/.t
 async function pullAll(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=5000", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
 async function loadProjection(){
   try{
-    var jobs=await pullAll(JOBS,"JobNo,JobName,StartDate,FinishDate,Active");
-    jobs=jobs.filter(function(j){ return (j.Active||"Yes")!=="No" && j.StartDate && j.FinishDate; });
+    var jobs=await pullAll(JOBS,"Title,StartDate,FinishDate,Archive");
+    jobs=jobs.filter(function(j){ var a=(j.Archive===true||j.Archive==="Yes"||j.Archive==="true"); return !a && j.StartDate && j.FinishDate; }).map(function(j){ return {JobNo:(j.Title||"").trim(), StartDate:j.StartDate, FinishDate:j.FinishDate}; });
     var tasks=await pullAll(JOBTASKS,"JobNo,PhaseCode,BudgetHours,Active");
     var byJob={}; tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var d=divOf(t.PhaseCode); if(!d) return; var jn=(t.JobNo||"").trim(); var o=byJob[jn]=byJob[jn]||{sm:0,pl:0,svc:0}; o[d]+=(parseFloat(t.BudgetHours)||0); });
     PROJDATA={jobs:jobs,byJob:byJob}; computeProjection();
