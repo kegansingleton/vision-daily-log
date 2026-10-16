@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Assign Task</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:680px;margin:0 auto;padding:14px 12px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:700;color:var(--vm2)}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=text],textarea,select{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:90px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.req{color:var(--vm)}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.5}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:680px;margin:0 auto}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}
+.noaccess b{color:var(--vm2)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Assign a task. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Assign Task</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div id="denied" class="noaccess" style="display:none">
+    <b>You don't have access to assign tasks.</b><br>
+    Assigning is limited to Project Managers, Admins, and Foremen. If you need it, ask an admin to set your Foreman flag in Employee Setup.
+  </div>
+
+  <div id="form" style="display:none">
+    <div class="card">
+      <h2>What needs done</h2>
+      <label>Task <span class="req">*</span></label>
+      <input type="text" id="task" placeholder="e.g. Order duct for level 2, Verify RFI 114 answer, Close out punch list">
+      <label>Details</label>
+      <textarea id="details" placeholder="Anything the assignee needs — specifics, location, who to coordinate with"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Who &amp; when</h2>
+      <label>Assign to <span class="req">*</span></label>
+      <select id="assignee"><option value="">— Select person —</option></select>
+      <div class="grid2">
+        <div><label>Due date <span class="req">*</span></label><input type="date" id="due"></div>
+        <div><label>Priority</label><select id="priority"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
+      </div>
+      <label>Job</label>
+      <input type="text" id="job" list="joblist" placeholder="Type a job #, or leave blank for General">
+      <datalist id="joblist"></datalist>
+      <div class="desc" style="margin-top:6px">Leave the job blank for a general / office task.</div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<div class="foot" id="foot" style="display:none"><div class="inner"><button class="btn" id="submitBtn">Assign task</button></div></div>
+
+<script>
+/* ===== Config ===== */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/";
+var LIST="25279cba-004d-4b8c-8356-4b32f24d9cc8";         /* Action Items */
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";     /* Employee Master */
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";     /* Job Tasks (job #/name source) */
+var ITEMS_URL=GRAPH+LIST+"/items";
+
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+
+/* ===== v1.8 resilient upload ===== */
+function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPost(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
+/* ===== MSAL ===== */
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
+var RTOKEN=null, loginEmail="", myName="";
+
+function E(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().slice(0,10);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+function emailOf(e){ return (e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); }
+function truthy(v){ return v===true||v==="Yes"||v==="true"; }
+
+async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
+
+async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+
+/* ===== Boot ===== */
+E("signin").onclick=function(){ msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); };
+function start(){ msal_i.handleRedirectPromise().then(function(resp){ RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null; var a=msal_i.getAllAccounts()[0]; if(a){ msal_i.setActiveAccount(a); showApp(a); } }).catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+String(e); }); }
+
+async function showApp(a){
+  E("gate").style.display="none"; E("app").style.display="block";
+  loginEmail=(a.username||"").toLowerCase().trim(); myName=(a.name||"").trim();
+  E("who").textContent=a.username||"";
+  try{
+    var emps=await pull(EMP_LIST,"EmployeeName,Active,Foreman,LoginEmail,Admin");
+    var active=emps.filter(function(e){ return (e.Active||"Yes")!=="No"; });
+    /* my flags */
+    var me=emps.filter(function(e){ return emailOf(e)===loginEmail; })[0];
+    var iAmAdmin = SUPERADMIN.indexOf(loginEmail)>-1 || (me && truthy(me.Admin));
+    var iAmPM = NAMED_PM.indexOf(loginEmail)>-1;
+    var iAmForeman = me && truthy(me.Foreman);
+    var canAssign = iAmAdmin || iAmPM || iAmForeman;
+    if(!canAssign){ E("denied").style.display="block"; return; }
+    /* populate assignee list (active employees, by name) */
+    var opts=active.map(function(e){ return {name:(e.EmployeeName||"").trim(), email:emailOf(e)}; })
+                   .filter(function(o){ return o.name && o.email; })
+                   .sort(function(x,y){ return x.name.localeCompare(y.name); });
+    var sel=E("assignee");
+    opts.forEach(function(o){ var op=document.createElement("option"); op.value=o.email; op.textContent=o.name; sel.appendChild(op); });
+    E("form").style.display="block"; E("foot").style.display="block";
+    if(!E("due").value) E("due").value=today();
+    loadJobs();
+  }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
+}
+
+/* ===== Job picker (live) ===== */
+function loadJobs(){
+  pull(JOBTASKS,"JobNo,JobName,Active").then(function(tasks){
+    var seen={},arr=[];
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(t.JobName||"").trim()); });
+    arr.sort();
+    E("joblist").innerHTML=arr.map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
+  }).catch(function(){});
+}
+function parseJob(v){ v=String(v||"").trim(); if(!v||/^general\b/i.test(v)) return {no:"",name:"General"}; var sp=v.indexOf(" "); if(sp<0) return {no:v,name:""}; return {no:v.slice(0,sp).trim(), name:v.slice(sp+1).trim()}; }
+
+/* ===== Submit ===== */
+function assign(){
+  var msg=E("msg"), btn=E("submitBtn");
+  var task=E("task").value.trim(), assignee=E("assignee").value, due=E("due").value, prio=E("priority").value, details=E("details").value.trim();
+  var aName=E("assignee").selectedOptions.length?E("assignee").selectedOptions[0].textContent:"";
+  if(!task){ msg.className="msg err"; msg.textContent="Enter the task."; return; }
+  if(!assignee){ msg.className="msg err"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.className="msg err"; msg.textContent="Pick a due date."; return; }
+  var j=parseJob(E("job").value);
+  var fields={
+    Title:task, JobNo:j.no, JobName:j.name,
+    AssignedTo:assignee, AssignedToName:aName,
+    DueDate:due+"T12:00:00Z", Priority:prio, Status:"Open",
+    Details:details, CreatedByEmail:loginEmail, CreatedByName:myName
+  };
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You’re offline right now — move to better signal and tap Assign again."; return; }
+  btn.disabled=true; msg.className="msg ok"; msg.textContent="Assigning...";
+  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,fields); }).then(function(){
+    msg.className="msg ok"; msg.textContent="Assigned to "+aName+". Assign another, or change the fields above.";
+    E("task").value=""; E("details").value=""; btn.disabled=false; btn.textContent="Assign task"; E("task").focus();
+  }).catch(function(e){
+    msg.className="msg err"; msg.textContent="Could not assign yet ("+e.message+"). Move to better signal and tap Assign again.";
+    btn.disabled=false;
+  });
+}
+E("submitBtn").onclick=assign;
+start();
+</script>
+</body>
+</html>
