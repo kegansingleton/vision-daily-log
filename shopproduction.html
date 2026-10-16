@@ -131,7 +131,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
 
 <script>
 /* ===== Access ===== */
-var ADMIN=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 
 /* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
@@ -167,7 +167,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return
 async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username;
   E("gate").style.display="none";
-  var ok=(ADMIN.indexOf(loginEmail)>-1)||(await hasShopAccess());
+  var ok=(SUPERADMIN.indexOf(loginEmail)>-1)||(await hasShopAccess());
   if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Fab Run is limited to shop staff — tick <b>Shop access</b> in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName;
   E("rundate").value=todayISO();
@@ -175,8 +175,8 @@ async function afterLogin(acct){
 }
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 async function hasShopAccess(){
-  try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,EmployeeName");
-    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); if(!s) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail; });
+  try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName");
+    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail; });
   }catch(e){ return false; }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
