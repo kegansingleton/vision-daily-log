@@ -36,6 +36,10 @@ textarea{min-height:80px;resize:vertical}
 .seg button{border:none;background:#fff;padding:9px 13px;font-size:13px;font-weight:700;color:var(--mut);cursor:pointer}
 .seg button.on{background:var(--vm2);color:#fff}
 .ai .meta .jb{color:var(--vm2);font-weight:600}
+.ai .det{font-size:13px;color:#374151;margin-top:5px;background:#f9fafb;border-left:3px solid var(--line);padding:5px 8px;border-radius:4px;cursor:pointer}
+.ai .det span{white-space:pre-wrap;word-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ai .det.full span{display:block}
+.ai .by{font-size:11.5px;color:var(--mut);margin-top:3px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .kpi b{display:block;font-size:26px;font-weight:800;line-height:1}
 .kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
@@ -232,13 +236,13 @@ function render(){
   var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
     return { id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
       jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
-      due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), doneOn:String(f.CompletedDate||"").slice(0,10) }; });
+      due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), details:String(f.Details||"").trim(), by:f.CreatedByName||f.CreatedByEmail||"", doneOn:String(f.CompletedDate||"").slice(0,10) }; });
   rows.forEach(function(r){ r.recent=(r.status==="Done" && r.doneOn && r.doneOn>=since); });
   var kOver=0,kWeek=0,kOpen=0,kDone=0;
   rows.forEach(function(r){ if(r.status==="Done"){ if(r.recent)kDone++; return; } kOpen++; if(r.due&&r.due<td)kOver++; else if(r.due&&r.due<=weekEnd)kWeek++; });
   E("kOver").textContent=kOver; E("kWeek").textContent=kWeek; E("kOpen").textContent=kOpen; E("kDone").textContent=kDone;
   E("kDoneLbl").textContent="Done since "+shortDate(since);
-  var match=function(r){ if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName).toLowerCase().indexOf(q)>-1; };
+  var match=function(r){ if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName+" "+r.details).toLowerCase().indexOf(q)>-1; };
   /* group: open items + anything done since last meeting (so a person/job with only finished work still gets credit) */
   var groups={};
   rows.forEach(function(r){
@@ -266,11 +270,14 @@ function render(){
       return '<div class="ai'+(done?" done":"")+'" data-id="'+esc(r.id)+'" data-status="'+esc(r.status)+'">'+
         '<button class="chk" title="'+(done?"Reopen":"Mark done")+'">'+(done?"↩":"✓")+'</button>'+
         '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
-        '<div class="meta">'+lead+' · '+duePart+'</div></div></div>';
+        '<div class="meta">'+lead+' · '+duePart+'</div>'+
+        (r.details?'<div class="det" title="Tap to expand"><span>'+esc(r.details)+'</span></div>':'')+
+        (r.by?'<div class="by">Assigned by '+esc(r.by)+'</div>':'')+'</div></div>';
     }).join("");
     if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">Nothing open'+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
     return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
   }).join("");
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .det"),function(d){ d.onclick=function(){ d.classList.toggle("full"); }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
 }
 function toggleDone(id,status,btn){
