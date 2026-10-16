@@ -122,7 +122,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 <script>
 /* ============ CONFIG ============ */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
-var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobtasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",tc:"91c4a3db-97f6-4b52-a855-516d5c414124"};
+var LIST={emp:"537b8d9b-e666-43d1-9441-efc2bed48d73",jobtasks:"192b6fd5-5a12-47c1-9d1b-ba4b51e13371",tc:"91c4a3db-97f6-4b52-a855-516d5c414124",jobs:"836523ba-cd20-4736-98ce-5716668b8973"};
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
@@ -208,6 +208,8 @@ async function loadRefData(){
     var jt=await gGetAll(LIST.jobtasks,["JobNo","JobName","PhaseCode","PhaseDesc","LineNum","LineDesc","Active"]);
     REF.emp=activeOnly(emp).sort(function(a,b){return (a.EmployeeName||"").localeCompare(b.EmployeeName||"");});
     var built=buildMap(activeOnly(jt));
+    var jl=await gGetAll(LIST.jobs,["Title","Archive"]); var arch={}; jl.forEach(function(j){ if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[String(j.Title||"").trim()]=1; });
+    built.jobs=built.jobs.filter(function(j){ return !arch[j.JobNo]; });
     REF.map=built.map; REF.jobs=built.jobs;
     initUI();
   }catch(e){ document.getElementById("loading").innerHTML="Could not load data: "+e.message; }
