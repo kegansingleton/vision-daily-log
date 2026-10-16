@@ -97,7 +97,10 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginEmail="", isPM=false, isAdmin=false, phaseChart=null;
+var account=null, loginEmail="", isPM=false, isAdmin=false, phaseChart=null, JOBDATES={};
+function d10(v){return v?String(v).slice(0,10):"";}
+function todayISO(){var d=new Date();function p(n){return (n<10?"0":"")+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
 function E(id){return document.getElementById(id);}
 function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
@@ -129,7 +132,7 @@ async function loadJobs(){
     var seen={}, jobs=[];
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn])return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
     jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
-    var jl=await pull(JOBS,"Title,Archive"); var arch={}; jl.forEach(function(j){ if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[(j.Title||"").trim()]=1; });
+    var jl=await pull(JOBS,"Title,Archive,FinishDate"); var arch={}; JOBDATES={}; jl.forEach(function(j){ var t=(j.Title||"").trim(); if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[t]=1; JOBDATES[t]=d10(j.FinishDate); });
     jobs=jobs.filter(function(j){return !arch[j.no];});
     E("jobPick").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
     E("jobPick").onchange=function(){ if(E("jobPick").value) loadSchedule(E("jobPick").value); };
@@ -156,6 +159,8 @@ function varTag(v){ if(v==null) return '<span class="tag m">—</span>'; var c=v
 
 function render(jobNo, tasks, act){
   var jobName=(tasks[0]&&tasks[0].JobName)||"";
+  var _fin=JOBDATES[jobNo], _banner="";
+  if(_fin && _fin<todayISO()){ var _d=Math.round((parseISO(todayISO())-parseISO(_fin))/864e5); _banner='<div style="background:#fde2e2;color:#b91c1c;font-weight:700;padding:10px 14px;border-radius:10px;margin-bottom:12px">\u26a0 This job is '+_d+' day'+(_d===1?"":"s")+' past its finish date ('+_fin+'). If it\'s done, archive it in Job Setup.</div>'; }
   /* group by phase code */
   var byPhase={}, phaseOrder=[];
   tasks.forEach(function(t){ var p=(t.PhaseCode||"").trim(); if(!byPhase[p]){byPhase[p]={desc:t.PhaseDesc||"",rows:[]};phaseOrder.push(p);} byPhase[p].rows.push(t); });
@@ -189,7 +194,7 @@ function render(jobNo, tasks, act){
   var JPct=JB>0?(EA/JB*100):0, JPF=pf(EA,AC), JForecast=(JPct>0?AC/(JPct/100):null), JVar=(JForecast==null?null:JB-JForecast);
   h+='<tr class="total"><td class="l" colspan="2">JOB TOTAL — '+esc(jobNo)+' '+esc(jobName)+'</td><td class="num">'+n1(JB)+'</td><td class="num">'+n1(JP)+'</td><td class="num">'+n1(AC)+'</td><td class="num">'+(JB-AC>=0?"+":"")+n1(JB-AC)+'</td><td class="num">'+Math.round(JPct)+'%</td><td class="num">'+n1(EA)+'</td><td class="num">'+(JPF==null?"—":(Math.round(JPF*100)/100).toFixed(2))+'</td><td class="num">'+(JForecast==null?"—":n1(JForecast))+'</td><td class="num">'+(JVar==null?"—":((JVar>=0?"+":"")+n1(JVar)))+'</td></tr>';
   h+='</tbody></table>';
-  E("sched").innerHTML=h;
+  E("sched").innerHTML=_banner+h;
   drawPhaseChart(cLabels,cBud,cAct,cErn);
 
   /* KPI cards */
