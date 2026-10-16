@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Task Board</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:860px;margin:0 auto;padding:14px 12px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+/* KPI bar */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi b{display:block;font-size:26px;font-weight:800;line-height:1}
+.kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+.kpi.red b{color:#b91c1c}.kpi.amb b{color:var(--amb)}.kpi.ink b{color:var(--ink)}
+/* controls */
+.controls{display:flex;gap:10px;align-items:center;margin:4px 0 2px;flex-wrap:wrap}
+.controls input[type=text]{flex:1;min-width:150px;padding:10px;font-size:14px;border:1px solid var(--line);border-radius:9px;font-family:inherit}
+.controls label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);margin:0}
+.controls label input{width:auto}
+/* job section */
+.job{background:#fff;border:1px solid var(--line);border-radius:12px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
+.job>.jh{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fafbfc;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.job .jname{font-size:15px;font-weight:800;color:var(--vm2);flex:1;min-width:120px}
+.job .jname .jn{color:var(--ink)}
+.pill{font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px}
+.pill.red{background:#fde8e8;color:#b91c1c}.pill.amb{background:var(--ambbg);color:var(--amb)}.pill.ink{background:#eef2f7;color:#475569}
+.jbody{padding:4px 14px 8px}
+.ai{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ai:last-child{border-bottom:none}
+.ai .chk{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ok);padding:0}
+.ai.done .chk{background:var(--okbg);border-color:var(--ok)}
+.ai .body{flex:1;min-width:0}
+.ai .t{font-size:14px;font-weight:600;color:var(--ink);word-wrap:break-word}
+.ai.done .t{text-decoration:line-through;color:var(--mut)}
+.ai .meta{font-size:12px;color:var(--mut);margin-top:2px}
+.ai .meta .ov{color:#b91c1c;font-weight:700}.ai .meta .soon{color:var(--amb);font-weight:700}
+.pri{display:inline-block;font-size:10.5px;font-weight:700;border-radius:8px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.pri.High{background:#fde8e8;color:#b91c1c}.pri.Normal{background:#eef2f7;color:#475569}.pri.Low{background:#f3f4f6;color:#9ca3af}
+.empty{color:var(--mut);font-size:13px;padding:16px 2px;text-align:center}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}.noaccess b{color:var(--vm2)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Task Board. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Task Board</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div id="denied" class="noaccess" style="display:none">
+    <b>You don't have access to the Task Board.</b><br>
+    It's limited to Project Managers, Admins, and Foremen.
+  </div>
+  <div id="board" style="display:none">
+    <div class="kpis">
+      <div class="kpi red"><b id="kOver">0</b><span>Overdue</span></div>
+      <div class="kpi amb"><b id="kWeek">0</b><span>Due this week</span></div>
+      <div class="kpi ink"><b id="kOpen">0</b><span>Open total</span></div>
+    </div>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Filter by task, person, or job…">
+      <label><input type="checkbox" id="showDone"> show completed</label>
+      <a href="/assigntask.html" style="font-size:13px;font-weight:700;color:var(--vm);text-decoration:none;white-space:nowrap">+ Assign task</a>
+    </div>
+    <div id="jobs"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<script>
+/* ===== Config ===== */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/";
+var LIST="25279cba-004d-4b8c-8356-4b32f24d9cc8";         /* Action Items */
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";     /* Employee Master */
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
+var RTOKEN=null, loginEmail="", ITEMS=[];
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+function emailOf(e){ return (e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); }
+function truthy(v){ return v===true||v==="Yes"||v==="true"; }
+function shortDate(iso){ var p=String(iso||"").slice(0,10).split("-"); return p.length===3?(+p[1]+"/"+ +p[2]):iso; }
+function isoDay(d){ return (d||new Date()).toISOString().slice(0,10); }
+function addDaysISO(n){ var d=new Date(); d.setDate(d.getDate()+n); return isoDay(d); }
+
+async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
+async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+async function pullItems(){ var token=await getToken(); var url=GRAPH+LIST+"/items?$expand=fields&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } return out; }
+
+E("signin").onclick=function(){ msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); };
+function start(){ msal_i.handleRedirectPromise().then(function(resp){ RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null; var a=msal_i.getAllAccounts()[0]; if(a){ msal_i.setActiveAccount(a); showApp(a); } }).catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+String(e); }); }
+
+async function showApp(a){
+  E("gate").style.display="none"; E("app").style.display="block";
+  loginEmail=(a.username||"").toLowerCase().trim(); E("who").textContent=a.username||"";
+  try{
+    var emps=await pull(EMP_LIST,"EmployeeName,Active,Foreman,LoginEmail,Admin");
+    var me=emps.filter(function(e){ return emailOf(e)===loginEmail; })[0];
+    var canView = SUPERADMIN.indexOf(loginEmail)>-1 || NAMED_PM.indexOf(loginEmail)>-1 || (me&&(truthy(me.Admin)||truthy(me.Foreman)));
+    if(!canView){ E("denied").style.display="block"; return; }
+    E("board").style.display="block";
+    E("search").oninput=render; E("showDone").onchange=render;
+    loadItems();
+  }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
+}
+
+function loadItems(){ E("jobs").innerHTML='<div class="empty">Loading…</div>'; pullItems().then(function(rows){ ITEMS=rows; render(); }).catch(function(e){ E("jobs").innerHTML='<div class="empty">Could not load the board ('+esc(e.message||e)+')</div>'; }); }
+
+function render(){
+  var q=(E("search").value||"").toLowerCase().trim();
+  var showDone=E("showDone").checked;
+  var today=isoDay(), weekEnd=addDaysISO(7);
+  /* normalize */
+  var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); return {
+    id:r.id, task:f.Title||"", who:f.AssignedToName||f.AssignedTo||"",
+    jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
+    due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open")
+  }; });
+  /* global KPIs (open only) */
+  var kOver=0,kWeek=0,kOpen=0;
+  rows.forEach(function(r){ if(r.status==="Done")return; kOpen++; if(r.due&&r.due<today)kOver++; else if(r.due&&r.due<=weekEnd)kWeek++; });
+  E("kOver").textContent=kOver; E("kWeek").textContent=kWeek; E("kOpen").textContent=kOpen;
+  /* filter */
+  var vis=rows.filter(function(r){ if(r.status==="Done"&&!showDone)return false; if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName).toLowerCase().indexOf(q)>-1; });
+  /* group by job */
+  var groups={};
+  vis.forEach(function(r){ (groups[r.jobKey]=groups[r.jobKey]||{no:r.jobNo,name:r.jobName,items:[]}).items.push(r); });
+  var keys=Object.keys(groups);
+  if(!keys.length){ E("jobs").innerHTML='<div class="empty">'+(q?"Nothing matches that filter.":"No open items yet. Assign one to get started.")+'</div>'; return; }
+  /* per-job counts + sort jobs by heat (overdue, then due-week, then open), General last */
+  keys.forEach(function(k){ var g=groups[k]; g.over=0; g.week=0; g.open=0; g.items.forEach(function(r){ if(r.status==="Done")return; g.open++; if(r.due&&r.due<today)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }); });
+  keys.sort(function(a,b){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return (ga.no||"").localeCompare(gb.no||""); });
+  E("jobs").innerHTML=keys.map(function(k){
+    var g=groups[k];
+    var title = k==="__GENERAL__" ? 'General <span class="jn">(no job)</span>' : esc(g.no)+' <span class="jn">'+esc(g.name)+'</span>';
+    var pills="";
+    if(g.over) pills+='<span class="pill red">'+g.over+' overdue</span> ';
+    if(g.week) pills+='<span class="pill amb">'+g.week+' this week</span> ';
+    pills+='<span class="pill ink">'+g.open+' open</span>';
+    /* sort items: open by due asc, done last */
+    g.items.sort(function(a,b){ var ad=a.status==="Done",bd=b.status==="Done"; if(ad!==bd)return ad?1:-1; if(ad)return (b.due||"").localeCompare(a.due||""); return (a.due||"9999").localeCompare(b.due||"9999"); });
+    var body=g.items.map(function(r){
+      var done=r.status==="Done";
+      var overdue=!done&&r.due&&r.due<today, soon=!done&&!overdue&&r.due&&r.due<=weekEnd;
+      var dtxt=r.due?shortDate(r.due):"no date";
+      var duePart=done?"done":(overdue?'<span class="ov">'+dtxt+' (overdue)</span>':(soon?'<span class="soon">due '+dtxt+'</span>':"due "+dtxt));
+      return '<div class="ai'+(done?" done":"")+'" data-id="'+esc(r.id)+'" data-status="'+esc(r.status)+'">'+
+        '<button class="chk" title="'+(done?"Reopen":"Mark done")+'">'+(done?"↩":"✓")+'</button>'+
+        '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
+        '<div class="meta">'+esc(r.who)+' · '+duePart+'</div></div></div>';
+    }).join("");
+    return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
+  }).join("");
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
+}
+
+function toggleDone(id,status,btn){
+  var makeDone=(status!=="Done");
+  var body=makeDone?{Status:"Done",CompletedDate:isoDay()+"T12:00:00Z",CompletedBy:loginEmail}:{Status:"Open",CompletedDate:null,CompletedBy:""};
+  btn.disabled=true;
+  getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
+  .then(function(){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(it){ it.f.Status=makeDone?"Done":"Open"; } render(); })
+  .catch(function(e){ btn.disabled=false; alert("Could not update that item: "+(e.message||e)); });
+}
+start();
+</script>
+</body>
+</html>
