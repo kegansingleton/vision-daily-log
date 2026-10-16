@@ -92,6 +92,7 @@ var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* ===== Auth ===== */
@@ -128,6 +129,8 @@ async function loadJobs(){
     var seen={}, jobs=[];
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn])return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
     jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
+    var jl=await pull(JOBS,"Title,Archive"); var arch={}; jl.forEach(function(j){ if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[(j.Title||"").trim()]=1; });
+    jobs=jobs.filter(function(j){return !arch[j.no];});
     E("jobPick").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
     E("jobPick").onchange=function(){ if(E("jobPick").value) loadSchedule(E("jobPick").value); };
   }catch(e){ E("sched").innerHTML='<div class="empty">Could not load jobs: '+esc(e.message||e)+'</div>'; }
