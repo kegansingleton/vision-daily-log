@@ -99,6 +99,10 @@ td.wrap-cell{white-space:normal}
   <div id="loading" class="loading">Pick a week and tap Load.</div>
 
   <div class="tabpanel" id="panel-comp">
+  <div class="card" id="overdueCard" style="display:none">
+    <h2>&#9888; Jobs past finish date <span class="pill" id="pillOverdue" style="background:#fde2e2;color:#b91c1c"></span></h2>
+    <div class="pad"><div class="tablewrap"><table id="overdueTbl"></table></div></div>
+  </div>
   <div id="headline" class="headline" style="display:none"></div>
   <div id="dataline" class="dataline" style="display:none"></div>
   <div id="nudgeRow" style="display:none;margin:8px 0 2px"><button class="btn gold" id="nudgeBtn">&#128203; Copy nudge list</button> <span id="nudgeMsg" class="note" style="margin-left:6px"></span></div>
@@ -152,6 +156,7 @@ var TC="91c4a3db-97f6-4b52-a855-516d5c414124";       /* Timecard Entries */
 var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a";     /* Daily Field Logs */
 var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";     /* Weekly 2-Week Look Ahead */
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";      /* Employee Master */
+var JOBSLIST="836523ba-cd20-4736-98ce-5716668b8973"; /* Jobs — for past-finish flag */
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
@@ -229,6 +234,7 @@ async function run(){
     computeLook(tc,look,from,to);
     renderSummary(from,to);
     loadBrowse(from,to);
+    loadOverdue();
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
 }
 
@@ -406,6 +412,20 @@ async function toggleDetail(elBase,i,btn,id,listId){
   if(det.getAttribute("data-loaded")==="1") return;
   try{ var token=await getToken(); var j=await fetch(GRAPH+listId+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); det.innerHTML=(j.fields&&j.fields.LogText)?j.fields.LogText:"(no detail saved)"; det.setAttribute("data-loaded","1"); }
   catch(e){ det.textContent="Could not load detail: "+(e.message||e); }
+}
+
+/* ===== Jobs past finish date ===== */
+async function loadOverdue(){
+  try{
+    var jobs=await getAll(JOBSLIST,"Title,FinishDate,PMName,Archive");
+    var today=iso(new Date());
+    var over=jobs.filter(function(j){ var a=(j.Archive===true||j.Archive==="Yes"||j.Archive==="true"); var f=dkey(j.FinishDate); return !a && f && f<today; }).sort(function(a,b){return dkey(a.FinishDate).localeCompare(dkey(b.FinishDate));});
+    if(!over.length){ E("overdueCard").style.display="none"; return; }
+    E("overdueCard").style.display="block"; E("pillOverdue").textContent=over.length+" overdue";
+    var h='<thead><tr><th>Job</th><th>PM</th><th>Finish</th><th>Days over</th></tr></thead><tbody>';
+    over.forEach(function(j){ var f=dkey(j.FinishDate); var days=Math.round((parseISO(today)-parseISO(f))/86400000); h+='<tr><td><b>'+esc(j.Title||"")+'</b></td><td>'+esc(j.PMName||"—")+'</td><td>'+esc(shortD(f))+'</td><td style="color:#b91c1c;font-weight:700;text-align:right">'+days+'</td></tr>'; });
+    E("overdueTbl").innerHTML=h+'</tbody>';
+  }catch(e){ /* non-critical */ }
 }
 
 /* ===== wiring ===== */
