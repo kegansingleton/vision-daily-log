@@ -33,6 +33,23 @@ textarea{min-height:90px;resize:vertical}
 .msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
 .noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}
 .noaccess b{color:var(--vm2)}
+.count{font-size:12px;font-weight:600;color:var(--mut);background:#f3f4f6;border-radius:10px;padding:1px 8px;margin-left:6px}
+.listControls{display:flex;gap:10px;align-items:center;margin:4px 0 8px;flex-wrap:wrap}
+.listControls input[type=text]{flex:1;min-width:150px;padding:9px;font-size:14px}
+.listControls label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);margin:0}
+.listControls label input{width:auto}
+.ai{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.ai:last-child{border-bottom:none}
+.ai .chk{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ok);padding:0}
+.ai.done .chk{background:var(--okbg);border-color:var(--ok)}
+.ai .body{flex:1;min-width:0}
+.ai .t{font-size:14px;font-weight:600;color:var(--ink);word-wrap:break-word}
+.ai.done .t{text-decoration:line-through;color:var(--mut)}
+.ai .meta{font-size:12px;color:var(--mut);margin-top:2px}
+.ai .meta .ov{color:#b91c1c;font-weight:700}
+.pri{display:inline-block;font-size:10.5px;font-weight:700;border-radius:8px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.pri.High{background:#fde8e8;color:#b91c1c}.pri.Normal{background:#eef2f7;color:#475569}.pri.Low{background:#f3f4f6;color:#9ca3af}
+.empty{color:var(--mut);font-size:13px;padding:14px 2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -77,6 +94,15 @@ textarea{min-height:90px;resize:vertical}
     </div>
 
     <div class="msg" id="msg"></div>
+
+    <div class="card" id="listCard">
+      <h2>Open action items <span class="count" id="openCount"></span></h2>
+      <div class="listControls">
+        <input type="text" id="search" placeholder="Filter by task, person, or job…">
+        <label><input type="checkbox" id="showDone"> show completed</label>
+      </div>
+      <div id="list"><div class="empty">Loading…</div></div>
+    </div>
   </div>
 </div>
 
@@ -141,7 +167,7 @@ async function showApp(a){
     opts.forEach(function(o){ var op=document.createElement("option"); op.value=o.email; op.textContent=o.name; sel.appendChild(op); });
     E("form").style.display="block"; E("foot").style.display="block";
     if(!E("due").value) E("due").value=today();
-    loadJobs();
+    loadJobs(); loadItems();
   }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
 }
 
@@ -175,12 +201,50 @@ function assign(){
   btn.disabled=true; msg.className="msg ok"; msg.textContent="Assigning...";
   getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,fields); }).then(function(){
     msg.className="msg ok"; msg.textContent="Assigned to "+aName+". Assign another, or change the fields above.";
-    E("task").value=""; E("details").value=""; btn.disabled=false; btn.textContent="Assign task"; E("task").focus();
+    E("task").value=""; E("details").value=""; btn.disabled=false; btn.textContent="Assign task"; E("task").focus(); loadItems();
   }).catch(function(e){
     msg.className="msg err"; msg.textContent="Could not assign yet ("+e.message+"). Move to better signal and tap Assign again.";
     btn.disabled=false;
   });
 }
+/* ===== Continuous list (Planner-style) ===== */
+var ITEMS=[];
+function shortDate(iso){ var p=String(iso||"").slice(0,10).split("-"); return p.length===3?(+p[1]+"/"+ +p[2]):iso; }
+async function pullItems(){ var token=await getToken(); var url=GRAPH+LIST+"/items?$expand=fields&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } return out; }
+function loadItems(){ E("list").innerHTML='<div class="empty">Loading…</div>'; pullItems().then(function(rows){ ITEMS=rows; renderItems(); }).catch(function(e){ E("list").innerHTML='<div class="empty">Could not load the list ('+esc(e.message||e)+')</div>'; }); }
+function renderItems(){
+  var q=(E("search").value||"").toLowerCase().trim();
+  var showDone=E("showDone").checked;
+  var today=new Date().toISOString().slice(0,10);
+  var rows=ITEMS.map(function(r){ var f=r.f; return {id:r.id, task:f.Title||"", who:f.AssignedToName||f.AssignedTo||"", job:((f.JobNo?f.JobNo+" ":"")+(f.JobName||"")).trim(), due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open")}; });
+  rows=rows.filter(function(r){ var done=r.status==="Done"; if(done&&!showDone) return false; if(!q) return true; return (r.task+" "+r.who+" "+r.job).toLowerCase().indexOf(q)>-1; });
+  rows.sort(function(a,b){ var ad=a.status==="Done",bd=b.status==="Done"; if(ad!==bd) return ad?1:-1; if(ad) return (b.due||"").localeCompare(a.due||""); return (a.due||"9999").localeCompare(b.due||"9999"); });
+  var openN=ITEMS.filter(function(r){return (r.f.Status||"Open")!=="Done";}).length;
+  E("openCount").textContent=openN+" open";
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(showDone?"No items yet.":"No open items — assign one above.")+'</div>'; return; }
+  E("list").innerHTML=rows.map(function(r){
+    var done=r.status==="Done";
+    var overdue=!done&&r.due&&r.due<today;
+    var dtxt=r.due?shortDate(r.due):"no date";
+    var meta=esc(r.who)+(r.job?" · "+esc(r.job):"")+" · "+(overdue?'<span class="ov">'+dtxt+' (overdue)</span>':(done?"done":"due "+dtxt));
+    return '<div class="ai'+(done?" done":"")+'" data-id="'+esc(r.id)+'" data-status="'+esc(r.status)+'">'+
+      '<button class="chk" title="'+(done?"Reopen":"Mark done")+'">'+(done?"↩":"✓")+'</button>'+
+      '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
+      '<div class="meta">'+meta+'</div></div></div>';
+  }).join("");
+  Array.prototype.forEach.call(E("list").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
+}
+function toggleDone(id,status,btn){
+  var makeDone=(status!=="Done");
+  var body=makeDone?{Status:"Done",CompletedDate:new Date().toISOString().slice(0,10)+"T12:00:00Z",CompletedBy:loginEmail}:{Status:"Open",CompletedDate:null,CompletedBy:""};
+  btn.disabled=true;
+  getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
+  .then(function(){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(it){ it.f.Status=makeDone?"Done":"Open"; } renderItems(); })
+  .catch(function(e){ btn.disabled=false; alert("Could not update that item: "+(e.message||e)); });
+}
+E("search").oninput=renderItems; E("showDone").onchange=renderItems;
+
 E("submitBtn").onclick=assign;
 start();
 </script>
