@@ -41,7 +41,8 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .mut{color:var(--mut);font-size:13px}
 .preview{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
-.mini{font-size:12px;font-weight:600;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+.mini{font-size:12px;font-weight:600;padding:5px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap}
+.acts{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}
 .mini.danger{color:#b91c1c;border-color:#f3c0c0}
 .mini:hover{filter:brightness(.97)}
 .addbtn{background:var(--vm);color:#fff;border-color:var(--vm);padding:11px 14px;font-size:14px;white-space:nowrap;border:none;border-radius:8px;font-weight:700;cursor:pointer}
@@ -118,18 +119,28 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginName="", loginEmail="";
-var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var account=null, loginName="", loginEmail="", isSuper=false;
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 var PARSED=null; // [{num,name}]
 
 /* ===== AUTH ===== */
-function afterLogin(acct){
+async function isAdminUser(email){
+  if(SUPERADMIN.indexOf(email)>-1) return true;
+  try{ var token=await getToken();
+    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===email; });
+  }catch(e){ return false; }
+}
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginName=acct.name||acct.username||"";
   loginEmail=(acct.username||"").toLowerCase();
+  isSuper=(SUPERADMIN.indexOf(loginEmail)>-1);
   document.getElementById("gate").style.display="none";
-  if(ALLOW.indexOf(loginEmail)<0){
-    document.body.innerHTML='<div style="max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px 24px;font-family:system-ui,Arial"><h2 style="color:#7f1d1d;margin:0 0 8px">Not authorized</h2><p>This page is limited to office admins. You are signed in as <b>'+loginEmail+'</b>.</p><p>If you should have access, ask for your login to be added.</p></div>';
+  var ok=await isAdminUser(loginEmail);
+  if(!ok){
+    document.body.innerHTML='<div style="max-width:420px;margin:60px auto;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px 24px;font-family:system-ui,Arial"><h2 style="color:#7f1d1d;margin:0 0 8px">Not authorized</h2><p>This page is limited to admins. You are signed in as <b>'+loginEmail+'</b>.</p></div>';
     return;
   }
   document.getElementById("app").style.display="block";
@@ -174,26 +185,28 @@ function renderRoster(){
   var list=ROSTER.filter(function(e){ return !q || (e.num+" "+e.name).toLowerCase().indexOf(q)>-1; });
   var active=ROSTER.filter(function(e){return e.active!=="No";}).length;
   document.getElementById("rosterStat").innerHTML='<div><b>'+active+'</b><span>Active</span></div><div><b>'+ROSTER.length+'</b><span>Total on file</span></div>';
-  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th>Foreman</th><th>Shop</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
-  if(!list.length){ h+='<tr><td colspan="8" class="mut">No matches.</td></tr>'; }
+  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th>Foreman</th><th>Shop</th><th>Admin</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
+  if(!list.length){ h+='<tr><td colspan="9" class="mut">No matches.</td></tr>'; }
   list.forEach(function(e){
     var badge = e.active==="No" ? '<span style="color:#b91c1c;font-weight:600">Inactive</span>' : '<span style="color:#15803d;font-weight:600">Active</span>';
     var typeBadge = e.office ? '<span style="color:#1d4ed8;font-weight:600">Office</span>' : '<span class="mut">Field</span>';
     var foreBadge = e.foreman ? '<span style="color:#15803d;font-weight:700">Foreman</span>' : '<span class="mut">—</span>';
     var shopBadge = e.shop ? '<span style="color:#c8932a;font-weight:700">Shop</span>' : '<span class="mut">—</span>';
+    var adminBadge = e.admin ? '<span style="color:#7f1d1d;font-weight:800">Admin</span>' : '<span class="mut">—</span>';
     var emailCell = e.email ? esc(e.email) : '<span class="mut" title="auto-generated from name — Edit to confirm">'+esc(autoEmail(e.name))+'</span>';
-    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td><td>'+foreBadge+'</td><td>'+shopBadge+'</td><td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
-       '<td style="text-align:right;white-space:nowrap"><button class="mini" data-act="edit">Edit</button> '+
+    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td><td>'+foreBadge+'</td><td>'+shopBadge+'</td><td>'+adminBadge+'</td><td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
+       '<td style="text-align:right"><div class="acts"><button class="mini" data-act="edit">Edit</button> '+
        '<button class="mini" data-act="foreman">'+(e.foreman?"Unset FM":"Make FM")+'</button> '+
        '<button class="mini" data-act="shop">'+(e.shop?"Remove shop":"Make shop")+'</button> '+
+       (isSuper?'<button class="mini" data-act="admin">'+(e.admin?"Remove admin":"Make admin")+'</button> ':'')+
        '<button class="mini" data-act="office">'+(e.office?"Make Field":"Make Office")+'</button> '+
        '<button class="mini" data-act="toggle">'+(e.active==="No"?"Activate":"Deactivate")+'</button> '+
-       '<button class="mini danger" data-act="del">Delete</button></td></tr>';
+       '<button class="mini danger" data-act="del">Delete</button></div></td></tr>';
   });
   var tbl=document.getElementById("rosterTbl"); tbl.innerHTML=h;
   tbl.querySelectorAll("button[data-act]").forEach(function(b){
     b.onclick=function(){ var tr=b.closest("tr"), id=tr.getAttribute("data-id"), act=b.getAttribute("data-act");
-      if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="office") toggleOffice(id); else if(act==="foreman") toggleForeman(id); else if(act==="shop") toggleShop(id); else if(act==="edit") editRow(tr,id);
+      if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="office") toggleOffice(id); else if(act==="foreman") toggleForeman(id); else if(act==="shop") toggleShop(id); else if(act==="admin") toggleAdmin(id); else if(act==="edit") editRow(tr,id);
     };
   });
 }
@@ -229,6 +242,17 @@ async function toggleEmp(id){
     var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Active:to})});
     if(!r.ok) throw new Error("HTTP "+r.status);
     rMsg("ok",e.name+" set "+(to==="No"?"inactive":"active")+"."); loadRoster();
+  }catch(err){ rMsg("err","Update failed: "+err.message); }
+}
+async function toggleAdmin(id){
+  if(!isSuper){ rMsg("err","Only Kegan or Bill can change admin rights."); return; }
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  var to=e.admin?"No":"Yes", body={Admin:to};
+  if(to==="Yes" && !e.email){ body.LoginEmail=autoEmail(e.name); }
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    rMsg("ok",e.name+(to==="Yes"?" is now an admin":" removed from admins")+"."); loadRoster();
   }catch(err){ rMsg("err","Update failed: "+err.message); }
 }
 async function toggleShop(id){
