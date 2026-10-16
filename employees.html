@@ -78,6 +78,7 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
       <div style="flex:2;min-width:160px"><div class="mut" style="margin-bottom:3px">Name</div><input id="addName" placeholder="Last, First"></div>
       <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;padding-bottom:10px"><input type="checkbox" id="addOffice" style="width:auto"> Office staff</label>
       <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;padding-bottom:10px"><input type="checkbox" id="addForeman" style="width:auto"> Foreman</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;padding-bottom:10px"><input type="checkbox" id="addShop" style="width:auto"> Shop access</label>
       <button class="addbtn" id="addEmpBtn">+ Add employee</button>
     </div>
     <input id="rosterFilter" placeholder="Filter by name or number…">
@@ -152,10 +153,10 @@ function escA(s){ return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/<
 async function loadRoster(){
   try{
     var token=await getToken();
-    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail)&$top=999";
+    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail,ShopAccess,Admin)&$top=999";
     var out=[];
     while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message);
-      (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,num:it.fields.EmployeeNumber||"",name:it.fields.EmployeeName||"",active:(it.fields.Active||"Yes"),office:(it.fields.OfficeStaff===true||it.fields.OfficeStaff==="Yes"||it.fields.OfficeStaff==="true"),foreman:(it.fields.Foreman===true||it.fields.Foreman==="Yes"||it.fields.Foreman==="true"),email:(it.fields.LoginEmail||"")}); });
+      (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,num:it.fields.EmployeeNumber||"",name:it.fields.EmployeeName||"",active:(it.fields.Active||"Yes"),office:(it.fields.OfficeStaff===true||it.fields.OfficeStaff==="Yes"||it.fields.OfficeStaff==="true"),foreman:(it.fields.Foreman===true||it.fields.Foreman==="Yes"||it.fields.Foreman==="true"),email:(it.fields.LoginEmail||""),shop:(it.fields.ShopAccess===true||it.fields.ShopAccess==="Yes"||it.fields.ShopAccess==="true"),admin:(it.fields.Admin===true||it.fields.Admin==="Yes"||it.fields.Admin==="true")}); });
       url=j["@odata.nextLink"]||null;
     }
     out.sort(function(a,b){ return ((parseInt(a.num)||0)-(parseInt(b.num)||0)) || String(a.name).localeCompare(String(b.name)); });
@@ -173,16 +174,18 @@ function renderRoster(){
   var list=ROSTER.filter(function(e){ return !q || (e.num+" "+e.name).toLowerCase().indexOf(q)>-1; });
   var active=ROSTER.filter(function(e){return e.active!=="No";}).length;
   document.getElementById("rosterStat").innerHTML='<div><b>'+active+'</b><span>Active</span></div><div><b>'+ROSTER.length+'</b><span>Total on file</span></div>';
-  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th>Foreman</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
-  if(!list.length){ h+='<tr><td colspan="7" class="mut">No matches.</td></tr>'; }
+  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th>Foreman</th><th>Shop</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
+  if(!list.length){ h+='<tr><td colspan="8" class="mut">No matches.</td></tr>'; }
   list.forEach(function(e){
     var badge = e.active==="No" ? '<span style="color:#b91c1c;font-weight:600">Inactive</span>' : '<span style="color:#15803d;font-weight:600">Active</span>';
     var typeBadge = e.office ? '<span style="color:#1d4ed8;font-weight:600">Office</span>' : '<span class="mut">Field</span>';
     var foreBadge = e.foreman ? '<span style="color:#15803d;font-weight:700">Foreman</span>' : '<span class="mut">—</span>';
+    var shopBadge = e.shop ? '<span style="color:#c8932a;font-weight:700">Shop</span>' : '<span class="mut">—</span>';
     var emailCell = e.email ? esc(e.email) : '<span class="mut" title="auto-generated from name — Edit to confirm">'+esc(autoEmail(e.name))+'</span>';
-    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td><td>'+foreBadge+'</td><td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
+    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td><td>'+foreBadge+'</td><td>'+shopBadge+'</td><td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
        '<td style="text-align:right;white-space:nowrap"><button class="mini" data-act="edit">Edit</button> '+
        '<button class="mini" data-act="foreman">'+(e.foreman?"Unset FM":"Make FM")+'</button> '+
+       '<button class="mini" data-act="shop">'+(e.shop?"Remove shop":"Make shop")+'</button> '+
        '<button class="mini" data-act="office">'+(e.office?"Make Field":"Make Office")+'</button> '+
        '<button class="mini" data-act="toggle">'+(e.active==="No"?"Activate":"Deactivate")+'</button> '+
        '<button class="mini danger" data-act="del">Delete</button></td></tr>';
@@ -190,7 +193,7 @@ function renderRoster(){
   var tbl=document.getElementById("rosterTbl"); tbl.innerHTML=h;
   tbl.querySelectorAll("button[data-act]").forEach(function(b){
     b.onclick=function(){ var tr=b.closest("tr"), id=tr.getAttribute("data-id"), act=b.getAttribute("data-act");
-      if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="office") toggleOffice(id); else if(act==="foreman") toggleForeman(id); else if(act==="edit") editRow(tr,id);
+      if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="office") toggleOffice(id); else if(act==="foreman") toggleForeman(id); else if(act==="shop") toggleShop(id); else if(act==="edit") editRow(tr,id);
     };
   });
 }
@@ -202,9 +205,10 @@ document.getElementById("addEmpBtn").onclick=async function(){
   try{ var token=await getToken();
     var office=document.getElementById("addOffice").checked?"Yes":"No";
     var foreman=document.getElementById("addForeman").checked?"Yes":"No";
-    var r=await fetch(GRAPH+EMP_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:num,EmployeeNumber:num,EmployeeName:name,Active:"Yes",OfficeStaff:office,Foreman:foreman,LoginEmail:autoEmail(name)}})});
+    var shop=document.getElementById("addShop").checked?"Yes":"No";
+    var r=await fetch(GRAPH+EMP_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:num,EmployeeNumber:num,EmployeeName:name,Active:"Yes",OfficeStaff:office,Foreman:foreman,ShopAccess:shop,LoginEmail:autoEmail(name)}})});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
-    document.getElementById("addNum").value=""; document.getElementById("addName").value=""; document.getElementById("addOffice").checked=false; document.getElementById("addForeman").checked=false;
+    document.getElementById("addNum").value=""; document.getElementById("addName").value=""; document.getElementById("addOffice").checked=false; document.getElementById("addForeman").checked=false; document.getElementById("addShop").checked=false;
     rMsg("ok","Added "+name+"."); loadRoster();
   }catch(e){ rMsg("err","Add failed: "+e.message); }
   this.disabled=false;
@@ -225,6 +229,16 @@ async function toggleEmp(id){
     var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Active:to})});
     if(!r.ok) throw new Error("HTTP "+r.status);
     rMsg("ok",e.name+" set "+(to==="No"?"inactive":"active")+"."); loadRoster();
+  }catch(err){ rMsg("err","Update failed: "+err.message); }
+}
+async function toggleShop(id){
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  var to=e.shop?"No":"Yes", body={ShopAccess:to};
+  if(to==="Yes" && !e.email){ body.LoginEmail=autoEmail(e.name); }
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    rMsg("ok",e.name+(to==="Yes"?" can now log shop production":" removed from shop access")+"."); loadRoster();
   }catch(err){ rMsg("err","Update failed: "+err.message); }
 }
 async function toggleForeman(id){
