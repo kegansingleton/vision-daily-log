@@ -141,13 +141,15 @@ var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
 var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
 
 function E(id){return document.getElementById(id);}
-function today(){return new Date().toISOString().slice(0,10);}
+function pad2(n){return (n<10?"0":"")+n;}
+function isoLocal(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}  /* local (Colorado) date, not UTC */
+function today(){return isoLocal(new Date());}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 function emailOf(e){ return (e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); }
 function truthy(v){ return v===true||v==="Yes"||v==="true"; }
 function shortDate(iso){ var p=String(iso||"").slice(0,10).split("-"); return p.length===3?(+p[1]+"/"+ +p[2]):iso; }
-function addDaysISO(n){ var d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function addDaysISO(n){ var d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
 
 async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
 async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
