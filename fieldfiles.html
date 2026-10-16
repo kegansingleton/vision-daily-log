@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Mechanical — Field Files</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--shadow:0 1px 3px rgba(0,0,0,.06);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding:0 14px 60px}
+header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;text-align:center;box-shadow:var(--shadow)}
+header.app img.logo{height:46px;background:#fff;border-radius:11px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
+header.app h1{margin:0;font-size:20px;font-weight:800}
+header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
+#who{font-size:12px;opacity:.9;margin-top:6px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:20px}
+.gate img{height:76px;background:#fff;border-radius:13px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.gate button{margin-top:16px;font-size:16px;font-weight:700;border:none;border-radius:11px;padding:12px 22px;background:#fff;color:var(--vm2);cursor:pointer}
+.filter{width:100%;font-size:16px;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-family:inherit;margin:16px 0 4px}
+.filter:focus{border-color:var(--vm);outline:none}
+.job{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-top:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.job .info{flex:1;min-width:200px}
+.job .jn{font-size:17px;font-weight:800}
+.job .meta{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6}
+.job a.open{font-size:15px;font-weight:700;text-decoration:none;background:var(--vm);color:#fff;border-radius:11px;padding:12px 20px;white-space:nowrap}
+.job a.open:active{background:var(--vm2)}
+.nolink{font-size:13px;color:var(--muted);font-style:italic;white-space:nowrap}
+.loading,.empty{padding:40px;text-align:center;color:var(--muted)}
+.footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+<img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:150,m/qt=q:92" alt="Vision Mechanical">
+<div style="font-size:18px">Vision Mechanical — Field Files</div>
+<button id="signin">Sign in with Microsoft</button>
+<div id="gateMsg" style="margin-top:12px;font-size:13px;opacity:.9"></div>
+</div>
+
+<header class="app">
+<img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
+<h1>Field Files</h1>
+<div class="sub">Tap a job to open its Datto files</div>
+<div id="who"></div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <input type="text" id="filter" class="filter" placeholder="Find a job…">
+  <div id="list"><div class="loading">Loading jobs…</div></div>
+</div>
+
+<div class="footer">Vision Mechanical &bull; Field Files &bull; Access is controlled by Datto (Vision email + link required).</div>
+
+<script>
+var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
+var SCOPE="https://graph.microsoft.com/Sites.Read.All";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, JOBS_LIST=[];
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function isArch(v){ return v===true||v==="Yes"||v==="true"; }
+function d10(v){return v?String(v).slice(0,10):"";}
+function shortD(v){var p=d10(v).split("-");return p.length===3?(+p[1]+"/"+ +p[2]+"/"+String(p[0]).slice(2)):"";}
+function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username; load(); }
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=2000", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+
+async function load(){
+  try{
+    var jobs=await pull(JOBS,"Title,StartDate,FinishDate,DattoLink,PMName,Address,Archive");
+    /* job names from Job Tasks (keyed by JobNo = the Jobs list Title) */
+    var tasks=await pull(JOBTASKS,"JobNo,JobName");
+    var nameByNo={}; tasks.forEach(function(t){ var jn=(t.JobNo||"").trim(); if(jn && t.JobName && !nameByNo[jn]) nameByNo[jn]=t.JobName; });
+    JOBS_LIST=jobs.filter(function(j){ return !isArch(j.Archive); })
+      .map(function(j){ var no=(j.Title||"").trim(); return {no:no, name:nameByNo[no]||"", datto:(j.DattoLink||"").trim(), pm:j.PMName||"", addr:j.Address||"", start:d10(j.StartDate), finish:d10(j.FinishDate)}; })
+      .sort(function(a,b){return a.no.localeCompare(b.no);});
+    render();
+  }catch(e){ E("list").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function render(){
+  var q=(E("filter").value||"").toLowerCase().trim();
+  var rows=JOBS_LIST.filter(function(j){ return !q || (j.no+" "+j.name+" "+j.pm+" "+j.addr).toLowerCase().indexOf(q)>-1; });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(q?"No matching jobs.":"No jobs with files yet.")+'</div>'; return; }
+  E("list").innerHTML=rows.map(function(j){
+    var meta=[]; if(j.addr)meta.push(esc(j.addr)); if(j.pm)meta.push("PM: "+esc(j.pm)); if(j.start||j.finish)meta.push((j.start?shortD(j.start):"?")+" – "+(j.finish?shortD(j.finish):"?"));
+    var btn = j.datto ? '<a class="open" href="'+esc(j.datto)+'" target="_blank" rel="noopener">Open files ↗</a>' : '<span class="nolink">No files link yet</span>';
+    return '<div class="job"><div class="info"><div class="jn">'+esc(j.no)+(j.name?' <span style="font-weight:600;color:var(--muted)">'+esc(j.name)+'</span>':'')+'</div>'+(meta.length?'<div class="meta">'+meta.join(" &bull; ")+'</div>':'')+'</div>'+btn+'</div>';
+  }).join("");
+}
+E("filter").oninput=function(){ render(); };
+</script>
+</body>
+</html>
