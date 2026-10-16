@@ -127,6 +127,10 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="1aec5cfa-db5b-47f2-adba-6b23a42e02af";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* v1.8: resilient upload - 20s timeout + retry on network/5xx/429 */
+function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPost(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
 /* --- Live job list (same source the timecards pull from) --- */
 var JOBS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
 function fillJobPick(arr){var s=document.getElementById("jobPick");if(!s)return;var e=function(x){return String(x).replace(/"/g,'&quot;').replace(/</g,'&lt;');};s.innerHTML='<option value="">-- Pick a job (or type below) --</option>'+arr.map(function(x){return '<option value="'+e(x)+'">'+e(x)+'</option>';}).join("");s.onchange=function(){var v=s.value;if(!v)return;var i=v.indexOf(" ");E("jobNo").value=i>0?v.slice(0,i):v;E("jobName").value=i>0?v.slice(i+1):"";};}
@@ -190,13 +194,12 @@ function submitReport(){
   var totL=0,totO=0;items.forEach(function(it){totL+=parseFloat(it.labor)||0;totO+=parseFloat(it.ot)||0;});
   var a={date:E("workDate").value,jobNo:E("jobNo").value.trim(),jobName:E("jobName").value.trim(),phase:E("phase").value.trim(),status:E("status").value,tech:E("tech").value.trim(),reason:E("reason").value.trim(),work:E("work").value.trim(),items:items.filter(function(it){return it.qty||it.po||it.labor||it.ot;}),totLabor:Math.round(totL*100)/100,totOt:Math.round(totO*100)/100,sig:E("sig").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
   var fields={Title:a.date+" | "+a.jobName+" | "+a.tech,WorkDate:a.date+"T12:00:00Z",WorkDateText:a.date,JobNo:a.jobNo,JobName:a.jobName,PhaseCode:a.phase,ServiceStatus:a.status,Technician:a.tech,ReasonForCall:a.reason,WorkPerformed:a.work,LaborHours:a.totLabor,OvertimeHours:a.totOt,LineItems:JSON.stringify(a.items),ForemanSignature:a.sig,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
-  msg.className="msg";msg.style.display="none";btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting service report...";
+  msg.className="msg";msg.style.display="none";if(navigator.onLine===false){msg.className="msg err";msg.textContent="You’re offline right now — move to better signal and tap Submit again.";return;}btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting service report...";
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
   msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){
-    return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
-  }).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){
+    return vmPostRetry(GRAPH_ITEMS_URL,tok.accessToken,{fields:fields});}).then(function(){
     msg.className="msg ok";msg.textContent="Submitted. Your service report has been filed.";btn.textContent="Submitted";
-  }).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+  }).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again.";btn.disabled=false;});
 }
 E("submitBtn").onclick=submitReport;
 start();
