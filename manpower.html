@@ -73,6 +73,7 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
       <button data-w="16">16 wks</button>
       <button data-w="26">26 wks</button>
     </div>
+    <div class="rangecap" id="rangeCap" style="font-size:13px;font-weight:600;color:var(--muted);align-self:center;margin-left:10px"></div>
     <div class="spacer"></div>
     <div class="updated" id="updated"></div>
   </div>
@@ -91,7 +92,7 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
 
   <div class="panel">
     <h2>Hours by job — selected range</h2>
-    <div class="cap">Total worked man-hours per job across the window.</div>
+    <div class="cap">Actual man-hours worked per job (from timecards) across the range above. Sick, vacation &amp; holiday are excluded.</div>
     <div style="overflow-x:auto"><table class="jobtable" id="jobTable"></table></div>
   </div>
 
@@ -185,6 +186,8 @@ function compute(rows, fromWk, curWk){
     kpi(r1(peak).toLocaleString()+"h","Peak week","Busiest in range")+
     kpi(r1(rangeTotal).toLocaleString()+"h","Range total","All jobs, "+WEEKS+" wks");
   E("updated").textContent="Updated "+new Date().toLocaleString();
+  var rngEnd=addDays(curWk,6), od={month:'short',day:'numeric'};
+  E("rangeCap").textContent=fromWk.toLocaleDateString(undefined,od)+" – "+rngEnd.toLocaleDateString(undefined,od)+", "+rngEnd.getFullYear()+"  ·  "+WEEKS+" wks";
 
   /* job table */
   var maxJob=Math.max.apply(null,jobs.map(function(jn){return totByJob[jn];}).concat([1]));
