@@ -83,6 +83,10 @@ var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="be65e5a7-28b0-4b9b-a9b5-c8f4387f71e4";
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+LIST+"/items";
+/* v1.8: resilient upload - 20s timeout + retry on network/5xx/429 */
+function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPost(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
 var TYPES=["Sick","Vacation","Bereavement","Union Sick Pay","Military","Jury Duty","Maternity/Paternity","Other"];var absType="";
@@ -100,9 +104,9 @@ function submitReq(){
   if(!E("dFrom").value||!E("dTo").value){msg.className="msg err";msg.textContent="Pick from and to dates";return;}
   var a={empName:E("empName").value.trim(),empNum:E("empNum").value.trim(),dept:E("dept").value.trim(),manager:E("manager").value.trim(),absType:absType,dFrom:E("dFrom").value,dTo:E("dTo").value,reason:E("reason").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
   var fields={Title:a.empName+" | "+a.absType+" | "+a.dFrom,EmployeeName:a.empName,EmployeeNumber:a.empNum,Department:a.dept,Manager:a.manager,AbsenceType:a.absType,DateFrom:a.dFrom+"T12:00:00Z",DateFromText:a.dFrom,DateTo:a.dTo+"T12:00:00Z",DateToText:a.dTo,Reason:a.reason,ApprovalStatus:"Pending",SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
-  btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting request...";
+  if(navigator.onLine===false){msg.className="msg err";msg.textContent="You’re offline right now — move to better signal and tap Submit again.";return;}btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting request...";
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
-  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){return fetch(GRAPH_ITEMS_URL,{method:"POST",headers:{Authorization:"Bearer "+tok.accessToken,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,200));});return r.json();}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Your request has been sent for approval.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit ("+e.message+"). Try again.";btn.disabled=false;});
+  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){return vmPostRetry(GRAPH_ITEMS_URL,tok.accessToken,{fields:fields});}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Your request has been sent for approval.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again.";btn.disabled=false;});
 }
 E("submitBtn").onclick=submitReq;start();
 </script>
