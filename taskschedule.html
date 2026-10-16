@@ -83,8 +83,8 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
 
 <script>
 /* ===== Security ===== */
-var ADMIN=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
-var PM=ADMIN.concat(["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"]);
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
 
 /* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
@@ -102,9 +102,18 @@ function d10(v){return v?String(v).slice(0,10):"";}
 function todayISO(){var d=new Date();function p(n){return (n<10?"0":"")+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
 function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
 function E(id){return document.getElementById(id);}
-function afterLogin(acct){
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+async function isAdminUser(em){
+  if(SUPERADMIN.indexOf(em)>-1) return true;
+  try{ var token=await getToken();
+    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
+  }catch(e){ return false; }
+}
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
-  isPM=(PM.indexOf(loginEmail)>-1); isAdmin=(ADMIN.indexOf(loginEmail)>-1);
+  isAdmin=await isAdminUser(loginEmail); isPM=isAdmin||(NAMED_PM.indexOf(loginEmail)>-1);
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username;
   E("rolePill").textContent=isPM?"Project Manager — edit % and adjustments":"View only";
   E("rolePill").className="rolepill"+(isPM?"":" view");
