@@ -62,6 +62,11 @@ th.l,td.l{text-align:left}
 </div></header>
 
 <div class="wrap" id="app" style="display:none">
+  <div class="card" id="gapCard" style="display:none;border-color:#f3c0c0">
+    <h2 style="color:#b91c1c">&#9888; Fab hours logged — no run recorded</h2>
+    <div class="cap">Timecard fab hours with no matching Shop Fab Run. Log the output so the rate counts.</div>
+    <div class="tablewrap"><table id="gapTbl"></table></div>
+  </div>
   <div class="typ" id="typSeg">
     <button data-t="Sheet Metal" class="on">Sheet Metal</button>
     <button data-t="Pipe">Pipe</button>
@@ -98,7 +103,8 @@ th.l,td.l{text-align:left}
 <div class="footer">Vision Mechanical &bull; Shop Production &bull; Rates = output ÷ crew hours on that job/phase/day (live).</div>
 
 <script>
-var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net","nholliday@visionmech.net","avigil@visionmech.net"];
+var ADMIN=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
@@ -110,14 +116,21 @@ var BAND={"Sheet Metal":[600,3500]};
 var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, RUNS=[], fabType="Sheet Metal", scatterChart=null;
+var account=null, RUNS=[], GAPS=[], fabType="Sheet Metal", scatterChart=null;
 function E(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function afterLogin(acct){
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); var em=(acct.username||"").toLowerCase();
   E("gate").style.display="none";
-  if(ALLOW.indexOf(em)<0){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Production is limited to admins and shop leads. Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
+  var ok=(ADMIN.indexOf(em)>-1)||(await hasShopAccess(em));
+  if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Production is limited to admins and shop staff (Shop access in Employee Setup). Signed in as <b>'+esc(em)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=acct.name||acct.username; load();
+}
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+async function hasShopAccess(em){
+  try{ var emps=await pullAll(EMPL,"LoginEmail,ShopAccess,EmployeeName");
+    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); if(!s) return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
+  }catch(e){ return false; }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
@@ -144,6 +157,10 @@ async function load(){
     runs.forEach(function(r){ var k=(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate); outByKey[k]=(outByKey[k]||0)+(parseFloat(r.Output)||0); cntByKey[k]=(cntByKey[k]||0)+1; });
     RUNS=runs.map(function(r){ var k=(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate); var H=hrs[k]||0, o=parseFloat(r.Output)||0, tot=outByKey[k]||0; var h=(tot>0)?(H*(o/tot)):0; return {f:r, out:o, hrs:h, rate:(h>0?o/h:null), mixed:(cntByKey[k]>1)}; });
     RUNS.sort(function(a,b){return dkey(b.f.RunDate).localeCompare(dkey(a.f.RunDate));});
+    var runKey={}; runs.forEach(function(r){ runKey[(r.JobNo||"")+"|"+(r.PhaseCode||"")+"|"+dkey(r.RunDate)]=1; });
+    GAPS=[]; Object.keys(hrs).forEach(function(k){ var parts=k.split("|"); if(PHASE_NAME[parts[1]] && hrs[k]>0 && !runKey[k]){ GAPS.push({job:parts[0],phase:parts[1],date:parts[2],hrs:hrs[k]}); } });
+    GAPS.sort(function(a,b){return b.date.localeCompare(a.date);});
+    renderGaps();
     E("loading").style.display="none"; render();
   }catch(e){ E("loading").textContent="Could not load: "+(e.message||e); }
 }
@@ -190,6 +207,14 @@ function render(){
   E("runsTbl").innerHTML=rh+'</tbody>';
 }
 function cr(v){ return v!=null?n1(v):"—"; }
+function renderGaps(){
+  if(!GAPS.length){ E("gapCard").style.display="none"; return; }
+  E("gapCard").style.display="block";
+  var h='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th>Hours (no run)</th></tr></thead><tbody>';
+  GAPS.slice(0,40).forEach(function(g){ h+='<tr><td class="l">'+esc(shortD(g.date))+'</td><td class="l">'+esc(g.job)+'</td><td class="l">'+esc(g.phase+(PHASE_NAME[g.phase]?(" "+PHASE_NAME[g.phase]):""))+'</td><td>'+n1(g.hrs)+'</td></tr>'; });
+  h+='</tbody>'; if(GAPS.length>40) h+='<tfoot><tr><td colspan="4" class="l" style="color:var(--muted)">…and '+(GAPS.length-40)+' more</td></tr></tfoot>';
+  E("gapTbl").innerHTML=h;
+}
 function breakdownTable(elId, rows, keyFn, labelFn, u, unit, colName){
   var by={}; rows.forEach(function(r){ var kk=keyFn(r); (by[kk]=by[kk]||[]).push(r); });
   var items=Object.keys(by).map(function(kk){ var l=by[kk]; return {k:kk, rate:blended(l), runs:l.length, out:l.reduce(function(s,r){return s+r.out;},0)}; }).filter(function(x){return x.rate!=null;}).sort(function(a,b){return b.rate-a.rate;});
