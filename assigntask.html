@@ -214,7 +214,7 @@ function assign(){
   var fields={ Title:task, JobNo:j.no, JobName:j.name, AssignedTo:assignee, AssignedToName:aName, DueDate:due+"T12:00:00Z", Priority:prio, Status:"Open", Details:details, CreatedByEmail:loginEmail, CreatedByName:myName };
   if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You’re offline right now — move to better signal and tap Assign again."; return; }
   btn.disabled=true; msg.className="msg ok"; msg.textContent="Assigning...";
-  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,fields); }).then(function(){
+  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,{fields:fields}); })  /* Graph requires the {fields:{...}} wrapper — without it an empty item is created */.then(function(){
     msg.className="msg ok"; msg.textContent="Assigned to "+aName+". Assign another, or change the fields above.";
     E("task").value=""; E("details").value=""; btn.disabled=false; btn.textContent="Assign task"; E("task").focus(); loadItems();
   }).catch(function(e){
@@ -230,7 +230,7 @@ function render(){
   var td=today(), weekEnd=addDaysISO(7), since=lastMeeting();
   var byPerson=(GROUP==="person");
   var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
-    return { id:r.id, task:f.Title||"", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
+    return { id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
       jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
       due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), doneOn:String(f.CompletedDate||"").slice(0,10) }; });
   rows.forEach(function(r){ r.recent=(r.status==="Done" && r.doneOn && r.doneOn>=since); });
