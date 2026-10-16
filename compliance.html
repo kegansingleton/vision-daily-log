@@ -143,7 +143,7 @@ td.wrap-cell{white-space:normal}
 
 <script>
 /* ===== Admin access ===== */
-var ALLOW=["kconger@visionmech.net","ahergert@visionmech.net","kegan.singleton@visionmech.net","nsingleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 
 /* Office/salaried staff are flagged in Employee Master (OfficeStaff column) — flat 40h handled off the timecard, so they're skipped in the "missing time" check. Set the flag in the Employee manager. */
 function isOffice(e){ var v=e&&e.OfficeStaff; return v===true||v==="Yes"||v==="true"||v===1; }
@@ -166,13 +166,19 @@ var account=null, loginEmail="";
 var LOADED={}, NAMES={}, RESULTS={tc:[],log:{},look:{}}, SUMMARY_RANGE={}, BROWSE={logs:[],look:[]};
 var ROSTER_EMAILS={}, ROSTER_NAMES={};
 function E(id){return document.getElementById(id);}
-function afterLogin(acct){
+async function isAdminUser(email){
+  if(SUPERADMIN.indexOf(email)>-1) return true;
+  try{ var token=await getToken();
+    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===email; });
+  }catch(e){ return false; }
+}
+async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase();
   E("gate").style.display="none";
-  if(ALLOW.indexOf(loginEmail)<0){
-    document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This dashboard is limited to admins. You are signed in as <b>'+esc(loginEmail)+'</b>.</p></div>';
-    return;
-  }
+  var ok=await isAdminUser(loginEmail);
+  if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>This dashboard is limited to admins (set in Employee Setup). Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginEmail;
   var wk=payWeek(new Date()); E("from").value=iso(wk.start); E("to").value=iso(wk.end);
   run();
@@ -243,7 +249,8 @@ function foremanNames(tc){ var m={}; tc.forEach(function(r){ var e=(r.ForemanEma
 
 /* ===== Section 1: Timecards missing (weekdays in range) ===== */
 function computeTimecards(emps,tc,from,to){
-  var days=weekdaysBetween(from,to);
+  var today=iso(new Date());
+  var days=weekdaysBetween(from,to).filter(function(d){ return d<today; }); /* only flag weekdays that have actually passed — never future dates, and not today (time isn't in until end of day) */
   var have={}; tc.forEach(function(r){ var k=(r.EmployeeNumber||"")+"|"+dkey(r.WorkDate); have[k]=true; });
   var checked=emps.filter(function(e){ return !isOffice(e); });
   var rows=[];
@@ -254,7 +261,7 @@ function computeTimecards(emps,tc,from,to){
   rows.sort(function(a,b){return b.miss.length-a.miss.length||String(a.name).localeCompare(String(b.name));});
   RESULTS.tc=rows;
   var pill=E("pillTC");
-  if(!rows.length){ pill.className="pill ok"; pill.textContent="All "+checked.length+" in"; E("tcTbl").innerHTML='<tr><td class="empty">Everyone with an active record has time on every weekday in range.</td></tr>'; }
+  if(!rows.length){ pill.className="pill ok"; pill.textContent="All "+checked.length+" in"; E("tcTbl").innerHTML='<tr><td class="empty">Everyone with an active record has time on every completed weekday so far.</td></tr>'; }
   else { pill.className="pill bad"; pill.textContent=rows.length+" missing"; 
     var h='<thead><tr><th>Emp #</th><th>Employee</th><th>Missing weekday(s)</th></tr></thead><tbody>';
     rows.forEach(function(r){ h+='<tr><td>'+esc(r.num)+'</td><td>'+esc(r.name)+'</td><td class="miss wrap-cell">'+r.miss.map(shortD).join(", ")+'</td></tr>'; });
