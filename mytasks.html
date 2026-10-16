@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — My Tasks</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--amb:#b45309;--ambbg:#fef3c7;--red:#b91c1c;--redbg:#fde8e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:640px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+header .rf{margin-left:auto;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:9px;padding:8px 11px;font-size:13px;font-weight:700;cursor:pointer}
+.wrap{max-width:640px;margin:0 auto;padding:12px 12px 60px}
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 10px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+.kpi b{display:block;font-size:26px;font-weight:800;line-height:1.05}
+.kpi span{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+.kpi.red b{color:var(--red)}.kpi.amb b{color:var(--amb)}
+/* sections */
+.sec{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin:18px 4px 8px;display:flex;align-items:center;gap:8px}
+.sec.red{color:var(--red)}.sec.amb{color:var(--amb)}.sec.ink{color:var(--mut)}.sec.ok{color:var(--ok)}
+.sec .n{background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--ink)}
+/* task card */
+.tk{background:#fff;border:1px solid var(--line);border-left:5px solid #cbd5e1;border-radius:12px;margin:0 0 10px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;transition:background .4s}
+.tk.over{border-left-color:var(--red)}.tk.soon{border-left-color:#f59e0b}.tk.done{border-left-color:var(--ok);opacity:.75}
+.tk.flash{background:#fff7d6}
+.tk .top{display:flex;gap:10px;padding:12px 12px 10px;align-items:flex-start;cursor:pointer}
+.tk .body{flex:1;min-width:0}
+.tk .t{font-size:16px;font-weight:700;line-height:1.3;word-wrap:break-word}
+.tk.done .t{text-decoration:line-through;color:var(--mut)}
+.tk .job{font-size:13px;color:var(--vm2);font-weight:700;margin-top:3px}
+.tk .meta{font-size:12.5px;color:var(--mut);margin-top:3px}
+.tk .meta .ov{color:var(--red);font-weight:800}.tk .meta .sn{color:var(--amb);font-weight:800}
+.pri{display:inline-block;font-size:10.5px;font-weight:800;border-radius:8px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.pri.High{background:var(--redbg);color:var(--red)}
+.tk .more{font-size:12px;color:var(--mut);flex:0 0 auto;padding-top:3px}
+.tk .det{display:none;padding:0 12px 10px;font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}
+.tk.open .det{display:block}
+.tk .det .by{display:block;font-size:12px;color:var(--mut);margin-top:6px;white-space:normal}
+.tk .act{border-top:1px solid var(--line);display:flex}
+.tk .act button{flex:1;border:none;background:#fff;padding:14px;font-size:15px;font-weight:800;cursor:pointer;color:var(--ok)}
+.tk .act button.re{color:var(--mut);font-weight:700}
+.tk .act button:disabled{opacity:.45}
+.tk .err{display:none;background:var(--redbg);color:var(--red);font-size:13px;padding:8px 12px}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:12px;color:var(--mut);font-size:14px;padding:22px 14px;text-align:center}
+.togg{display:block;width:100%;background:none;border:none;color:var(--mut);font-size:13px;font-weight:700;padding:14px;cursor:pointer}
+/* toast */
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120px);background:#111827;color:#fff;border-radius:12px;padding:12px 14px;font-size:14px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .25s;z-index:200;max-width:92vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast button{background:none;border:none;color:#fca5a5;font-weight:800;font-size:14px;cursor:pointer;padding:0}
+.offline{display:none;background:var(--ambbg);color:var(--amb);font-size:13px;font-weight:700;border-radius:10px;padding:9px 12px;margin:4px 0 8px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.foot{text-align:center;font-size:12px;color:var(--mut);margin-top:26px}
+.foot a{color:var(--vm2);font-weight:700;text-decoration:none}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>My Tasks</h1><p>Your assigned action items. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>My Tasks</h1><div class="who" id="who"></div></div>
+  <button class="rf" id="refresh">&#8635; Refresh</button>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="offline" id="offline">You're offline — showing what was last loaded. Marking done will work once you have signal.</div>
+  <div class="kpis">
+    <div class="kpi red"><b id="kOver">–</b><span>Overdue</span></div>
+    <div class="kpi amb"><b id="kWeek">–</b><span>This week</span></div>
+    <div class="kpi"><b id="kOpen">–</b><span>Open</span></div>
+  </div>
+  <div id="list"><div class="empty">Loading your tasks…</div></div>
+  <div class="foot"><a href="/portal.html">&larr; Employee Portal</a></div>
+</div>
+
+<div class="toast" id="toast"><span id="toastTx"></span><button id="toastUndo">UNDO</button></div>
+
+<script>
+/* ===== Config ===== */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/";
+var LIST="25279cba-004d-4b8c-8356-4b32f24d9cc8";   /* Action Items */
+var DONE_DAYS=14;                                  /* how far back "Done recently" looks */
+
+/* ===== MSAL ===== */
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
+var RTOKEN=null, loginEmail="", myName="", MINE=[], OPEN_IDS={}, SHOW_DONE=false, FOCUS_ID=null;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+/* local (Colorado) dates — NOT toISOString, which flips to tomorrow after 6pm MT */
+function pad(n){return (n<10?"0":"")+n;}
+function isoLocal(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function today(){return isoLocal(new Date());}
+function addDaysISO(n){var d=new Date();d.setDate(d.getDate()+n);return isoLocal(d);}
+var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function niceDate(iso){ var p=String(iso||"").slice(0,10).split("-"); if(p.length!==3) return iso; var d=new Date(+p[0],+p[1]-1,+p[2]); return DOW[d.getDay()]+" "+(+p[1])+"/"+(+p[2]); }
+function daysBetween(a,b){ var pa=a.split("-"),pb=b.split("-"); return Math.round((new Date(+pb[0],+pb[1]-1,+pb[2])-new Date(+pa[0],+pa[1]-1,+pa[2]))/864e5); }
+
+async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
+
+/* resilient PATCH: retry on network / 5xx / 429, 20s timeout */
+function vmPatch(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,160));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPatchRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPatch(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
+/* ===== Boot ===== */
+E("signin").onclick=function(){ msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); };
+function start(){
+  var m=/[?&]id=([^&#]+)/.exec(location.search); if(m){ FOCUS_ID=decodeURIComponent(m[1]); OPEN_IDS[FOCUS_ID]=1; }
+  msal_i.handleRedirectPromise().then(function(resp){ RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null; var a=msal_i.getAllAccounts()[0]; if(a){ msal_i.setActiveAccount(a); showApp(a); } }).catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+String(e); });
+}
+function showApp(a){
+  E("gate").style.display="none"; E("app").style.display="block";
+  loginEmail=(a.username||"").toLowerCase().trim(); myName=(a.name||"").trim().toLowerCase();
+  E("who").textContent=a.name||a.username||"";
+  E("refresh").onclick=load;
+  window.addEventListener("online",netState); window.addEventListener("offline",netState); netState();
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible" && navigator.onLine!==false) load(); });
+  load();
+}
+function netState(){ E("offline").style.display=(navigator.onLine===false)?"block":"none"; }
+
+/* ===== Load: only items assigned to me ===== */
+function isMine(f){
+  var to=String(f.AssignedTo||"").toLowerCase().trim();
+  if(to && to===loginEmail) return true;
+  /* fallback: Employee Master had no LoginEmail and auto-email differs from real login — match on name */
+  var nm=String(f.AssignedToName||"").toLowerCase().trim();
+  return !!(nm && myName && nm===myName);
+}
+async function load(){
+  if(navigator.onLine===false){ netState(); return; }
+  E("refresh").disabled=true;
+  try{
+    var token=await getToken();
+    var url=GRAPH+LIST+"/items?$expand=fields&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields && isMine(it.fields)) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; }
+    MINE=out; render();
+  }catch(e){
+    if(!MINE.length) E("list").innerHTML='<div class="empty">Could not load your tasks ('+esc(e.message||e)+'). Tap Refresh to try again.</div>';
+  }
+  E("refresh").disabled=false;
+}
+
+/* ===== Render ===== */
+function shape(r){ var f=r.f; return { id:r.id, task:f.Title||"", jobNo:(f.JobNo||"").trim(), jobName:(f.JobName||"").trim(), due:String(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:f.Status||"Open", details:f.Details||"", by:f.CreatedByName||f.CreatedByEmail||"", doneOn:String(f.CompletedDate||"").slice(0,10) }; }
+function render(){
+  var td=today(), wk=addDaysISO(7), cutoff=addDaysISO(-DONE_DAYS);
+  var rows=MINE.map(shape);
+  var over=[],week=[],later=[],done=[];
+  rows.forEach(function(r){
+    if(r.status==="Done"){ if(!r.doneOn || r.doneOn>=cutoff) done.push(r); return; }
+    if(r.due && r.due<td) over.push(r); else if(r.due && r.due<=wk) week.push(r); else later.push(r);
+  });
+  var byDue=function(a,b){ var pa=a.pri==="High"?0:1, pb=b.pri==="High"?0:1; var c=(a.due||"9999").localeCompare(b.due||"9999"); return c||(pa-pb); };
+  over.sort(byDue); week.sort(byDue); later.sort(byDue); done.sort(function(a,b){return (b.doneOn||"").localeCompare(a.doneOn||"");});
+  E("kOver").textContent=over.length; E("kWeek").textContent=week.length; E("kOpen").textContent=over.length+week.length+later.length;
+
+  var h="";
+  if(!over.length && !week.length && !later.length) h+='<div class="empty">&#9989; Nothing open — you\'re all caught up.</div>';
+  if(over.length)  h+=sec("red","Overdue",over.length)+over.map(card).join("");
+  if(week.length)  h+=sec("amb","Due this week",week.length)+week.map(card).join("");
+  if(later.length) h+=sec("ink","Later",later.length)+later.map(card).join("");
+  if(done.length){
+    h+='<button class="togg" id="doneTog">'+(SHOW_DONE?"Hide":"Show")+' completed (last '+DONE_DAYS+' days) · '+done.length+'</button>';
+    if(SHOW_DONE) h+=sec("ok","Completed",done.length)+done.map(card).join("");
+  }
+  E("list").innerHTML=h;
+  wire();
+  if(FOCUS_ID){ var el=document.querySelector('.tk[data-id="'+CSS.escape(FOCUS_ID)+'"]'); if(el){ el.classList.add("flash"); el.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){el.classList.remove("flash");},2200); } FOCUS_ID=null; }
+}
+function sec(cls,label,n){ return '<div class="sec '+cls+'">'+label+' <span class="n">'+n+'</span></div>'; }
+function card(r){
+  var td=today(), done=r.status==="Done";
+  var over=!done&&r.due&&r.due<td, soon=!done&&!over&&r.due&&r.due<=addDaysISO(7);
+  var dueTxt;
+  if(done) dueTxt="Done"+(r.doneOn?" "+niceDate(r.doneOn):"");
+  else if(!r.due) dueTxt="No due date";
+  else if(over){ var n=daysBetween(r.due,td); dueTxt='<span class="ov">'+n+' day'+(n===1?"":"s")+' overdue</span> · was due '+niceDate(r.due); }
+  else if(r.due===td) dueTxt='<span class="sn">Due today</span>';
+  else if(soon) dueTxt='<span class="sn">Due '+niceDate(r.due)+'</span>';
+  else dueTxt="Due "+niceDate(r.due);
+  var job=r.jobNo?(esc(r.jobNo)+(r.jobName?" · "+esc(r.jobName):"")):"General";
+  var hasMore=!!(r.details||r.by);
+  return '<div class="tk'+(done?" done":over?" over":soon?" soon":"")+(OPEN_IDS[r.id]?" open":"")+'" data-id="'+esc(r.id)+'">'+
+    '<div class="top"><div class="body"><div class="t">'+esc(r.task)+(r.pri==="High"&&!done?'<span class="pri High">HIGH</span>':"")+'</div>'+
+    '<div class="job">'+job+'</div><div class="meta">'+dueTxt+'</div></div>'+
+    (hasMore?'<div class="more">'+(OPEN_IDS[r.id]?"&#9650;":"&#9660;")+'</div>':"")+'</div>'+
+    (hasMore?'<div class="det">'+esc(r.details)+(r.by?'<span class="by">Assigned by '+esc(r.by)+'</span>':"")+'</div>':"")+
+    '<div class="err"></div>'+
+    '<div class="act">'+(done?'<button class="re" data-act="reopen">&#8617; Reopen</button>':'<button data-act="done">&#10003; Mark done</button>')+'</div></div>';
+}
+function wire(){
+  Array.prototype.forEach.call(document.querySelectorAll(".tk .top"),function(t){ t.onclick=function(){ var c=t.parentNode, id=c.getAttribute("data-id"); if(!c.querySelector(".det")) return; if(OPEN_IDS[id]) delete OPEN_IDS[id]; else OPEN_IDS[id]=1; c.classList.toggle("open"); var m=c.querySelector(".more"); if(m) m.innerHTML=OPEN_IDS[id]?"&#9650;":"&#9660;"; }; });
+  Array.prototype.forEach.call(document.querySelectorAll(".tk .act button"),function(b){ b.onclick=function(){ var c=b.closest(".tk"); setStatus(c.getAttribute("data-id"), b.getAttribute("data-act")==="done", c, b); }; });
+  var tg=E("doneTog"); if(tg) tg.onclick=function(){ SHOW_DONE=!SHOW_DONE; render(); };
+}
+
+/* ===== Mark done / reopen ===== */
+var toastTimer=null;
+function setStatus(id,makeDone,cardEl,btn){
+  var err=cardEl?cardEl.querySelector(".err"):null;
+  if(navigator.onLine===false){ if(err){ err.style.display="block"; err.textContent="No signal — move to better coverage and tap again."; } return; }
+  var body=makeDone?{Status:"Done",CompletedDate:today()+"T12:00:00Z",CompletedBy:loginEmail}:{Status:"Open",CompletedDate:null,CompletedBy:""};
+  if(btn){ btn.disabled=true; btn.textContent=makeDone?"Saving…":"Reopening…"; }
+  if(err) err.style.display="none";
+  return getToken().then(function(tok){ return vmPatchRetry(GRAPH+LIST+"/items/"+id+"/fields",tok,body); })
+  .then(function(){
+    var it=MINE.filter(function(x){return x.id===id;})[0];
+    if(it){ it.f.Status=body.Status; it.f.CompletedDate=body.CompletedDate; it.f.CompletedBy=body.CompletedBy; }
+    render();
+    if(makeDone) toast("Marked done", function(){ setStatus(id,false,null,null); });
+  })
+  .catch(function(e){
+    if(btn){ btn.disabled=false; btn.innerHTML=makeDone?"&#10003; Mark done":"&#8617; Reopen"; }
+    if(err){ err.style.display="block"; err.textContent="Didn't save ("+(e.message||e)+"). Tap again."; }
+  });
+}
+function toast(msg,undo){
+  E("toastTx").textContent=msg; var t=E("toast"); t.classList.add("show");
+  E("toastUndo").onclick=function(){ t.classList.remove("show"); clearTimeout(toastTimer); undo(); };
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("show"); },5000);
+}
+start();
+</script>
+</body>
+</html>
