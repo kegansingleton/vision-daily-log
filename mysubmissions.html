@@ -154,6 +154,25 @@ async function getMine(listId,dateField,emailField,fromISO,select){
   return out.filter(function(r){ return String(r[emailField]||"").toLowerCase()===loginEmail; });
 }
 
+/* Logs/look-aheads: LogText carries embedded photos, so pulling it for every crew's log made the page
+   download tens of MB and fail on phones. Pull only my rows' summary fields; fetch LogText when View is tapped. */
+async function getMineLite(listId,dateField,fromISO,select){
+  var token=await getToken();
+  var base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=500";
+  var out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; } }
+  var flt="&$filter=fields/LoginEmail eq '"+loginEmail.replace(/'/g,"''")+"' and fields/"+dateField+" ge '"+fromISO+"T00:00:00Z'";
+  try{ await page(base+flt,{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
+  return out.filter(function(r){ return String(r.f.LoginEmail||"").toLowerCase()===loginEmail && dkey(r.f[dateField])>=fromISO; });
+}
+async function getLogText(listId,id){
+  var token=await getToken();
+  var j=await fetch(GRAPH+listId+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+  if(j.error) throw new Error(j.error.message);
+  return (j.fields&&j.fields.LogText)||"";
+}
+
 /* ===== Timecards (weekly grid) ===== */
 var tcRows=[], selMon=mondayOf(new Date());
 async function loadTC(){
@@ -242,29 +261,36 @@ async function delEntry(i){
 /* ===== Daily Logs (list + expand) ===== */
 async function loadLogs(){
   try{
-    var rows=await getMine(LOGS,"LogDate","LoginEmail",iso(addDays(new Date(),-120)),"LogDate,Project,ActivityStatus,LogText");
-    rows.sort(function(a,b){return dkey(b.LogDate).localeCompare(dkey(a.LogDate));});
-    renderList("logsTbl",rows,"LogDate","Date",function(r){return r.ActivityStatus||"";});
+    var rows=await getMineLite(LOGS,"LogDate",iso(addDays(new Date(),-120)),"LogDate,Project,ActivityStatus,LoginEmail");
+    rows.sort(function(a,b){return dkey(b.f.LogDate).localeCompare(dkey(a.f.LogDate));});
+    renderList("logsTbl",rows,"LogDate","Date",function(r){return r.ActivityStatus||"";},LOGS);
   }catch(e){ E("logsTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
 /* ===== Look-Aheads (list + expand) ===== */
 async function loadLook(){
   try{
-    var rows=await getMine(LOOK,"WeekOf","LoginEmail",iso(addDays(new Date(),-150)),"WeekOf,Project,LookAheadStatus,LogText");
-    rows.sort(function(a,b){return dkey(b.WeekOf).localeCompare(dkey(a.WeekOf));});
-    renderList("lookTbl",rows,"WeekOf","Week of",function(r){return r.LookAheadStatus||"";});
+    var rows=await getMineLite(LOOK,"WeekOf",iso(addDays(new Date(),-150)),"WeekOf,Project,LookAheadStatus,LoginEmail");
+    rows.sort(function(a,b){return dkey(b.f.WeekOf).localeCompare(dkey(a.f.WeekOf));});
+    renderList("lookTbl",rows,"WeekOf","Week of",function(r){return r.LookAheadStatus||"";},LOOK);
   }catch(e){ E("lookTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
-function renderList(elId,rows,dateField,dateHdr,statusFn){
-  if(!rows.length){ E(elId).innerHTML='<div class="empty">Nothing submitted yet.</div>'; return; }
+function renderList(elId,rows,dateField,dateHdr,statusFn,listId){
+  if(!rows.length){ E(elId).innerHTML='<div class="empty">Nothing submitted in this window.</div>'; return; }
   var h='<table><thead><tr><th>'+dateHdr+'</th><th>Project</th><th>Status</th><th></th></tr></thead><tbody>';
-  rows.forEach(function(r,i){
+  rows.forEach(function(row,i){ var r=row.f;
     h+='<tr><td>'+esc(shortD(r[dateField]))+'</td><td>'+esc(r.Project||"")+'</td><td>'+esc(statusFn(r))+'</td><td><button class="viewbtn" data-i="'+i+'">View</button></td></tr>';
-    h+='<tr id="'+elId+'-d'+i+'" style="display:none"><td colspan="4"><div class="detail">'+(r.LogText?r.LogText:"(no detail saved)")+'</div></td></tr>';
+    h+='<tr id="'+elId+'-d'+i+'" style="display:none"><td colspan="4"><div class="detail" id="'+elId+'-t'+i+'">Loading…</div></td></tr>';
   });
   h+='</tbody></table>';
   E(elId).innerHTML=h;
-  E(elId).querySelectorAll(".viewbtn").forEach(function(b){ b.onclick=function(){ var dr=E(elId+"-d"+b.getAttribute("data-i")); var show=dr.style.display==="none"; dr.style.display=show?"table-row":"none"; b.textContent=show?"Hide":"View"; }; });
+  E(elId).querySelectorAll(".viewbtn").forEach(function(b){ b.onclick=function(){
+    var i=b.getAttribute("data-i"), dr=E(elId+"-d"+i), box=E(elId+"-t"+i); var show=dr.style.display==="none";
+    dr.style.display=show?"table-row":"none"; b.textContent=show?"Hide":"View";
+    if(show && !box.getAttribute("data-loaded")){
+      getLogText(listId,rows[i].id).then(function(t){ box.innerHTML=t||"(no detail saved)"; box.setAttribute("data-loaded","1"); })
+      .catch(function(e){ box.textContent="Could not load this one ("+(e.message||e)+"). Tap Hide, then View to retry."; });
+    }
+  }; });
 }
 </script>
 </body>
