@@ -182,7 +182,7 @@ function buildMap(jt){
     if(!map[j].phases[p]){ map[j].phases[p]={desc:r.PhaseDesc||"", lines:[]}; map[j].phaseList.push(p); }
     if(r.LineNum && String(r.LineNum).trim()!==""){ map[j].phases[p].lines.push({line:r.LineNum, ldesc:r.LineDesc||""}); }
   });
-  jobs.sort(function(a,b){return (a.JobNo||"").localeCompare(b.JobNo||"");});
+  jobs.sort(function(a,b){return String(a.JobName||"").toLowerCase().localeCompare(String(b.JobName||"").toLowerCase())||String(a.JobNo).localeCompare(String(b.JobNo));});
   /* Universal shop-fab codes — always selectable on any job. Their line options come from
      the job's real rollup-target code (12xx -> 1211 lines, 18xx -> 1800 lines), so the line
      entered is already valid for payroll. Not injected if the job already has that code. */
