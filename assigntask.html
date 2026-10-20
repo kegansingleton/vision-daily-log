@@ -201,7 +201,7 @@ function loadJobs(){
   pull(JOBTASKS,"JobNo,JobName,Active").then(function(tasks){
     var seen={},arr=[];
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(t.JobName||"").trim()); });
-    arr.sort(); E("joblist").innerHTML=arr.map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
+    arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); /* alphabetical by job name */ E("joblist").innerHTML=arr.map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
   }).catch(function(){});
 }
 function parseJob(v){ v=String(v||"").trim(); if(!v||/^general\b/i.test(v)) return {no:"",name:"General"}; var sp=v.indexOf(" "); if(sp<0) return {no:v,name:""}; return {no:v.slice(0,sp).trim(), name:v.slice(sp+1).trim()}; }
