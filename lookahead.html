@@ -567,7 +567,7 @@ if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);
 }
 return page(JOBS_URL).then(function(){
 if(!arr.length)return;
-arr.sort();applyProjects(arr);jobsCacheSet(arr);
+arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); /* alphabetical by job name */applyProjects(arr);jobsCacheSet(arr);
 });
 }).catch(function(){/* keep cached/fallback list */});
 }
