@@ -148,7 +148,7 @@ async function loadRef(){
     var tasks=await pull(JOBTASKS,"JobNo,JobName,PhaseCode,PhaseDesc,LineNum,Active");
     var seen={}; JOBS=[]; TASKS_BY_JOB={};
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn) return; if(!seen[jn]){ seen[jn]=1; JOBS.push({no:jn,name:(t.JobName||"").trim()}); } (TASKS_BY_JOB[jn]=TASKS_BY_JOB[jn]||[]).push({phase:(t.PhaseCode||""),line:(t.LineNum||""),pdesc:(t.PhaseDesc||"")}); });
-    JOBS.sort(function(a,b){return a.no.localeCompare(b.no);});
+    JOBS.sort(function(a,b){return String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase())||String(a.no).localeCompare(String(b.no));});
     var emps=await pull(EMPL,"EmployeeNumber,EmployeeName,Active");
     EMPLIST=emps.filter(function(e){return (e.Active||"Yes")!=="No";}).map(function(e){return {num:e.EmployeeNumber,name:e.EmployeeName};});
     var jl=await pull(JOBSLIST,"Title,FinishDate,Archive"); JOBFINISH={}; jl.forEach(function(j){ var t=(j.Title||"").trim(); var a=(j.Archive===true||j.Archive==="Yes"||j.Archive==="true"); JOBFINISH[t]={fin:dkey(j.FinishDate),arch:a}; });
