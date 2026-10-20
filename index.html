@@ -149,7 +149,7 @@ This report may be relied upon as a contemporaneous business record. Complete it
 </div>
 
 <script>
-var VERSION = "v1.8 (Sep 2026)";
+var VERSION = "v1.9 (Oct 2026)";
 var REPORTS_TO = "reports@visionmech.net";
 var loginEmail = "";
 
@@ -329,8 +329,9 @@ speak(spoken);
 }
 
 var dailyPhotos=[];
-function dAddFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var max=900,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);dailyPhotos.push(c.toDataURL("image/jpeg",0.55));dRenderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
-function dRenderThumbs(){var el=E('dthumbs');if(!el)return;var h="";dailyPhotos.forEach(function(p,i){h+='<div class="thumb"><img src="'+p+'"><div class="x" data-i="'+i+'">&times;</div></div>';});el.innerHTML=h;el.querySelectorAll(".x").forEach(function(x){x.onclick=function(){dailyPhotos.splice(parseInt(x.getAttribute("data-i"),10),1);dRenderThumbs();};});var hint=E('dphotohint');if(hint)hint.textContent=dailyPhotos.length?(dailyPhotos.length+" photo"+(dailyPhotos.length>1?"s":"")+" added"):"";}
+function dScale(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function dAddFiles(files){Array.prototype.forEach.call(files,function(file){if(!/^image\//.test(file.type))return;var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){dailyPhotos.push({full:dScale(img,1600,0.8),thumb:dScale(img,280,0.5),url:null});dRenderThumbs();};img.src=e.target.result;};reader.readAsDataURL(file);});}
+function dRenderThumbs(){var el=E('dthumbs');if(!el)return;var h="";dailyPhotos.forEach(function(p,i){h+='<div class="thumb"><img src="'+p.thumb+'"><div class="x" data-i="'+i+'">&times;</div></div>';});el.innerHTML=h;el.querySelectorAll(".x").forEach(function(x){x.onclick=function(){dailyPhotos.splice(parseInt(x.getAttribute("data-i"),10),1);dRenderThumbs();};});var hint=E('dphotohint');if(hint)hint.textContent=dailyPhotos.length?(dailyPhotos.length+" photo"+(dailyPhotos.length>1?"s":"")+" added"):"";}
 function buildInput(q){
 var v=answers[q.id];
 switch(q.type){
@@ -498,7 +499,10 @@ L.push("-- DOCUMENTATION & SIGN-OFF --");
 line("Photos",a.photos); line("Additional Notes",a.notes);
 L.push("Certification: "+(a.certify?"Certified true & accurate by signer":"NOT CERTIFIED"));
 line("Signed",a.signature);
-if(dailyPhotos.length){ L.push(""); L.push("-- PHOTOS --"); dailyPhotos.forEach(function(p){ L.push('<img src="'+p+'" style="max-width:100%;margin:8px 0;border:1px solid #ccc;border-radius:6px;">'); }); }
+if(dailyPhotos.length){ L.push(""); L.push("-- PHOTOS --");
+  if(PHOTO_FOLDER_URL) L.push(dailyPhotos.length+' photo'+(dailyPhotos.length>1?'s':'')+' — full size: <a href="'+PHOTO_FOLDER_URL+'">open the photo folder in SharePoint</a>');
+  dailyPhotos.slice(0,8).forEach(function(p){ var im='<img src="'+p.thumb+'" style="width:180px;margin:4px;border:1px solid #ccc;border-radius:6px;vertical-align:top;">'; L.push(p.url?('<a href="'+p.url+'">'+im+'</a>'):im); });
+  if(dailyPhotos.length>8) L.push('(+'+(dailyPhotos.length-8)+' more in the photo folder)'); }
 L.push("========================================");
 return L.join("\n");
 }
@@ -509,6 +513,27 @@ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&am
 
 /* ---------- Microsoft login + direct-to-SharePoint (Graph) ---------- */
 var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+/* ---------- Photos -> SharePoint "Daily Log Photos" folder (one subfolder per log) ---------- */
+var PHOTO_SITE="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var PHOTO_ROOT="Daily Log Photos", PHOTO_FOLDER=null, PHOTO_FOLDER_URL=null;
+function cleanName(t){return String(t||"").replace(/["*:<>?\/\\|#%~&{}]/g,"-").replace(/\s+/g," ").trim().slice(0,60);}
+function dataUrlToBlob(u){var b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:"image/jpeg"});}
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+function putPhotoOnce(token,path,blob){var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;var to=ctrl?setTimeout(function(){ctrl.abort();},45000):null;
+  var o={method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":"image/jpeg"},body:blob};if(ctrl)o.signal=ctrl.signal;
+  return fetch(PHOTO_SITE+"/drive/root:/"+encPath(path)+":/content",o).then(function(r){if(to)clearTimeout(to);if(!r.ok)return r.text().then(function(t){var e=new Error("photo upload HTTP "+r.status+" "+t.slice(0,150));e.httpStatus=r.status;throw e;});return r.json();},function(e){if(to)clearTimeout(to);throw e;});}
+function putPhoto(token,path,blob){var n=0;function go(){n++;return putPhotoOnce(token,path,blob).catch(function(e){var s=e.httpStatus;if(((s===undefined)||s>=500||s===429)&&n<3)return new Promise(function(r){setTimeout(r,1500*n);}).then(go);throw e;});}return go();}
+/* uploads only photos not yet uploaded, so a retry after a signal drop doesn't duplicate */
+function uploadPhotos(token,onProgress){
+  if(!dailyPhotos.length) return Promise.resolve();
+  if(!PHOTO_FOLDER){ var a=answers,d=new Date(),pad=function(n){return (n<10?"0":"")+n;};
+    PHOTO_FOLDER=PHOTO_ROOT+"/"+cleanName((a.date||"")+" "+String(a.project||"").split(" ")[0]+" "+(a.submittedBy||"")+" "+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())); }
+  var chain=Promise.resolve();
+  dailyPhotos.forEach(function(p,i){ chain=chain.then(function(){ if(p.url) return; if(onProgress) onProgress(i+1,dailyPhotos.length);
+    return putPhoto(token,PHOTO_FOLDER+"/photo-"+(i<9?"0":"")+(i+1)+".jpg",dataUrlToBlob(p.full)).then(function(j){ p.url=j.webUrl||""; }); }); });
+  return chain.then(function(){ if(PHOTO_FOLDER_URL) return;
+    return fetch(PHOTO_SITE+"/drive/root:/"+encPath(PHOTO_FOLDER),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}).then(function(j){ PHOTO_FOLDER_URL=j.webUrl||null; }).catch(function(){}); });
+}
 var GRAPH_ITEMS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/bccd1165-a999-41b4-9cae-394d0766fb4a/items";
 /* Live job list - same source the timecards pull from (Job Tasks list). Distinct active JobNo/JobName. */
 var JOBS_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/192b6fd5-5a12-47c1-9d1b-ba4b51e13371/items?$expand=fields($select=JobNo,JobName,Active)&$top=999";
@@ -560,7 +585,7 @@ Subcontractors:spVal("subs"),VisitorsInspectors:spVal("visitors"),ToolboxTalkHel
 SafetyTopic:spVal("toolboxTopic"),IncidentsNearMisses:spVal("incidents"),SafetyNotes:spVal("safetyNotes"),
 InspectionsTests:spVal("inspections"),QualityIssuesRework:spVal("quality"),ChallengeStatus:spVal("chalStatus"),EscalatedTo:spVal("escalatedTo"),
 ChallengesDelays:spVal("challenges"),DelayCause:spVal("delayCause"),DirectedOutOfScope:spVal("directed"),
-LookAheadStatus:spVal("lookStatus"),NextDayPlan:spVal("lookAhead"),Photos:spVal("photos"),
+LookAheadStatus:spVal("lookStatus"),NextDayPlan:spVal("lookAhead"),Photos:(dailyPhotos.length?(dailyPhotos.length+" photo"+(dailyPhotos.length>1?"s":"")+(PHOTO_FOLDER_URL?(" — "+PHOTO_FOLDER_URL):"")):""),
 AdditionalNotes:spVal("notes"),Certified:spYN(a.certify),Signature:spVal("signature"),
 SubmittedAt:new Date().toLocaleString(),LoginEmail:loginEmail,LogText:buildText()
 };
@@ -611,7 +636,7 @@ if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);
 }
 return page(JOBS_URL).then(function(){
 if(!arr.length)return;
-arr.sort();applyProjects(arr);jobsCacheSet(arr);
+arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); /* alphabetical by job name */applyProjects(arr);jobsCacheSet(arr);
 });
 }).catch(function(){/* keep cached/fallback list */});
 }
@@ -635,7 +660,7 @@ if(navigator.onLine===false){ msg.style.color="#b8462b"; msg.textContent="You're
 msg.style.color="";msg.textContent="Saving your log to SharePoint...";btn.disabled=true;
 var acct=msalInstance.getActiveAccount()||msalInstance.getAllAccounts()[0];
 msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
-postLog(tok.accessToken).then(function(){
+uploadPhotos(tok.accessToken,function(i,n){ msg.textContent="Uploading photo "+i+" of "+n+"…"; }).then(function(){ msg.textContent="Saving your log to SharePoint..."; return postLog(tok.accessToken); }).then(function(){
 msg.style.color="#15803d";msg.textContent="Submitted. Your daily log has been filed to SharePoint. Tap \u201cStart New Log\u201d to file another.";
 btn.textContent="Submitted"; clearDraft();
 }).catch(function(e){
@@ -650,7 +675,7 @@ msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});
 });
 };
 E('editBtn').onclick=function(){ idx=visible.length-1; render(); };
-E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; clearDraft(); var sb=E('emailBtn'); if(sb){ sb.disabled=false; sb.textContent="\u2709 Submit Log"; } var m=E('okMsg'); if(m) m.textContent=""; idx=0; render(); } };
+E('newBtn').onclick=function(){ if(confirm("Start a new blank log? Current entries will be cleared.")){ for(var k in answers) delete answers[k]; dailyPhotos.length=0; PHOTO_FOLDER=null; PHOTO_FOLDER_URL=null; clearDraft(); var sb=E('emailBtn'); if(sb){ sb.disabled=false; sb.textContent="\u2709 Submit Log"; } var m=E('okMsg'); if(m) m.textContent=""; idx=0; render(); } };
 E('voiceOn').onchange=function(){ if(!E('voiceOn').checked&&window.speechSynthesis) window.speechSynthesis.cancel(); };
 
 document.addEventListener('keydown',function(e){
