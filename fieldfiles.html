@@ -84,7 +84,7 @@ async function load(){
     var nameByNo={}; tasks.forEach(function(t){ var jn=(t.JobNo||"").trim(); if(jn && t.JobName && !nameByNo[jn]) nameByNo[jn]=t.JobName; });
     JOBS_LIST=jobs.filter(function(j){ return !isArch(j.Archive); })
       .map(function(j){ var no=(j.Title||"").trim(); return {no:no, name:nameByNo[no]||"", datto:(j.DattoLink||"").trim(), pm:j.PMName||"", addr:j.Address||"", start:d10(j.StartDate), finish:d10(j.FinishDate)}; })
-      .sort(function(a,b){return a.no.localeCompare(b.no);});
+      .sort(function(a,b){return String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase())||String(a.no).localeCompare(String(b.no));});
     render();
   }catch(e){ E("list").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
