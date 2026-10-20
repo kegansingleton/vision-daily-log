@@ -140,7 +140,7 @@ async function loadJobs(){
     var tasks=await pull(JOBTASKS,"JobNo,JobName,Active");
     var seen={}, jobs=[];
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn])return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
-    jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
+    jobs.sort(function(a,b){return String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase())||String(a.no).localeCompare(String(b.no));});
     var jl=await pull(JOBS,"Title,Archive,FinishDate"); var arch={}; JOBDATES={}; jl.forEach(function(j){ var t=(j.Title||"").trim(); if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[t]=1; JOBDATES[t]=d10(j.FinishDate); });
     jobs=jobs.filter(function(j){return !arch[j.no];});
     E("jobPick").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
