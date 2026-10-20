@@ -169,7 +169,7 @@ async function loadJobs(){
   try{
     var items=await getAll(LIST.jobs,"JobNo,JobName,Active");
     JOBS=items.filter(function(j){return (j.Active||"Yes")!=="No";});
-    JOBS.sort(function(a,b){return String(a.JobNo).localeCompare(String(b.JobNo));});
+    JOBS.sort(function(a,b){return String(a.JobName||"").toLowerCase().localeCompare(String(b.JobName||"").toLowerCase())||String(a.JobNo).localeCompare(String(b.JobNo));});
     var dl=E("jobsList"); var h="";
     JOBS.forEach(function(j){ jobByNo[j.JobNo]=j; h+='<option value="'+esc(j.JobNo)+' '+esc(j.JobName||"")+'">'; });
     dl.innerHTML=h;
