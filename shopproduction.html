@@ -214,7 +214,7 @@ async function loadJobs(){
     var tasks=await pull(JOBTASKS,"JobNo,JobName,Active");
     var seen={}, jobs=[];
     tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; jobs.push({no:jn,name:(t.JobName||"").trim()}); });
-    jobs.sort(function(a,b){return a.no.localeCompare(b.no);});
+    jobs.sort(function(a,b){return String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase())||String(a.no).localeCompare(String(b.no));});
     var jl=await pull(JOBS,"Title,Archive"); var arch={}; jl.forEach(function(j){ if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[(j.Title||"").trim()]=1; });
     jobs=jobs.filter(function(j){return !arch[j.no];});
     E("job").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
