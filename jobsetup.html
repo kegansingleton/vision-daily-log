@@ -193,6 +193,8 @@ function parseCSV(text){
   return rows;
 }
 function clean(s){return (s||"").replace(/\s+/g," ").trim();}
+/* Vista exports budgets like "1,234.00" — parseFloat stops at the comma (1,234 -> 1), so strip commas/$ first */
+function hrs(v){ var n=parseFloat(String(v==null?"":v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:n; }
 
 /* ===== EXTRACT job/phase/line from Viewpoint export ===== */
 function extract(rows){
@@ -271,15 +273,15 @@ async function graphBatch(token, requests){
   var j=await r.json();
   return j.responses||[];
 }
-async function getExistingIds(token, jobNo){
-  var ids=[], url=GRAPH+LIST.jobTasks+"/items?$expand=fields($select=JobNo)&$top=999";
+async function getExistingRows(token, jobNo){
+  var rows=[], url=GRAPH+LIST.jobTasks+"/items?$expand=fields($select=JobNo,PhaseCode,LineNum)&$top=999";
   while(url){
     var j=await fetch(url,{headers:{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(r=>r.json());
     if(j.error) throw new Error(j.error.message);
-    (j.value||[]).forEach(function(it){ if(it.fields && it.fields.JobNo===jobNo) ids.push(it.id); });
+    (j.value||[]).forEach(function(it){ var f=it.fields||{}; if(f.JobNo===jobNo) rows.push({id:it.id,key:String(f.PhaseCode||"").trim()+"|"+String(f.LineNum||"").trim()}); });
     url=j["@odata.nextLink"]||null;
   }
-  return ids;
+  return rows;
 }
 
 /* ===== LOAD ===== */
@@ -293,26 +295,25 @@ document.getElementById("loadBtn").onclick=async function(){
     var relPath="/sites/"+SITE_ID+"/lists/"+LIST.jobTasks+"/items";
     var jobsRel="/sites/"+SITE_ID+"/lists/"+LIST.jobs+"/items";
     var totalRows=0; jobNos.forEach(function(jn){ totalRows+=PARSED[jn].rows.length; });
-    var done=0;
+    var done=0, upd=0, add=0;
 
     for(var ji=0; ji<jobNos.length; ji++){
       var jn=jobNos[ji], job=PARSED[jn];
-      msg.textContent="Refreshing "+jn+" — clearing old rows…";
-      // delete existing rows for this job
-      var oldIds=await getExistingIds(token, jn);
-      for(var d=0; d<oldIds.length; d+=20){
-        var dreq=oldIds.slice(d,d+20).map(function(id,ix){return {id:String(ix),method:"DELETE",url:relPath+"/"+id};});
-        await graphBatch(token, dreq);
-      }
-      // ensure Jobs list has this job
+      msg.textContent="Refreshing "+jn+" — reading current rows…";
+      /* UPDATE rows that already exist (keeps PMs' % Complete and Adjustment), ADD new phase/lines.
+         Rows not in the export (e.g. added on the Phase Codes page) are left alone. */
+      var existing=await getExistingRows(token, jn), byKey={};
+      existing.forEach(function(e){ if(!byKey[e.key]) byKey[e.key]=e.id; });
       await ensureJob(token, jobsRel, jn, job.name);
-      // insert new rows in batches of 20
       msg.textContent="Loading "+jn+" — writing "+job.rows.length+" phase/line rows…";
       for(var s=0; s<job.rows.length; s+=20){
         var chunk=job.rows.slice(s,s+20);
         var reqs=chunk.map(function(x,ix){
-          return {id:String(ix),method:"POST",url:relPath,headers:{"Content-Type":"application/json"},
-            body:{fields:{Title:jn+" "+x.phase+" "+x.line, JobNo:jn, JobName:job.name, PhaseCode:x.phase, PhaseDesc:x.pdesc, LineNum:x.line, LineDesc:x.ldesc, BudgetHours:parseFloat(x.budget)||0, Active:"Yes"}}};
+          var flds={JobName:job.name, PhaseDesc:x.pdesc, LineDesc:x.ldesc, BudgetHours:hrs(x.budget), Active:"Yes"};
+          var id=byKey[String(x.phase).trim()+"|"+String(x.line).trim()];
+          if(id){ upd++; return {id:String(ix),method:"PATCH",url:relPath+"/"+id+"/fields",headers:{"Content-Type":"application/json"},body:flds}; }
+          add++; flds.Title=jn+" "+x.phase+" "+x.line; flds.JobNo=jn; flds.PhaseCode=x.phase; flds.LineNum=x.line;
+          return {id:String(ix),method:"POST",url:relPath,headers:{"Content-Type":"application/json"},body:{fields:flds}};
         });
         var resp=await graphBatch(token, reqs);
         var bad=resp.filter(function(r){return r.status>=300;});
@@ -322,7 +323,7 @@ document.getElementById("loadBtn").onclick=async function(){
       }
     }
     msg.className="msg ok";
-    msg.innerHTML="✓ Loaded "+jobNos.join(", ")+" — "+totalRows+" phase/line rows are now available on the timecard.";
+    msg.innerHTML="✓ Loaded "+jobNos.join(", ")+" — "+upd+" phase/line rows updated (% complete kept), "+add+" new rows added.";
   }catch(e){ msg.className="msg err"; msg.textContent="Load failed: "+e.message; }
   finally{ btn.disabled=false; }
 };
