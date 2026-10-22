@@ -177,19 +177,24 @@ async function load(){
       "fields/WeekOf ge '"+from+"T00:00:00Z' and fields/WeekOf le '"+to+"T23:59:59Z'");
     if(seq!==LOAD_SEQ) return;
     ROWS=look.filter(function(r){ var d=dkey(r.f.WeekOf); return d && iso(mondayOf(parseISO(d)))===monISO; });
-    /* who owes one: jobs that had field hours in the 2 weeks before this Monday, minus archived jobs */
+    /* who owes one — same rule as the Compliance dashboard: only employees flagged Foreman in
+       Employee Setup owe look-aheads, for the jobs they ran crews on in the 2 weeks before this Monday.
+       Time entered by service techs, office staff, etc. doesn't count. */
     MISSING=[];
     try{
       var tcFrom=iso(addDays(mon,-14)), tcTo=iso(addDays(mon,-1));
       var tc=await pull(TC,"WorkDate,JobNo,JobName,Foreman,ForemanEmail,PayType","fields/WorkDate ge '"+tcFrom+"T00:00:00Z' and fields/WorkDate le '"+tcTo+"T23:59:59Z'");
       var jobs=await pull(JOBS,"Title,Archive");
+      var emps=await pull(EMP,"EmployeeName,LoginEmail,Foreman,Active");
       if(seq!==LOAD_SEQ) return;
+      var FM={}; emps.forEach(function(r){ var e=r.f; if(!truthy(e.Foreman)||(e.Active||"Yes")==="No") return; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); if(em) FM[em]=e.EmployeeName||em; });
       var arch={}; jobs.forEach(function(j){ if(truthy(j.f.Archive)) arch[String(j.f.Title||"").trim()]=1; });
       var have={}; ROWS.forEach(function(r){ have[jobNo(r.f.Project)]=1; });
       var worked={};
       tc.forEach(function(r){ var f=r.f, d=dkey(f.WorkDate); if(d<tcFrom||d>tcTo) return; if((f.PayType||"Regular")!=="Regular") return;
+        var fe=String(f.ForemanEmail||"").toLowerCase().trim(); if(!FM[fe]) return;
         var jn=jobNo(f.JobNo); if(!jn||arch[jn]||have[jn]) return;
-        var w=worked[jn]=worked[jn]||{no:jn,name:(f.JobName||"").trim(),fm:{}}; if(f.Foreman) w.fm[f.Foreman]=1; });
+        var w=worked[jn]=worked[jn]||{no:jn,name:(f.JobName||"").trim(),fm:{}}; w.fm[FM[fe]]=1; });
       MISSING=Object.keys(worked).map(function(k){return worked[k];}).sort(function(a,b){return (a.name||a.no).toLowerCase().localeCompare((b.name||b.no).toLowerCase());});
     }catch(e){ MISSING=null; }
     render();
@@ -203,7 +208,7 @@ function render(){
   var hz=rows.filter(function(r){ return hasText(r.f.Hurdles); }).length;
   E("kIn").textContent=rows.length; E("kHz").textContent=hz; E("kMiss").textContent=MISSING==null?"?":MISSING.length;
   if(MISSING&&MISSING.length){
-    E("missing").innerHTML='<div class="missing"><b>No look-ahead yet for '+MISSING.length+' job'+(MISSING.length>1?"s":"")+'</b> that had crews on them the last 2 weeks:<ul>'+
+    E("missing").innerHTML='<div class="missing"><b>No look-ahead yet for '+MISSING.length+' job'+(MISSING.length>1?"s":"")+'</b> where a foreman ran crews the last 2 weeks:<ul>'+
       MISSING.map(function(m){ var fm=Object.keys(m.fm); return '<li><b style="color:var(--ink)">'+esc(m.no)+'</b> '+esc(m.name)+(fm.length?' <span style="color:var(--mut)">— '+esc(fm.join(", "))+'</span>':'')+'</li>'; }).join("")+'</ul></div>';
   } else E("missing").innerHTML="";
   var vis=rows.filter(function(r){ if(!q) return true; var f=r.f; return [f.Project,f.SubmittedBy,f.ForemanSuper,f.AreasWeek1,f.AreasWeek2,f.MaterialsWeek1,f.MaterialsWeek2,f.ManpowerWeek1,f.ManpowerWeek2,f.Hurdles,f.DrawingNotes,f.Additionalnotes].join(" ").toLowerCase().indexOf(q)>-1; });
