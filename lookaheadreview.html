@@ -80,7 +80,7 @@ table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:12.5px;white-space:n
 </div></header>
 
 <div class="wrap" id="app" style="display:none">
-  <div id="denied" class="noaccess" style="display:none"><b style="color:var(--vm2)">Look-Ahead Review is for Project Managers, Admins and Foremen.</b></div>
+  <div id="denied" class="noaccess" style="display:none"><b style="color:var(--vm2)">Look-Ahead Review is for Project Managers and Admins.</b></div>
   <div id="main" style="display:none">
     <div class="bar">
       <button id="prevWk">&larr;</button>
@@ -147,7 +147,7 @@ async function afterLogin(a){
   account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim();
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
   var ok=SUPERADMIN.indexOf(loginEmail)>-1||NAMED_PM.indexOf(loginEmail)>-1;
-  if(!ok){ try{ var emps=await pull(EMP,"EmployeeName,LoginEmail,Admin,Foreman"); ok=emps.some(function(r){ var e=r.f; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&(truthy(e.Admin)||truthy(e.Foreman)); }); }catch(e){} }
+  if(!ok){ try{ var emps=await pull(EMP,"EmployeeName,LoginEmail,Admin"); ok=emps.some(function(r){ var e=r.f; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&truthy(e.Admin); });  /* PMs + Admins only */ }catch(e){} }
   if(!ok){ E("denied").style.display="block"; return; }
   E("main").style.display="block";
   var m=/[?&]week=(\d{4}-\d{2}-\d{2})/.exec(location.search);
