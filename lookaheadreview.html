@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Look-Ahead Review</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--amb:#b45309;--ambbg:#fef3c7;--red:#b91c1c;--redbg:#fde8e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1100px;margin:0 auto}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:12px 12px 50px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:4px 0 10px}
+.bar .wk{font-size:16px;font-weight:800;color:var(--vm2);min-width:190px;text-align:center}
+.bar button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+.bar button.pri{background:var(--vm);color:#fff;border-color:var(--vm)}
+.bar input[type=date]{padding:8px;border:1px solid var(--line);border-radius:9px;font-size:14px}
+.bar input[type=text]{flex:1;min-width:160px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:14px}
+.spacer{flex:1}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:26px;font-weight:800;line-height:1.05}
+.kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+.kpi.ok b{color:var(--ok)}.kpi.red b{color:var(--red)}.kpi.amb b{color:var(--amb)}
+.missing{background:var(--redbg);border:1px solid #f5c2c2;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:14px}
+.missing b{color:var(--red)}
+.missing ul{margin:6px 0 0;padding-left:18px}
+.la{background:#fff;border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;margin:0 0 12px;box-shadow:0 1px 3px rgba(0,0,0,.04);break-inside:avoid;page-break-inside:avoid}
+.la.hurdle{border-left-color:var(--amb)}
+.la .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.la .job{font-size:16px;font-weight:800;color:var(--vm2)}
+.la .job .no{color:var(--ink)}
+.la .by{font-size:12.5px;color:var(--mut)}
+.pill{font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap}
+.pill.late{background:var(--redbg);color:var(--red)}.pill.st{background:#eef2f7;color:#475569}.pill.hz{background:var(--ambbg);color:var(--amb)}
+.la .bd{padding:10px 14px 12px}
+.la.closed .bd{display:none}
+table.wk2{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+table.wk2 th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);padding:4px 8px;border-bottom:1px solid var(--line)}
+table.wk2 th:first-child{width:105px}
+table.wk2 td{vertical-align:top;padding:7px 8px;border-bottom:1px solid #f1f2f4;white-space:pre-wrap;word-wrap:break-word}
+table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:12.5px;white-space:normal}
+.blk{margin-top:10px;font-size:13.5px;white-space:pre-wrap;word-wrap:break-word}
+.blk .t{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);font-weight:800;margin-bottom:2px}
+.blk.hz{background:var(--ambbg);border-radius:8px;padding:8px 10px}
+.blk.hz .t{color:var(--amb)}
+.full{margin-top:10px}
+.full button{border:none;background:none;color:var(--vm);font-weight:700;font-size:13px;cursor:pointer;padding:0}
+.full .box{margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;max-height:600px;overflow:auto;display:none}
+.full .box img{max-width:100%}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:12px;color:var(--mut);font-size:14px;padding:22px 14px;text-align:center}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}
+@media(max-width:640px){table.wk2 th:first-child{width:84px} table.wk2 td.lbl{font-size:11.5px;word-break:normal;overflow-wrap:normal;hyphens:none} .bar .wk{min-width:0;flex:1;font-size:15px} .bar input[type=date]{order:5} .bar input[type=text]{order:6;flex-basis:100%} .bar #toggleAll{order:7;flex:1} .bar #printBtn{order:8;flex:1}}
+@media print{
+  header,.bar,.full,.noprint{display:none!important}
+  body{background:#fff} .wrap{padding:0;max-width:none}
+  .la{box-shadow:none;border-color:#ccc} .la.closed .bd{display:block}
+  .kpi{border-color:#ccc}
+  #printTitle{display:block!important;font-size:18px;font-weight:800;margin:0 0 8px;color:#7f1d1d}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Look-Ahead Review</h1><p>Every job's 2-week look-ahead on one page. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Look-Ahead Review</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div id="denied" class="noaccess" style="display:none"><b style="color:var(--vm2)">Look-Ahead Review is for Project Managers, Admins and Foremen.</b></div>
+  <div id="main" style="display:none">
+    <div class="bar">
+      <button id="prevWk">&larr;</button>
+      <div class="wk" id="wkLabel"></div>
+      <button id="nextWk">&rarr;</button>
+      <input type="date" id="wkPick" title="Jump to a week">
+      <input type="text" id="filter" placeholder="Filter by job, foreman, or text…">
+      <button id="toggleAll">Collapse all</button>
+      <button class="pri" id="printBtn">&#128424; Print</button>
+    </div>
+    <div id="printTitle" style="display:none"></div>
+    <div class="kpis">
+      <div class="kpi ok"><b id="kIn">–</b><span>Submitted</span></div>
+      <div class="kpi red"><b id="kMiss">–</b><span>Missing</span></div>
+      <div class="kpi amb"><b id="kHz">–</b><span>With hurdles</span></div>
+    </div>
+    <div id="missing"></div>
+    <div id="list"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<script>
+/* ===== Config ===== */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/";
+var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";      /* Weekly 2-Week Look Ahead */
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124";        /* Timecard Entries — who worked which job */
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973";      /* Jobs — archive flag */
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";       /* Employee Master */
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", WEEK=null, ROWS=[], MISSING=[], ALL_OPEN=true, LOAD_SEQ=0;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function mondayOf(d){var x=new Date(d);x.setHours(0,0,0,0);return addDays(x,-((x.getDay()+6)%7));}
+function dkey(v){return String(v||"").slice(0,10);}
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
+function jobName(v){var s=String(v||"").trim(),i=s.indexOf(" ");return i<0?"":s.slice(i+1);}
+function truthy(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(name){var p=String(name||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmt(d){return MON[d.getMonth()]+" "+d.getDate();}
+
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+async function pull(listId,select,filter){
+  var token=await getToken(), base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } }
+  if(filter){ try{ await page(base+"&$filter="+filter,{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); return out; }catch(e){ out.length=0; } }
+  await page(base,{Authorization:"Bearer "+token}); return out;
+}
+
+/* ===== Auth ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+async function afterLogin(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  var ok=SUPERADMIN.indexOf(loginEmail)>-1||NAMED_PM.indexOf(loginEmail)>-1;
+  if(!ok){ try{ var emps=await pull(EMP,"EmployeeName,LoginEmail,Admin,Foreman"); ok=emps.some(function(r){ var e=r.f; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&(truthy(e.Admin)||truthy(e.Foreman)); }); }catch(e){} }
+  if(!ok){ E("denied").style.display="block"; return; }
+  E("main").style.display="block";
+  var m=/[?&]week=(\d{4}-\d{2}-\d{2})/.exec(location.search);
+  WEEK=mondayOf(m?parseISO(m[1]):new Date());
+  E("prevWk").onclick=function(){ WEEK=addDays(WEEK,-7); load(); };
+  E("nextWk").onclick=function(){ WEEK=addDays(WEEK,7); load(); };
+  E("wkPick").onchange=function(){ if(this.value){ WEEK=mondayOf(parseISO(this.value)); load(); } };
+  E("filter").oninput=render;
+  E("toggleAll").onclick=function(){ ALL_OPEN=!ALL_OPEN; this.textContent=ALL_OPEN?"Collapse all":"Expand all"; Array.prototype.forEach.call(document.querySelectorAll(".la"),function(c){ c.classList.toggle("closed",!ALL_OPEN); }); };
+  E("printBtn").onclick=function(){ window.print(); };
+  load();
+}
+
+/* ===== Load one week ===== */
+async function load(){
+  var seq=++LOAD_SEQ, mon=WEEK, monISO=iso(mon), sun=addDays(mon,6);
+  E("wkLabel").textContent="Week of "+fmt(mon)+", "+mon.getFullYear();
+  E("printTitle").textContent="2-Week Look-Aheads — week of "+fmt(mon)+", "+mon.getFullYear();
+  E("wkPick").value=monISO;
+  try{ history.replaceState(null,"",location.pathname+"?week="+monISO); }catch(e){}
+  E("list").innerHTML='<div class="empty">Loading look-aheads…</div>'; E("missing").innerHTML="";
+  ["kIn","kMiss","kHz"].forEach(function(k){E(k).textContent="–";});
+  try{
+    var from=iso(addDays(mon,-6)), to=iso(addDays(mon,6));
+    /* summary fields only — LogText (with drawings/photos) loads per card on demand */
+    var look=await pull(LOOK,"WeekOf,Project,SubmittedBy,ForemanSuper,AreasWeek1,AreasWeek2,MaterialsWeek1,MaterialsWeek2,ManpowerWeek1,ManpowerWeek2,DrawingNotes,Hurdles,LookAheadStatus,Additionalnotes,SubmittedAt,LateFlag,LoginEmail",
+      "fields/WeekOf ge '"+from+"T00:00:00Z' and fields/WeekOf le '"+to+"T23:59:59Z'");
+    if(seq!==LOAD_SEQ) return;
+    ROWS=look.filter(function(r){ var d=dkey(r.f.WeekOf); return d && iso(mondayOf(parseISO(d)))===monISO; });
+    /* who owes one: jobs that had field hours in the 2 weeks before this Monday, minus archived jobs */
+    MISSING=[];
+    try{
+      var tcFrom=iso(addDays(mon,-14)), tcTo=iso(addDays(mon,-1));
+      var tc=await pull(TC,"WorkDate,JobNo,JobName,Foreman,ForemanEmail,PayType","fields/WorkDate ge '"+tcFrom+"T00:00:00Z' and fields/WorkDate le '"+tcTo+"T23:59:59Z'");
+      var jobs=await pull(JOBS,"Title,Archive");
+      if(seq!==LOAD_SEQ) return;
+      var arch={}; jobs.forEach(function(j){ if(truthy(j.f.Archive)) arch[String(j.f.Title||"").trim()]=1; });
+      var have={}; ROWS.forEach(function(r){ have[jobNo(r.f.Project)]=1; });
+      var worked={};
+      tc.forEach(function(r){ var f=r.f, d=dkey(f.WorkDate); if(d<tcFrom||d>tcTo) return; if((f.PayType||"Regular")!=="Regular") return;
+        var jn=jobNo(f.JobNo); if(!jn||arch[jn]||have[jn]) return;
+        var w=worked[jn]=worked[jn]||{no:jn,name:(f.JobName||"").trim(),fm:{}}; if(f.Foreman) w.fm[f.Foreman]=1; });
+      MISSING=Object.keys(worked).map(function(k){return worked[k];}).sort(function(a,b){return (a.name||a.no).toLowerCase().localeCompare((b.name||b.no).toLowerCase());});
+    }catch(e){ MISSING=null; }
+    render();
+  }catch(e){ if(seq===LOAD_SEQ) E("list").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+
+/* ===== Render ===== */
+function render(){
+  var q=(E("filter").value||"").toLowerCase().trim();
+  var rows=ROWS.slice().sort(function(a,b){ var x=(jobName(a.f.Project)||a.f.Project||"").toLowerCase(), y=(jobName(b.f.Project)||b.f.Project||"").toLowerCase(); return x.localeCompare(y)||String(b.f.SubmittedAt||"").localeCompare(String(a.f.SubmittedAt||"")); });
+  var hz=rows.filter(function(r){ return hasText(r.f.Hurdles); }).length;
+  E("kIn").textContent=rows.length; E("kHz").textContent=hz; E("kMiss").textContent=MISSING==null?"?":MISSING.length;
+  if(MISSING&&MISSING.length){
+    E("missing").innerHTML='<div class="missing"><b>No look-ahead yet for '+MISSING.length+' job'+(MISSING.length>1?"s":"")+'</b> that had crews on them the last 2 weeks:<ul>'+
+      MISSING.map(function(m){ var fm=Object.keys(m.fm); return '<li><b style="color:var(--ink)">'+esc(m.no)+'</b> '+esc(m.name)+(fm.length?' <span style="color:var(--mut)">— '+esc(fm.join(", "))+'</span>':'')+'</li>'; }).join("")+'</ul></div>';
+  } else E("missing").innerHTML="";
+  var vis=rows.filter(function(r){ if(!q) return true; var f=r.f; return [f.Project,f.SubmittedBy,f.ForemanSuper,f.AreasWeek1,f.AreasWeek2,f.MaterialsWeek1,f.MaterialsWeek2,f.ManpowerWeek1,f.ManpowerWeek2,f.Hurdles,f.DrawingNotes,f.Additionalnotes].join(" ").toLowerCase().indexOf(q)>-1; });
+  if(!vis.length){ E("list").innerHTML='<div class="empty">'+(q?"Nothing matches that filter.":"No look-aheads submitted for this week yet.")+'</div>'; return; }
+  E("list").innerHTML=vis.map(card).join("");
+  Array.prototype.forEach.call(document.querySelectorAll(".la .hd"),function(h){ h.onclick=function(){ h.parentNode.classList.toggle("closed"); }; });
+  Array.prototype.forEach.call(document.querySelectorAll(".full button"),function(b){ b.onclick=function(){ showFull(b); }; });
+}
+function hasText(v){ return String(v||"").replace(/\s+/g,"").length>0 && !/^(none|n\/a|na|no)$/i.test(String(v).trim()); }
+function cell(v){ return hasText(v)?esc(v):'<span style="color:#c4c8cf">—</span>'; }
+function card(r){
+  var f=r.f, hzOn=hasText(f.Hurdles);
+  var no=jobNo(f.Project), nm=jobName(f.Project);
+  var who=f.ForemanSuper||f.SubmittedBy||f.LoginEmail||"";
+  var pills=(f.LateFlag==="Yes"?'<span class="pill late">Late</span> ':'')+(f.LookAheadStatus?'<span class="pill st">'+esc(f.LookAheadStatus)+'</span> ':'')+(hzOn?'<span class="pill hz">Hurdles</span>':'');
+  return '<div class="la'+(hzOn?" hurdle":"")+(ALL_OPEN?"":" closed")+'" data-id="'+esc(r.id)+'">'+
+    '<div class="hd"><div class="job"><span class="no">'+esc(no)+'</span> '+esc(nm)+'</div><div class="by">'+esc(who)+(f.SubmittedAt?' · '+esc(f.SubmittedAt):'')+'</div><div style="margin-left:auto">'+pills+'</div></div>'+
+    '<div class="bd">'+
+      '<table class="wk2"><thead><tr><th></th><th>Week 1 · '+fmt(WEEK)+'</th><th>Week 2 · '+fmt(addDays(WEEK,7))+'</th></tr></thead><tbody>'+
+        '<tr><td class="lbl">Areas / work</td><td>'+cell(f.AreasWeek1)+'</td><td>'+cell(f.AreasWeek2)+'</td></tr>'+
+        '<tr><td class="lbl">Materials</td><td>'+cell(f.MaterialsWeek1)+'</td><td>'+cell(f.MaterialsWeek2)+'</td></tr>'+
+        '<tr><td class="lbl">Manpower</td><td>'+cell(f.ManpowerWeek1)+'</td><td>'+cell(f.ManpowerWeek2)+'</td></tr>'+
+      '</tbody></table>'+
+      (hzOn?'<div class="blk hz"><div class="t">Hurdles / needs</div>'+esc(f.Hurdles)+'</div>':'')+
+      (hasText(f.DrawingNotes)?'<div class="blk"><div class="t">Drawings / notes</div>'+esc(f.DrawingNotes)+'</div>':'')+
+      (hasText(f.Additionalnotes)?'<div class="blk"><div class="t">Additional notes</div>'+esc(f.Additionalnotes)+'</div>':'')+
+      '<div class="full"><button>Show full submission (with any drawings/photos)</button><div class="box"></div></div>'+
+    '</div></div>';
+}
+async function showFull(btn){
+  var box=btn.nextElementSibling, id=btn.closest(".la").getAttribute("data-id");
+  if(box.style.display==="block"){ box.style.display="none"; btn.textContent="Show full submission (with any drawings/photos)"; return; }
+  box.style.display="block"; btn.textContent="Hide full submission";
+  if(box.getAttribute("data-loaded")) return;
+  box.textContent="Loading…";
+  try{ var token=await getToken();
+    var j=await fetch(GRAPH+LOOK+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    if(j.error) throw new Error(j.error.message);
+    box.innerHTML=(j.fields&&j.fields.LogText)||"(no detail saved)"; box.setAttribute("data-loaded","1");
+  }catch(e){ box.textContent="Could not load ("+(e.message||e)+")."; }
+}
+</script>
+</body>
+</html>
