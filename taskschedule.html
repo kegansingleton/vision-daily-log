@@ -145,6 +145,8 @@ async function loadJobs(){
     jobs=jobs.filter(function(j){return !arch[j.no];});
     E("jobPick").innerHTML='<option value="">— Select a job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
     E("jobPick").onchange=function(){ if(E("jobPick").value) loadSchedule(E("jobPick").value); };
+    /* deep link from the Action Items meeting board: taskschedule.html?job=A26101 */
+    var qj=/[?&]job=([^&#]+)/.exec(location.search); if(qj){ var want=decodeURIComponent(qj[1]); var op=Array.prototype.filter.call(E("jobPick").options,function(o){return o.value===want;})[0]; if(op){ E("jobPick").value=want; loadSchedule(want); } }
   }catch(e){ E("sched").innerHTML='<div class="empty">Could not load jobs: '+esc(e.message||e)+'</div>'; }
 }
 
