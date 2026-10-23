@@ -50,8 +50,49 @@ textarea{min-height:80px;resize:vertical}
 .controls label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);margin:0}
 .controls label input{width:auto}
 /* job section */
-.job{background:#fff;border:1px solid var(--line);border-radius:12px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
-.job>.jh{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fafbfc;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.job{background:#fff;border:1px solid var(--line);border-radius:12px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.job>.jh{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fafbfc;border-bottom:1px solid var(--line);flex-wrap:wrap;border-radius:12px 12px 0 0}
+/* ===== Meeting board (By job) ===== */
+body.mtg .wrap{max-width:1180px}
+.mtg .job{scroll-margin-top:calc(var(--hdr,66px) + 8px)}
+.mtg .job>.jh{position:sticky;top:var(--hdr,66px);z-index:20;background:linear-gradient(135deg,#fff,#fdf2f1);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.mtg .job .jname{font-size:17px}
+.addbtn{border:none;background:var(--vm);color:#fff;font-weight:800;font-size:13px;border-radius:9px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.addbtn.on{background:var(--vm2)}
+.tslink{font-size:13px;font-weight:700;color:var(--vm2);text-decoration:none;border:1px solid #f0c9c4;background:#fff;border-radius:9px;padding:7px 10px;white-space:nowrap}
+.tslink:hover{border-color:var(--vm)}
+.qadd{display:none;padding:12px 14px;background:#fff8f7;border-bottom:1px solid #f3d4d0}
+.qadd.open{display:block}
+.qadd .row1{display:grid;grid-template-columns:2.2fr 1.3fr 1fr .9fr auto;gap:8px;align-items:end}
+.qadd input,.qadd select,.qadd textarea{padding:9px;font-size:14px}
+.qadd textarea{min-height:44px;margin-top:8px}
+.qadd label{margin:0 0 3px}
+.qadd .go{border:none;background:var(--ok);color:#fff;font-weight:800;border-radius:9px;padding:10px 14px;cursor:pointer;font-size:14px}
+.qadd .qmsg{font-size:12.5px;margin-top:6px;min-height:16px}
+.mtg .jgrid{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:900px){.mtg .jgrid{grid-template-columns:1fr 1fr;align-items:start}.mtg .jgrid .lacol{border-left:1px solid var(--line);position:sticky;top:calc(var(--hdr,66px) + 62px);max-height:calc(100vh - var(--hdr,66px) - 80px);overflow:auto}}
+@media(max-width:700px){.mtg .job .jname{flex-basis:100%}.mtg .job>.jh .tslink,.mtg .job>.jh .addbtn{flex:1;text-align:center}}
+@media(max-width:700px){.qadd .row1{grid-template-columns:1fr 1fr}.qadd .row1 .tcell{grid-column:1/-1}}
+.lacol{padding:10px 14px 12px;background:#fcfcfd;border-radius:0 0 12px 0}
+.lacol h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lacol h4 .who{color:var(--ink);text-transform:none;letter-spacing:0;font-size:13px;font-weight:700}
+.lacol .stale{background:var(--ambbg);color:var(--amb);border-radius:10px;padding:1px 8px;font-size:10.5px}
+.lacol .none{color:var(--mut);font-size:13px;padding:6px 0}
+table.wk2{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+table.wk2 th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);padding:3px 6px;border-bottom:1px solid var(--line)}
+table.wk2 th:first-child{width:80px}
+table.wk2 td{vertical-align:top;padding:6px;border-bottom:1px solid #f1f2f4;white-space:pre-wrap;word-wrap:break-word}
+table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:11.5px;white-space:normal}
+.lablk{margin-top:8px;font-size:13px;white-space:pre-wrap;word-wrap:break-word}
+.lablk .t{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);font-weight:800}
+.lablk.hz{background:var(--ambbg);border-radius:8px;padding:7px 9px}.lablk.hz .t{color:var(--amb)}
+.lafull{margin-top:8px}.lafull button{border:none;background:none;color:var(--vm);font-weight:700;font-size:12.5px;cursor:pointer;padding:0}
+.lafull .box{display:none;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;max-height:480px;overflow:auto;background:#fff}.lafull .box img{max-width:100%}
+.jumpbar{display:none;gap:6px;overflow-x:auto;padding:6px 0 4px;margin:6px 0 0;-webkit-overflow-scrolling:touch}
+.mtg .jumpbar{display:flex}
+.jumpbar a{flex:0 0 auto;text-decoration:none;font-size:12.5px;font-weight:700;color:var(--vm2);background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 11px;white-space:nowrap}
+.jumpbar a .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+.jumpbar a .d.r{background:#dc2626}.jumpbar a .d.a{background:#f59e0b}.jumpbar a .d.g{background:#22c55e}.jumpbar a .d.n{background:#cbd5e1}
 .job .jname{font-size:15px;font-weight:800;color:var(--vm2);flex:1;min-width:120px}
 .job .jname .jn{color:var(--ink)}
 .pill{font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px}
@@ -128,6 +169,7 @@ textarea{min-height:80px;resize:vertical}
       <input type="text" id="search" placeholder="Filter by task, person, or job…">
       <label><input type="checkbox" id="showDone"> show completed</label>
     </div>
+    <div class="jumpbar" id="jumpbar"></div>
     <div id="jobs"><div class="empty">Loading…</div></div>
   </div>
 </div>
@@ -152,6 +194,8 @@ function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPo
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
 var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
+var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";   /* Weekly 2-Week Look Ahead */
+var LA={}, LA_LOADED=false, OPEN_ADD={}, ASSIGNEE_OPTS="";
 var GROUP=(function(){ try{ return localStorage.getItem("vm_ai_group")||"job"; }catch(e){ return "job"; } })();
 
 function E(id){return document.getElementById(id);}
@@ -187,13 +231,94 @@ async function showApp(a){
     E("main").style.display="block";
     var opts=active.map(function(e){ return {name:(e.EmployeeName||"").trim(), email:emailOf(e)}; }).filter(function(o){ return o.name&&o.email; }).sort(function(x,y){ return x.name.localeCompare(y.name); });
     var sel=E("assignee"); opts.forEach(function(o){ var op=document.createElement("option"); op.value=o.email; op.textContent=o.name; sel.appendChild(op); });
+    ASSIGNEE_OPTS=E("assignee").innerHTML;
     if(!E("due").value) E("due").value=today();
+    setHdr(); window.addEventListener("resize",setHdr);
+    loadLookAheads();
     E("submitBtn").onclick=assign;
     E("search").oninput=render; E("showDone").onchange=render;
     Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-g")===GROUP); b.onclick=function(){ GROUP=b.getAttribute("data-g"); try{ localStorage.setItem("vm_ai_group",GROUP); }catch(e){} Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(x){ x.classList.toggle("on",x===b); }); render(); }; });
     E("formToggle").onclick=function(){ var b=E("formBody"); var hid=b.style.display==="none"; b.style.display=hid?"block":"none"; E("formCaret").innerHTML=hid?"&#9650; hide":"&#9660; assign"; };
     loadJobs(); loadItems();
   }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
+}
+
+function setHdr(){ var h=document.querySelector("header"); if(h) document.documentElement.style.setProperty("--hdr",h.offsetHeight+"px"); }
+function mondayOfISO(iso){ var p=iso.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()-((d.getDay()+6)%7)); return isoLocal(d); }
+var MONS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function niceD(iso){ var p=String(iso).split("-"); return MONS[+p[1]-1]+" "+(+p[2]); }
+function addDaysTo(iso,n){ var p=iso.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return isoLocal(d); }
+
+/* ===== Foremen's 2-week look-aheads: latest one per job from the last ~3 weeks (summary fields only) ===== */
+async function loadLookAheads(){
+  try{
+    var token=await getToken(), from=addDaysISO(-21);
+    var base=GRAPH+LOOK+"/items?$expand=fields($select=WeekOf,Project,SubmittedBy,ForemanSuper,AreasWeek1,AreasWeek2,MaterialsWeek1,MaterialsWeek2,ManpowerWeek1,ManpowerWeek2,Hurdles,LookAheadStatus,Additionalnotes,DrawingNotes,SubmittedAt,LateFlag)&$top=999", out=[];
+    async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } }
+    try{ await page(base+"&$filter=fields/WeekOf ge '"+from+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+    catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
+    var map={};
+    out.forEach(function(r){ var f=r.f, wk=String(f.WeekOf||"").slice(0,10); if(!wk||wk<from) return; var jn=String(f.Project||"").trim().split(/\s+/)[0]; if(!jn) return;
+      var cur=map[jn]; var key=wk+"|"+String(f.SubmittedAt||"")+"|"+r.id; if(!cur||key>cur._k){ r._k=key; r.wk=mondayOfISO(wk); r.name=String(f.Project||"").trim().slice(jn.length).trim(); map[jn]=r; } });
+    LA=map;
+  }catch(e){ LA={}; }
+  LA_LOADED=true; render();
+}
+function hasTxt(v){ v=String(v||"").trim(); return v.length>0 && !/^(none|n\/a|na|no|-)$/i.test(v); }
+function laCell(v){ return hasTxt(v)?esc(v):'<span style="color:#c4c8cf">—</span>'; }
+function laPanel(jn){
+  if(!LA_LOADED) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">Loading…</div></div>';
+  var r=LA[jn];
+  if(!r) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">No look-ahead submitted in the last 3 weeks.</div></div>';
+  var f=r.f, thisMon=mondayOfISO(today()), stale=r.wk<thisMon;
+  return '<div class="lacol"><h4>2-week look-ahead <span class="who">'+esc(f.ForemanSuper||f.SubmittedBy||"")+'</span> · week of '+niceD(r.wk)+
+      (stale?' <span class="stale">from '+(r.wk===addDaysTo(thisMon,-7)?"last week":"an older week")+'</span>':'')+
+      (f.LookAheadStatus?' <span class="pill ink">'+esc(f.LookAheadStatus)+'</span>':'')+(f.LateFlag==="Yes"?' <span class="pill red">Late</span>':'')+'</h4>'+
+    '<table class="wk2"><thead><tr><th></th><th>Wk 1 · '+niceD(r.wk)+'</th><th>Wk 2 · '+niceD(addDaysTo(r.wk,7))+'</th></tr></thead><tbody>'+
+      '<tr><td class="lbl">Areas / work</td><td>'+laCell(f.AreasWeek1)+'</td><td>'+laCell(f.AreasWeek2)+'</td></tr>'+
+      '<tr><td class="lbl">Materials</td><td>'+laCell(f.MaterialsWeek1)+'</td><td>'+laCell(f.MaterialsWeek2)+'</td></tr>'+
+      '<tr><td class="lbl">Manpower</td><td>'+laCell(f.ManpowerWeek1)+'</td><td>'+laCell(f.ManpowerWeek2)+'</td></tr></tbody></table>'+
+    (hasTxt(f.Hurdles)?'<div class="lablk hz"><div class="t">Hurdles / needs</div>'+esc(f.Hurdles)+'</div>':'')+
+    (hasTxt(f.DrawingNotes)?'<div class="lablk"><div class="t">Drawings / notes</div>'+esc(f.DrawingNotes)+'</div>':'')+
+    (hasTxt(f.Additionalnotes)?'<div class="lablk"><div class="t">Additional notes</div>'+esc(f.Additionalnotes)+'</div>':'')+
+    '<div class="lafull" data-la="'+esc(r.id)+'"><button>Show full look-ahead</button><div class="box"></div></div></div>';
+}
+async function showLaFull(btn){
+  var wrap=btn.parentNode, box=wrap.querySelector(".box"), id=wrap.getAttribute("data-la");
+  if(box.style.display==="block"){ box.style.display="none"; btn.textContent="Show full look-ahead"; return; }
+  box.style.display="block"; btn.textContent="Hide full look-ahead";
+  if(box.getAttribute("data-ok")) return; box.textContent="Loading…";
+  try{ var token=await getToken(); var j=await fetch(GRAPH+LOOK+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    if(j.error) throw new Error(j.error.message); box.innerHTML=(j.fields&&j.fields.LogText)||"(no detail saved)"; box.setAttribute("data-ok","1");
+  }catch(e){ box.textContent="Could not load ("+(e.message||e)+")."; }
+}
+
+/* ===== Quick-add on a job card ===== */
+function qaddHtml(k,no,name){
+  return '<div class="qadd'+(OPEN_ADD[k]?" open":"")+'" data-k="'+esc(k)+'" data-no="'+esc(no)+'" data-name="'+esc(name)+'">'+
+    '<div class="row1"><div class="tcell"><label>New item for '+(no?esc(no):"General")+'</label><input type="text" class="q-task" placeholder="What needs to happen?"></div>'+
+    '<div><label>Assign to</label><select class="q-who">'+ASSIGNEE_OPTS+'</select></div>'+
+    '<div><label>Due</label><input type="date" class="q-due" value="'+addDaysISO(7)+'"></div>'+
+    '<div><label>Priority</label><select class="q-pri"><option>High</option><option selected>Normal</option><option>Low</option></select></div>'+
+    '<div><button class="go">Add</button></div></div>'+
+    '<textarea class="q-det" placeholder="Details (optional)"></textarea><div class="qmsg"></div></div>';
+}
+function quickAdd(box){
+  var task=box.querySelector(".q-task").value.trim(), whoSel=box.querySelector(".q-who"), who=whoSel.value, due=box.querySelector(".q-due").value,
+      pri=box.querySelector(".q-pri").value, det=box.querySelector(".q-det").value.trim(), msg=box.querySelector(".qmsg"), btn=box.querySelector(".go");
+  var whoName=whoSel.selectedOptions.length?whoSel.selectedOptions[0].textContent:"";
+  if(!task){ msg.style.color="#b91c1c"; msg.textContent="Type the item."; box.querySelector(".q-task").focus(); return; }
+  if(!who){ msg.style.color="#b91c1c"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.style.color="#b91c1c"; msg.textContent="Pick a due date."; return; }
+  if(navigator.onLine===false){ msg.style.color="#b91c1c"; msg.textContent="You're offline — move to better signal and tap Add again."; return; }
+  var no=box.getAttribute("data-no"), name=box.getAttribute("data-name");
+  var fields={ Title:task, JobNo:no, JobName:no?name:"General", AssignedTo:who, AssignedToName:whoName, DueDate:due+"T12:00:00Z", Priority:pri, Status:"Open", Details:det, CreatedByEmail:loginEmail, CreatedByName:myName };
+  btn.disabled=true; msg.style.color=""; msg.textContent="Adding…";
+  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,{fields:fields}); }).then(function(j){
+    ITEMS.push({id:(j&&j.id)||("tmp"+Date.now()), f:fields}); render();
+    var nb=document.querySelector('.qadd[data-k="'+CSS.escape(box.getAttribute("data-k"))+'"]');
+    if(nb){ nb.querySelector(".qmsg").style.color="#15803d"; nb.querySelector(".qmsg").textContent="Added for "+whoName+". Add another, or close."; nb.querySelector(".q-task").focus(); }
+  }).catch(function(e){ btn.disabled=false; msg.style.color="#b91c1c"; msg.textContent="Didn't save ("+(e.message||e)+"). Tap Add again."; });
 }
 
 /* ===== Job picker ===== */
@@ -233,6 +358,7 @@ function render(){
   var showDone=E("showDone").checked;
   var td=today(), weekEnd=addDaysISO(7), since=lastMeeting();
   var byPerson=(GROUP==="person");
+  document.body.classList.toggle("mtg",!byPerson);
   var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
     return { id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
       jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
@@ -253,9 +379,12 @@ function render(){
     if(r.status==="Done"){ if(r.recent) g.done++; if(showDone) g.items.push(r); }
     else { g.items.push(r); g.open++; if(r.due&&r.due<td)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }
   });
+  if(!byPerson){ Object.keys(LA).forEach(function(jn){ var r=LA[jn]; if(groups[jn]) return; if(q && (jn+" "+r.name).toLowerCase().indexOf(q)<0) return;
+    groups[jn]={key:jn,no:jn,name:r.name,who:"",items:[],over:0,week:0,open:0,done:0}; }); }
   var keys=Object.keys(groups);
   if(!keys.length){ E("jobs").innerHTML='<div class="empty">'+(q?"Nothing matches that filter.":"No open items yet — assign one above.")+'</div>'; return; }
-  keys.sort(function(a,b){ if(!byPerson){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; } var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return byPerson?(ga.who||"").localeCompare(gb.who||""):(ga.no||"").localeCompare(gb.no||""); });
+  if(!byPerson) keys.sort(function(a,b){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; var x=(groups[a].name||groups[a].no||"").toLowerCase(), y=(groups[b].name||groups[b].no||"").toLowerCase(); return x.localeCompare(y)||String(a).localeCompare(String(b)); });
+  else keys.sort(function(a,b){ if(!byPerson){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; } var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return byPerson?(ga.who||"").localeCompare(gb.who||""):(ga.no||"").localeCompare(gb.no||""); });
   E("jobs").innerHTML=keys.map(function(k){
     var g=groups[k];
     var title = byPerson ? esc(g.who||"(unassigned)") : (k==="__GENERAL__" ? 'General <span class="jn">(no job)</span>' : esc(g.no)+' <span class="jn">'+esc(g.name)+'</span>');
@@ -274,9 +403,21 @@ function render(){
         (r.details?'<div class="det" title="Tap to expand"><span>'+esc(r.details)+'</span></div>':'')+
         (r.by?'<div class="by">Assigned by '+esc(r.by)+'</div>':'')+'</div></div>';
     }).join("");
-    if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">Nothing open'+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
-    return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
+    if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">'+(byPerson?'Nothing open':'No open action items')+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
+    if(byPerson) return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
+    var jid="job-"+String(k).replace(/[^A-Za-z0-9_-]/g,"_");
+    return '<div class="job" id="'+jid+'"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div>'+(k!=="__GENERAL__"?'<a class="tslink" href="/taskschedule.html?job='+encodeURIComponent(g.no||k)+'" target="_blank" rel="noopener" title="Budget vs earned hours for this job">&#128202; Task schedule</a>':'')+'<button class="addbtn'+(OPEN_ADD[k]?" on":"")+'" data-k="'+esc(k)+'">'+(OPEN_ADD[k]?"&times; Close":"+ Add item")+'</button></div>'+
+      qaddHtml(k,g.no||"",g.name||"")+
+      '<div class="jgrid"><div class="jbody">'+body+'</div>'+(k==="__GENERAL__"?'':laPanel(k))+'</div></div>';
   }).join("");
+  /* jump bar (By job): one chip per job, dot = red overdue / amber due this week / green open / grey look-ahead only */
+  E("jumpbar").innerHTML=byPerson?"":keys.map(function(k){ var g=groups[k]; var d=g.over?"r":g.week?"a":g.open?"g":"n"; var lbl=k==="__GENERAL__"?"General":((g.name||g.no)+"");
+    return '<a href="#job-'+String(k).replace(/[^A-Za-z0-9_-]/g,"_")+'"><span class="d '+d+'"></span>'+esc(lbl.length>28?lbl.slice(0,27)+"…":lbl)+'</a>'; }).join("");
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".addbtn"),function(b){ b.onclick=function(){ var k=b.getAttribute("data-k"); if(OPEN_ADD[k]) delete OPEN_ADD[k]; else OPEN_ADD[k]=1;
+    var box=b.closest(".job").querySelector(".qadd"); box.classList.toggle("open",!!OPEN_ADD[k]); b.classList.toggle("on",!!OPEN_ADD[k]); b.innerHTML=OPEN_ADD[k]?"&times; Close":"+ Add item"; if(OPEN_ADD[k]) box.querySelector(".q-task").focus(); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".qadd"),function(box){ box.querySelector(".go").onclick=function(){ quickAdd(box); };
+    box.querySelector(".q-task").onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); quickAdd(box); } }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".lafull button"),function(b){ b.onclick=function(){ showLaFull(b); }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .det"),function(d){ d.onclick=function(){ d.classList.toggle("full"); }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
 }
