@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Start-Up Report</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:720px;margin:0 auto;padding:12px 12px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 4px;font-size:15px;font-weight:800;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .n{background:var(--vm);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 6px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+label .req{color:var(--vm)}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.bad{border-color:var(--red)!important;background:#fff7f7!important}
+/* photos */
+.pbtns{display:flex;gap:8px;flex-wrap:wrap}
+.pbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--vm);color:var(--vm2);background:#fff8f7;border-radius:10px;padding:11px 14px;font-weight:800;font-size:14px;cursor:pointer}
+.pbtn.bad{border-style:solid}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumb{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer}
+.dp .thumb{width:160px;height:120px}
+/* checklist */
+.ck{border-top:1px solid var(--line);padding:9px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ck:first-child{border-top:none}
+.ck .lbl{flex:1;min-width:150px;font-size:14px;font-weight:600}
+.ck .lbl small{display:block;font-weight:500;color:var(--mut);font-size:11.5px}
+.tri{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tri button{border:none;background:#fff;padding:9px 12px;font-size:13px;font-weight:800;color:var(--mut);cursor:pointer;min-width:52px}
+.tri button.on.y{background:var(--ok);color:#fff}.tri button.on.n{background:var(--red);color:#fff}.tri button.on.na{background:#6b7280;color:#fff}
+.ck input,.ck select{width:150px;padding:9px;font-size:15px}
+.ck .legs{display:flex;gap:6px}
+.ck .legs input{width:78px;min-width:0}
+.secttl{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--vm2);margin:14px 0 2px}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:11px;font-size:16px;font-weight:800;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.55}
+.btn.ghost{background:#fff;color:var(--vm2);border:1px solid var(--line);font-size:14px;padding:11px}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:#eef2f7;color:#334155;display:block}
+.reqnote{font-size:12.5px;color:var(--mut);margin:4px 0 0}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:520px){.grid3{grid-template-columns:1fr 1fr}.ck input,.ck select{width:100%}.ck .legs{width:100%}.ck .legs input{flex:1 1 0;width:0}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Start-Up Report</h1><p>Equipment start-up &amp; service checklists. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Start-Up Report</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg info" id="listWarn" style="display:none"></div>
+
+  <div class="card">
+    <h2><span class="n">1</span>Job &amp; equipment</h2>
+    <div class="grid2">
+      <div><label>Report type</label><select id="rtype"><option>Start-Up</option><option>Service / PM</option></select></div>
+      <div><label>Date <span class="req">*</span></label><input type="date" id="date"></div>
+    </div>
+    <label>Job <span class="req">*</span></label>
+    <input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist>
+    <label>Equipment type <span class="req">*</span></label>
+    <select id="etype"><option value="">— Select equipment —</option></select>
+    <div class="grid2">
+      <div><label>Bldg / Room / Area</label><input type="text" id="area" placeholder="e.g. Bldg 945, Roof"></div>
+      <div><label>Tag ID</label><input type="text" id="tag" placeholder="e.g. RTU-3"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>Data plate</h2>
+    <div class="desc">Required on every report: a clear photo of the equipment data plate, plus the model and serial number.</div>
+    <div class="dp">
+      <div class="pbtns"><label class="pbtn" id="dpBtn" for="dpCam">&#128247; Photo of data plate <span class="req">*</span></label></div>
+      <input id="dpCam" type="file" accept="image/*" capture="environment" style="display:none">
+      <div class="thumbs" id="dpThumb"></div>
+    </div>
+    <label>Manufacturer</label><input type="text" id="mfr" placeholder="e.g. Carrier, Trane, Daikin">
+    <div class="grid2">
+      <div><label>Model number <span class="req">*</span></label><input type="text" id="model" autocapitalize="characters"></div>
+      <div><label>Serial number <span class="req">*</span></label><input type="text" id="serial" autocapitalize="characters"></div>
+    </div>
+  </div>
+
+  <div class="card" id="ckCard">
+    <h2><span class="n">3</span><span id="ckTitle">Checklist</span></h2>
+    <div class="desc" id="ckDesc">Pick an equipment type above to load its checklist.</div>
+    <div id="checklist"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>Photos, notes &amp; sign-off</h2>
+    <div class="pbtns"><label class="pbtn" for="phCam">&#128247; Take photos</label><label class="pbtn" for="phFile">&#128193; From camera roll</label></div>
+    <input id="phCam" type="file" accept="image/*" capture="environment" multiple style="display:none">
+    <input id="phFile" type="file" accept="image/*" multiple style="display:none">
+    <div class="thumbs" id="phThumbs"></div>
+    <label>Comments / deficiencies</label><textarea id="comments" placeholder="Anything found, fixed, or needing follow-up"></textarea>
+    <label>Recommendations</label><textarea id="recs" style="min-height:60px" placeholder="Parts, repairs, or follow-up the customer should consider"></textarea>
+    <label>Service technician <span class="req">*</span></label><input type="text" id="tech" list="techlist" placeholder="Your name"><datalist id="techlist"></datalist>
+  </div>
+
+  <div class="msg" id="msg"></div>
+  <button class="btn" id="submitBtn">Submit Start-Up Report</button>
+  <p class="reqnote">Required: job, equipment type, data plate photo, model, serial and technician. Your entries are saved on this phone until you submit.</p>
+  <button class="btn ghost" id="newBtn" style="margin-top:14px;display:none">Start a new report</button>
+</div>
+
+<script>
+/* ===== Config ===== */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE;
+var GRAPH=SITEURL+"/lists/";
+var LIST_NAME="Start-Up Reports";                       /* SharePoint list, found by name — no ID to paste */
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var PHOTO_ROOT="Start-Up Report Photos";               /* folder in the site's Documents library */
+var DRAFT_KEY="vm_startup_draft_v1";
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", LIST_ID=null, LIST_COLS=null;
+
+/* ===== Checklists — consolidated from the 26 Word sheets (identical sheets share one list) =====
+   item: [key, label, kind, extra]   kind: c = Done/No/N-A  ·  t = reading/text  ·  l = L1/L2/L3  ·  s = select (extra = options) */
+var C={
+ volt:["volt","Verified voltage","t"], xfmr:["xfmr","Verified transformer voltage","t"], tight:["tight","Tightened electrical connections","c"],
+ lube:["lube","Lubricated motors / bearings","c"], wipe:["wipe","Cleaned & wiped down surfaces","c"], wx:["wx","Weather","t"], oat:["oat","Approx. outdoor temperature (°F)","t"],
+ filt:["filt","Filter condition & quantity","t"], fanA:["fanA","Fan motor amps","t"], pulley:["pulley","Verified pulley alignment","c"], btens:["btens","Belt tension","c"],
+ bcond:["bcond","Belt condition","t"], brepl:["brepl","Belt replaced","c"], suct:["suct","Suction pressure / temp","t"], disch:["disch","Discharge pressure / temp","t"],
+ refr:["refr","Refrigerant type","s",["R-410A","R-454B","R-32","R-22","R-407C","R-134a","Other"]], ctype:["ctype","Compressor type","s",["Scroll","Recip","Rotary","Screw","Centrifugal","Other"]],
+ llt:["llt","Liquid line temp (°F)","t"], sh:["sh","Superheat (°F)","t"], sc:["sc","Subcooling (°F)","t"], gasM:["gasM","Manifold gas pressure (in. w.c.)","t"],
+ dt:["dt","Heat / cool exchanger ΔT (°F)","t"], stat:["stat","Stat / control point","t"], econ:["econ","Verified economizer operation","c"], fuses:["fuses","Fuses","t"],
+ ctrl:["ctrl","Controller method","s",["VFD","Switch","Timer","BAS / DDC","Other"]], hc:["hc","Heat / cool type","s",["Gas / DX","Electric / DX","Heat pump","Hydronic","Cooling only","Heating only","Other"]]
+};
+function I(k,label){ var x=C[k].slice(); if(label) x[1]=label; return x; }
+var LISTS={
+ PKG:{t:"Packaged unit checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),"Refrigeration",["compA","Compressor amps","l"],I("ctype"),I("refr"),I("suct"),I("disch"),I("llt"),I("sh"),I("sc"),"Heating & airflow",I("gasM"),I("dt"),I("fanA"),["indA","Inducer fan motor amps","t"],I("stat"),I("econ"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ PTAC:{t:"PTAC / wall-mount checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["amps","Amperage","l"],"Refrigeration & airflow",I("refr"),I("suct"),I("disch"),I("dt"),I("fanA"),["compA1","Compressor amps","t"],I("stat"),I("econ"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ COND:{t:"Condensing / chiller checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),["ccrel","Inspected contactors / relays","c"],["braze","Inspected brazed joints","c"],["inlet","Cleaned air inlets","c"],["condA","Condenser amps","l"],["cfanA","Condenser fan motor amps","t"],"Refrigeration",I("ctype"),I("refr"),I("suct"),I("disch"),I("llt"),I("sh"),I("sc"),"Conditions & cleaning",I("oat"),["iat","Approx. indoor temperature (°F)","t"],I("lube","Motors & bearings lubricated"),["coil","Cleaned coil","c"],I("wipe"),I("filt")]},
+ AHU:{t:"Air handler checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),"Coil & drive",["coil","Coil clean","c"],["braze","Visually inspected braze joints","c"],I("fanA"),I("pulley"),["bsize","Belt size","t"],I("btens"),I("bcond"),I("brepl"),"Condensate & cleaning",["pan","Cleaned condensate pan","c"],["drain","Condensate drain line free / clear","c"],I("wx"),I("oat"),I("wipe"),I("filt")]},
+ FAN:{t:"Fan checklist",items:["Electrical",I("volt"),I("fanA"),I("fuses"),I("ctrl"),I("tight"),"Drive",["bqty","Replacement belts — qty & size","t"],I("pulley"),I("btens"),I("bcond"),I("brepl"),I("lube"),"Cleaning",I("wipe"),["vac","Vacuumed inlet screen / motor / fan blades","c"],I("filt")]},
+ UH:{t:"Heater / ventilator checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["fmv","Fan motor voltage","l"],I("fanA"),"Cleaning",I("wipe"),I("filt")]},
+ TUBE:{t:"Tube heater checklist",items:["Electrical & gas",I("volt"),I("xfmr"),I("tight"),I("lube"),["gasP","Gas pressure (in. w.c.)","t"],["fmv","Fan motor voltage","l"],I("fanA"),"Cleaning",I("wipe"),I("filt")]},
+ ERV:{t:"ERV checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["fmv","Fan motor voltage","l"],I("fanA"),["rot","Motor rotation verified","c"],"Cleaning",I("wipe"),I("filt")]},
+ EDH:{t:"Electric duct heater checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["hlegs","Heater voltage","l"],["heatA","Heater amps","t"],"Cleaning",I("wipe"),I("filt")]},
+ MAU:{t:"Makeup air unit checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),"Heating",I("gasM"),["stages","Stages of heat","t"],["burn","Cleaned burners","c"],["pilot","Cleaned ignition / pilot assembly","c"],["hxdt","Heat exchanger ΔT (°F)","t"],["screen","Inlet air screen cleaned","c"],"Drive",I("pulley"),I("btens"),I("bcond"),I("brepl"),I("fanA"),["cfan","Cleaned fan","c"],I("lube"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ PUMP:{t:"Pump / compressor checklist",items:["Electrical",I("volt"),["motA","Motor amps","t"],I("fuses"),I("ctrl"),["elec","Checked electrical connections","c"],"Mechanical",["align","Verified pump alignment","c"],["lubeP","Lubricated motor / pump bearings","c"],["coup","Coupling condition","t"],I("wipe")]},
+ BOILER:{t:"Boiler checklist",items:["Gas",["gasS","Gas pressure — static","t"],["gasO","Gas pressure — operating","t"],["leakG","Checked for gas leaks","c"],"Combustion & safeties",["burn","Inspected burners","c"],["hx","Inspected heat exchanger","c"],["lwco","Tested low water safety","c"],["limits","Tested safeties & limits","c"],["flame","Tested flame safety","c"],["fsig","Flame signal","t"],["comb","Combustion analysis (annual)","t"],["co","Checked air stream for carbon monoxide","t"],"Water & venting",["prv","Tested pressure relief valve","c"],["leakW","Checked for water leaks","c"],["flue","Inspected flue","c"],I("tight")]},
+ SWAMP:{t:"Evaporative cooler checklist",items:["Electrical",I("volt"),I("fanA"),I("stat","Control point"),I("tight"),I("lube"),"Water",["basin","Basin cleaned","c"],["wline","Water line on / off","s",["On","Off"]],["wshut","Water shut-off location","t"],["float","Float level","t"],["mwv","Make-up water valve","t"],"Drive & pads",I("pulley"),I("btens"),I("bcond"),I("brepl"),["pad","Pad condition","t"],["padR","Pads replaced","c"],["padS","Pad size & quantity","t"],"Conditions",I("oat"),I("wx")]},
+ FILTER:{t:"Filter service",items:[["unit","Unit type","s",["RTU","AHU","MAU","EF","Chiller","VAV","Furnace","Other"]],["exist","Existing filter condition","t"],["qsize","Quantity & size of filters replaced","t"],["vis","Visual problems seen during filter change","s",["No","Yes — see comments"]]]},
+ VAV:{t:"VAV / fan-powered box checklist (draft)",items:[["box","Box type","s",["VAV (cooling only)","VAV w/ reheat","Fan-powered — series","Fan-powered — parallel"]],["inlet","Inlet size","t"],"Electrical & controls",I("volt"),I("xfmr","Control transformer voltage"),I("tight"),["ctlr","Controller / BAS point verified","c"],["sens","Space sensor verified","c"],["dat","Discharge air temp (°F)","t"],"Airflow",["damp","Damper / actuator full stroke verified","c"],["minC","Min CFM — setpoint / measured","t"],["maxC","Max CFM — setpoint / measured","t"],"Fan (fan-powered only)",["fpbA","Fan motor amps","t"],["fpbR","Fan rotation verified","c"],"Reheat",["rh","Reheat type","s",["None","Hot water","Electric"]],["rhOp","Reheat operation verified","c"],["rhA","Electric heat amps / HW valve stroke","t"],"Cleaning",I("filt")]}
+};
+var TYPES=[["RTU","Rooftop unit (RTU)","PKG"],["DOAS","DOAS","PKG"],["BARD","BARD wall-mount unit","PTAC"],["PTAC","PTAC unit","PTAC"],["Chiller","Chiller","COND"],["Condenser","Condensing unit","COND"],["Mini-Split","Mini-split","COND"],
+ ["AHU","Air handling unit (AHU)","AHU"],["Fan Coil","Fan coil unit","AHU"],["Furnace","Furnace","AHU"],["VAV","ATU / FPB / VAV box","VAV"],["MAU","Makeup air unit (MAU)","MAU"],["ERV","ERV","ERV"],
+ ["Exhaust Fan","Exhaust fan","FAN"],["Transfer Fan","Transfer fan","FAN"],["Dust Collector","Dust collector","FAN"],["Cabinet Unit Heater","Cabinet unit heater","UH"],["Electric Unit Heater","Electric unit heater","UH"],
+ ["Gas Unit Heater","Gas unit heater","UH"],["Tube Heater","Tube heater","TUBE"],["Electric Duct Heater","Electric duct heater","EDH"],["Boiler","Boiler","BOILER"],["Pump","Pump","PUMP"],["Air Compressor","Air compressor","PUMP"],
+ ["Swamper","Swamp cooler (evaporative)","SWAMP"],["Filter Service","Filter service","FILTER"]];
+
+/* ===== helpers ===== */
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function typeOf(v){return TYPES.filter(function(t){return t[0]===v;})[0];}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+
+/* ===== state ===== */
+var ANS={}, DP=null, PHOTOS=[], PHOTO_FOLDER=null, PHOTO_FOLDER_URL=null;
+
+/* ===== Auth ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+function afterLogin(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  E("etype").innerHTML='<option value="">— Select equipment —</option>'+TYPES.map(function(t){return '<option value="'+esc(t[0])+'">'+esc(t[1])+'</option>';}).join("");
+  E("date").value=today();
+  loadDraft();
+  if(!E("tech").value) E("tech").value=a.name||"";
+  E("etype").onchange=function(){ E("etype").classList.remove("bad"); renderChecklist(); saveDraft(); };
+  ["rtype","date","job","area","tag","mfr","model","serial","comments","recs","tech"].forEach(function(id){ E(id).addEventListener("input",function(){ E(id).classList.remove("bad"); saveDraft(); }); E(id).addEventListener("change",saveDraft); });
+  E("dpCam").onchange=function(){ if(this.files[0]) addPhoto(this.files[0],true); this.value=""; };
+  E("phCam").onchange=function(){ Array.prototype.forEach.call(this.files,function(f){addPhoto(f,false);}); this.value=""; };
+  E("phFile").onchange=E("phCam").onchange;
+  E("submitBtn").onclick=submit;
+  E("newBtn").onclick=function(){ if(confirm("Start a new blank report?")) resetForm(); };
+  renderChecklist();
+  loadJobs(); loadTechs(); findList();
+}
+
+/* ===== lookups ===== */
+async function pullAll(listId,select){ var token=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[];
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(t){ var seen={},arr=[]; t.forEach(function(r){ if((r.Active||"Yes")==="No") return; var jn=(r.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(r.JobName||"").trim()); });
+  arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);});
+  E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
+function loadTechs(){ pullAll(EMP,"EmployeeName,Active").then(function(t){ var n=t.filter(function(r){return (r.Active||"Yes")!=="No"&&r.EmployeeName;}).map(function(r){return r.EmployeeName.trim();}).sort();
+  E("techlist").innerHTML=n.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
+async function findList(){
+  try{ var token=await getToken();
+    var j=await fetch(SITEURL+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("listWarn").style.display="block"; E("listWarn").textContent="Heads up: the “"+LIST_NAME+"” list isn't set up in SharePoint yet, so reports can't be filed. Ask the office."; return; }
+    LIST_ID=L.id;
+    var c=await fetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){}
+}
+
+/* ===== checklist ===== */
+function renderChecklist(){
+  var t=typeOf(E("etype").value);
+  if(!t){ E("ckTitle").textContent="Checklist"; E("ckDesc").style.display="block"; E("checklist").innerHTML=""; return; }
+  var L=LISTS[t[2]]; E("ckTitle").textContent=L.t; E("ckDesc").style.display=t[2]==="VAV"?"block":"none";
+  if(t[2]==="VAV") E("ckDesc").textContent="Skip the fan items on a plain VAV box. Leave anything that doesn't apply blank or tap N/A.";
+  var h=""; L.items.forEach(function(it){
+    if(typeof it==="string"){ h+='<div class="secttl">'+esc(it)+'</div>'; return; }
+    var k=it[0], v=ANS[k];
+    h+='<div class="ck" data-k="'+k+'"><div class="lbl">'+esc(it[1])+'</div>';
+    if(it[2]==="c") h+='<div class="tri">'+[["y","Done"],["n","No"],["na","N/A"]].map(function(o){return '<button type="button" class="'+o[0]+(v===o[1]?" on":"")+'" data-v="'+o[1]+'">'+o[1]+'</button>';}).join("")+'</div>';
+    else if(it[2]==="l"){ var a=(v&&typeof v==="object")?v:{}; h+='<div class="legs">'+["L1","L2","L3"].map(function(x){return '<input type="text" inputmode="decimal" placeholder="'+x+'" data-leg="'+x+'" value="'+esc(a[x]||"")+'">';}).join("")+'</div>'; }
+    else if(it[2]==="s") h+='<select data-in="1"><option value=""></option>'+it[3].map(function(o){return '<option'+(v===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>';
+    else h+='<input type="text" data-in="1" value="'+esc(v||"")+'">';
+    h+='</div>';
+  });
+  E("checklist").innerHTML=h;
+  Array.prototype.forEach.call(E("checklist").querySelectorAll(".ck"),function(row){ var k=row.getAttribute("data-k");
+    Array.prototype.forEach.call(row.querySelectorAll(".tri button"),function(b){ b.onclick=function(){ var on=b.classList.contains("on"); Array.prototype.forEach.call(row.querySelectorAll(".tri button"),function(x){x.classList.remove("on");}); if(!on){ b.classList.add("on"); ANS[k]=b.getAttribute("data-v"); } else delete ANS[k]; saveDraft(); }; });
+    var inp=row.querySelector("[data-in]"); if(inp){ var f=function(){ ANS[k]=inp.value; saveDraft(); }; inp.oninput=f; inp.onchange=f; }
+    Array.prototype.forEach.call(row.querySelectorAll("[data-leg]"),function(x){ x.oninput=function(){ var o=(ANS[k]&&typeof ANS[k]==="object")?ANS[k]:{}; o[x.getAttribute("data-leg")]=x.value; ANS[k]=o; saveDraft(); }; });
+  });
+}
+
+/* ===== photos ===== */
+function scale(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function addPhoto(file,isDP){ if(!/^image\//.test(file.type)) return; var rd=new FileReader(); rd.onload=function(e){ var img=new Image(); img.onload=function(){
+  var p={full:scale(img,1800,0.82),thumb:scale(img,isDP?480:240,isDP?0.6:0.5),url:null}; if(isDP){ DP=p; E("dpBtn").classList.remove("bad"); } else PHOTOS.push(p); renderThumbs(); }; img.src=e.target.result; }; rd.readAsDataURL(file); }
+function renderThumbs(){
+  E("dpThumb").innerHTML=DP?'<div class="thumb"><img src="'+DP.thumb+'"><div class="x" id="dpX">&times;</div></div>':"";
+  E("dpBtn").innerHTML=DP?"&#128247; Retake data plate photo":'&#128247; Photo of data plate <span class="req">*</span>';
+  if(DP) E("dpX").onclick=function(){ DP=null; renderThumbs(); };
+  E("phThumbs").innerHTML=PHOTOS.map(function(p,i){return '<div class="thumb"><img src="'+p.thumb+'"><div class="x" data-i="'+i+'">&times;</div></div>';}).join("");
+  Array.prototype.forEach.call(E("phThumbs").querySelectorAll(".x"),function(x){ x.onclick=function(){ PHOTOS.splice(+x.getAttribute("data-i"),1); renderThumbs(); }; });
+}
+function cleanName(t){return String(t||"").replace(/["*:<>?\/\\|#%~&{}]/g,"-").replace(/\s+/g," ").trim().slice(0,70);}
+function dataUrlToBlob(u){var b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:"image/jpeg"});}
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+function putOnce(token,path,blob){var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;var to=ctrl?setTimeout(function(){ctrl.abort();},45000):null;var o={method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":"image/jpeg"},body:blob};if(ctrl)o.signal=ctrl.signal;
+  return fetch(SITEURL+"/drive/root:/"+encPath(path)+":/content",o).then(function(r){if(to)clearTimeout(to);if(!r.ok)return r.text().then(function(t){var e=new Error("photo upload HTTP "+r.status+" "+t.slice(0,150));e.httpStatus=r.status;throw e;});return r.json();},function(e){if(to)clearTimeout(to);throw e;});}
+function putRetry(token,path,blob){var n=0;function go(){n++;return putOnce(token,path,blob).catch(function(e){var s=e.httpStatus;if(((s===undefined)||s>=500||s===429)&&n<3)return new Promise(function(r){setTimeout(r,1500*n);}).then(go);throw e;});}return go();}
+async function uploadPhotos(token,progress){
+  if(!PHOTO_FOLDER){ var d=new Date(); PHOTO_FOLDER=PHOTO_ROOT+"/"+cleanName(E("date").value+" "+String(E("job").value).split(" ")[0]+" "+(E("tag").value||E("etype").value)+" "+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())); }
+  var all=[{p:DP,name:"data-plate.jpg"}].concat(PHOTOS.map(function(p,i){return {p:p,name:"photo-"+pad(i+1)+".jpg"};}));
+  for(var i=0;i<all.length;i++){ if(all[i].p.url) continue; progress(i+1,all.length); var j=await putRetry(token,PHOTO_FOLDER+"/"+all[i].name,dataUrlToBlob(all[i].p.full)); all[i].p.url=j.webUrl||""; }
+  if(!PHOTO_FOLDER_URL){ try{ var r=await fetch(SITEURL+"/drive/root:/"+encPath(PHOTO_FOLDER),{headers:{Authorization:"Bearer "+token}}).then(function(x){return x.json();}); PHOTO_FOLDER_URL=r.webUrl||null; }catch(e){} }
+}
+
+/* ===== validation & report ===== */
+function validate(){
+  var miss=[]; function need(id,label){ var el=E(id); if(!String(el.value||"").trim()){ el.classList.add("bad"); miss.push(label); } }
+  need("job","Job"); need("etype","Equipment type");
+  if(!DP){ E("dpBtn").classList.add("bad"); miss.push("Data plate photo"); }
+  need("model","Model number"); need("serial","Serial number"); need("tech","Service technician"); need("date","Date");
+  return miss;
+}
+function ansText(it){ var v=ANS[it[0]]; if(it[2]==="l"){ if(!v||typeof v!=="object") return ""; var p=["L1","L2","L3"].filter(function(x){return v[x];}).map(function(x){return x+" "+v[x];}); return p.join(" · "); } return v==null?"":String(v); }
+function buildReport(){
+  var t=typeOf(E("etype").value), L=LISTS[t[2]], H=[];
+  var row=function(a,b){ return '<tr><td style="padding:4px 10px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top">'+esc(a)+'</td><td style="padding:4px 0;font-weight:600">'+b+'</td></tr>'; };
+  H.push('<h2 style="color:#7f1d1d;margin:0 0 6px">'+esc(E("rtype").value)+' Report — '+esc(t[1])+'</h2>');
+  H.push('<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(E("job").value))+row("Date",esc(E("date").value))+row("Bldg / Room / Area",esc(E("area").value))+row("Tag ID",esc(E("tag").value))+
+    row("Manufacturer",esc(E("mfr").value))+row("Model",esc(E("model").value))+row("Serial",esc(E("serial").value))+row("Service technician",esc(E("tech").value))+'</table>');
+  if(DP) H.push('<p style="margin:10px 0 4px;font-weight:700">Data plate</p>'+(DP.url?'<a href="'+DP.url+'">':'')+'<img src="'+DP.thumb+'" style="max-width:420px;width:100%;border:1px solid #ccc;border-radius:6px">'+(DP.url?'</a>':''));
+  H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">'+esc(L.t)+'</h3><table style="border-collapse:collapse;font-size:13.5px;width:100%">');
+  L.items.forEach(function(it){ if(typeof it==="string"){ H.push('<tr><td colspan="2" style="padding:8px 0 2px;font-weight:800;color:#7f1d1d;font-size:12px;text-transform:uppercase">'+esc(it)+'</td></tr>'); return; }
+    var a=ansText(it), col=a==="No"?"#b91c1c":(a==="Done"?"#15803d":"#1f2937");
+    H.push('<tr><td style="padding:3px 10px 3px 0;border-bottom:1px solid #eee">'+esc(it[1])+'</td><td style="padding:3px 0;border-bottom:1px solid #eee;font-weight:600;color:'+col+'">'+(a?esc(a):'<span style="color:#bbb">—</span>')+'</td></tr>'); });
+  H.push('</table>');
+  if(E("comments").value.trim()) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Comments / deficiencies</h3><div style="white-space:pre-wrap">'+esc(E("comments").value)+'</div>');
+  if(E("recs").value.trim()) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Recommendations</h3><div style="white-space:pre-wrap">'+esc(E("recs").value)+'</div>');
+  if(PHOTOS.length){ H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Photos</h3>');
+    if(PHOTO_FOLDER_URL) H.push('<p>'+(PHOTOS.length+1)+' photos — full size: <a href="'+PHOTO_FOLDER_URL+'">open the photo folder in SharePoint</a></p>');
+    PHOTOS.slice(0,8).forEach(function(p){ var im='<img src="'+p.thumb+'" style="width:170px;margin:3px;border:1px solid #ccc;border-radius:6px">'; H.push(p.url?'<a href="'+p.url+'">'+im+'</a>':im); });
+    if(PHOTOS.length>8) H.push('<p>(+'+(PHOTOS.length-8)+' more in the photo folder)</p>'); }
+  H.push('<p style="color:#6b7280;font-size:12px;margin-top:14px">Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'</p>');
+  return H.join("\n");
+}
+function buildFields(){
+  var t=typeOf(E("etype").value), jv=String(E("job").value).trim(), sp=jv.indexOf(" ");
+  var f={ Title:E("date").value+" | "+(sp<0?jv:jv.slice(0,sp))+" | "+(E("tag").value||t[1])+" | "+E("tech").value,
+    ReportType:E("rtype").value, ServiceDate:E("date").value+"T12:00:00Z", JobNo:sp<0?jv:jv.slice(0,sp), JobName:sp<0?"":jv.slice(sp+1),
+    EquipmentType:t[1], TagID:E("tag").value, Area:E("area").value, Manufacturer:E("mfr").value, Model:E("model").value.trim(), SerialNumber:E("serial").value.trim(),
+    Technician:E("tech").value.trim(), Comments:E("comments").value, Recommendations:E("recs").value, DataPlatePhoto:(DP&&DP.url)||"", PhotoFolder:PHOTO_FOLDER_URL||"",
+    PhotoCount:String((DP?1:0)+PHOTOS.length), Checklist:JSON.stringify(ANS), LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport() };
+  /* only send columns that exist on the list, so a missing optional column never blocks a report */
+  if(LIST_COLS){ Object.keys(f).forEach(function(k){ if(k!=="Title" && !LIST_COLS[k]) delete f[k]; }); }
+  return f;
+}
+function postOnce(token,body){var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;var to=ctrl?setTimeout(function(){ctrl.abort();},25000):null;var o={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctrl)o.signal=ctrl.signal;
+  return fetch(GRAPH+LIST_ID+"/items",o).then(function(r){if(to)clearTimeout(to);if(!r.ok)return r.text().then(function(t){var e=new Error("HTTP "+r.status+" "+t.slice(0,200));e.httpStatus=r.status;throw e;});return r.json();},function(e){if(to)clearTimeout(to);throw e;});}
+function postRetry(token,body){var n=0;function go(){n++;return postOnce(token,body).catch(function(e){var s=e.httpStatus;if(((s===undefined)||s>=500||s===429)&&n<3)return new Promise(function(r){setTimeout(r,1300*n);}).then(go);throw e;});}return go();}
+
+async function submit(){
+  var msg=E("msg"), btn=E("submitBtn"); saveDraft();
+  var miss=validate();
+  if(miss.length){ msg.className="msg err"; msg.textContent="Still needed: "+miss.join(", ")+"."; var first=document.querySelector(".bad"); if(first) first.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You're offline — your entries are saved. Move to better signal and tap Submit again."; return; }
+  if(!LIST_ID){ await findList(); if(!LIST_ID){ msg.className="msg err"; msg.textContent="The “"+LIST_NAME+"” list isn't set up in SharePoint yet. Your entries are saved on this phone."; return; } }
+  btn.disabled=true; msg.className="msg info"; msg.textContent="Uploading photos…";
+  try{
+    var token=await getToken();
+    await uploadPhotos(token,function(i,n){ msg.textContent="Uploading photo "+i+" of "+n+"…"; });
+    msg.textContent="Saving report to SharePoint…";
+    await postRetry(token,{fields:buildFields()});
+    msg.className="msg ok"; msg.textContent="Submitted. The start-up report for "+(E("tag").value||typeOf(E("etype").value)[1])+" is filed."; btn.textContent="Submitted";
+    clearDraft(); E("newBtn").style.display="block";
+  }catch(e){ btn.disabled=false; msg.className="msg err"; msg.textContent="Couldn't submit yet ("+(e.message||e)+"). Your entries are saved — move to better signal and tap Submit again (photos already uploaded won't re-upload)."; }
+}
+
+/* ===== drafts (text only — photos stay in memory) ===== */
+var FIELDS=["rtype","date","job","etype","area","tag","mfr","model","serial","comments","recs","tech"];
+function saveDraft(){ try{ var d={ans:ANS,ts:Date.now()}; FIELDS.forEach(function(id){ d[id]=E(id).value; }); localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch(e){} }
+function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); if(!d) return; if(Date.now()-(d.ts||0)>14*864e5){ clearDraft(); return; } FIELDS.forEach(function(id){ if(d[id]!=null&&d[id]!=="") E(id).value=d[id]; }); ANS=d.ans||{}; }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+function resetForm(){ clearDraft(); ANS={}; DP=null; PHOTOS=[]; PHOTO_FOLDER=null; PHOTO_FOLDER_URL=null;
+  FIELDS.forEach(function(id){ if(id!=="rtype"&&id!=="tech") E(id).value=""; }); E("date").value=today(); renderThumbs(); renderChecklist();
+  E("msg").className="msg"; E("submitBtn").disabled=false; E("submitBtn").textContent="Submit Start-Up Report"; E("newBtn").style.display="none"; window.scrollTo(0,0); }
+</script>
+</body>
+</html>
