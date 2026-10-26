@@ -20,7 +20,10 @@ header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opa
 .card .desc{font-size:12.5px;color:var(--mut);margin:0 0 6px}
 label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
 label .req{color:var(--vm)}
-input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;color:var(--ink);font-family:inherit;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+input::placeholder,textarea::placeholder{color:#8a919c;opacity:1}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff;box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+input:not(:placeholder-shown),textarea:not(:placeholder-shown){background:#fff;border-color:#6b7280}
 textarea{min-height:80px;resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -35,12 +38,13 @@ textarea{min-height:80px;resize:vertical}
 .thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer}
 .dp .thumb{width:160px;height:120px}
 /* checklist */
-.ck{border-top:1px solid var(--line);padding:9px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ck{border-top:1px solid #eef0f3;padding:9px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ck:first-child{border-top:none}
 .ck .lbl{flex:1;min-width:150px;font-size:14px;font-weight:600}
 .ck .lbl small{display:block;font-weight:500;color:var(--mut);font-size:11.5px}
-.tri{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
-.tri button{border:none;background:#fff;padding:9px 12px;font-size:13px;font-weight:800;color:var(--mut);cursor:pointer;min-width:52px}
+.tri{display:inline-flex;border:1.5px solid #9ca3af;border-radius:9px;overflow:hidden}
+.tri button{border:none;border-left:1px solid #d1d5db;background:#f3f5f8;padding:9px 12px;font-size:13px;font-weight:800;color:var(--mut);cursor:pointer;min-width:52px}
+.tri button:first-child{border-left:none}
 .tri button.on.y{background:var(--ok);color:#fff}.tri button.on.n{background:var(--red);color:#fff}.tri button.on.na{background:#6b7280;color:#fff}
 .ck input,.ck select{width:150px;padding:9px;font-size:15px}
 .ck .legs{display:flex;gap:6px}
@@ -242,8 +246,8 @@ function renderChecklist(){
     h+='<div class="ck" data-k="'+k+'"><div class="lbl">'+esc(it[1])+'</div>';
     if(it[2]==="c") h+='<div class="tri">'+[["y","Done"],["n","No"],["na","N/A"]].map(function(o){return '<button type="button" class="'+o[0]+(v===o[1]?" on":"")+'" data-v="'+o[1]+'">'+o[1]+'</button>';}).join("")+'</div>';
     else if(it[2]==="l"){ var a=(v&&typeof v==="object")?v:{}; h+='<div class="legs">'+["L1","L2","L3"].map(function(x){return '<input type="text" inputmode="decimal" placeholder="'+x+'" data-leg="'+x+'" value="'+esc(a[x]||"")+'">';}).join("")+'</div>'; }
-    else if(it[2]==="s") h+='<select data-in="1"><option value=""></option>'+it[3].map(function(o){return '<option'+(v===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>';
-    else h+='<input type="text" data-in="1" value="'+esc(v||"")+'">';
+    else if(it[2]==="s") h+='<select data-in="1"><option value="">Select…</option>'+it[3].map(function(o){return '<option'+(v===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>';
+    else h+='<input type="text" data-in="1" placeholder="Enter reading" value="'+esc(v||"")+'">';
     h+='</div>';
   });
   E("checklist").innerHTML=h;
