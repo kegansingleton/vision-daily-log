@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Weekly Owner Report</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50}
+header .row{display:flex;align-items:center;gap:12px;max-width:1000px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px 12px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2)}
+.grid{display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;align-items:end}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:0 0 4px}
+input,select{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus{outline:none;border-color:var(--vm);background:#fff}
+.btn{padding:11px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}
+.btn:disabled{opacity:.5}
+.secs{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.secs label{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink);font-weight:600;margin:0}
+.secs input{width:18px;height:18px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:#eef2f7;color:#334155;display:block}
+#doc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px 32px;min-height:200px;font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:14.5px;line-height:1.45;outline:none}
+#doc:focus{box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+#doc h1{font-size:22px;color:#7f1d1d;margin:0}
+#doc h3{font-size:16px;color:#7f1d1d;border-bottom:2px solid #f1d5d2;padding-bottom:3px;margin:20px 0 8px}
+#doc table{border-collapse:collapse;width:100%;font-size:13.5px}
+#doc th,#doc td{border:1px solid #d9dce1;padding:5px 8px;text-align:left;vertical-align:top}
+#doc th{background:#f6f7f9}
+#doc .ph{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#doc .ph img{width:100%;height:150px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb}
+#doc .meta td{border:none;padding:2px 14px 2px 0}
+.tip{font-size:12.5px;color:var(--mut)}
+.denied{display:none;max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.grid .jobc{grid-column:1/-1}#doc{padding:16px}#doc .ph{grid-template-columns:1fr 1fr}}
+@media print{header,.noprint{display:none!important}body{background:#fff}.wrap{padding:0;max-width:none}#doc{border:none;padding:0}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Weekly Owner Report</h1><p>Drafts the weekly owner / GC report from that week's daily logs, timecards and look-ahead. PMs and admins.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header class="noprint"><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Weekly Owner Report</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="denied" id="denied"><h2 style="color:#7f1d1d">Not authorized</h2><p>The weekly owner report is for Project Managers and Admins.</p></div>
+<div class="wrap" id="app" style="display:none">
+  <div class="card noprint">
+    <div class="grid">
+      <div class="jobc"><label>Job</label><input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist></div>
+      <div><label>Week of (Monday)</label><input type="date" id="week"></div>
+      <button class="btn btn-g" id="prevWk">&#9664; Wk</button>
+      <button class="btn btn-p" id="buildBtn">Build draft</button>
+    </div>
+    <div class="secs" id="secs"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+  <div class="acts noprint" id="acts" style="display:none">
+    <button class="btn btn-p" id="printBtn">Print / Save PDF</button>
+    <button class="btn btn-g" id="copyBtn">Copy for email</button>
+    <button class="btn btn-g" id="saveBtn">Save to SharePoint</button>
+    <span class="tip" style="align-self:center">Click anywhere in the report to edit before sending.</span>
+  </div>
+  <div id="doc" contenteditable="true" style="display:none"></div>
+</div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a", LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c", TC="91c4a3db-97f6-4b52-a855-516d5c414124",
+    ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"], NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SECTIONS=[["summary","Summary",1],["manpower","Manpower",1],["work","Work completed",1],["deliveries","Deliveries & material",1],["quality","Inspections & quality",1],
+  ["safety","Safety",1],["issues","Delays, issues & extra work",1],["look","Two-week look-ahead",1],["photos","Photos",1],["actions","Open action items (internal)",0]];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", myName="", LAST=null;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function mondayOf(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());var w=(x.getDay()+6)%7;return addDays(x,-w);}
+function dkey(v){return String(v||"").slice(0,10);}
+function dname(s){return parseISO(s).toLocaleDateString([], {weekday:"short",month:"numeric",day:"numeric"});}
+function longD(s){return parseISO(s).toLocaleDateString([], {month:"long",day:"numeric",year:"numeric"});}
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
+function truthy(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function txt(s){ return esc(String(s||"").trim()).replace(/\n/g,"<br>"); }
+function blank(s){ s=String(s||"").trim().toLowerCase(); return !s||s==="n/a"||s==="na"||s==="none"||s==="no"||s==="-"; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gget(url,extra){ var t=await getToken(); var r=await fetch(url,{headers:Object.assign({Authorization:"Bearer "+t},extra||{})}); var j=await r.json(); if(j.error) throw new Error(j.error.message); return j; }
+async function pullAll(url,extra){ var out=[]; while(url){ var j=await gget(url,extra); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+function itemsUrl(list,select){ return GRAPH+list+"/items?$expand=fields($select="+select+")&$top=999"; }
+async function pullRange(list,select,dateCol,from,to){
+  var base=itemsUrl(list,select);
+  try{ return await pullAll(base+"&$filter=fields/"+dateCol+" ge '"+from+"T00:00:00Z' and fields/"+dateCol+" le '"+to+"T23:59:59Z'",{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ return (await pullAll(base)).filter(function(r){ var d=dkey(r[dateCol]); return d>=from&&d<=to; }); }
+}
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim(); myName=a.name||"";
+  E("gate").style.display="none"; E("who").textContent=myName||loginEmail;
+  var ok=SUPERADMIN.indexOf(loginEmail)>-1||NAMED_PM.indexOf(loginEmail)>-1;
+  if(!ok){ try{ var emps=await pullAll(itemsUrl(EMP,"EmployeeName,LoginEmail,Admin,Active")); ok=emps.some(function(e){ var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&truthy(e.Admin)&&(e.Active||"Yes")!=="No"; }); }catch(e){} }
+  if(!ok){ E("denied").style.display="block"; return; }
+  E("app").style.display="block";
+  E("secs").innerHTML=SECTIONS.map(function(s){ return '<label><input type="checkbox" data-s="'+s[0]+'"'+(s[2]?" checked":"")+'> '+esc(s[1])+'</label>'; }).join("");
+  var q=new URLSearchParams(location.search);
+  E("week").value=iso(mondayOf(q.get("week")?parseISO(q.get("week")):new Date()));
+  if(q.get("job")) E("job").value=q.get("job");
+  E("week").onchange=function(){ if(E("week").value) E("week").value=iso(mondayOf(parseISO(E("week").value))); };
+  E("prevWk").onclick=function(){ E("week").value=iso(addDays(parseISO(E("week").value),-7)); };
+  E("buildBtn").onclick=build;
+  E("printBtn").onclick=function(){ window.print(); };
+  E("copyBtn").onclick=copyDoc; E("saveBtn").onclick=saveDoc;
+  E("secs").querySelectorAll("input").forEach(function(c){ c.onchange=function(){ if(LAST) render(); }; });
+  pullAll(itemsUrl(JOBTASKS,"JobNo,JobName,Active")).then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
+    arr.sort(function(x,y){return x.slice(x.indexOf(" ")+1).toLowerCase().localeCompare(y.slice(y.indexOf(" ")+1).toLowerCase());}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){});
+}
+function on(k){ var c=E("secs").querySelector('[data-s="'+k+'"]'); return c&&c.checked; }
+
+async function build(){
+  var jv=E("job").value.trim(), jn=jobNo(jv), msg=E("msg");
+  if(!jn||!E("week").value){ msg.className="msg err"; msg.textContent="Pick a job and a week."; return; }
+  var from=E("week").value, to=iso(addDays(parseISO(from),6));
+  E("buildBtn").disabled=true; msg.className="msg info"; msg.textContent="Pulling daily logs, timecards, look-ahead and action items…";
+  try{
+    var R=await Promise.all([
+      pullRange(LOGS,"LogDate,Project,SubmittedBy,ForemanSuper,Weather,Temperature,WeatherImpactedWork,WeatherImpactDetail,TotalWorkers,RegularManHours,OvertimeManHours,WorkPerformed,AreasLocations,Quantities,DeliveriesReceived,ShortagesBackorders,Subcontractors,VisitorsInspectors,ToolboxTalkHeld,SafetyTopic,IncidentsNearMisses,InspectionsTests,QualityIssuesRework,ChallengesDelays,DelayCause,DirectedOutOfScope,NextDayPlan,Photos","LogDate",from,to),
+      pullRange(TC,"WorkDate,JobNo,EmployeeName,Hours,PayType,Overtime","WorkDate",from,to).catch(function(){return null;}),
+      pullAll(itemsUrl(LOOK,"WeekOf,Project,ForemanSuper,SubmittedBy,AreasWeek1,AreasWeek2,MaterialsWeek1,MaterialsWeek2,ManpowerWeek1,ManpowerWeek2,Hurdles,SubmittedAt")).catch(function(){return [];}),
+      pullAll(itemsUrl(ACTIONS,"Title,JobNo,AssignedToName,AssignedTo,DueDate,Status,Priority,Modified")).catch(function(){return [];}),
+      findTM(jn,from,to)
+    ]);
+    var logs=R[0].filter(function(f){return jobNo(f.Project)===jn;}).sort(function(a,b){return dkey(a.LogDate).localeCompare(dkey(b.LogDate));});
+    var tc=R[1]?R[1].filter(function(f){return String(f.JobNo||"").trim()===jn;}):null;
+    var la=R[2].filter(function(f){ return jobNo(f.Project)===jn && dkey(f.WeekOf)<=to; }).sort(function(a,b){ return (dkey(b.WeekOf)+String(b.SubmittedAt||"")).localeCompare(dkey(a.WeekOf)+String(a.SubmittedAt||"")); })[0]||null;
+    var acts=R[3].filter(function(f){ return String(f.JobNo||"").trim()===jn; });
+    var name=jv.slice(jn.length).trim()||(logs[0]?String(logs[0].Project).trim().slice(jn.length).trim():"");
+    LAST={jn:jn,name:name,from:from,to:to,logs:logs,tc:tc,la:la,acts:acts,tm:R[4],photos:null};
+    msg.className="msg info"; msg.textContent="Loading photos…"; render();
+    LAST.photos=await loadPhotos(logs); render();
+    msg.className="msg ok"; msg.textContent="Draft ready: "+logs.length+" daily log"+(logs.length===1?"":"s")+(tc?", "+tc.length+" timecard entries":"")+(la?", look-ahead from week of "+dkey(la.WeekOf):", no look-ahead found")+". Edit below, then print or copy.";
+  }catch(e){ msg.className="msg err"; msg.textContent="Couldn't build the report ("+e.message+")."; }
+  E("buildBtn").disabled=false;
+}
+async function findTM(jn,from,to){
+  try{ var j=await gget(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()==="t&m tickets";})[0]; if(!L) return [];
+    return (await pullRange(L.id,"TicketNo,JobNo,WorkDate,Description,SignedStatus,CustomerRep,LaborHours,OTHours","WorkDate",from,to)).filter(function(f){return String(f.JobNo||"").trim()===jn;}); }catch(e){ return []; }
+}
+function shareId(url){ var b=btoa(unescape(encodeURIComponent(url))).replace(/=+$/,"").replace(/\//g,"_").replace(/\+/g,"-"); return "u!"+b; }
+async function loadPhotos(logs){
+  var out=[];
+  for(var i=0;i<logs.length&&out.length<24;i++){ var m=/https?:\/\/\S+/.exec(String(logs[i].Photos||"")); if(!m) continue;
+    try{ var j=await gget("https://graph.microsoft.com/v1.0/shares/"+shareId(m[0])+"/driveItem/children?$expand=thumbnails&$top=50");
+      (j.value||[]).forEach(function(it){ var th=it.thumbnails&&it.thumbnails[0]; if(th&&(th.large||th.medium)&&out.length<24) out.push({src:(th.large||th.medium).url,web:it.webUrl,day:dkey(logs[i].LogDate)}); }); }catch(e){}
+  }
+  return out;
+}
+function render(){
+  var D=LAST, H=[], logs=D.logs;
+  var days=logs.map(function(f){return dkey(f.LogDate);}).filter(function(v,i,a){return a.indexOf(v)===i;});
+  var crewByDay={}, mhByDay={}; logs.forEach(function(f){ var d=dkey(f.LogDate); crewByDay[d]=(crewByDay[d]||0)+(+f.TotalWorkers||0); mhByDay[d]=(mhByDay[d]||0)+(+f.RegularManHours||0)+(+f.OvertimeManHours||0); });
+  var tcByDay={}, tcTot=0, tcOt=0, people={}; (D.tc||[]).forEach(function(f){ var d=dkey(f.WorkDate), h=+f.Hours||0; tcByDay[d]=(tcByDay[d]||0)+h; tcTot+=h; if(truthy(f.Overtime)) tcOt+=h; people[f.EmployeeName]=1; });
+  var peak=0; Object.keys(crewByDay).forEach(function(d){ if(crewByDay[d]>peak) peak=crewByDay[d]; });
+  var hrsTotal=D.tc?tcTot:Object.keys(mhByDay).reduce(function(s,d){return s+mhByDay[d];},0);
+  H.push('<h1>Weekly Progress Report</h1><div style="color:#6b7280;margin:2px 0 10px">Vision Mechanical</div>');
+  H.push('<table class="meta"><tr><td><b>Project</b></td><td>'+esc(D.jn+" "+D.name)+'</td></tr><tr><td><b>Week</b></td><td>'+esc(longD(D.from))+' – '+esc(longD(D.to))+'</td></tr><tr><td><b>Prepared by</b></td><td>'+esc(myName)+'</td></tr><tr><td><b>Date</b></td><td>'+esc(longD(iso(new Date())))+'</td></tr></table>');
+  if(on("summary")){
+    var s=days.length?("Vision Mechanical crews worked "+days.length+" day"+(days.length===1?"":"s")+" this week"+(peak?", with up to "+peak+" workers on site":"")+(hrsTotal?" and "+Math.round(hrsTotal*10)/10+" total man-hours":"")+"."):"No daily logs were submitted for this job this week.";
+    H.push('<h3>Summary</h3><p>'+esc(s)+'</p><p style="color:#9ca3af">[Add a sentence or two on overall status, schedule and anything the owner should know.]</p>');
+  }
+  if(on("manpower")&&(days.length||D.tc)){
+    var all={}; days.forEach(function(d){all[d]=1;}); Object.keys(tcByDay).forEach(function(d){all[d]=1;});
+    var ds=Object.keys(all).sort();
+    H.push('<h3>Manpower</h3><table><tr><th>Day</th><th>Workers on site</th><th>Man-hours</th><th>Weather</th></tr>'+ds.map(function(d){ var lg=logs.filter(function(f){return dkey(f.LogDate)===d;});
+      var w=lg.map(function(f){return [f.Weather,f.Temperature].filter(Boolean).join(" ");}).filter(Boolean)[0]||"";
+      var mh=D.tc?(tcByDay[d]||0):(mhByDay[d]||0);
+      return '<tr><td>'+esc(dname(d))+'</td><td>'+(crewByDay[d]||"—")+'</td><td>'+(mh?Math.round(mh*10)/10:"—")+'</td><td>'+esc(w)+'</td></tr>'; }).join("")+
+      '<tr><th>Total</th><th>'+(peak?"Peak "+peak:"")+'</th><th>'+(hrsTotal?Math.round(hrsTotal*10)/10:"")+(tcOt?" ("+Math.round(tcOt*10)/10+" OT)":"")+'</th><th></th></tr></table>'+
+      (D.tc?'<p style="font-size:12px;color:#6b7280">Man-hours from timecards'+(Object.keys(people).length?" ("+Object.keys(people).length+" people)":"")+'; workers on site from foreman daily logs.</p>':''));
+  }
+  function perDay(field,extraFn){ return logs.filter(function(f){return !blank(f[field]);}).map(function(f){ return '<li><b>'+esc(dname(dkey(f.LogDate)))+':</b> '+txt(f[field])+(extraFn?extraFn(f):"")+'</li>'; }).join(""); }
+  if(on("work")){ var w=perDay("WorkPerformed",function(f){ return blank(f.AreasLocations)?"":' <i style="color:#6b7280">('+esc(f.AreasLocations)+')</i>'; });
+    H.push('<h3>Work completed</h3>'+(w?'<ul>'+w+'</ul>':'<p>No work activities logged.</p>')); var qn=perDay("Quantities"); if(qn) H.push('<p><b>Quantities installed</b></p><ul>'+qn+'</ul>'); }
+  if(on("deliveries")){ var dl=perDay("DeliveriesReceived"), sh=perDay("ShortagesBackorders");
+    H.push('<h3>Deliveries &amp; material</h3>'+(dl?'<p><b>Received</b></p><ul>'+dl+'</ul>':'<p>No deliveries logged.</p>')+(sh?'<p><b>Shortages / backorders</b></p><ul>'+sh+'</ul>':'')); }
+  if(on("quality")){ var it=perDay("InspectionsTests"), qi=perDay("QualityIssuesRework"), vi=perDay("VisitorsInspectors");
+    H.push('<h3>Inspections &amp; quality</h3>'+(it||vi||qi?((it?'<p><b>Inspections / tests</b></p><ul>'+it+'</ul>':'')+(vi?'<p><b>Visitors / inspectors</b></p><ul>'+vi+'</ul>':'')+(qi?'<p><b>Quality issues / rework</b></p><ul>'+qi+'</ul>':'')):'<p>No inspections or quality issues logged.</p>')); }
+  if(on("safety")){ var topics=logs.filter(function(f){return !blank(f.SafetyTopic);}).map(function(f){return f.SafetyTopic.trim();}).filter(function(v,i,a){return a.indexOf(v)===i;});
+    var inc=perDay("IncidentsNearMisses");
+    H.push('<h3>Safety</h3><p>'+(topics.length?'Toolbox talks: '+esc(topics.join("; "))+'.':'No toolbox talk topics recorded in daily logs.')+'</p>'+(inc?'<p><b>Incidents / near misses</b></p><ul>'+inc+'</ul>':'<p>No incidents or near misses reported in daily logs.</p>')); }
+  if(on("issues")){ var ch=perDay("ChallengesDelays",function(f){return blank(f.DelayCause)?"":' <i style="color:#6b7280">(Cause: '+esc(f.DelayCause)+')</i>';}), wx=perDay("WeatherImpactDetail"), dir=perDay("DirectedOutOfScope");
+    var tm=(D.tm||[]).map(function(t){ return '<tr><td>'+esc(t.TicketNo||"")+'</td><td>'+esc(dname(dkey(t.WorkDate)))+'</td><td>'+esc(t.Description||"")+'</td><td>'+esc((+t.LaborHours||0)+(+t.OTHours||0))+'</td><td>'+esc(t.SignedStatus==="Signed"?("Signed — "+(t.CustomerRep||"")):"Not signed")+'</td></tr>'; }).join("");
+    H.push('<h3>Delays, issues &amp; extra work</h3>'+(ch||wx||dir||tm?((ch?'<ul>'+ch+'</ul>':'')+(wx?'<p><b>Weather impacts</b></p><ul>'+wx+'</ul>':'')+(dir?'<p><b>Directed / out-of-scope work</b></p><ul>'+dir+'</ul>':'')+
+      (tm?'<p><b>T&amp;M tickets this week</b></p><table><tr><th>Ticket</th><th>Day</th><th>Description</th><th>Hrs</th><th>Customer</th></tr>'+tm+'</table>':'')):'<p>No delays or issues reported.</p>')); }
+  if(on("look")){ var L=D.la;
+    if(L){ var r=[["Areas / work",L.AreasWeek1,L.AreasWeek2],["Manpower",L.ManpowerWeek1,L.ManpowerWeek2],["Materials needed",L.MaterialsWeek1,L.MaterialsWeek2]].filter(function(x){return !blank(x[1])||!blank(x[2]);});
+      H.push('<h3>Two-week look-ahead</h3><p style="font-size:12px;color:#6b7280">From '+esc(L.ForemanSuper||L.SubmittedBy||"foreman")+', week of '+esc(longD(dkey(L.WeekOf)))+'</p><table><tr><th></th><th>Week 1</th><th>Week 2</th></tr>'+r.map(function(x){return '<tr><th>'+x[0]+'</th><td>'+txt(x[1])+'</td><td>'+txt(x[2])+'</td></tr>';}).join("")+'</table>'+(blank(L.Hurdles)?'':'<p><b>Hurdles / needs from others:</b> '+txt(L.Hurdles)+'</p>')); }
+    else { var nd=logs.length?logs[logs.length-1].NextDayPlan:""; H.push('<h3>Two-week look-ahead</h3><p>'+(blank(nd)?'No look-ahead submitted for this job.':'Next planned: '+txt(nd))+'</p>'); } }
+  if(on("photos")){ var P=D.photos;
+    if(P===null) H.push('<h3>Photos</h3><p style="color:#9ca3af">Loading photos…</p>');
+    else if(P.length) H.push('<h3>Photos</h3><div class="ph">'+P.map(function(p){return '<a href="'+esc(p.web)+'"><img src="'+esc(p.src)+'" alt="'+esc(dname(p.day))+'"></a>';}).join("")+'</div><p style="font-size:12px;color:#6b7280">Delete any photo you don\'t want to send: click it and press Delete.</p>');
+    else H.push('<h3>Photos</h3><p>No photos attached to this week\'s daily logs.</p>'); }
+  if(on("actions")){ var open=D.acts.filter(function(a){return !/done|complete|closed/i.test(a.Status||"");}).sort(function(a,b){return dkey(a.DueDate).localeCompare(dkey(b.DueDate));});
+    var done=D.acts.filter(function(a){ return /done|complete|closed/i.test(a.Status||"")&&dkey(a.Modified)>=D.from&&dkey(a.Modified)<=D.to; });
+    H.push('<h3>Open action items</h3>'+(open.length?'<table><tr><th>Item</th><th>Owner</th><th>Due</th></tr>'+open.map(function(a){ return '<tr><td>'+esc(a.Title)+'</td><td>'+esc(a.AssignedToName||a.AssignedTo||"")+'</td><td>'+esc(a.DueDate?dname(dkey(a.DueDate)):"")+'</td></tr>'; }).join("")+'</table>':'<p>No open action items.</p>')+(done.length?'<p><b>Closed this week:</b> '+esc(done.map(function(a){return a.Title;}).join("; "))+'</p>':'')); }
+  H.push('<p style="margin-top:22px;color:#6b7280;font-size:12.5px">Questions: '+esc(myName)+' · '+esc(loginEmail)+'</p>');
+  E("doc").innerHTML=H.join("\n"); E("doc").style.display="block"; E("acts").style.display="flex";
+}
+async function copyDoc(){
+  var html=E("doc").innerHTML, wrap='<div style="font-family:Calibri,Arial,sans-serif;font-size:14px">'+html.replace(/<h3>/g,'<h3 style="color:#7f1d1d;border-bottom:2px solid #f1d5d2">').replace(/<table>/g,'<table border="1" cellpadding="5" style="border-collapse:collapse;border-color:#d9dce1">').replace(/<table class="meta">/g,'<table cellpadding="2">')+'</div>';
+  try{ await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([wrap],{type:"text/html"}),"text/plain":new Blob([E("doc").innerText],{type:"text/plain"})})]); E("msg").className="msg ok"; E("msg").textContent="Copied. Paste into an Outlook email."; }
+  catch(e){ var r=document.createRange(); r.selectNodeContents(E("doc")); var s=getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand("copy"); s.removeAllRanges(); E("msg").className="msg ok"; E("msg").textContent="Copied. Paste into an Outlook email."; }
+}
+async function saveDoc(){
+  var m=E("msg");
+  try{ var j=await gget(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()==="weekly reports";})[0];
+    if(!L){ m.className="msg err"; m.textContent="The “Weekly Reports” list isn't set up yet — print or copy instead."; return; }
+    var c=await gget(GRAPH+L.id+"/columns?$select=name,readOnly"), cols={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) cols[x.name]=1; });
+    var f={Title:LAST.jn+" | week of "+LAST.from, JobNo:LAST.jn, JobName:LAST.name, WeekOf:LAST.from+"T12:00:00Z", PreparedBy:myName, LoginEmail:loginEmail, ReportHTML:E("doc").innerHTML};
+    Object.keys(f).forEach(function(k){ if(k!=="Title"&&!cols[k]) delete f[k]; });
+    var t=await getToken(); var r=await fetch(GRAPH+L.id+"/items",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
+    if(!r.ok) throw new Error("HTTP "+r.status); m.className="msg ok"; m.textContent="Saved to the Weekly Reports list.";
+  }catch(e){ m.className="msg err"; m.textContent="Couldn't save ("+e.message+")."; }
+}
+</script>
+</body>
+</html>

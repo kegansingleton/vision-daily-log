@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Certifications</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1000px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px 12px 60px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;border-top:4px solid var(--gry)}
+.tile .n{font-size:26px;font-weight:800}.tile .l{font-size:12px;color:var(--mut);font-weight:700}
+.tile.red{border-top-color:var(--red)}.tile.red .n{color:var(--red)}
+.tile.amb{border-top-color:var(--amb)}.tile.amb .n{color:var(--amb)}
+.tile.ok{border-top-color:var(--ok)}.tile.ok .n{color:var(--ok)}
+.tile.sel{outline:3px solid rgba(192,57,43,.35)}
+.bar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:8px;align-items:center}
+input,select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.btn{padding:11px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.emp{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+.emp h3{margin:0;padding:10px 14px;font-size:15px;background:#fafbfc;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.cert{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #f1f2f4}
+.cert:first-of-type{border-top:none}
+.cert .m{flex:1;min-width:0}.cert .t{font-weight:800;font-size:14.5px}.cert .s{font-size:12.5px;color:var(--mut);margin-top:2px}
+.pill{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap}
+.p-exp{background:var(--redbg);color:var(--red)}.p-soon{background:var(--ambbg);color:var(--amb)}.p-ok{background:var(--okbg);color:var(--ok)}.p-none{background:var(--grybg);color:var(--gry)}
+.unv{font-size:11px;font-weight:800;color:var(--amb);margin-left:6px}
+.cert a{color:var(--vm);font-weight:700;font-size:13px;text-decoration:none}
+.cert .ed{border:none;background:none;color:var(--mut);font-size:18px;cursor:pointer;padding:4px 6px}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:520px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;color:var(--ink);margin-top:10px}.chk input{width:20px;height:20px}
+.prev{max-width:100%;max-height:160px;border-radius:8px;margin-top:6px;display:none}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:700px){.tiles{grid-template-columns:1fr 1fr}.bar{grid-template-columns:1fr 1fr}.bar #q{grid-column:1/-1}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Certifications</h1><p>OSHA, EPA 608, brazing, med gas, lift cards, first aid — with expiration warnings. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1 id="htitle">Certifications</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="msg info" id="topMsg"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="bar" id="bar">
+    <input type="text" id="q" placeholder="Search name, cert, number…">
+    <select id="ftype"><option value="">All cert types</option></select>
+    <select id="fstat"><option value="">All statuses</option><option value="exp">Expired</option><option value="soon">Expiring ≤ 60 days</option><option value="ok">Current</option><option value="none">No expiration</option><option value="unv">Not verified</option></select>
+    <button class="btn btn-g" id="csvBtn">CSV</button>
+    <button class="btn btn-p" id="addBtn">+ Add</button>
+  </div>
+  <div id="list"></div>
+</div>
+
+<div class="modal" id="modal"><div class="box">
+  <h2 id="mTitle">Add certification</h2>
+  <label>Employee</label><input type="text" id="fEmp" list="emplist" placeholder="Start typing a name"><datalist id="emplist"></datalist>
+  <label>Certification</label><select id="fType"></select>
+  <div id="otherWrap" style="display:none"><label>Name of certification</label><input type="text" id="fOther" placeholder="e.g. State journeyman license"></div>
+  <label>Card / cert number (optional)</label><input type="text" id="fNum" placeholder="As shown on the card">
+  <div class="grid2">
+    <div><label>Issued</label><input type="date" id="fIssue"></div>
+    <div><label>Expires</label><input type="date" id="fExp"><div class="hint" id="expHint"></div></div>
+  </div>
+  <label>Photo of card (front)</label><input type="file" id="fPhoto" accept="image/*,application/pdf"><img class="prev" id="fPrev" alt="">
+  <div class="hint" id="photoHint"></div>
+  <label>Notes</label><textarea id="fNotes" rows="2" placeholder="Optional"></textarea>
+  <label class="chk" id="verWrap"><input type="checkbox" id="fVer"> Verified by office (card checked)</label>
+  <div class="msg" id="mMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="mCancel">Cancel</button><button class="btn btn-p" id="mSave">Save</button></div>
+  <div class="row-b" id="delRow" style="display:none"><button class="btn btn-d" id="mDel">Delete this certification</button></div>
+</div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LIST_NAME="Certifications", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", PHOTO_ROOT="Certification Cards";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+/* [name, default years valid (0 = no expiration)] */
+var TYPES=[["OSHA 10",0],["OSHA 30",0],["EPA 608 — Universal",0],["EPA 608 — Type I",0],["EPA 608 — Type II",0],["EPA 608 — Type III",0],
+ ["Brazing qualification",0.5],["Med gas installer (ASSE 6010)",3],["Med gas verifier / inspector (ASSE 6020/6030)",3],["Aerial / scissor lift (MEWP)",3],["Forklift / telehandler",3],
+ ["First aid / CPR / AED",2],["Fall protection — competent person",0],["Confined space",1],["Rigger / signal person",5],["Backflow tester",1],["Welding certification",0.5],
+ ["Journeyman license",1],["Master / contractor license",1],["NFPA 70E / electrical safety",3],["Other",0]];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", IS_ADMIN=false, MY_NAME="", LIST_ID=null, LIST_COLS=null, ROWS=[], EMPS=[], EDIT=null, PHOTO=null, TILE="";
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function parse(s){ s=String(s||"").slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(s)) return null; var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function daysLeft(s){ var d=parse(s); if(!d) return null; var t=new Date(); t.setHours(0,0,0,0); return Math.round((d-t)/864e5); }
+function nice(s){ var d=parse(s); return d?d.toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"}):""; }
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function yes(v){ return v===true||v==="Yes"||v==="true"; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,140)); } return r.status===204?null:r.json(); }
+async function pullAll(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  E("fType").innerHTML=TYPES.map(function(t){return '<option>'+esc(t[0])+'</option>';}).join("");
+  E("ftype").innerHTML='<option value="">All cert types</option>'+TYPES.map(function(t){return '<option>'+esc(t[0])+'</option>';}).join("");
+  try{
+    var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active");
+    emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      EMPS.push(n); if(e===loginEmail){ MY_NAME=n; if(yes(f.Admin)) IS_ADMIN=true; } });
+    if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+    if(!MY_NAME) MY_NAME=a.name||"";
+    EMPS.sort(function(x,y){return x.localeCompare(y);});
+    E("emplist").innerHTML=EMPS.map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+    var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999");
+    var L=(lists.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("topMsg").textContent="The “"+LIST_NAME+"” list isn't set up in SharePoint yet. Ask the office."; E("bar").style.display="none"; return; }
+    LIST_ID=L.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){ E("topMsg").textContent="Couldn't load ("+e.message+")."; return; }
+  if(!IS_ADMIN){ E("htitle").textContent="My Certifications"; E("topMsg").textContent="Your cards on file. Add a new card with + Add — the office will verify it."; E("csvBtn").style.display="none"; E("ftype").style.display="none"; E("verWrap").style.display="none"; }
+  else E("topMsg").style.display="none";
+  ["q","ftype","fstat"].forEach(function(id){ E(id).addEventListener("input",function(){ if(id==="fstat") TILE=""; render(); }); });
+  await load();
+}
+async function load(){
+  try{ ROWS=await pullAll(LIST_ID,"Title,EmployeeName,CertType,CertNumber,IssueDate,ExpiryDate,CardPhoto,Notes,Verified,AddedBy"); }catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load certifications ('+esc(e.message)+').</div>'; return; }
+  if(!IS_ADMIN){ var me=MY_NAME.toLowerCase().trim(); ROWS=ROWS.filter(function(r){ return String(r.EmployeeName||"").toLowerCase().trim()===me || String(r.AddedBy||"").toLowerCase()===loginEmail; }); }
+  render();
+}
+function status(r){ if(!r.ExpiryDate) return "none"; var d=daysLeft(r.ExpiryDate); if(d===null) return "none"; if(d<0) return "exp"; if(d<=60) return "soon"; return "ok"; }
+function pill(r){ var s=status(r), d=daysLeft(r.ExpiryDate);
+  if(s==="exp") return '<span class="pill p-exp">Expired '+nice(r.ExpiryDate)+'</span>';
+  if(s==="soon") return '<span class="pill p-soon">'+(d===0?"Expires today":"Expires in "+d+" day"+(d===1?"":"s"))+'</span>';
+  if(s==="ok") return '<span class="pill p-ok">Good to '+nice(r.ExpiryDate)+'</span>';
+  return '<span class="pill p-none">No expiration</span>'; }
+function render(){
+  var counts={exp:0,soon:0,ok:0,none:0}; ROWS.forEach(function(r){ counts[status(r)]++; });
+  var unv=ROWS.filter(function(r){return !yes(r.Verified);}).length;
+  var T=[["exp","red","Expired",counts.exp],["soon","amb","Expiring ≤ 60 days",counts.soon],["ok","ok","Current",counts.ok+counts.none],["unv","","Not verified",unv]];
+  E("tiles").innerHTML=T.map(function(t){ return '<div class="tile '+t[1]+(TILE===t[0]?" sel":"")+'" data-t="'+t[0]+'"><div class="n">'+t[3]+'</div><div class="l">'+t[2]+'</div></div>'; }).join("");
+  E("tiles").querySelectorAll(".tile").forEach(function(el){ el.onclick=function(){ var t=el.getAttribute("data-t"); TILE=(TILE===t)?"":t; E("fstat").value=""; render(); }; });
+  var q=E("q").value.toLowerCase().trim(), ft=E("ftype").value, fs=TILE||E("fstat").value;
+  var rows=ROWS.filter(function(r){ var s=status(r);
+    if(ft&&r.CertType!==ft) return false;
+    if(fs==="unv"&&yes(r.Verified)) return false;
+    if(fs==="ok"&&TILE==="ok"){ if(s!=="ok"&&s!=="none") return false; } else if(fs&&fs!=="unv"&&s!==fs) return false;
+    if(q&&[r.EmployeeName,r.CertType,r.CertNumber,r.Notes].join(" ").toLowerCase().indexOf(q)<0) return false; return true; });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(ROWS.length?"Nothing matches.":(IS_ADMIN?"No certifications on file yet. Tap + Add to enter the first card.":"No cards on file for you yet. Tap + Add to upload one."))+'</div>'; return; }
+  var by={}; rows.forEach(function(r){ var n=r.EmployeeName||"(no name)"; (by[n]=by[n]||[]).push(r); });
+  var rank={exp:0,soon:1,ok:2,none:3};
+  var names=Object.keys(by).sort(function(a,b){ var x=Math.min.apply(null,by[a].map(function(r){return rank[status(r)];})), y=Math.min.apply(null,by[b].map(function(r){return rank[status(r)];})); return x-y||a.localeCompare(b); });
+  E("list").innerHTML=names.map(function(n){
+    var list=by[n].sort(function(a,b){ return rank[status(a)]-rank[status(b)]||String(a.ExpiryDate||"9").localeCompare(String(b.ExpiryDate||"9")); });
+    var bad=list.filter(function(r){return status(r)==="exp";}).length, soon=list.filter(function(r){return status(r)==="soon";}).length;
+    return '<div class="emp"><h3><span>'+esc(n)+'</span><span style="font-size:12px;color:#6b7280;font-weight:700">'+list.length+' card'+(list.length===1?"":"s")+(bad?' · <span style="color:#b91c1c">'+bad+' expired</span>':'')+(soon?' · <span style="color:#b45309">'+soon+' expiring</span>':'')+'</span></h3>'+
+      list.map(function(r){ var canEdit=IS_ADMIN||(!yes(r.Verified)&&String(r.AddedBy||"").toLowerCase()===loginEmail);
+        return '<div class="cert"><div class="m"><div class="t">'+esc(r.CertType||r.Title)+(yes(r.Verified)?'':'<span class="unv">NOT VERIFIED</span>')+'</div><div class="s">'+
+        [r.CertNumber?("# "+esc(r.CertNumber)):"",r.IssueDate?("Issued "+nice(r.IssueDate)):"",r.Notes?esc(r.Notes):""].filter(Boolean).join(" · ")+
+        (r.CardPhoto?' · <a href="'+esc(r.CardPhoto)+'" target="_blank">Card</a>':'')+'</div></div>'+pill(r)+(canEdit?'<button class="ed" data-id="'+r._id+'" title="Edit">&#9998;</button>':'')+'</div>'; }).join("")+'</div>';
+  }).join("");
+  E("list").querySelectorAll(".ed").forEach(function(b){ b.onclick=function(){ openForm(ROWS.filter(function(r){return r._id===b.getAttribute("data-id");})[0]); }; });
+}
+
+/* ===== add / edit ===== */
+function typeYears(name){ var t=TYPES.filter(function(x){return x[0]===name;})[0]; return t?t[1]:0; }
+function expHint(){ var y=typeYears(E("fType").value); E("expHint").textContent=y?("Usually good for "+(y<1?Math.round(y*12)+" months":y+" year"+(y===1?"":"s"))):"Usually doesn't expire — leave blank"; }
+function autoExp(){ var y=typeYears(E("fType").value), d=parse(E("fIssue").value); if(!y||!d||E("fExp").dataset.touched) return; var x=new Date(d); x.setMonth(x.getMonth()+Math.round(y*12)); E("fExp").value=iso(x); }
+E("fType").onchange=function(){ E("otherWrap").style.display=E("fType").value==="Other"?"block":"none"; expHint(); autoExp(); };
+E("fIssue").onchange=autoExp; E("fExp").oninput=function(){ E("fExp").dataset.touched="1"; };
+E("fPhoto").onchange=function(){ var f=E("fPhoto").files[0]; PHOTO=null; E("fPrev").style.display="none"; E("photoHint").textContent=""; if(!f) return;
+  if(f.type==="application/pdf"){ if(f.size>3.8e6){ E("photoHint").textContent="That PDF is too big (max 3.8 MB)."; E("fPhoto").value=""; return; } PHOTO={blob:f,ext:"pdf"}; E("photoHint").textContent="PDF attached: "+f.name; return; }
+  var img=new Image(); img.onload=function(){ var w=img.width,h=img.height,m=1600; if(Math.max(w,h)>m){ var s=m/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+    var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(img,0,0,w,h); c.toBlob(function(b){ PHOTO={blob:b,ext:"jpg"}; E("fPrev").src=URL.createObjectURL(b); E("fPrev").style.display="block"; },"image/jpeg",0.85); };
+  img.onerror=function(){ E("photoHint").textContent="Couldn't read that image."; }; img.src=URL.createObjectURL(f); };
+function openForm(r){
+  EDIT=r||null; PHOTO=null; E("fPhoto").value=""; E("fPrev").style.display="none"; E("photoHint").textContent=""; E("mMsg").className="msg"; delete E("fExp").dataset.touched;
+  E("mTitle").textContent=r?"Edit certification":"Add certification";
+  var known=r&&TYPES.some(function(t){return t[0]===r.CertType;});
+  E("fEmp").value=r?(r.EmployeeName||""):(IS_ADMIN?"":MY_NAME); E("fEmp").disabled=!IS_ADMIN;
+  E("fType").value=r?(known?r.CertType:"Other"):TYPES[0][0]; E("fOther").value=(r&&!known)?(r.CertType||""):"";
+  E("otherWrap").style.display=E("fType").value==="Other"?"block":"none";
+  E("fNum").value=r?(r.CertNumber||""):""; E("fIssue").value=r?String(r.IssueDate||"").slice(0,10):""; E("fExp").value=r?String(r.ExpiryDate||"").slice(0,10):"";
+  if(r&&r.ExpiryDate) E("fExp").dataset.touched="1";
+  E("fNotes").value=r?(r.Notes||""):""; E("fVer").checked=r?yes(r.Verified):IS_ADMIN;
+  if(r&&r.CardPhoto) E("photoHint").innerHTML='Card on file: <a href="'+esc(r.CardPhoto)+'" target="_blank">view</a>. Pick a new photo to replace it.';
+  E("delRow").style.display=r?"flex":"none"; expHint(); E("modal").style.display="block";
+}
+E("addBtn").onclick=function(){ openForm(null); };
+E("mCancel").onclick=function(){ E("modal").style.display="none"; };
+function encPath(p){ return p.split("/").map(encodeURIComponent).join("/"); }
+function safe(s){ return String(s||"").replace(/[\\\/:*?"<>|#%]/g,"-").trim(); }
+E("mSave").onclick=async function(){
+  var m=E("mMsg"), emp=E("fEmp").value.trim(), type=E("fType").value==="Other"?E("fOther").value.trim():E("fType").value, miss=[];
+  if(!emp) miss.push("Employee"); if(!type) miss.push("Certification name");
+  if(!EDIT&&!PHOTO&&!IS_ADMIN) miss.push("Photo of card");
+  var ex=E("fExp").value, is=E("fIssue").value; if(ex&&is&&ex<is) miss.push("Expiration is before issue date");
+  if(miss.length){ m.className="msg err"; m.textContent="Still needed: "+miss.join(", ")+"."; return; }
+  E("mSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+  try{
+    var photoUrl=EDIT?(EDIT.CardPhoto||""):"";
+    if(PHOTO){ var stamp=new Date(), path=PHOTO_ROOT+"/"+safe(emp)+"/"+safe(type)+" "+iso(stamp)+"-"+pad(stamp.getHours())+pad(stamp.getMinutes())+pad(stamp.getSeconds())+"."+PHOTO.ext;
+      var up=await gfetch(SITEURL+"/drive/root:/"+encPath(path)+":/content",{method:"PUT",headers:{"Content-Type":PHOTO.blob.type||"application/octet-stream"},body:PHOTO.blob}); photoUrl=up.webUrl||photoUrl; }
+    var f={ Title:emp+" — "+type, EmployeeName:emp, CertType:type, CertNumber:E("fNum").value.trim(), IssueDate:is?is+"T12:00:00Z":null, ExpiryDate:ex?ex+"T12:00:00Z":null,
+      CardPhoto:photoUrl, Notes:E("fNotes").value.trim(), Verified:IS_ADMIN?E("fVer").checked:false };
+    if(!EDIT) f.AddedBy=loginEmail;
+    Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
+    if(!EDIT){ Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]==="") delete f[k]; }); await gfetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); }
+    else await gfetch(GRAPH+LIST_ID+"/items/"+EDIT._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)});
+    E("modal").style.display="none"; await load();
+  }catch(e){ m.className="msg err"; m.textContent="Couldn't save ("+e.message+")."; }
+  E("mSave").disabled=false;
+};
+E("mDel").onclick=async function(){ if(!EDIT||!confirm("Delete "+(EDIT.CertType||"this certification")+" for "+(EDIT.EmployeeName||"")+"? The card photo stays in SharePoint.")) return;
+  try{ await gfetch(GRAPH+LIST_ID+"/items/"+EDIT._id,{method:"DELETE"}); E("modal").style.display="none"; await load(); }catch(e){ E("mMsg").className="msg err"; E("mMsg").textContent="Couldn't delete ("+e.message+")."; } };
+E("csvBtn").onclick=function(){
+  var head=["Employee","Certification","Number","Issued","Expires","Status","Verified","Card"], lab={exp:"Expired",soon:"Expiring soon",ok:"Current",none:"No expiration"};
+  var lines=[head].concat(ROWS.map(function(r){ return [r.EmployeeName,r.CertType,r.CertNumber,String(r.IssueDate||"").slice(0,10),String(r.ExpiryDate||"").slice(0,10),lab[status(r)],yes(r.Verified)?"Yes":"No",r.CardPhoto]; }))
+    .map(function(a){ return a.map(function(v){ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(","); }).join("\r\n");
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines],{type:"text/csv"})); a.download="certifications-"+iso(new Date())+".csv"; a.click(); };
+</script>
+</body>
+</html>

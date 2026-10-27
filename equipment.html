@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Equipment Register</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--blu:#1d4ed8;--blubg:#dbeafe;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1000px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px 12px 60px}
+.bar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+input,select{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--vm);background:#fff}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:13px;color:var(--mut)}
+.stats b{color:var(--ink)}
+.unit{background:#fff;border:1px solid var(--line);border-radius:12px;margin:8px 0;overflow:hidden}
+.uh{padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer}
+.uh .thumb{width:54px;height:54px;border-radius:8px;background:#eef0f3 center/cover no-repeat;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:22px}
+.uh .main{flex:1;min-width:0}
+.uh .t1{font-weight:800;font-size:15px}.uh .t2{font-size:13px;color:var(--mut);margin-top:2px;word-break:break-word}
+.badge{display:inline-block;font-size:11px;font-weight:800;border-radius:10px;padding:2px 8px;margin-left:4px}
+.b-su{background:var(--okbg);color:var(--ok)}.b-sv{background:var(--blubg);color:var(--blu)}.b-nr{background:var(--ambbg);color:var(--amb)}
+.uh .cnt{text-align:right;font-size:12px;color:var(--mut);flex:0 0 auto}
+.ub{display:none;border-top:1px solid var(--line);padding:10px 14px;background:#fafbfc}
+.unit.open .ub{display:block}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 14px;font-size:13px;margin-bottom:10px}
+.kv div span{display:block;color:var(--mut);font-size:11px;font-weight:700;text-transform:uppercase}
+.ev{border-left:4px solid var(--ok);background:#fff;border-radius:8px;padding:9px 11px;margin:8px 0;font-size:13.5px}
+.ev.sv{border-left-color:var(--blu)}
+.ev .eh{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.ev .eb{color:#374151;margin-top:4px;white-space:pre-wrap}
+.ev a,.links a{color:var(--vm);font-weight:700;text-decoration:none;margin-right:12px;font-size:13px}
+.links{margin-top:6px}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:800px;margin:0 auto;border-radius:12px;padding:16px;position:relative}
+.modal .x{position:absolute;right:10px;top:8px;border:none;background:none;font-size:26px;cursor:pointer}
+.modal pre{white-space:pre-wrap;font-family:inherit;font-size:14px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:600px){.bar{grid-template-columns:1fr 1fr}.bar #q{grid-column:1/-1}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Equipment Register</h1><p>Every unit we've started up or serviced, with its history. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Equipment Register</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="bar">
+    <input type="text" id="q" placeholder="Search tag, model, serial, job, manufacturer…">
+    <select id="fjob"><option value="">All jobs</option></select>
+    <select id="ftype"><option value="">All equipment types</option></select>
+  </div>
+  <div class="stats" id="stats">Loading…</div>
+  <div id="list"></div>
+</div>
+<div class="modal" id="modal"><div class="box"><button class="x" id="mx">&times;</button><div id="mbody"></div></div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var SU_NAME="Start-Up Reports", SV_LIST="1aec5cfa-db5b-47f2-adba-6b23a42e02af";
+var SU_ID=null, UNITS=[], SHOWN=60;
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null;
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function d10(s){ return String(s||"").slice(0,10); }
+function norm(s){ return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gget(url){ var t=await getToken(); var r=await fetch(url,{headers:{Authorization:"Bearer "+t}}); var j=await r.json(); if(j.error) throw new Error(j.error.message); return j; }
+async function pullAll(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await gget(url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  var q=new URLSearchParams(location.search); if(q.get("q")) E("q").value=q.get("q");
+  try{
+    var lists=await gget(SITEURL+"/lists?$select=id,displayName&$top=999");
+    var L=(lists.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===SU_NAME.toLowerCase();})[0]; SU_ID=L?L.id:null;
+    var su=SU_ID?await pullAll(SU_ID,"ServiceDate,JobNo,JobName,EquipmentType,TagID,Area,Manufacturer,Model,SerialNumber,Technician,ReportType,Comments,Recommendations,DataPlatePhoto,PhotoFolder"):[];
+    var sv=await pullAll(SV_LIST,"WorkDate,WorkDateText,JobNo,JobName,Technician,ServiceStatus,ReasonForCall,WorkPerformed,Manufacturer,Model,SerialNumber,DataPlatePhoto,PhotoFolder,Refrigerant,Filters,LaborHours,OvertimeHours").catch(function(){return [];});
+    build(su,sv);
+  }catch(e){ E("stats").textContent="Couldn't load equipment ("+e.message+")."; return; }
+  ["q","fjob","ftype"].forEach(function(id){ E(id).addEventListener("input",function(){ SHOWN=60; render(); }); });
+  render();
+}
+function build(su,sv){
+  var map={}, order=[];
+  function key(job,serial,model,tag){ var s=norm(serial); if(s.length>=4) return "S:"+s; if(norm(tag)) return "T:"+norm(job)+"|"+norm(tag); if(norm(model)) return "M:"+norm(job)+"|"+norm(model); return null; }
+  function unit(k,f){ if(!map[k]){ map[k]={k:k,job:"",jobName:"",type:"",tag:"",area:"",mfr:"",model:"",serial:"",plate:"",ev:[]}; order.push(k); } var u=map[k];
+    ["mfr","model","serial"].forEach(function(p){ var v={mfr:f.Manufacturer,model:f.Model,serial:f.SerialNumber}[p]; if(v&&!u[p]) u[p]=String(v).trim(); });
+    if(f.JobNo&&!u.job){ u.job=f.JobNo; u.jobName=f.JobName||""; } if(f.DataPlatePhoto&&!u.plate) u.plate=f.DataPlatePhoto; return u; }
+  su.forEach(function(f){ var k=key(f.JobNo,f.SerialNumber,f.Model,f.TagID)||("SU:"+f._id); var u=unit(k,f);
+    if(f.TagID) u.tag=f.TagID; if(f.EquipmentType) u.type=f.EquipmentType; if(f.Area) u.area=f.Area;
+    u.ev.push({kind:"su",id:f._id,date:d10(f.ServiceDate),who:f.Technician,title:f.ReportType||"Start-Up",body:[f.Comments,f.Recommendations?("Recommendations: "+f.Recommendations):""].filter(Boolean).join("\n"),plate:f.DataPlatePhoto,folder:f.PhotoFolder,job:f.JobNo}); });
+  var loose=0;
+  sv.forEach(function(f){ var k=key(f.JobNo,f.SerialNumber,f.Model,null); if(!k){ loose++; return; } var u=unit(k,f); if(!u.type) u.type="Serviced unit";
+    var extra=[f.Refrigerant?("Refrigerant: "+f.Refrigerant):"",f.Filters?("Filters: "+f.Filters):""].filter(Boolean).join(" · ");
+    u.ev.push({kind:"sv",id:f._id,date:d10(f.WorkDate)||f.WorkDateText,who:f.Technician,title:"Service call"+(f.ServiceStatus?(" — "+f.ServiceStatus):""),body:[f.ReasonForCall?("Reason: "+f.ReasonForCall):"",f.WorkPerformed,extra].filter(Boolean).join("\n"),plate:f.DataPlatePhoto,folder:f.PhotoFolder,job:f.JobNo}); });
+  UNITS=order.map(function(k){ var u=map[k]; u.ev.sort(function(a,b){return (b.date||"").localeCompare(a.date||"");}); u.last=u.ev[0]?u.ev[0].date:"";
+    u.hay=[u.job,u.jobName,u.type,u.tag,u.area,u.mfr,u.model,u.serial].join(" ").toLowerCase()+" "+norm(u.serial).toLowerCase()+" "+norm(u.model).toLowerCase(); return u; });
+  UNITS.sort(function(a,b){ return (b.last||"").localeCompare(a.last||""); });
+  UNITS._loose=loose;
+  var jobs={},types={}; UNITS.forEach(function(u){ if(u.job) jobs[u.job]=u.job+" "+u.jobName; if(u.type) types[u.type]=1; });
+  E("fjob").innerHTML='<option value="">All jobs</option>'+Object.keys(jobs).sort(function(a,b){return jobs[a].slice(jobs[a].indexOf(" ")+1).localeCompare(jobs[b].slice(jobs[b].indexOf(" ")+1));}).map(function(j){return '<option value="'+esc(j)+'">'+esc(jobs[j])+'</option>';}).join("");
+  E("ftype").innerHTML='<option value="">All equipment types</option>'+Object.keys(types).sort().map(function(t){return '<option>'+esc(t)+'</option>';}).join("");
+}
+function render(){
+  var q=E("q").value.toLowerCase().trim(), qn=norm(q).toLowerCase(), fj=E("fjob").value, ft=E("ftype").value;
+  var rows=UNITS.filter(function(u){ if(fj&&u.job!==fj) return false; if(ft&&u.type!==ft) return false; if(!q) return true;
+    return q.split(/\s+/).every(function(w){ return u.hay.indexOf(w)>-1; }) || (qn.length>=3&&u.hay.indexOf(qn)>-1); });
+  var su=0,sv=0; rows.forEach(function(u){ u.ev.forEach(function(e){ if(e.kind==="su") su++; else sv++; }); });
+  E("stats").innerHTML='<span><b>'+rows.length+'</b> units</span> · <span><b>'+su+'</b> start-ups</span> · <span><b>'+sv+'</b> service calls</span>'+(UNITS._loose?' · <span title="Service reports with no model or serial can\'t be matched to a unit">'+UNITS._loose+' service reports had no model/serial</span>':'');
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(UNITS.length?"No equipment matches that search.":"No equipment yet. Units show up here as start-up and service reports come in.")+'</div>'; return; }
+  E("list").innerHTML=rows.slice(0,SHOWN).map(function(u,i){
+    var nsu=u.ev.filter(function(e){return e.kind==="su";}).length, nsv=u.ev.length-nsu;
+    var name=(u.tag?u.tag+" · ":"")+(u.type||"Unit");
+    var kv=[["Job",u.job+" "+u.jobName],["Area",u.area],["Manufacturer",u.mfr],["Model",u.model],["Serial",u.serial],["Last activity",u.last]].filter(function(x){return String(x[1]).trim();}).map(function(x){return '<div><span>'+x[0]+'</span>'+esc(x[1])+'</div>';}).join("");
+    var evs=u.ev.map(function(e){ return '<div class="ev '+e.kind+'"><div class="eh"><span>'+esc(e.title)+'</span><span style="color:#6b7280;font-weight:600">'+esc(e.date)+'</span></div><div style="font-size:12px;color:#6b7280">'+esc(e.who||"")+'</div>'+(e.body?'<div class="eb">'+esc(e.body)+'</div>':'')+
+      '<div class="links"><a href="#" data-open="'+e.kind+'|'+e.id+'">View report</a>'+(e.plate?'<a href="'+esc(e.plate)+'" target="_blank">Data plate</a>':'')+(e.folder?'<a href="'+esc(e.folder)+'" target="_blank">Photos</a>':'')+'</div></div>'; }).join("");
+    return '<div class="unit" data-i="'+i+'"><div class="uh"><div class="thumb">&#9881;</div><div class="main"><div class="t1">'+esc(name)+
+      (nsu?'<span class="badge b-su">Started up</span>':'<span class="badge b-nr">No start-up on file</span>')+(nsv?'<span class="badge b-sv">'+nsv+' service</span>':'')+'</div><div class="t2">'+esc([u.mfr,u.model].filter(Boolean).join(" "))+(u.serial?' · S/N '+esc(u.serial):'')+'<br>'+esc(u.job+" "+u.jobName)+'</div></div><div class="cnt">'+esc(u.last)+'</div></div><div class="ub"><div class="kv">'+kv+'</div>'+evs+'</div></div>';
+  }).join("")+(rows.length>SHOWN?'<button id="more" style="width:100%;padding:12px;border-radius:10px;border:1.5px dashed #c0392b;background:#fff;color:#c0392b;font-weight:800;font-size:15px">Show more ('+(rows.length-SHOWN)+' left)</button>':'');
+  E("list").querySelectorAll(".uh").forEach(function(h){ h.onclick=function(){ h.parentNode.classList.toggle("open"); }; });
+  E("list").querySelectorAll("[data-open]").forEach(function(a){ a.onclick=function(ev){ ev.preventDefault(); openReport(a.getAttribute("data-open")); }; });
+  var m=E("more"); if(m) m.onclick=function(){ SHOWN+=60; render(); };
+}
+async function openReport(s){
+  var p=s.split("|"), kind=p[0], id=p[1]; E("modal").style.display="block"; E("mbody").innerHTML="Loading report…";
+  try{ var f=(await gget(GRAPH+(kind==="su"?SU_ID:SV_LIST)+"/items/"+id+"?$expand=fields")).fields||{};
+    if(kind==="su"&&f.ReportHTML) E("mbody").innerHTML=f.ReportHTML;
+    else if(f.ReportText) E("mbody").innerHTML='<pre>'+esc(f.ReportText)+'</pre>';
+    else E("mbody").innerHTML='<p>No stored report text for this entry.</p>';
+  }catch(e){ E("mbody").textContent="Couldn't load the report ("+e.message+")."; }
+}
+E("mx").onclick=function(){ E("modal").style.display="none"; };
+E("modal").onclick=function(e){ if(e.target===E("modal")) E("modal").style.display="none"; };
+</script>
+</body>
+</html>

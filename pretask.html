@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Daily Pre-Task Plan</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:760px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:12px 12px 130px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:800;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .n{background:var(--vm);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 6px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.req{color:var(--vm)}
+input[type=text],input[type=date],select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;color:var(--ink);font-family:inherit;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+input::placeholder,textarea::placeholder{color:#8a919c;opacity:1}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff;box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+input:not(:placeholder-shown),textarea:not(:placeholder-shown){background:#fff;border-color:#6b7280}
+textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bad{border-color:var(--red)!important;background:#fff7f7!important}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid #9ca3af;background:#f3f5f8;border-radius:20px;padding:9px 13px;font-size:13.5px;font-weight:700;color:#374151;cursor:pointer;user-select:none}
+.chip.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.chip.ppe.on{background:#1d4ed8;border-color:#1d4ed8}
+.chip.permit.on{background:var(--amb);border-color:var(--amb)}
+.ctrl{border-left:4px solid var(--vm2);background:#fff8f7;border-radius:8px;padding:8px 10px;margin-top:8px}
+.ctrl b{font-size:12.5px;color:var(--vm2)}
+.ctrl textarea{min-height:56px;margin-top:4px;font-size:14px;background:#fff}
+.talk{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px}
+.talk ul{margin:6px 0 0;padding-left:18px}.talk li{margin:3px 0}
+.crew{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.crew label{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:600;color:var(--ink);border:1.5px solid #d1d5db;border-radius:9px;padding:9px 10px;background:#fff;cursor:pointer}
+.crew label.on{border-color:var(--ok);background:var(--okbg)}
+.crew input{width:20px;height:20px}
+.search{margin-bottom:6px}
+.stop{background:var(--redbg);border:1px solid #f5c2c2;color:var(--red);border-radius:10px;padding:10px 12px;font-size:13.5px;font-weight:700;margin-top:10px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:10px;font-weight:600;color:var(--ink)}
+.chk input{width:20px;height:20px;margin-top:1px}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer}
+.btn-primary{background:var(--vm);color:#fff}.btn-primary:disabled{opacity:.55}
+.btn-ghost{background:#fff;color:var(--vm);border:1.5px dashed var(--vm);margin-top:6px}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:760px;margin:0 auto}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:#eef2f7;color:#334155;display:block}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:480px){.crew{grid-template-columns:1fr}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Daily Pre-Task Plan</h1><p>Hazards, controls, PPE and crew sign-on before work starts. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Daily Pre-Task Plan</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg info" id="listWarn" style="display:none"></div>
+  <div class="card">
+    <h2><span class="n">1</span>Job &amp; tasks</h2>
+    <div class="grid2">
+      <div><label>Date <span class="req">*</span></label><input type="date" id="pdate"></div>
+      <div><label>Area / location</label><input type="text" id="area" placeholder="e.g. Roof, Level 2 mech room"></div>
+    </div>
+    <label>Job <span class="req">*</span></label><input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist>
+    <label>Today's tasks <span class="req">*</span></label>
+    <textarea id="tasks" placeholder="e.g. Set RTU-3 with crane, braze refrigerant lines, hang duct on L2"></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>Hazards &amp; controls</h2>
+    <div class="desc">Tap every hazard on today's work. Standard controls fill in — edit them to fit the job.</div>
+    <div class="chips" id="hazChips"></div>
+    <div id="ctrls"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>PPE &amp; permits</h2>
+    <label>PPE required</label><div class="chips" id="ppeChips"></div>
+    <label>Permits / special requirements</label><div class="chips" id="permitChips"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>Toolbox talk</h2>
+    <select id="talk"><option value="">— Pick today's topic —</option></select>
+    <div id="talkBox"></div>
+    <div id="customTalkWrap" style="display:none"><label>Custom topic</label><input type="text" id="customTalk" placeholder="What you covered"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">5</span>Crew sign-on</h2>
+    <div class="desc">Check everyone who reviewed this plan. Each person checked confirms they understand the hazards and controls.</div>
+    <input type="text" id="crewSearch" class="search" placeholder="Search crew…">
+    <div class="crew" id="crew"></div>
+    <label>Subs / visitors (names, company)</label><input type="text" id="others" placeholder="e.g. Joe Smith (ABC Electric)">
+    <div class="stop">&#9995; Anyone can stop work. If conditions change or something isn't safe, stop and re-plan.</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">6</span>Foreman sign-off</h2>
+    <label>Foreman <span class="req">*</span></label><input type="text" id="foreman" placeholder="Your name">
+    <label class="chk"><input type="checkbox" id="certify"> I reviewed this plan with the crew before work started.</label>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="foot" id="foot" style="display:none"><div class="inner">
+  <button class="btn btn-primary" id="submitBtn">Submit pre-task plan</button>
+  <button class="btn btn-ghost" id="newBtn" style="display:none">Start a new plan</button>
+</div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LIST_NAME="Pre-Task Plans", DRAFT_KEY="vm_pretask_draft_v1";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var HAZARDS=[
+ ["Falls / ladders","Ladder inspected, 3 points of contact, extend 3 ft past landing. 100% tie-off above 6 ft; guardrails or covers on openings."],
+ ["Aerial / scissor lift","Pre-use inspection done, operator trained, harness tied off in boom lifts, gate closed, area below barricaded."],
+ ["Overhead work","Barricade and sign the area below, tether tools, hard hats on everyone in the zone."],
+ ["Hot work (brazing / welding)","Hot work permit posted, 35 ft cleared of combustibles or covered, fire extinguisher at hand, fire watch 30 min after."],
+ ["Electrical / LOTO","Lock and tag every energy source, verify zero energy with a tester before touching, only qualified people on live work."],
+ ["Crane / rigging / heavy lift","Lift plan reviewed, rigging inspected, tag lines used, no one under the load, signal person assigned."],
+ ["Confined space","Permit issued, atmosphere tested (O2, LEL, H2S, CO), attendant posted, rescue plan in place."],
+ ["Excavation / trench","Competent person inspected, protective system over 5 ft deep, ladder within 25 ft, spoils 2 ft from edge, utilities located."],
+ ["Silica / dust","Wet cut or vacuum-shroud tools, respirator if required by the task table, no dry sweeping."],
+ ["Refrigerant / chemicals","SDS reviewed, ventilation, gloves and eye protection; recover refrigerant — no venting; watch for frostbite and pressure."],
+ ["Pressure testing","Test medium and pressure per spec, gauges rated, area cleared, no one in line with caps or plugs while pressurized."],
+ ["Hand & power tools","Inspect tools and cords, guards in place, GFCI on all cords, right tool for the job."],
+ ["Struck-by / moving equipment","Hi-vis on, stay out of swing radius and blind spots, spotter for backing equipment."],
+ ["Pinch points / material handling","Gloves on, hands clear of pinch points, team lift or cart over 50 lb, clear path before carrying."],
+ ["Heat / cold stress","Water, rest and shade breaks; watch each other for symptoms; dress in layers for cold."],
+ ["Housekeeping / slips & trips","Clear walkways, cords routed overhead or covered, clean up as you go, mark wet areas."],
+ ["Noise","Hearing protection near loud tools and equipment (over 85 dB — if you have to shout at arm's length)."]
+];
+var PPE=["Hard hat","Safety glasses","Gloves (cut-resistant)","Hi-vis vest","Safety-toe boots","Hearing protection","Face shield / welding hood","Respirator","Fall harness","FR clothing","Arc-rated PPE"];
+var PERMITS=["Hot work permit","Confined space permit","LOTO / energy isolation","Excavation permit","Lift / crane plan","Roof access","None required"];
+var TALKS=[
+ ["Ladder safety",["Inspect before use; tag out damaged ladders.","Extension ladders at 4:1 angle, 3 ft past the landing.","Face the ladder and keep 3 points of contact.","Never stand on the top two steps of a stepladder."]],
+ ["Fall protection",["Tie off at 6 ft or higher — no exceptions.","Inspect harness and lanyard daily (webbing, stitching, hardware).","Anchor rated 5,000 lb per person; know the rescue plan.","Cover and mark floor and roof openings."]],
+ ["Aerial lift safety",["Pre-use inspection every shift.","Tie off to the basket anchor in boom lifts.","Check for overhead lines and obstructions before raising.","Never exceed platform capacity or lean over rails."]],
+ ["Hot work & fire prevention",["Get the permit before striking an arc or lighting a torch.","Clear or cover combustibles within 35 ft.","Extinguisher within reach; know how to use it.","Fire watch stays 30 minutes after work ends."]],
+ ["Lockout / tagout",["Identify every energy source — electrical, pneumatic, hydraulic, gravity, stored.","Your lock, your key — never remove someone else's.","Try / test to verify zero energy before working.","Communicate with the owner's staff before shutting systems down."]],
+ ["Silica dust",["Concrete, block and masonry cutting creates silica dust.","Use wet methods or vacuum shrouds on the tool.","Follow the task table for respirators.","No dry sweeping or compressed air on dust."]],
+ ["Refrigerant handling",["Recover refrigerant — venting is illegal.","EPA 608 certification required to handle refrigerant.","Gloves and eye protection: liquid refrigerant causes frostbite.","Never heat a cylinder or overfill a recovery tank."]],
+ ["Brazing & cylinders",["Secure cylinders upright with caps on when not in use.","Check hoses and regulators for leaks with soap solution.","Purge with nitrogen; ventilate the work area.","Open cylinder valves slowly; stand to the side."]],
+ ["Pressure testing safety",["Know the test medium and pressure before you start.","Use gauges rated above the test pressure.","Clear the area; no one in line with caps or plugs.","Relieve pressure slowly before breaking any joint."]],
+ ["Rigging & crane lifts",["Inspect slings, shackles and hooks before every lift.","Know the load weight and center of gravity.","Use tag lines; never stand under a suspended load.","One designated signal person."]],
+ ["Electrical safety",["Treat every circuit as live until tested.","GFCI on all temporary power and cords.","Inspect cords — no splices or missing ground pins.","Keep 10 ft from overhead power lines."]],
+ ["Heat illness prevention",["Water, rest, shade.","Drink before you're thirsty — about a cup every 15–20 minutes.","Know the signs: dizziness, cramps, confusion, no sweating.","New and returning workers need time to acclimate."]],
+ ["Cold stress",["Dress in layers and stay dry.","Watch for numbness, shivering, pale skin.","Take warm-up breaks.","Keep walking surfaces clear of ice."]],
+ ["Hand & power tool safety",["Inspect before use; tag out damaged tools.","Guards stay on.","Unplug before changing blades or bits.","Wear eye protection on every cutting or grinding task."]],
+ ["Housekeeping",["Clean as you go — trash, scraps, cords.","Keep exits, stairs and walkways clear.","Store material so it can't fall or roll.","Report spills right away."]],
+ ["Struck-by hazards",["Wear hi-vis around moving equipment.","Make eye contact with operators before crossing.","Stay out of the swing radius.","Secure tools and material at height."]],
+ ["Excavation & trenching",["A competent person inspects daily and after rain.","Protective systems required at 5 ft deep.","Ladder within 25 ft of every worker.","Keep spoils and equipment 2 ft from the edge."]],
+ ["Hearing conservation",["If you have to shout at arm's length, it's too loud.","Wear plugs or muffs around saws, grinders, compressors.","Insert foam plugs fully — roll, pull ear, insert.","Hearing loss is permanent and painless."]],
+ ["Stop work authority",["Anyone can stop work that looks unsafe — no retaliation.","Stop, tell the foreman, fix it, then restart.","Changing conditions mean re-planning the task.","Better to lose ten minutes than a finger."]],
+ ["Near-miss reporting",["A near miss is a free lesson — report it.","Use the Close Call form on the portal.","Focus on fixing the cause, not blame.","Share lessons at the next toolbox talk."]]
+];
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", LIST_ID=null, LIST_COLS=null, EMPS=[];
+var ST={haz:{},ctrl:{},ppe:{},permit:{},crew:{}};
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+function afterLogin(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("foot").style.display="block"; E("who").textContent=a.name||a.username;
+  E("talk").innerHTML='<option value="">— Pick today\'s topic —</option>'+TALKS.map(function(t,i){return '<option value="'+i+'">'+esc(t[0])+'</option>';}).join("")+'<option value="custom">Other / custom topic</option>';
+  loadDraft();
+  if(!E("pdate").value) E("pdate").value=today();
+  if(!E("foreman").value) E("foreman").value=a.name||"";
+  renderChips(); renderCtrls(); renderTalk();
+  ["pdate","area","job","tasks","others","foreman","customTalk"].forEach(function(id){ var el=E(id); var f=function(){ el.classList.remove("bad"); saveDraft(); }; el.addEventListener("input",f); el.addEventListener("change",f); });
+  E("talk").onchange=function(){ E("talk").classList.remove("bad"); renderTalk(); saveDraft(); };
+  E("certify").onchange=saveDraft; E("crewSearch").oninput=renderCrew;
+  loadJobs(); loadCrew(); findList();
+}
+async function pullAll(listId,select){ var t=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
+  arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
+function loadCrew(){ pullAll(EMP,"EmployeeName,EmployeeNumber,Active,OfficeStaff").then(function(rows){ EMPS=rows.filter(function(f){return (f.Active||"Yes")!=="No"&&f.EmployeeName;}).map(function(f){return f.EmployeeName.trim();}).sort(function(a,b){return a.localeCompare(b);}); renderCrew(); }).catch(function(){ E("crew").innerHTML='<div class="desc">Could not load the crew list.</div>'; }); }
+async function findList(){
+  try{ var t=await getToken(); var j=await fetch(SITEURL+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
+    var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("listWarn").style.display="block"; E("listWarn").textContent="Heads up: the “"+LIST_NAME+"” list isn't set up in SharePoint yet, so plans can't be filed. Ask the office."; return; }
+    LIST_ID=L.id; var c=await fetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
+    LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){}
+}
+
+/* ===== chips / controls ===== */
+function chipHtml(cls,key,label,on){ return '<span class="chip '+cls+(on?" on":"")+'" data-k="'+key+'" data-v="'+esc(label)+'">'+esc(label)+'</span>'; }
+function renderChips(){
+  E("hazChips").innerHTML=HAZARDS.map(function(h){ return chipHtml("haz","haz",h[0],ST.haz[h[0]]); }).join("");
+  E("ppeChips").innerHTML=PPE.map(function(p){ return chipHtml("ppe","ppe",p,ST.ppe[p]); }).join("");
+  E("permitChips").innerHTML=PERMITS.map(function(p){ return chipHtml("permit","permit",p,ST.permit[p]); }).join("");
+  document.querySelectorAll(".chip").forEach(function(c){ c.onclick=function(){ var k=c.getAttribute("data-k"), v=c.getAttribute("data-v");
+    if(ST[k][v]) delete ST[k][v]; else ST[k][v]=true;
+    if(k==="permit"){ if(v==="None required"&&ST.permit[v]) ST.permit={"None required":true}; else if(v!=="None required") delete ST.permit["None required"]; }
+    if(k==="haz"&&ST.haz[v]){ autoPpe(v); autoPermit(v); }
+    renderChips(); if(k==="haz") renderCtrls(); saveDraft(); }; });
+}
+function autoPpe(h){ var map={"Falls / ladders":["Fall harness"],"Aerial / scissor lift":["Fall harness"],"Hot work (brazing / welding)":["Face shield / welding hood","FR clothing"],"Electrical / LOTO":["Arc-rated PPE"],"Silica / dust":["Respirator"],"Noise":["Hearing protection"],"Struck-by / moving equipment":["Hi-vis vest"],"Overhead work":["Hard hat"]};
+  (map[h]||[]).forEach(function(p){ ST.ppe[p]=true; }); ["Hard hat","Safety glasses","Safety-toe boots"].forEach(function(p){ ST.ppe[p]=true; }); }
+function autoPermit(h){ var map={"Hot work (brazing / welding)":"Hot work permit","Confined space":"Confined space permit","Electrical / LOTO":"LOTO / energy isolation","Excavation / trench":"Excavation permit","Crane / rigging / heavy lift":"Lift / crane plan"};
+  if(map[h]){ ST.permit[map[h]]=true; delete ST.permit["None required"]; } }
+function renderCtrls(){
+  var sel=HAZARDS.filter(function(h){return ST.haz[h[0]];});
+  E("ctrls").innerHTML=sel.map(function(h){ var v=(ST.ctrl[h[0]]!=null)?ST.ctrl[h[0]]:h[1]; return '<div class="ctrl"><b>'+esc(h[0])+' — controls</b><textarea data-h="'+esc(h[0])+'">'+esc(v)+'</textarea></div>'; }).join("");
+  E("ctrls").querySelectorAll("textarea").forEach(function(t){ t.oninput=function(){ ST.ctrl[t.getAttribute("data-h")]=t.value; saveDraft(); }; });
+}
+function renderTalk(){
+  var v=E("talk").value; E("customTalkWrap").style.display=v==="custom"?"block":"none";
+  if(v===""||v==="custom"){ E("talkBox").innerHTML=""; return; }
+  var t=TALKS[+v]; E("talkBox").innerHTML='<div class="talk"><b>Talking points — '+esc(t[0])+'</b><ul>'+t[1].map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul></div>';
+}
+function renderCrew(){
+  var q=(E("crewSearch").value||"").toLowerCase().trim();
+  var list=EMPS.filter(function(n){ return ST.crew[n] || !q || n.toLowerCase().indexOf(q)>-1; });
+  list.sort(function(a,b){ var x=ST.crew[a]?0:1, y=ST.crew[b]?0:1; return x-y||a.localeCompare(b); });
+  if(!q) list=list.filter(function(n,i){ return ST.crew[n]||i<200; });
+  E("crew").innerHTML=list.map(function(n){ return '<label class="'+(ST.crew[n]?"on":"")+'"><input type="checkbox" data-n="'+esc(n)+'"'+(ST.crew[n]?" checked":"")+'> '+esc(n)+'</label>'; }).join("")||'<div class="desc">No match.</div>';
+  E("crew").querySelectorAll("input").forEach(function(c){ c.onchange=function(){ var n=c.getAttribute("data-n"); if(c.checked) ST.crew[n]=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}); else delete ST.crew[n]; renderCrew(); saveDraft(); }; });
+}
+
+/* ===== report + submit ===== */
+function jobParts(){ var v=String(E("job").value||"").trim(), i=v.indexOf(" "); return {no:i<0?v:v.slice(0,i), name:i<0?"":v.slice(i+1)}; }
+function talkName(){ var v=E("talk").value; return v==="custom"?E("customTalk").value.trim():(v===""?"":TALKS[+v][0]); }
+function buildReport(){
+  var H=[], haz=HAZARDS.filter(function(h){return ST.haz[h[0]];}), crew=Object.keys(ST.crew);
+  H.push('<h2 style="color:#7f1d1d;margin:0">Daily Pre-Task Plan</h2><p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical</p>');
+  H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Job",E("job").value],["Date",E("pdate").value],["Area",E("area").value],["Foreman",E("foreman").value]].map(function(r){return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Tasks</h3><div style="white-space:pre-wrap">'+esc(E("tasks").value)+'</div>');
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Hazards &amp; controls</h3>'+(haz.length?'<table style="border-collapse:collapse;width:100%">'+haz.map(function(h){ return '<tr><td style="padding:5px 8px;border:1px solid #e5e7eb;font-weight:700;width:34%;vertical-align:top">'+esc(h[0])+'</td><td style="padding:5px 8px;border:1px solid #e5e7eb">'+esc(ST.ctrl[h[0]]!=null?ST.ctrl[h[0]]:h[1])+'</td></tr>'; }).join("")+'</table>':'<p>None identified.</p>'));
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">PPE</h3><p>'+(esc(Object.keys(ST.ppe).join(", "))||"—")+'</p>');
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Permits</h3><p>'+(esc(Object.keys(ST.permit).join(", "))||"—")+'</p>');
+  var tn=talkName(); H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Toolbox talk</h3><p><b>'+esc(tn||"—")+'</b></p>');
+  var tv=E("talk").value; if(tv!==""&&tv!=="custom") H.push('<ul>'+TALKS[+tv][1].map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul>');
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Crew sign-on ('+crew.length+')</h3><table style="border-collapse:collapse">'+crew.map(function(n){return '<tr><td style="padding:3px 14px 3px 0">&#10003; '+esc(n)+'</td><td style="color:#6b7280;font-size:12px">'+esc(ST.crew[n])+'</td></tr>';}).join("")+'</table>');
+  if(E("others").value.trim()) H.push('<p><b>Subs / visitors:</b> '+esc(E("others").value)+'</p>');
+  H.push('<p style="color:#6b7280;font-size:12px;margin-top:12px">Reviewed with the crew by '+esc(E("foreman").value)+'. Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'. Anyone can stop work.</p>');
+  return H.join("\n");
+}
+async function submit(){
+  var msg=E("msg"), btn=E("submitBtn"); saveDraft(); var miss=[];
+  function need(id,label){ var el=E(id); if(!String(el.value||"").trim()){ el.classList.add("bad"); miss.push(label); } }
+  need("pdate","Date"); need("job","Job"); need("tasks","Today's tasks"); need("talk","Toolbox talk topic"); need("foreman","Foreman");
+  if(E("talk").value==="custom") need("customTalk","Custom topic");
+  if(!Object.keys(ST.haz).length) miss.push("at least one hazard");
+  if(!Object.keys(ST.ppe).length) miss.push("PPE");
+  if(!Object.keys(ST.crew).length) miss.push("crew sign-on");
+  if(!E("certify").checked) miss.push("Foreman checkbox");
+  if(miss.length){ msg.className="msg err"; msg.textContent="Still needed: "+miss.join(", ")+"."; var b=document.querySelector(".bad"); if(b) b.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You're offline — your entries are saved. Move to better signal and tap Submit again."; return; }
+  if(!LIST_ID){ await findList(); if(!LIST_ID){ msg.className="msg err"; msg.textContent="The “"+LIST_NAME+"” list isn't set up yet. Your entries are saved on this phone."; return; } }
+  btn.disabled=true; msg.className="msg info"; msg.textContent="Saving…";
+  try{ var t=await getToken(), j=jobParts(), crew=Object.keys(ST.crew);
+    var f={ Title:E("pdate").value+" | "+(j.no||"")+" | "+E("foreman").value, JobNo:j.no, JobName:j.name, PlanDate:E("pdate").value+"T12:00:00Z", Area:E("area").value, Foreman:E("foreman").value,
+      Tasks:E("tasks").value, Hazards:Object.keys(ST.haz).join("; "), PPE:Object.keys(ST.ppe).join("; "), Permits:Object.keys(ST.permit).join("; "), ToolboxTopic:talkName(),
+      Crew:crew.join("; "), CrewCount:crew.length, Visitors:E("others").value, LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport() };
+    if(LIST_COLS) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
+    var r=await fetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
+    msg.className="msg ok"; msg.textContent="Submitted. Pre-task plan filed for "+crew.length+" crew."; btn.textContent="Submitted"; clearDraft(); E("newBtn").style.display="block";
+  }catch(e){ btn.disabled=false; msg.className="msg err"; msg.textContent="Couldn't submit yet ("+(e.message||e)+"). Your entries are saved — tap Submit again."; }
+}
+E("submitBtn").onclick=submit;
+E("newBtn").onclick=function(){ if(confirm("Start a new blank plan?")){ clearDraft(); location.reload(); } };
+var FIELDS=["pdate","area","job","tasks","talk","customTalk","others","foreman"];
+function saveDraft(){ try{ var d={ST:ST,cert:E("certify").checked,ts:Date.now()}; FIELDS.forEach(function(id){ d[id]=E(id).value; }); localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch(e){} }
+function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); if(!d) return; if(Date.now()-(d.ts||0)>36*3600e3){ clearDraft(); return; } FIELDS.forEach(function(id){ if(d[id]) E(id).value=d[id]; }); ST=d.ST||ST; E("certify").checked=!!d.cert; }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+</script>
+</body>
+</html>

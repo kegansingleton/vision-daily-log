@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — T&amp;M / Extra Work Ticket</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:760px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:12px 12px 130px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:800;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .n{background:var(--vm);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 6px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.req{color:var(--vm)}
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;color:var(--ink);font-family:inherit;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+input::placeholder,textarea::placeholder{color:#8a919c;opacity:1}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff;box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+input:not(:placeholder-shown),textarea:not(:placeholder-shown){background:#fff;border-color:#6b7280}
+textarea{min-height:90px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bad{border-color:var(--red)!important;background:#fff7f7!important}
+.row-item{border:1.5px solid #d1d5db;border-radius:10px;padding:10px 12px;margin:10px 0;background:#fafbfc}
+.row-item .top{display:flex;align-items:center;justify-content:space-between}
+.row-item .top b{font-size:12.5px;color:var(--vm2);text-transform:uppercase;letter-spacing:.03em}
+.row-item label{margin-top:6px}
+.g3{display:grid;grid-template-columns:2fr 1.3fr;gap:8px}
+.g4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-x{background:none;border:none;color:var(--mut);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer}
+.btn-primary{background:var(--vm);color:#fff}.btn-primary:disabled{opacity:.55}
+.btn-ghost{background:#fff;color:var(--vm);border:1.5px dashed var(--vm);margin-top:6px}
+.tot{display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--vm2);padding:8px 2px 0}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.pbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--vm);color:var(--vm2);background:#fff8f7;border-radius:10px;padding:11px 14px;font-weight:800;font-size:14px;cursor:pointer}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumb{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer}
+.sigwrap{border:2px solid #6b7280;border-radius:10px;background:#fff;position:relative;touch-action:none}
+.sigwrap.bad{border-color:var(--red)}
+.sigwrap canvas{display:block;width:100%;height:170px;border-radius:8px}
+.sigwrap .line{position:absolute;left:14px;right:14px;bottom:36px;border-bottom:1.5px solid #cbd5e1;pointer-events:none}
+.sigwrap .hint{position:absolute;left:14px;bottom:12px;font-size:12px;color:#9ca3af;pointer-events:none}
+.sigacts{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.sigacts button{background:none;border:none;color:var(--vm);font-weight:800;cursor:pointer;font-size:13px}
+.legal{font-size:12.5px;color:#374151;background:#f9fafb;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-top:8px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:10px;font-weight:600}
+.chk input{width:20px;height:20px;margin-top:1px}
+.seg{display:flex;border:1.5px solid #9ca3af;border-radius:9px;overflow:hidden}
+.seg button{flex:1;border:none;border-left:1px solid #d1d5db;background:#f3f5f8;padding:11px 8px;font-size:13.5px;font-weight:800;color:var(--mut);cursor:pointer}
+.seg button:first-child{border-left:none}.seg button.on{background:var(--vm2);color:#fff}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:760px;margin:0 auto}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:#eef2f7;color:#334155;display:block}
+.tno{font-size:12px;color:var(--mut);margin-top:4px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:520px){.g3{grid-template-columns:1fr}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>T&amp;M / Extra Work Ticket</h1><p>Document extra work and get it signed on site. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>T&amp;M / Extra Work Ticket</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg info" id="listWarn" style="display:none"></div>
+  <div class="card">
+    <h2><span class="n">1</span>Job &amp; work</h2>
+    <div class="grid2">
+      <div><label>Date of work <span class="req">*</span></label><input type="date" id="wdate"></div>
+      <div><label>Category <span class="req">*</span></label><select id="cat"><option value="">Select…</option><option>GC / owner directed</option><option>Design change / conflict</option><option>Damage by others</option><option>Out of sequence / delay</option><option>Added scope</option><option>Other</option></select></div>
+    </div>
+    <label>Job <span class="req">*</span></label><input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist>
+    <div class="tno" id="tno"></div>
+    <div class="grid2">
+      <div><label>Location / area</label><input type="text" id="area" placeholder="e.g. Level 2, grid C-4"></div>
+      <div><label>Directed by <span class="req">*</span></label><input type="text" id="directed" placeholder="Who asked for it (name)"></div>
+    </div>
+    <label>Description of extra work <span class="req">*</span></label>
+    <textarea id="desc" placeholder="What was done, and why it's outside our contract scope"></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>Labor</h2>
+    <div id="labor"></div><button class="btn btn-ghost" id="addLabor">+ Add worker</button>
+    <div class="tot"><span>Regular hours</span><span id="totReg">0</span></div>
+    <div class="tot"><span>Overtime hours</span><span id="totOt">0</span></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>Material &amp; equipment</h2>
+    <div class="desc">Leave blank if none.</div>
+    <div id="mats"></div><button class="btn btn-ghost" id="addMat">+ Add material</button>
+    <div id="equip"></div><button class="btn btn-ghost" id="addEq">+ Add equipment / rental</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>Photos</h2>
+    <div class="desc">Before / after and anything that shows why it's extra.</div>
+    <div class="pbtns"><label class="pbtn" for="phCam">&#128247; Take photos</label><label class="pbtn" for="phFile">&#128193; From camera roll</label></div>
+    <input id="phCam" type="file" accept="image/*" capture="environment" multiple style="display:none">
+    <input id="phFile" type="file" accept="image/*" multiple style="display:none">
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">5</span>Customer signature</h2>
+    <div class="seg" id="sigMode"><button type="button" data-m="sign" class="on">Sign now</button><button type="button" data-m="later">Couldn't get signature</button></div>
+    <div id="signBox">
+      <div class="grid2">
+        <div><label>Printed name <span class="req">*</span></label><input type="text" id="cname" placeholder="GC / owner rep"></div>
+        <div><label>Company <span class="req">*</span></label><input type="text" id="ccomp" placeholder="e.g. GE Johnson"></div>
+      </div>
+      <label>Their email (optional — gets a copy)</label><input type="email" id="cemail" placeholder="name@company.com">
+      <div class="legal">By signing, the representative acknowledges the labor, material and equipment above were performed / furnished at their direction. Pricing to follow per contract.</div>
+      <label>Signature <span class="req">*</span></label>
+      <div class="sigwrap" id="sigwrap"><canvas id="sig"></canvas><div class="line"></div><div class="hint" id="sigHint">Sign here with a finger</div></div>
+      <div class="sigacts"><span style="font-size:12px;color:#6b7280" id="sigWhen"></span><button type="button" id="sigClear">Clear signature</button></div>
+    </div>
+    <div id="laterBox" style="display:none">
+      <label>Why not signed? <span class="req">*</span></label>
+      <select id="noSigWhy"><option value="">Select…</option><option>Rep not on site</option><option>Rep refused to sign</option><option>Will sign later</option><option>Verbal direction only</option></select>
+      <label>Rep name (if known)</label><input type="text" id="cname2" placeholder="Who directed it">
+      <div class="desc" style="margin-top:8px">The ticket files as <b>Unsigned</b> so the PM can chase the signature.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">6</span>Foreman sign-off</h2>
+    <label>Foreman <span class="req">*</span></label><input type="text" id="foreman" list="techlist" placeholder="Your name">
+    <label class="chk"><input type="checkbox" id="certify"> I certify the hours, material and equipment above are accurate.</label>
+  </div>
+  <datalist id="techlist"></datalist>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="foot" id="foot" style="display:none"><div class="inner">
+  <button class="btn btn-primary" id="submitBtn">Submit T&amp;M ticket</button>
+  <button class="btn btn-ghost" id="newBtn" style="display:none">Start a new ticket</button>
+</div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LIST_NAME="T&M Tickets", PHOTO_ROOT="T&M Ticket Photos", DRAFT_KEY="vm_tm_draft_v1";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var CLASSES=["Foreman","Journeyman","Apprentice","Helper/Laborer","Service Tech","Welder"];
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", LIST_ID=null, LIST_COLS=null;
+var LAB=[], MAT=[], EQ=[], PHOTOS=[], SIGMODE="sign", SIGNED=false, SIG_AT="", TICKET_NO="", FOLDER=null, FOLDER_URL=null;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function num(v){var n=parseFloat(v);return isNaN(n)?0:n;}
+function r2(n){return Math.round(n*100)/100;}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+function vmFetch(url,opts,ms){return new Promise(function(res,rej){var ctl=("AbortController"in window)?new AbortController():null,done=false;var to=setTimeout(function(){done=true;if(ctl)try{ctl.abort();}catch(e){}rej(new Error("timed out"));},ms||25000);if(ctl)opts.signal=ctl.signal;
+  fetch(url,opts).then(function(r){if(!r.ok)return r.text().then(function(t){var e=new Error("HTTP "+r.status+" "+t.slice(0,180));e.httpStatus=r.status;throw e;});return r.json();}).then(function(j){if(done)return;clearTimeout(to);res(j);},function(e){if(done)return;clearTimeout(to);rej(e);});});}
+function retry(fn){var n=0;function go(){n++;return fn().catch(function(e){var s=e.httpStatus;if(((s===undefined)||s>=500||s===429)&&n<3)return new Promise(function(r){setTimeout(r,1300*n);}).then(go);throw e;});}return go();}
+
+/* ===== auth ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+function afterLogin(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("foot").style.display="block"; E("who").textContent=a.name||a.username;
+  loadDraft();
+  if(!E("wdate").value) E("wdate").value=today();
+  if(!E("foreman").value) E("foreman").value=a.name||"";
+  if(!LAB.length) LAB.push({who:a.name||"",cls:"Foreman",reg:"",ot:""});
+  renderLab(); renderMat(); renderEq(); setSigMode(SIGMODE); initSig();
+  ["wdate","cat","job","area","directed","desc","cname","ccomp","cemail","noSigWhy","cname2","foreman"].forEach(function(id){ var el=E(id); var f=function(){ el.classList.remove("bad"); saveDraft(); if(id==="job"||id==="wdate") showTno(); }; el.addEventListener("input",f); el.addEventListener("change",f); });
+  E("certify").onchange=saveDraft;
+  showTno(); loadJobs(); loadTechs(); findList();
+}
+
+/* ===== lookups ===== */
+async function pullAll(listId,select){ var t=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
+  arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
+function loadTechs(){ pullAll(EMP,"EmployeeName,Active").then(function(rows){ E("techlist").innerHTML=rows.filter(function(f){return (f.Active||"Yes")!=="No"&&f.EmployeeName;}).map(function(f){return f.EmployeeName.trim();}).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join(""); }).catch(function(){}); }
+async function findList(){
+  try{ var t=await getToken(); var j=await fetch(SITEURL+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
+    var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("listWarn").style.display="block"; E("listWarn").textContent="Heads up: the “"+LIST_NAME+"” list isn't set up in SharePoint yet, so tickets can't be filed. Ask the office."; return; }
+    LIST_ID=L.id; var c=await fetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
+    LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){}
+}
+function jobParts(){ var v=String(E("job").value||"").trim(), i=v.indexOf(" "); return {no:i<0?v:v.slice(0,i), name:i<0?"":v.slice(i+1)}; }
+function showTno(){ if(!TICKET_NO){ var j=jobParts(); E("tno").textContent=j.no?("Ticket # will be "+j.no+"-"+String(E("wdate").value||today()).replace(/-/g,"").slice(2)+"-####"):""; } else E("tno").textContent="Ticket # "+TICKET_NO; }
+
+/* ===== rows ===== */
+function renderLab(){ E("labor").innerHTML=LAB.map(function(r,i){ return '<div class="row-item"><div class="top"><b>Worker '+(i+1)+'</b><button class="btn-x" data-del="LAB" data-i="'+i+'">&times;</button></div>'+
+  '<div class="g3"><div><label>Name</label><input type="text" list="techlist" data-a="LAB" data-f="who" data-i="'+i+'" value="'+esc(r.who)+'" placeholder="Name"></div><div><label>Classification</label><select data-a="LAB" data-f="cls" data-i="'+i+'">'+CLASSES.map(function(c){return '<option'+(r.cls===c?" selected":"")+'>'+c+'</option>';}).join("")+'</select></div></div>'+
+  '<div class="g4"><div><label>Regular hrs</label><input type="number" inputmode="decimal" step="0.25" data-a="LAB" data-f="reg" data-i="'+i+'" value="'+esc(r.reg)+'" placeholder="0.0"></div><div><label>Overtime hrs</label><input type="number" inputmode="decimal" step="0.25" data-a="LAB" data-f="ot" data-i="'+i+'" value="'+esc(r.ot)+'" placeholder="0.0"></div></div></div>'; }).join(""); wire("labor"); totals(); }
+function renderMat(){ E("mats").innerHTML=MAT.map(function(r,i){ return '<div class="row-item"><div class="top"><b>Material '+(i+1)+'</b><button class="btn-x" data-del="MAT" data-i="'+i+'">&times;</button></div>'+
+  '<div class="g3"><div><label>Item</label><input type="text" data-a="MAT" data-f="item" data-i="'+i+'" value="'+esc(r.item)+'" placeholder="e.g. 1-1/2&quot; copper type L"></div><div><label>Qty / unit</label><input type="text" data-a="MAT" data-f="qty" data-i="'+i+'" value="'+esc(r.qty)+'" placeholder="e.g. 40 ft"></div></div>'+
+  '<div class="g4"><div><label>Source</label><select data-a="MAT" data-f="src" data-i="'+i+'">'+["Van stock","Shop stock","Supplier"].map(function(c){return '<option'+(r.src===c?" selected":"")+'>'+c+'</option>';}).join("")+'</select></div><div><label>PO # (if any)</label><input type="text" data-a="MAT" data-f="po" data-i="'+i+'" value="'+esc(r.po)+'"></div></div></div>'; }).join(""); wire("mats"); }
+function renderEq(){ E("equip").innerHTML=EQ.map(function(r,i){ return '<div class="row-item"><div class="top"><b>Equipment '+(i+1)+'</b><button class="btn-x" data-del="EQ" data-i="'+i+'">&times;</button></div>'+
+  '<div class="g3"><div><label>Equipment</label><input type="text" data-a="EQ" data-f="item" data-i="'+i+'" value="'+esc(r.item)+'" placeholder="e.g. 19\' scissor lift"></div><div><label>Hours / days</label><input type="text" data-a="EQ" data-f="qty" data-i="'+i+'" value="'+esc(r.qty)+'" placeholder="e.g. 4 hrs"></div></div></div>'; }).join(""); wire("equip"); }
+var ARR={LAB:function(){return LAB;},MAT:function(){return MAT;},EQ:function(){return EQ;}}, RND={LAB:renderLab,MAT:renderMat,EQ:renderEq};
+function wire(el){ var box=E(el);
+  box.querySelectorAll("[data-a]").forEach(function(inp){ var f=function(){ ARR[inp.getAttribute("data-a")]()[+inp.getAttribute("data-i")][inp.getAttribute("data-f")]=inp.value; if(inp.getAttribute("data-a")==="LAB") totals(); saveDraft(); }; inp.oninput=f; inp.onchange=f; });
+  box.querySelectorAll("[data-del]").forEach(function(b){ b.onclick=function(){ var a=b.getAttribute("data-del"); ARR[a]().splice(+b.getAttribute("data-i"),1); RND[a](); saveDraft(); }; }); }
+function totals(){ var r=0,o=0; LAB.forEach(function(x){ r+=num(x.reg); o+=num(x.ot); }); E("totReg").textContent=r2(r); E("totOt").textContent=r2(o); return {reg:r2(r),ot:r2(o)}; }
+E("addLabor").onclick=function(){ LAB.push({who:"",cls:"Journeyman",reg:"",ot:""}); renderLab(); saveDraft(); };
+E("addMat").onclick=function(){ MAT.push({item:"",qty:"",src:"Van stock",po:""}); renderMat(); saveDraft(); };
+E("addEq").onclick=function(){ EQ.push({item:"",qty:""}); renderEq(); saveDraft(); };
+
+/* ===== photos ===== */
+function scale(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function addPhoto(file){ if(!/^image\//.test(file.type)) return; var rd=new FileReader(); rd.onload=function(e){ var img=new Image(); img.onload=function(){ PHOTOS.push({full:scale(img,1800,0.82),thumb:scale(img,240,0.55),url:null}); renderThumbs(); }; img.src=e.target.result; }; rd.readAsDataURL(file); }
+function renderThumbs(){ E("thumbs").innerHTML=PHOTOS.map(function(p,i){return '<div class="thumb"><img src="'+p.thumb+'"><div class="x" data-i="'+i+'">&times;</div></div>';}).join(""); E("thumbs").querySelectorAll(".x").forEach(function(x){ x.onclick=function(){ PHOTOS.splice(+x.getAttribute("data-i"),1); renderThumbs(); }; }); }
+E("phCam").onchange=function(){ Array.prototype.forEach.call(this.files,addPhoto); this.value=""; };
+E("phFile").onchange=E("phCam").onchange;
+
+/* ===== signature pad ===== */
+var sigCtx=null, drawing=false, last=null;
+function initSig(){
+  var c=E("sig"), w=E("sigwrap"); var ratio=Math.max(window.devicePixelRatio||1,1);
+  function size(){ var data=SIGNED?c.toDataURL():null; c.width=w.clientWidth*ratio; c.height=170*ratio; sigCtx=c.getContext("2d"); sigCtx.scale(ratio,ratio); sigCtx.lineWidth=2.4; sigCtx.lineCap="round"; sigCtx.lineJoin="round"; sigCtx.strokeStyle="#0f172a";
+    if(data){ var im=new Image(); im.onload=function(){ sigCtx.drawImage(im,0,0,w.clientWidth,170); }; im.src=data; } }
+  size(); window.addEventListener("resize",function(){ if(E("signBox").style.display!=="none") size(); });
+  function pos(e){ var r=c.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+  c.addEventListener("pointerdown",function(e){ drawing=true; last=pos(e); c.setPointerCapture(e.pointerId); e.preventDefault(); });
+  c.addEventListener("pointermove",function(e){ if(!drawing) return; var p=pos(e); sigCtx.beginPath(); sigCtx.moveTo(last.x,last.y); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); last=p;
+    if(!SIGNED){ SIGNED=true; SIG_AT=new Date().toLocaleString(); E("sigHint").style.display="none"; E("sigwrap").classList.remove("bad"); E("sigWhen").textContent="Signed "+SIG_AT; } e.preventDefault(); });
+  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ c.addEventListener(ev,function(){ drawing=false; }); });
+  E("sigClear").onclick=function(){ sigCtx.clearRect(0,0,c.width,c.height); SIGNED=false; SIG_AT=""; E("sigHint").style.display=""; E("sigWhen").textContent=""; };
+}
+function setSigMode(m){ SIGMODE=m; Array.prototype.forEach.call(E("sigMode").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-m")===m); });
+  E("signBox").style.display=m==="sign"?"block":"none"; E("laterBox").style.display=m==="later"?"block":"none"; saveDraft(); }
+Array.prototype.forEach.call(E("sigMode").querySelectorAll("button"),function(b){ b.onclick=function(){ setSigMode(b.getAttribute("data-m")); if(SIGMODE==="sign") setTimeout(function(){ window.dispatchEvent(new Event("resize")); },30); }; });
+function sigPng(){ /* trimmed, white-backed PNG for the report */
+  var c=E("sig"), o=document.createElement("canvas"); o.width=c.width; o.height=c.height; var x=o.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,o.width,o.height); x.drawImage(c,0,0);
+  var s=document.createElement("canvas"), sc=Math.min(1,600/o.width); s.width=Math.round(o.width*sc); s.height=Math.round(o.height*sc); s.getContext("2d").drawImage(o,0,0,s.width,s.height); return s.toDataURL("image/png"); }
+
+/* ===== uploads ===== */
+function cleanName(t){return String(t||"").replace(/["*:<>?\/\\|#%~&{}]/g,"-").replace(/\s+/g," ").trim().slice(0,70);}
+function dataUrlToBlob(u){var parts=u.split(","),mime=(parts[0].match(/:(.*?);/)||[])[1]||"image/jpeg",b=atob(parts[1]),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:mime});}
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+async function putFile(token,name,dataUrl){ var path=FOLDER+"/"+name, blob=dataUrlToBlob(dataUrl);
+  return retry(function(){ return vmFetch(SITEURL+"/drive/root:/"+encPath(path)+":/content",{method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":blob.type},body:blob},45000); }); }
+
+/* ===== report ===== */
+function lines(){ return { labor:LAB.filter(function(r){return r.who||num(r.reg)||num(r.ot);}).map(function(r){return {who:r.who,cls:r.cls,reg:num(r.reg),ot:num(r.ot)};}),
+  materials:MAT.filter(function(r){return r.item||r.qty;}).map(function(r){return {item:r.item,qty:r.qty,source:r.src,po:r.po};}),
+  equipment:EQ.filter(function(r){return r.item||r.qty;}).map(function(r){return {item:r.item,qty:r.qty};}) }; }
+function buildReport(L,t,sigData,sigUrl){
+  var j=jobParts(), H=[], th='style="text-align:left;padding:5px 8px;background:#f3f4f6;font-size:12px;border:1px solid #e5e7eb"', td='style="padding:5px 8px;border:1px solid #e5e7eb;font-size:13px"';
+  H.push('<h2 style="color:#7f1d1d;margin:0">T&amp;M / Extra Work Ticket #'+esc(TICKET_NO)+'</h2>');
+  H.push('<p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical &middot; '+esc(SIGMODE==="sign"&&SIGNED?"SIGNED":"UNSIGNED")+'</p>');
+  H.push('<table style="border-collapse:collapse;font-size:14px;margin-bottom:10px">'+[["Job",E("job").value],["Date of work",E("wdate").value],["Location",E("area").value],["Category",E("cat").value],["Directed by",E("directed").value],["Foreman",E("foreman").value]].map(function(r){return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+r[0]+'</td><td style="padding:3px 0;font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
+  H.push('<h3 style="color:#7f1d1d;margin:10px 0 4px">Description of work</h3><div style="white-space:pre-wrap">'+esc(E("desc").value)+'</div>');
+  H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Labor</h3><table style="border-collapse:collapse;width:100%"><tr><th '+th+'>Name</th><th '+th+'>Class</th><th '+th+'>Reg hrs</th><th '+th+'>OT hrs</th></tr>'+
+    (L.labor.length?L.labor.map(function(r){return '<tr><td '+td+'>'+esc(r.who)+'</td><td '+td+'>'+esc(r.cls)+'</td><td '+td+'>'+r.reg+'</td><td '+td+'>'+r.ot+'</td></tr>';}).join(""):'<tr><td '+td+' colspan="4">None</td></tr>')+
+    '<tr><td '+td+' colspan="2"><b>Totals</b></td><td '+td+'><b>'+t.reg+'</b></td><td '+td+'><b>'+t.ot+'</b></td></tr></table>');
+  if(L.materials.length) H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Material</h3><table style="border-collapse:collapse;width:100%"><tr><th '+th+'>Item</th><th '+th+'>Qty</th><th '+th+'>Source</th><th '+th+'>PO</th></tr>'+L.materials.map(function(r){return '<tr><td '+td+'>'+esc(r.item)+'</td><td '+td+'>'+esc(r.qty)+'</td><td '+td+'>'+esc(r.source)+'</td><td '+td+'>'+esc(r.po)+'</td></tr>';}).join("")+'</table>');
+  if(L.equipment.length) H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Equipment</h3><table style="border-collapse:collapse;width:100%"><tr><th '+th+'>Equipment</th><th '+th+'>Hours / days</th></tr>'+L.equipment.map(function(r){return '<tr><td '+td+'>'+esc(r.item)+'</td><td '+td+'>'+esc(r.qty)+'</td></tr>';}).join("")+'</table>');
+  if(PHOTOS.length){ H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Photos</h3>'+(FOLDER_URL?'<p><a href="'+FOLDER_URL+'">'+PHOTOS.length+' photo(s) — open folder</a></p>':''));
+    PHOTOS.slice(0,6).forEach(function(p){ var im='<img src="'+p.thumb+'" style="width:160px;margin:3px;border:1px solid #ccc;border-radius:6px">'; H.push(p.url?'<a href="'+p.url+'">'+im+'</a>':im); }); }
+  H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Customer acknowledgment</h3>');
+  if(SIGMODE==="sign"&&SIGNED){ H.push('<p style="font-size:12px;color:#374151">The representative below acknowledges the labor, material and equipment above were performed / furnished at their direction. Pricing to follow per contract.</p>'+
+    '<img src="'+sigData+'" style="max-width:360px;width:100%;max-height:120px;object-fit:contain;object-position:left bottom;border-bottom:1px solid #111">'+
+    '<p style="margin:4px 0">'+esc(E("cname").value)+', '+esc(E("ccomp").value)+'<br><span style="color:#6b7280;font-size:12px">Signed '+esc(SIG_AT)+(sigUrl?' &middot; <a href="'+sigUrl+'">signature file</a>':'')+'</span></p>'); }
+  else H.push('<p style="color:#b91c1c;font-weight:700">NOT SIGNED — '+esc(E("noSigWhy").value)+(E("cname2").value?' (rep: '+esc(E("cname2").value)+')':'')+'</p>');
+  H.push('<p style="color:#6b7280;font-size:12px;margin-top:14px">Foreman: '+esc(E("foreman").value)+' — certified accurate. Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'</p>');
+  return H.join("\n");
+}
+
+/* ===== submit ===== */
+async function submit(){
+  var msg=E("msg"), btn=E("submitBtn"); saveDraft();
+  var miss=[]; function need(id,label){ var el=E(id); if(!String(el.value||"").trim()){ el.classList.add("bad"); miss.push(label); } }
+  need("wdate","Date"); need("job","Job"); need("cat","Category"); need("directed","Directed by"); need("desc","Description"); need("foreman","Foreman");
+  var L=lines(), t=totals();
+  if(!L.labor.length && !L.materials.length && !L.equipment.length) miss.push("at least one labor, material or equipment line");
+  if(SIGMODE==="sign"){ need("cname","Customer printed name"); need("ccomp","Customer company"); if(!SIGNED){ E("sigwrap").classList.add("bad"); miss.push("Customer signature"); } }
+  else need("noSigWhy","Why not signed");
+  if(!E("certify").checked) miss.push("Foreman certification checkbox");
+  if(miss.length){ msg.className="msg err"; msg.textContent="Still needed: "+miss.join(", ")+"."; var b=document.querySelector(".bad"); if(b) b.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You're offline — your entries are saved. Move to better signal and tap Submit again."; return; }
+  if(!LIST_ID){ await findList(); if(!LIST_ID){ msg.className="msg err"; msg.textContent="The “"+LIST_NAME+"” list isn't set up yet. Your entries are saved on this phone."; return; } }
+  btn.disabled=true; msg.className="msg info"; msg.textContent="Saving ticket…";
+  try{
+    var token=await getToken(), j=jobParts(), d=new Date();
+    if(!TICKET_NO){ TICKET_NO=j.no+"-"+String(E("wdate").value).replace(/-/g,"").slice(2)+"-"+pad(d.getHours())+pad(d.getMinutes()); showTno(); }
+    if(!FOLDER) FOLDER=PHOTO_ROOT+"/"+cleanName(TICKET_NO+" "+E("foreman").value);
+    var sigData=(SIGMODE==="sign"&&SIGNED)?sigPng():"", sigUrl="";
+    for(var i=0;i<PHOTOS.length;i++){ if(PHOTOS[i].url) continue; msg.textContent="Uploading photo "+(i+1)+" of "+PHOTOS.length+"…"; var r=await putFile(token,"photo-"+pad(i+1)+".jpg",PHOTOS[i].full); PHOTOS[i].url=r.webUrl||""; }
+    if(sigData){ msg.textContent="Saving signature…"; var s=await putFile(token,"signature.png",sigData); sigUrl=s.webUrl||""; }
+    if((PHOTOS.length||sigData)&&!FOLDER_URL){ try{ var fj=await fetch(SITEURL+"/drive/root:/"+encPath(FOLDER),{headers:{Authorization:"Bearer "+token}}).then(function(x){return x.json();}); FOLDER_URL=fj.webUrl||null; }catch(e){} }
+    msg.textContent="Saving ticket…";
+    var signedOk=(SIGMODE==="sign"&&SIGNED);
+    var f={ Title:TICKET_NO+" | "+(j.name||j.no)+" | "+E("foreman").value, TicketNo:TICKET_NO, JobNo:j.no, JobName:j.name, WorkDate:E("wdate").value+"T12:00:00Z",
+      Category:E("cat").value, Area:E("area").value, DirectedBy:E("directed").value, Description:E("desc").value, Foreman:E("foreman").value,
+      SignedStatus:signedOk?"Signed":"Unsigned", CustomerRep:signedOk?E("cname").value:E("cname2").value, CustomerCompany:signedOk?E("ccomp").value:"", CustomerEmail:signedOk?E("cemail").value.trim():"",
+      NotSignedReason:signedOk?"":E("noSigWhy").value, LaborHours:t.reg, OTHours:t.ot, LineItems:JSON.stringify(L), PhotoFolder:FOLDER_URL||"", SignatureFile:sigUrl,
+      LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport(L,t,sigData,sigUrl) };
+    if(LIST_COLS) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
+    await retry(function(){ return vmFetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); });
+    msg.className="msg ok"; msg.textContent="Submitted. Ticket #"+TICKET_NO+" filed"+(signedOk?" with signature.":" as UNSIGNED — the PM will follow up."); btn.textContent="Submitted"; clearDraft(); E("newBtn").style.display="block";
+  }catch(e){ btn.disabled=false; msg.className="msg err"; msg.textContent="Couldn't submit yet ("+(e.message||e)+"). Your entries are saved — move to better signal and tap Submit again."; }
+}
+E("submitBtn").onclick=submit;
+E("newBtn").onclick=function(){ if(confirm("Start a new blank ticket?")){ clearDraft(); location.reload(); } };
+
+/* ===== drafts (text only; signature/photos stay in memory) ===== */
+var FIELDS=["wdate","cat","job","area","directed","desc","cname","ccomp","cemail","noSigWhy","cname2","foreman"];
+function saveDraft(){ try{ var d={LAB:LAB,MAT:MAT,EQ:EQ,SIGMODE:SIGMODE,cert:E("certify").checked,ts:Date.now()}; FIELDS.forEach(function(id){ d[id]=E(id).value; }); localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch(e){} }
+function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); if(!d) return; if(Date.now()-(d.ts||0)>14*864e5){ clearDraft(); return; } FIELDS.forEach(function(id){ if(d[id]) E(id).value=d[id]; }); LAB=d.LAB||[]; MAT=d.MAT||[]; EQ=d.EQ||[]; SIGMODE=d.SIGMODE||"sign"; E("certify").checked=!!d.cert; }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+</script>
+</body>
+</html>

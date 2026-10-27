@@ -102,7 +102,13 @@ var TABS=[
   row:function(f){return [d10(f.WorkDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.Technician||f.SubmittedBy,tags(f.ServiceStatus),hrs(f.LaborHours,f.OvertimeHours)];},hd:["Date","Job","Technician","Status","Hours"]},
  {k:"su",t:"Start-Up Reports",name:"Start-Up Reports",date:"ServiceDate",body:"ReportHTML",html:true,
   cols:["ServiceDate","JobNo","JobName","EquipmentType","TagID","Technician","Model","SerialNumber","ReportType"],
-  row:function(f){return [d10(f.ServiceDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),[f.EquipmentType,f.TagID].filter(Boolean).join(" · "),f.Technician,[f.Model,f.SerialNumber].filter(Boolean).join(" / ")];},hd:["Date","Job","Equipment","Technician","Model / Serial"]}
+  row:function(f){return [d10(f.ServiceDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),[f.EquipmentType,f.TagID].filter(Boolean).join(" · "),f.Technician,[f.Model,f.SerialNumber].filter(Boolean).join(" / ")];},hd:["Date","Job","Equipment","Technician","Model / Serial"]},
+ {k:"tm",t:"T&M Tickets",name:"T&M Tickets",date:"WorkDate",body:"ReportHTML",html:true,
+  cols:["WorkDate","TicketNo","JobNo","JobName","Foreman","SignedStatus","CustomerRep","LaborHours","OTHours"],
+  row:function(f){return [d10(f.WorkDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.TicketNo||"",f.Foreman||"",tags(f.SignedStatus),hrs(f.LaborHours,f.OTHours)];},hd:["Date","Job","Ticket","Foreman","Signed","Hours"]},
+ {k:"pt",t:"Pre-Task Plans",name:"Pre-Task Plans",date:"PlanDate",body:"ReportHTML",html:true,
+  cols:["PlanDate","JobNo","JobName","Foreman","ToolboxTopic","CrewCount"],
+  row:function(f){return [d10(f.PlanDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.Foreman||"",f.ToolboxTopic||"",f.CrewCount||""];},hd:["Date","Job","Foreman","Toolbox talk","Crew"]}
 ];
 var SKIP={ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
