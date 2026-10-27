@@ -166,7 +166,7 @@ function submitForm(){
   var a={formType:formType,cc:E("cc").value.trim(),name:E("name").value.trim(),fdate:E("fdate").value,items:its,total:Math.round(t*100)/100,loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
   var buildFields=function(){ a.items=its.map(function(it){ return {date:it.date,project:it.project,code:it.code,desc:it.desc,receipt:it.receipt,amount:it.amount,receipts:it.files.map(function(f){return f.url;})}; });
   var fields={Title:a.formType+" | "+a.name+" | "+a.fdate,FormType:a.formType,EmployeeName:a.name,FormDate:a.fdate+"T12:00:00Z",FormDateText:a.fdate,CreditCardNo:(a.formType==="Expense"?a.cc:""),LineItems:JSON.stringify(a.items),TotalAmount:a.total,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
-  if(LIST_COLS&&LIST_COLS.ReceiptFolder) fields.ReceiptFolder=RC_FOLDER_URL||""; if(LIST_COLS&&LIST_COLS.ReceiptCount) fields.ReceiptCount=String(its.reduce(function(n,it){return n+it.files.length;},0));
+  if(LIST_COLS&&LIST_COLS.ReceiptFolder) fields.ReceiptFolder=RC_FOLDER_URL||""; if(LIST_COLS&&LIST_COLS.ReceiptFolderPath) fields.ReceiptFolderPath="/Shared Documents/"+RC_FOLDER;  /* for the flow to attach the receipts */ if(LIST_COLS&&LIST_COLS.ReceiptCount) fields.ReceiptCount=String(its.reduce(function(n,it){return n+it.files.length;},0));
   return fields; };
   if(navigator.onLine===false){msg.className="msg err";msg.textContent="You’re offline right now — move to better signal and tap Submit again.";return;}btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting...";
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
