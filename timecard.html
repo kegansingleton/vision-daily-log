@@ -32,6 +32,13 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .paytabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .paytab{flex:1;min-width:70px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;background:#fff;cursor:pointer;color:var(--mut)}
 .paytab.on{background:var(--vm);color:#fff;border-color:var(--vm)}
+.otrow{display:flex;align-items:center;gap:10px;margin:10px 0 2px}
+.otrow .lbl{font-size:12px;font-weight:700;color:var(--mut)}
+.otseg{display:inline-flex;border:1.5px solid #9ca3af;border-radius:9px;overflow:hidden}
+.otseg button{border:none;border-left:1px solid #d1d5db;background:#f3f5f8;padding:9px 14px;font-size:13.5px;font-weight:800;color:var(--mut);cursor:pointer}
+.otseg button:first-child{border-left:none}
+.otseg button.on{background:#334155;color:#fff}.otseg button.on.ot{background:#b45309}
+.entry.isot{border-color:#f59e0b;background:#fffbeb}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .applybox{margin-top:8px}
 .applygrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
@@ -135,7 +142,8 @@ var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", loginName="";
 var REF={emp:[],jobs:[],map:{}};
 var crewSel={}; // empNo -> {num,name}
-var entries=[]; // {id,pay,job,jobName,phase,line,hours,apply:{empNo:true}}
+var entries=[]; // {id,pay,ot,job,jobName,phase,line,hours,apply:{empNo:true}}
+var OT_COL=null;   /* Timecard Entries "Overtime" column (Yes/No or text) — OT toggle only shows once it exists */
 var eid=1;
 
 /* ============ AUTH ============ */
@@ -148,6 +156,8 @@ function afterLogin(acct){
   document.getElementById("who").textContent=loginName+" · "+new Date().toLocaleDateString();
   loadRefData();
 }
+function loadOtCol(){ getToken().then(function(t){ return fetch(GRAPH+LIST.tc+"/columns?$select=name,boolean,text,readOnly",{headers:{Authorization:"Bearer "+t}}); }).then(function(r){return r.json();})
+  .then(function(j){ var c=(j.value||[]).filter(function(x){return x.name==="Overtime"&&!x.readOnly;})[0]; if(c){ OT_COL=c; if(typeof renderEntries==="function"&&document.getElementById("entries")) renderEntries(); } }).catch(function(){}); }
 async function getToken(){
   try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}
   catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; }
@@ -205,6 +215,7 @@ function buildMap(jt){
   return {map:map, jobs:jobs};
 }
 async function loadRefData(){
+  loadOtCol();
   try{
     var emp=await gGetAll(LIST.emp,["EmployeeNumber","EmployeeName","Active"]);
     var jt=await gGetAll(LIST.jobtasks,["JobNo","JobName","PhaseCode","PhaseDesc","LineNum","LineDesc","Active"]);
@@ -253,13 +264,13 @@ function renderChips(){
   if(arr.length===0){c.innerHTML='<span class="hint">No crew selected yet.</span>';return;}
   arr.forEach(function(e){var s=document.createElement("span");s.className="chip";s.textContent=e.name;c.appendChild(s);});
 }
-function addEntry(){ entries.push({id:eid++,pay:"Regular",job:"",jobName:"",phase:"",line:"",hours:"",apply:{}}); }
+function addEntry(){ entries.push({id:eid++,pay:"Regular",ot:false,job:"",jobName:"",phase:"",line:"",hours:"",apply:{}}); }
 function opt(v,t,sel){ return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(sel===v?" selected":"")+'>'+t+'</option>'; }
 function renderEntries(){
   var wrap=document.getElementById("entries"); wrap.innerHTML="";
   var crew=Object.values(crewSel);
   entries.forEach(function(en,idx){
-    var div=document.createElement("div"); div.className="entry";
+    var div=document.createElement("div"); div.className="entry"+(en.pay==="Regular"&&en.ot?" isot":"");
     var tabs=PAYTYPES.map(function(p){return '<div class="paytab'+(en.pay===p?" on":"")+'" data-p="'+p+'">'+p+'</div>';}).join("");
     var jm=en.job&&REF.map[en.job]?REF.map[en.job]:null;
     var phasesForJob=jm?jm.phaseList:[];
@@ -284,10 +295,12 @@ function renderEntries(){
       '<div class="top"><b>Entry '+(idx+1)+'</b><button class="btn-x" data-del="1" title="Remove">&times;</button></div>'+
       '<div class="paytabs">'+tabs+'</div>'+
       jobBlock+
+      ((OT_COL&&en.pay==="Regular")?'<div class="otrow"><span class="lbl">Hours are</span><div class="otseg"><button type="button" data-ot="0" class="'+(!en.ot?"on":"")+'">Regular</button><button type="button" data-ot="1" class="ot'+(en.ot?" on":"")+'">Overtime</button></div></div>':'')+
       '<label>Hours <span class="req">*</span> <span class="hint">(0.5 steps)</span></label>'+
       '<input type="number" data-f="hours" min="0.5" step="0.5" inputmode="decimal" value="'+(en.hours||"")+'" placeholder="e.g. 8">'+
       '<div class="applybox"><label>Applies to <span class="req">*</span></label>'+applyMini+'</div>';
-    div.querySelectorAll(".paytab").forEach(function(t){t.onclick=function(){en.pay=t.getAttribute("data-p");renderEntries();renderSummary();};});
+    div.querySelectorAll(".paytab").forEach(function(t){t.onclick=function(){en.pay=t.getAttribute("data-p");if(en.pay!=="Regular")en.ot=false;renderEntries();renderSummary();};});
+    div.querySelectorAll("[data-ot]").forEach(function(b){b.onclick=function(){en.ot=(b.getAttribute("data-ot")==="1");renderEntries();renderSummary();};});
     div.querySelectorAll("[data-f]").forEach(function(el){el.onchange=function(){
       var f=el.getAttribute("data-f"); en[f]=el.value;
       if(f==="job"){ en.jobName=REF.map[el.value]?REF.map[el.value].name:""; en.phase=""; en.line=""; renderEntries(); renderSummary(); return; }
@@ -302,15 +315,15 @@ function renderEntries(){
   });
 }
 function renderSummary(){
-  var tot={};
+  var tot={}, ot={};
   entries.forEach(function(en){
     var h=parseFloat(en.hours||0)||0; if(h<=0)return;
-    Object.keys(en.apply).forEach(function(n){ if(!crewSel[n])return; tot[n]=(tot[n]||0)+h; });
+    Object.keys(en.apply).forEach(function(n){ if(!crewSel[n])return; tot[n]=(tot[n]||0)+h; if(en.pay==="Regular"&&en.ot) ot[n]=(ot[n]||0)+h; });
   });
   var el=document.getElementById("summary");
   var crew=Object.values(crewSel);
   if(crew.length===0){el.innerHTML='<span class="hint">Add crew and entries to see totals.</span>';return;}
-  var rows=crew.map(function(c){var h=tot[c.num]||0;var bad=(h===0||h>16);return '<tr class="'+(bad?"bad":"")+'"><td>'+c.name+'</td><td>'+(h||"—")+(h?" hrs":"")+'</td></tr>';}).join("");
+  var rows=crew.map(function(c){var h=tot[c.num]||0;var bad=(h===0||h>16);return '<tr class="'+(bad?"bad":"")+'"><td>'+c.name+'</td><td>'+(h||"—")+(h?" hrs":"")+(ot[c.num]?' <span style="color:#b45309;font-weight:800">('+ot[c.num]+' OT)</span>':'')+'</td></tr>';}).join("");
   el.innerHTML='<table>'+rows+'</table><div class="hint">Flagged red = 0 hours or over 16. Double-check before submitting.</div>';
 }
 
@@ -352,6 +365,7 @@ async function submit(){
           PhaseCode:en.pay==="Regular"?en.phase:"", LineNum:en.pay==="Regular"?en.line:"",
           Hours:h, Foreman:loginName, ForemanEmail:loginEmail
         });
+        if(OT_COL){ var isOt=(en.pay==="Regular"&&!!en.ot); rows[rows.length-1].Overtime=OT_COL.boolean?isOt:(isOt?"Yes":"No"); }
       });
     }
   });
