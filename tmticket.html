@@ -89,7 +89,7 @@ textarea{min-height:90px;resize:vertical}
       <div><label>Date of work <span class="req">*</span></label><input type="date" id="wdate"></div>
       <div><label>Category <span class="req">*</span></label><select id="cat"><option value="">Select…</option><option>GC / owner directed</option><option>Design change / conflict</option><option>Damage by others</option><option>Out of sequence / delay</option><option>Added scope</option><option>Other</option></select></div>
     </div>
-    <label>Job <span class="req">*</span></label><input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist>
+    <label>Job <span class="req">*</span></label><input type="text" id="job" list="joblist" placeholder="Job # — start typing"><datalist id="joblist"></datalist><div id="pmLine" style="font-size:12.5px;color:#6b7280;margin-top:4px"></div>
     <div class="tno" id="tno"></div>
     <div class="grid2">
       <div><label>Location / area</label><input type="text" id="area" placeholder="e.g. Level 2, grid C-4"></div>
@@ -195,17 +195,22 @@ function afterLogin(a){
   renderLab(); renderMat(); renderEq(); setSigMode(SIGMODE); initSig();
   ["wdate","cat","job","area","directed","desc","cname","ccomp","cemail","noSigWhy","cname2","foreman"].forEach(function(id){ var el=E(id); var f=function(){ el.classList.remove("bad"); saveDraft(); if(id==="job"||id==="wdate") showTno(); }; el.addEventListener("input",f); el.addEventListener("change",f); });
   E("certify").onchange=saveDraft;
+  E("job").addEventListener("input",showPM); E("job").addEventListener("change",showPM);
   showTno(); loadJobs(); loadTechs(); loadPMs(); findList();
 }
 
 /* ===== lookups ===== */
 async function pullAll(listId,select){ var t=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
 function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
-  arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
+  arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); arr.forEach(function(s){ KNOWN_JOBS[s.split(" ")[0]]=1; }); showPM(); }).catch(function(){}); }
+var KNOWN_JOBS={};
+function showPM(){ var no=jobParts().no, el=E("pmLine"); if(!el) return; if(!no){ el.textContent=""; return; }
+  if(Object.keys(KNOWN_JOBS).length&&!KNOWN_JOBS[no]){ el.innerHTML='<span style="color:#b91c1c;font-weight:700">Job '+esc(no)+' isn\'t in the job list \u2014 pick it from the dropdown.</span>'; return; }
+  var pm=pmFor(no); el.textContent=pm.name?("PM: "+pm.name+" \u2014 the ticket will be emailed to "+pm.email):"No PM set in Job Setup \u2014 the ticket will go to "+pm.email+"."; }
 function loadTechs(){ pullAll(EMP,"EmployeeName,LoginEmail,Active").then(function(rows){ rows.forEach(function(f){ if(f.EmployeeName) EMAIL_BY_NAME[f.EmployeeName.trim().toLowerCase()]=(f.LoginEmail||"").trim().toLowerCase()||autoEmail(f.EmployeeName); }); E("techlist").innerHTML=rows.filter(function(f){return (f.Active||"Yes")!=="No"&&f.EmployeeName;}).map(function(f){return f.EmployeeName.trim();}).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join(""); }).catch(function(){}); }
 /* PM for each job comes from Job Setup (Jobs list, PMName). The T&M email goes to that PM; if none is found it goes to reports@. */
 function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(p.length<2)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
-function loadPMs(){ pullAll(JOBS,"Title,PMName").then(function(rows){ rows.forEach(function(f){ var no=String(f.Title||"").trim(); if(no&&f.PMName) PM_BY_JOB[no]=String(f.PMName).trim(); }); }).catch(function(){}); }
+function loadPMs(){ pullAll(JOBS,"Title,PMName").then(function(rows){ rows.forEach(function(f){ var no=String(f.Title||"").trim(); if(no&&f.PMName) PM_BY_JOB[no]=String(f.PMName).trim(); }); showPM(); }).catch(function(){}); }
 function pmFor(jobNo){ var name=PM_BY_JOB[String(jobNo||"").trim()]||"", email="";
   if(name){ var m=/[\w.+-]+@[\w.-]+\.\w+/.exec(name); if(m){ email=m[0].toLowerCase(); name=name.replace(m[0],"").replace(/[<>()]/g,"").trim()||email; }
     else email=EMAIL_BY_NAME[name.toLowerCase()]||autoEmail(name); }
@@ -304,7 +309,7 @@ function buildReport(L,t,sigData,sigUrl){
 async function submit(){
   var msg=E("msg"), btn=E("submitBtn"); saveDraft();
   var miss=[]; function need(id,label){ var el=E(id); if(!String(el.value||"").trim()){ el.classList.add("bad"); miss.push(label); } }
-  need("wdate","Date"); need("job","Job"); need("cat","Category"); need("directed","Directed by"); need("desc","Description"); need("foreman","Foreman");
+  need("wdate","Date"); need("job","Job"); if(E("job").value.trim()&&Object.keys(KNOWN_JOBS).length&&!KNOWN_JOBS[jobParts().no]){ E("job").classList.add("bad"); miss.push("a job from the list (\u201c"+jobParts().no+"\u201d isn't a job)"); } need("cat","Category"); need("directed","Directed by"); need("desc","Description"); need("foreman","Foreman");
   var L=lines(), t=totals();
   if(!L.labor.length && !L.materials.length && !L.equipment.length) miss.push("at least one labor, material or equipment line");
   if(SIGMODE==="sign"){ need("cname","Customer printed name"); need("ccomp","Customer company"); if(!SIGNED){ E("sigwrap").classList.add("bad"); miss.push("Customer signature"); } }
