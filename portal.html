@@ -29,6 +29,9 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 .gate p{opacity:.9;font-size:14px;margin:0 0 20px}
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .gate .msg{margin-top:14px;font-size:13px;opacity:.9}
+.tile[data-role]{display:none}
+.tile[data-role].show{display:flex}
+.sec.empty-sec,.grid.empty-sec{display:none}
 .foot{text-align:center;font-size:11px;color:var(--mut);margin-top:28px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
@@ -66,13 +69,12 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
     <a class="tile" href="/servicereport.html"><div class="ic">&#128295;</div><div class="tx"><b>Service Report</b><span>Service ticket / daily report</span></div></a>
     <a class="tile" href="/startupreport.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Start-Up Report</b><span>Equipment start-up &amp; PM checklists</span></div></a>
     <a class="tile" href="/mysubmissions.html#service"><div class="ic">&#128203;</div><div class="tx"><b>My Submissions</b><span>Your service &amp; start-up reports</span></div></a>
-    <a class="tile" href="/adminreview.html"><div class="ic">&#128269;</div><div class="tx"><b>Admin Review</b><span>Admins: review &amp; edit submitted reports</span></div></a>
   </div>
 
   <div class="sec">Tasks</div>
   <div class="grid">
     <a class="tile" href="/mytasks.html"><div class="ic">&#128204;</div><div class="tx"><b>My Tasks</b><span>Items assigned to you</span></div></a>
-    <a class="tile" href="/assigntask.html"><div class="ic">&#9745;&#65039;</div><div class="tx"><b>Action Items</b><span>Assign &amp; track tasks by job</span></div></a>
+    <a class="tile" data-role="lead" href="/assigntask.html"><div class="ic">&#9745;&#65039;</div><div class="tx"><b>Action Items</b><span>Assign &amp; track tasks by job</span></div></a>
   </div>
 
   <div class="sec">Safety &amp; Quality</div>
@@ -98,24 +100,25 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 
   <div class="sec">Shop</div>
   <div class="grid">
-    <a class="tile" href="/shopproduction.html"><div class="ic">&#128296;</div><div class="tx"><b>Shop Fab Run</b><span>Log a fabrication batch</span></div></a>
+    <a class="tile" data-role="shop" href="/shopproduction.html"><div class="ic">&#128296;</div><div class="tx"><b>Shop Fab Run</b><span>Log a fabrication batch</span></div></a>
   </div>
 
   <div class="sec">Reports</div>
   <div class="grid">
-    <a class="tile" href="/manpower.html"><div class="ic">&#128200;</div><div class="tx"><b>Manpower Load</b><span>Company man-hours by job</span></div></a>
-    <a class="tile" href="/lookaheadreview.html"><div class="ic">&#128197;</div><div class="tx"><b>Look-Ahead Review</b><span>All 2-week look-aheads for the Monday meeting</span></div></a>
+    <a class="tile" data-role="admin" href="/manpower.html"><div class="ic">&#128200;</div><div class="tx"><b>Manpower Load</b><span>Company man-hours by job</span></div></a>
+    <a class="tile" data-role="pm" href="/lookaheadreview.html"><div class="ic">&#128197;</div><div class="tx"><b>Look-Ahead Review</b><span>All 2-week look-aheads for the Monday meeting</span></div></a>
     <a class="tile" href="/taskschedule.html"><div class="ic">&#128203;</div><div class="tx"><b>Task Schedule</b><span>Budget vs earned hours by phase</span></div></a>
-    <a class="tile" href="/shopdash.html"><div class="ic">&#128295;</div><div class="tx"><b>Shop Production</b><span>Fab rates &amp; optimal batch size</span></div></a>
+    <a class="tile" data-role="shop" href="/shopdash.html"><div class="ic">&#128295;</div><div class="tx"><b>Shop Production</b><span>Fab rates &amp; optimal batch size</span></div></a>
   </div>
 
   <div class="sec">Setup (Office)</div>
   <div class="grid">
-    <a class="tile" href="/compliance.html"><div class="ic">&#9989;</div><div class="tx"><b>Compliance Dashboard</b><span>Timecards, logs &amp; look-aheads turned in vs. not</span></div></a>
-    <a class="tile" href="/tcadmin.html"><div class="ic">&#128202;</div><div class="tx"><b>Timecard Admin</b><span>Accounting: all entries + CSV</span></div></a>
-    <a class="tile" href="/phasecodes.html"><div class="ic">&#10133;</div><div class="tx"><b>Add Phase Codes</b><span>Add a phase/line to an existing job</span></div></a>
-    <a class="tile" href="/jobsetup.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Job Setup</b><span>Load phase &amp; line codes for a job</span></div></a>
-    <a class="tile" href="/employees.html"><div class="ic">&#128101;</div><div class="tx"><b>Employee Setup</b><span>Refresh the crew list from Vista</span></div></a>
+    <a class="tile" data-role="admin" href="/adminreview.html"><div class="ic">&#128269;</div><div class="tx"><b>Admin Review</b><span>Admins: review &amp; edit submitted reports</span></div></a>
+    <a class="tile" data-role="admin" href="/compliance.html"><div class="ic">&#9989;</div><div class="tx"><b>Compliance Dashboard</b><span>Timecards, logs &amp; look-aheads turned in vs. not</span></div></a>
+    <a class="tile" data-role="admin" href="/tcadmin.html"><div class="ic">&#128202;</div><div class="tx"><b>Timecard Admin</b><span>Accounting: all entries + CSV</span></div></a>
+    <a class="tile" data-role="admin" href="/phasecodes.html"><div class="ic">&#10133;</div><div class="tx"><b>Add Phase Codes</b><span>Add a phase/line to an existing job</span></div></a>
+    <a class="tile" data-role="pm" href="/jobsetup.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Job Setup</b><span>Load phase &amp; line codes for a job</span></div></a>
+    <a class="tile" data-role="admin" href="/employees.html"><div class="ic">&#128101;</div><div class="tx"><b>Employee Setup</b><span>Refresh the crew list from Vista</span></div></a>
   </div>
 
   <div class="foot">Vision Mechanical &bull; Employee Portal &bull; Access limited to Vision Mechanical accounts.</div>
@@ -129,6 +132,51 @@ function showApp(acct){
   E("gate").style.display="none";
   E("app").style.display="block";
   E("who").textContent=acct&&acct.username?acct.username:"";
+  tidySections();
+  applyRoles(acct);
+}
+/* ===== Role-based buttons =====
+   admin = Kegan/Bill or Admin flag in Employee Setup  -> everything
+   pm    = named PMs (+admins)                        -> Job Setup, Look-Ahead Review
+   lead  = PMs, admins, Foremen                       -> Action Items
+   shop  = Shop access flag (+admins)                 -> Shop Fab Run, Shop Production
+   Hidden buttons are a convenience only; each page still checks access itself. */
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var EMP_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Foreman,ShopAccess,Active)&$top=999";
+function truthy(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function showRoles(r){
+  document.querySelectorAll(".tile[data-role]").forEach(function(el){ var need=el.getAttribute("data-role");
+    var ok=r.admin || (need==="pm"&&r.pm) || (need==="lead"&&(r.pm||r.foreman)) || (need==="shop"&&r.shop);
+    el.classList.toggle("show",!!ok); });
+  tidySections();
+}
+function tidySections(){ /* hide a section header when every button under it is hidden */
+  document.querySelectorAll(".grid").forEach(function(g){ var any=Array.prototype.some.call(g.querySelectorAll(".tile"),function(t){ return !t.hasAttribute("data-role")||t.classList.contains("show"); });
+    g.classList.toggle("empty-sec",!any); var h=g.previousElementSibling; if(h&&h.classList.contains("sec")) h.classList.toggle("empty-sec",!any); });
+}
+function applyRoles(acct){
+  var em=String(acct&&acct.username||"").toLowerCase().trim();
+  var r={admin:SUPERADMIN.indexOf(em)>-1, pm:NAMED_PM.indexOf(em)>-1, foreman:false, shop:false};
+  try{ var c=JSON.parse(localStorage.getItem("vm_roles_v1")||"null"); if(c&&c.em===em) showRoles(c.r); }catch(e){}   /* instant from last visit */
+  showRoles(r);
+  msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+    var url=EMP_URL, me=null;
+    function page(u){ return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(x){return x.json();}).then(function(j){
+      (j.value||[]).forEach(function(it){ var f=it.fields||{}; if((f.Active||"Yes")==="No") return; var e2=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e2===em) me=f; });
+      if(j["@odata.nextLink"]) return page(j["@odata.nextLink"]); }); }
+    return page(url).then(function(){
+      if(me){ r.admin=r.admin||truthy(me.Admin); r.foreman=truthy(me.Foreman); r.shop=truthy(me.ShopAccess); }
+      r.pm=r.pm||r.admin;
+      showRoles(r);
+      try{ localStorage.setItem("vm_roles_v1",JSON.stringify({em:em,r:r})); }catch(e){}
+    });
+  }).catch(function(){
+    /* first visit on this device: get the data permission once, then come back */
+    try{ if(!sessionStorage.getItem("vm_roles_try")){ sessionStorage.setItem("vm_roles_try","1"); msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:acct}); } }catch(e){}
+  });
 }
 function start(){
   msalInstance.handleRedirectPromise().then(function(){
