@@ -117,7 +117,22 @@ var PALETTE=["#ff6b57","#f2a65a","#ffd166","#06d6a0","#4cc9f0","#8a7dff","#f472b
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null;
 function E(id){return document.getElementById(id);}
-function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct.name||acct.username; run(); loadProjection(); }
+async function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E("gate").style.display="none";
+  if(!(await vmIsAdmin(acct.username))){ vmDenied(acct.username,"Manpower Load"); return; }
+  E("app").style.display="block"; E("who").textContent=acct.name||acct.username; run(); loadProjection(); }
+/* ===== Admin gate: Kegan/Bill or the Admin flag in Employee Setup ===== */
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+function vmAutoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function vmIsAdmin(email){
+  email=String(email||"").toLowerCase().trim(); if(VM_SUPER.indexOf(email)>-1) return true;
+  try{ var token=await getToken(), url="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999", ok=false;
+    while(url&&!ok){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break;
+      (j.value||[]).forEach(function(it){ var f=it.fields||{}; if((f.Active||"Yes")==="No") return; var a=(f.Admin===true||f.Admin==="Yes"||f.Admin==="true"); var e=(f.LoginEmail||"").toLowerCase().trim()||vmAutoEmail(f.EmployeeName); if(a&&e===email) ok=true; });
+      url=j["@odata.nextLink"]||null; }
+    return ok; }catch(e){ return false; }
+}
+function vmDenied(email,what){ document.body.innerHTML='<div style="max-width:440px;margin:60px auto;text-align:center;font-family:-apple-system,Segoe UI,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:30px"><h2 style="color:#7f1d1d">Not authorized</h2><p>'+what+' is limited to admins (set in Employee Setup). Signed in as <b>'+String(email).replace(/</g,"&lt;")+'</b>.</p></div>'; }
+
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
 msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
