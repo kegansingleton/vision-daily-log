@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Admin Review</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1150px;margin:0 auto}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1150px;margin:0 auto;padding:12px 12px 60px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.tab{flex:1;min-width:140px;text-align:center;font-size:14px;font-weight:800;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;background:#eef0f2;color:var(--mut);cursor:pointer}
+.tab.on{background:var(--vm2);color:#fff;border-color:var(--vm2)}
+.tab .c{display:inline-block;margin-left:6px;font-size:11px;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px}
+.bar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.bar label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin-bottom:3px}
+.bar input{padding:9px;border:1.5px solid #9ca3af;border-radius:9px;font-size:14px;background:#fff}
+.bar .grow{flex:1;min-width:180px}.bar .grow input{width:100%}
+.bar button{border:none;background:var(--vm);color:#fff;font-weight:800;border-radius:9px;padding:10px 14px;cursor:pointer}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table.list{width:100%;border-collapse:collapse;font-size:13.5px}
+table.list th{text-align:left;background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.list td{padding:9px 10px;border-bottom:1px solid #f0f1f3;vertical-align:top}
+table.list tr.r{cursor:pointer}table.list tr.r:hover td{background:#fdf6f5}
+table.list tr.open td{background:#fdf2f1}
+.tag{display:inline-block;font-size:11px;font-weight:800;border-radius:10px;padding:1px 8px;white-space:nowrap}
+.tag.late{background:var(--redbg);color:var(--red)}.tag.st{background:#eef2f7;color:#475569}
+.detail{padding:12px 14px 16px;background:#fff;border-top:2px solid var(--vm2)}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.dgrid{grid-template-columns:1fr}}
+.dgrid h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--vm2)}
+.fld{margin-bottom:8px}
+.fld label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);margin-bottom:3px}
+.fld input,.fld select,.fld textarea{width:100%;padding:8px 9px;border:1.5px solid #9ca3af;border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+.fld textarea{min-height:60px;resize:vertical}
+.fld.chg input,.fld.chg select,.fld.chg textarea{border-color:var(--amb);background:#fffbeb}
+.preview{border:1px solid var(--line);border-radius:10px;padding:12px;max-height:720px;overflow:auto;font-size:13px;background:#fcfcfd}
+.preview pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0}
+.preview img{max-width:100%}
+.acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;position:sticky;bottom:0;background:#fff;padding:8px 0}
+.acts button{border:none;border-radius:9px;padding:10px 16px;font-weight:800;cursor:pointer;font-size:14px}
+.acts .save{background:var(--ok);color:#fff}.acts .save:disabled{opacity:.45}
+.acts .cancel{background:#eef0f2;color:var(--ink)}
+.acts .m{font-size:13px}
+.empty{padding:24px;text-align:center;color:var(--mut)}
+.note{font-size:12px;color:var(--mut);margin:8px 2px}
+.denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.hide-sm{}
+@media(max-width:640px){.hide-sm{display:none}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Admin Review</h1><p>Review and correct submitted reports. Admins only.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Admin Review</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="tabs" id="tabs"></div>
+  <div class="bar">
+    <div><label>From</label><input type="date" id="from"></div>
+    <div><label>To</label><input type="date" id="to"></div>
+    <div class="grow"><label>Search</label><input type="text" id="q" placeholder="Job, person, status, equipment…"></div>
+    <button id="loadBtn">Load</button>
+  </div>
+  <div class="card"><div id="list"><div class="empty">Loading…</div></div></div>
+  <div class="note">Edits save straight to SharePoint. SharePoint keeps version history on every item (who changed what, and when), so any change can be rolled back from the list. Editing fields doesn't re-send the emailed PDF.</div>
+</div>
+
+<script>
+/* ===== Config ===== */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+/* each tab: list (id or name), date column, summary columns, the big report column, and how to show a row */
+var TABS=[
+ {k:"logs",t:"Daily Logs",id:"bccd1165-a999-41b4-9cae-394d0766fb4a",date:"LogDate",body:"LogText",html:true,
+  cols:["LogDate","Project","SubmittedBy","ActivityStatus","LateSubmission","LoginEmail"],
+  row:function(f){return [d10(f.LogDate),f.Project,f.SubmittedBy||f.LoginEmail,tags(f.ActivityStatus,f.LateSubmission==="Yes")];},hd:["Date","Job","Submitted by","Status"]},
+ {k:"look",t:"Look-Aheads",id:"3c787f11-c841-4fc9-a4c1-d04e11b6cd2c",date:"WeekOf",body:"LogText",html:true,
+  cols:["WeekOf","Project","SubmittedBy","ForemanSuper","LookAheadStatus","LateFlag","LoginEmail"],
+  row:function(f){return [d10(f.WeekOf),f.Project,f.ForemanSuper||f.SubmittedBy||f.LoginEmail,tags(f.LookAheadStatus,f.LateFlag==="Yes")];},hd:["Week of","Job","Foreman","Status"]},
+ {k:"svc",t:"Service Reports",id:"1aec5cfa-db5b-47f2-adba-6b23a42e02af",date:"WorkDate",body:"ReportText",html:false,
+  cols:["WorkDate","JobNo","JobName","Technician","ServiceStatus","LaborHours","OvertimeHours","SubmittedBy"],
+  row:function(f){return [d10(f.WorkDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.Technician||f.SubmittedBy,tags(f.ServiceStatus),hrs(f.LaborHours,f.OvertimeHours)];},hd:["Date","Job","Technician","Status","Hours"]},
+ {k:"su",t:"Start-Up Reports",name:"Start-Up Reports",date:"ServiceDate",body:"ReportHTML",html:true,
+  cols:["ServiceDate","JobNo","JobName","EquipmentType","TagID","Technician","Model","SerialNumber","ReportType"],
+  row:function(f){return [d10(f.ServiceDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),[f.EquipmentType,f.TagID].filter(Boolean).join(" · "),f.Technician,[f.Model,f.SerialNumber].filter(Boolean).join(" / ")];},hd:["Date","Job","Equipment","Technician","Model / Serial"]}
+];
+var SKIP={ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
+var account=null, loginEmail="", TAB=TABS[0], ROWS=[], OPEN=null, LOADSEQ=0;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function d10(v){var s=String(v||"").slice(0,10);if(!s)return "";var p=s.split("-");return (+p[1])+"/"+(+p[2])+"/"+p[0].slice(2);}
+function tags(st,late){return (late?'<span class="tag late">Late</span> ':'')+(st?'<span class="tag st">'+esc(st)+'</span>':'');}
+function hrs(r,o){var a=parseFloat(r)||0,b=parseFloat(o)||0;return a+(b?' <span class="tag late" style="background:#fef3c7;color:#b45309">+'+b+' OT</span>':'');}
+function truthy(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
+async function gget(url,hdr){ var t=await getToken(); var h={Authorization:"Bearer "+t}; if(hdr) for(var k in hdr) h[k]=hdr[k]; var j=await fetch(url,{headers:h}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); return j; }
+
+/* ===== Auth / gate: super-admins + Admin flag in Employee Setup ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?resp.account:(msalApp.getAllAccounts()[0]||null); if(a) afterLogin(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+async function afterLogin(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim();
+  E("gate").style.display="none";
+  var ok=SUPERADMIN.indexOf(loginEmail)>-1;
+  if(!ok){ try{ var url=GRAPH+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin)&$top=999"; while(url&&!ok){ var j=await gget(url); (j.value||[]).forEach(function(it){ var f=it.fields||{}; var em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(em===loginEmail&&truthy(f.Admin)) ok=true; }); url=j["@odata.nextLink"]||null; } }catch(e){} }
+  if(!ok){ document.body.innerHTML='<div class="denied"><h2 style="color:#7f1d1d">Admins only</h2><p>Admin Review is limited to people with the Admin flag in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
+  E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  E("from").value=iso(addDays(new Date(),-14)); E("to").value=iso(new Date());
+  var m=/[?&#]tab=(\w+)/.exec(location.href); if(m){ var t=TABS.filter(function(x){return x.k===m[1];})[0]; if(t) TAB=t; }
+  renderTabs();
+  E("loadBtn").onclick=load; E("q").oninput=renderList;
+  load();
+}
+function renderTabs(){
+  E("tabs").innerHTML=TABS.map(function(t){return '<div class="tab'+(t===TAB?" on":"")+'" data-k="'+t.k+'">'+esc(t.t)+(t===TAB&&ROWS.length?'<span class="c">'+ROWS.length+'</span>':'')+'</div>';}).join("");
+  Array.prototype.forEach.call(E("tabs").querySelectorAll(".tab"),function(el){ el.onclick=function(){ TAB=TABS.filter(function(x){return x.k===el.getAttribute("data-k");})[0]; OPEN=null; try{history.replaceState(null,"","?tab="+TAB.k);}catch(e){} renderTabs(); load(); }; });
+}
+
+/* ===== list resolution + columns (cached per tab) ===== */
+async function resolve(tab){
+  if(!tab.id && tab.name){ var j=await gget(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===tab.name.toLowerCase();})[0]; if(!L) throw new Error("The “"+tab.name+"” list doesn't exist in SharePoint yet."); tab.id=L.id; }
+  if(!tab.meta){ var c=await gget(GRAPH+tab.id+"/columns"); tab.meta=(c.value||[]); tab.names={}; tab.meta.forEach(function(x){ tab.names[x.name]=x; }); }
+}
+
+/* ===== load ===== */
+async function load(){
+  var seq=++LOADSEQ, tab=TAB; E("list").innerHTML='<div class="empty">Loading '+esc(tab.t.toLowerCase())+'…</div>'; ROWS=[]; renderTabs();
+  try{
+    await resolve(tab);
+    var sel=tab.cols.filter(function(c){return tab.names[c];}).concat(["Title"]).join(",");
+    var from=E("from").value, to=E("to").value, out=[];
+    var base=GRAPH+tab.id+"/items?$expand=fields($select="+sel+")&$top=500";
+    async function page(url,hdr){ while(url){ var j=await gget(url,hdr); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields,mod:it.lastModifiedDateTime}); }); url=j["@odata.nextLink"]||null; } }
+    var dateCol=tab.names[tab.date]?tab.date:null;
+    if(dateCol){ try{ await page(base+"&$filter=fields/"+dateCol+" ge '"+from+"T00:00:00Z' and fields/"+dateCol+" le '"+to+"T23:59:59Z'",{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }catch(e){ out.length=0; await page(base); } }
+    else await page(base);
+    if(seq!==LOADSEQ) return;
+    ROWS=out.filter(function(r){ if(!dateCol) return true; var d=String(r.f[dateCol]||"").slice(0,10); return !d||(d>=from&&d<=to); })
+            .sort(function(a,b){ return String(b.f[tab.date]||"").localeCompare(String(a.f[tab.date]||"")); });
+    renderTabs(); renderList();
+  }catch(e){ if(seq===LOADSEQ) E("list").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+function renderList(){
+  var tab=TAB, q=(E("q").value||"").toLowerCase().trim();
+  var rows=ROWS.filter(function(r){ if(!q) return true; return Object.keys(r.f).map(function(k){return r.f[k];}).join(" ").toLowerCase().indexOf(q)>-1; });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(q?"Nothing matches that search.":"Nothing submitted in this date range.")+'</div>'; return; }
+  var h='<table class="list"><thead><tr>'+tab.hd.map(function(x,i){return '<th'+(i>2?' class="hide-sm"':'')+'>'+esc(x)+'</th>';}).join("")+'</tr></thead><tbody>';
+  rows.forEach(function(r){ var cells=tab.row(r.f);
+    h+='<tr class="r'+(OPEN===r.id?" open":"")+'" data-id="'+esc(r.id)+'">'+cells.map(function(c,i){ var html=(typeof c==="string"&&/<span/.test(c))?c:esc(c==null?"":c); return '<td'+(i>2?' class="hide-sm"':'')+'>'+html+'</td>'; }).join("")+'</tr>';
+    if(OPEN===r.id) h+='<tr><td colspan="'+tab.hd.length+'" style="padding:0"><div class="detail" id="detail">Loading…</div></td></tr>';
+  });
+  E("list").innerHTML=h+'</tbody></table>';
+  Array.prototype.forEach.call(E("list").querySelectorAll("tr.r"),function(tr){ tr.onclick=function(){ var id=tr.getAttribute("data-id"); OPEN=(OPEN===id)?null:id; renderList(); }; });
+  if(OPEN&&E("detail")) openDetail(OPEN);
+}
+
+/* ===== detail: editable fields + full report ===== */
+function editable(tab){
+  return tab.meta.filter(function(c){ return !c.readOnly && !c.hidden && !SKIP[c.name] && c.name!==tab.body && (c.text||c.number||c.dateTime||c.choice||c.boolean||c.currency); });
+}
+async function openDetail(id){
+  var tab=TAB, box=E("detail"); if(!box) return;
+  try{
+    var j=await gget(GRAPH+tab.id+"/items/"+id+"?$expand=fields");
+    if(OPEN!==id||!E("detail")) return;
+    var f=j.fields||{}, cols=editable(tab);
+    var form=cols.map(function(c){ var v=f[c.name], val=(v==null?"":v), inp;
+      if(c.choice){ var opts=(c.choice.choices||[]).slice(); if(val&&opts.indexOf(val)<0) opts.unshift(val); inp='<select data-c="'+c.name+'"><option value=""></option>'+opts.map(function(o){return '<option'+(o===val?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>'; }
+      else if(c.boolean){ inp='<select data-c="'+c.name+'" data-b="1"><option value="false"'+(!val?" selected":"")+'>No</option><option value="true"'+(val?" selected":"")+'>Yes</option></select>'; }
+      else if(c.dateTime){ inp='<input type="date" data-c="'+c.name+'" data-d="1" value="'+esc(String(val).slice(0,10))+'">'; }
+      else if(c.number||c.currency){ inp='<input type="number" step="any" data-c="'+c.name+'" data-n="1" value="'+esc(val)+'">'; }
+      else if(c.text&&c.text.allowMultipleLines){ inp='<textarea data-c="'+c.name+'">'+esc(val)+'</textarea>'; }
+      else inp='<input type="text" data-c="'+c.name+'" value="'+esc(val)+'">';
+      return '<div class="fld"><label>'+esc(c.displayName||c.name)+'</label>'+inp+'</div>'; }).join("");
+    var body=f[tab.body]||"";
+    var prev=body?(tab.html?body:'<pre>'+esc(body)+'</pre>'):'<span style="color:#9ca3af">(no report text saved)</span>';
+    var bodyEdit=(!tab.html && tab.names[tab.body])?'<div class="fld" style="margin-top:10px"><label>Edit report text</label><textarea data-c="'+tab.body+'" style="min-height:200px">'+esc(body)+'</textarea></div>':'';
+    box.innerHTML='<div class="dgrid"><div><h4>Fields</h4>'+form+'</div><div><h4>Submitted report</h4><div class="preview">'+prev+'</div>'+bodyEdit+
+      '<div class="note">Last changed '+esc(new Date(j.lastModifiedDateTime).toLocaleString())+(j.lastModifiedBy&&j.lastModifiedBy.user?' by '+esc(j.lastModifiedBy.user.displayName||""):'')+'</div></div></div>'+
+      '<div class="acts"><button class="save" id="saveBtn" disabled>Save changes</button><button class="cancel" id="closeBtn">Close</button><span class="m" id="saveMsg"></span></div>';
+    var orig={}; Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ orig[el.getAttribute("data-c")]=el.value; var on=function(){ var ch=el.value!==orig[el.getAttribute("data-c")]; el.parentNode.classList.toggle("chg",ch); E("saveBtn").disabled=!box.querySelector(".fld.chg"); }; el.oninput=on; el.onchange=on; });
+    E("closeBtn").onclick=function(){ OPEN=null; renderList(); };
+    E("saveBtn").onclick=function(){ save(id,box,orig); };
+  }catch(e){ box.textContent="Could not open: "+(e.message||e); }
+}
+async function save(id,box,orig){
+  var tab=TAB, patch={}, btn=E("saveBtn"), m=E("saveMsg");
+  Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ var k=el.getAttribute("data-c"); if(el.value===orig[k]) return;
+    var v=el.value; if(el.getAttribute("data-n")) v=(v===""?null:parseFloat(v)); else if(el.getAttribute("data-b")) v=(v==="true"); else if(el.getAttribute("data-d")) v=(v?v+"T12:00:00Z":null); patch[k]=v; });
+  if(!Object.keys(patch).length) return;
+  btn.disabled=true; m.style.color=""; m.textContent="Saving…";
+  try{ var t=await getToken();
+    var r=await fetch(GRAPH+tab.id+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(patch)});
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
+    var row=ROWS.filter(function(x){return x.id===id;})[0]; if(row) Object.keys(patch).forEach(function(k){ row.f[k]=patch[k]; });
+    m.style.color="#15803d"; m.textContent="Saved "+Object.keys(patch).length+" change"+(Object.keys(patch).length>1?"s":"")+".";
+    Object.keys(patch).forEach(function(k){ var el=box.querySelector('[data-c="'+k+'"]'); if(el){ orig[k]=el.value; el.parentNode.classList.remove("chg"); } });
+    
+  }catch(e){ btn.disabled=false; m.style.color="#b91c1c"; m.textContent="Didn't save: "+(e.message||e); }
+}
+</script>
+</body>
+</html>
