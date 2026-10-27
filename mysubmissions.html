@@ -73,6 +73,8 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="tab on" data-tab="tc">Timecards</div>
     <div class="tab" data-tab="logs">Daily Logs</div>
     <div class="tab" data-tab="look">Look-Aheads</div>
+    <div class="tab" data-tab="svc">Service Reports</div>
+    <div class="tab" data-tab="su">Start-Up Reports</div>
   </div>
 
   <div class="panel" id="panel-tc">
@@ -90,6 +92,12 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="tablewrap" id="logsTbl"><div class="empty">Loading…</div></div>
   </div>
 
+  <div class="panel" id="panel-svc" style="display:none">
+    <div class="tablewrap" id="svcTbl"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="panel" id="panel-su" style="display:none">
+    <div class="tablewrap" id="suTbl"><div class="empty">Loading…</div></div>
+  </div>
   <div class="panel" id="panel-look" style="display:none">
     <div class="tablewrap" id="lookTbl"><div class="empty">Loading…</div></div>
   </div>
@@ -115,7 +123,9 @@ function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username||"";
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=loginName;
-  loadTC(); loadEditable(); loadLogs(); loadLook();
+  loadTC(); loadEditable(); loadLogs(); loadLook(); loadSvc(); loadSU();
+  if(/service|svc/.test(location.hash)){ var st=document.querySelector('.tab[data-tab="svc"]'); if(st) st.click(); }
+  if(/startup|su$/.test(location.hash)){ var su=document.querySelector('.tab[data-tab="su"]'); if(su) su.click(); }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
 E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
@@ -129,6 +139,8 @@ document.querySelectorAll(".tab").forEach(function(t){
     E("panel-tc").style.display=id==="tc"?"block":"none";
     E("panel-logs").style.display=id==="logs"?"block":"none";
     E("panel-look").style.display=id==="look"?"block":"none";
+    E("panel-svc").style.display=id==="svc"?"block":"none";
+    E("panel-su").style.display=id==="su"?"block":"none";
   };
 });
 
@@ -171,6 +183,43 @@ async function getLogText(listId,id){
   var j=await fetch(GRAPH+listId+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
   if(j.error) throw new Error(j.error.message);
   return (j.fields&&j.fields.LogText)||"";
+}
+
+/* ===== Service + Start-Up reports: my own rows (by email), full report loads on View ===== */
+var SVC_LIST="1aec5cfa-db5b-47f2-adba-6b23a42e02af", SU_LIST=null;
+async function getMineBy(listId,dateField,emailField,fromISO,select){
+  var token=await getToken(), base=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=500", out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/"+emailField+" eq '"+loginEmail.replace(/'/g,"''")+"' and fields/"+dateField+" ge '"+fromISO+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
+  return out.filter(function(r){ return String(r.f[emailField]||"").toLowerCase()===loginEmail && dkey(r.f[dateField])>=fromISO; })
+            .sort(function(a,b){ return dkey(b.f[dateField]).localeCompare(dkey(a.f[dateField])); });
+}
+function renderReports(elId,rows,listId,bodyField,isHtml,cols){
+  if(!rows.length){ E(elId).innerHTML='<div class="empty">Nothing submitted in the last 120 days.</div>'; return; }
+  var h='<table><thead><tr>'+cols.map(function(c){return '<th>'+c[0]+'</th>';}).join("")+'<th></th></tr></thead><tbody>';
+  rows.forEach(function(r,i){ h+='<tr>'+cols.map(function(c){return '<td>'+esc(c[1](r.f))+'</td>';}).join("")+'<td><button class="viewbtn" data-i="'+i+'">View</button></td></tr>'+
+    '<tr id="'+elId+'-d'+i+'" style="display:none"><td colspan="'+(cols.length+1)+'"><div class="detail" id="'+elId+'-t'+i+'">Loading…</div></td></tr>'; });
+  E(elId).innerHTML=h+'</tbody></table>';
+  E(elId).querySelectorAll(".viewbtn").forEach(function(b){ b.onclick=async function(){ var i=b.getAttribute("data-i"), dr=E(elId+"-d"+i), box=E(elId+"-t"+i), show=dr.style.display==="none";
+    dr.style.display=show?"table-row":"none"; b.textContent=show?"Hide":"View";
+    if(show&&!box.getAttribute("data-ok")){ try{ var t=await getToken(); var j=await fetch(GRAPH+listId+"/items/"+rows[i].id+"?$expand=fields($select="+bodyField+")",{headers:{Authorization:"Bearer "+t}}).then(function(x){return x.json();});
+      var body=(j.fields&&j.fields[bodyField])||""; box.innerHTML=body?(isHtml?body:'<pre style="white-space:pre-wrap;font-family:inherit;margin:0">'+esc(body)+'</pre>'):"(no detail saved)"; box.setAttribute("data-ok","1"); }catch(e){ box.textContent="Could not load ("+(e.message||e)+")."; } } }; });
+}
+async function loadSvc(){
+  try{ var rows=await getMineBy(SVC_LIST,"WorkDate","SubmittedBy",iso(addDays(new Date(),-120)),"WorkDate,JobNo,JobName,ServiceStatus,LaborHours,OvertimeHours,SubmittedBy");
+    renderReports("svcTbl",rows,SVC_LIST,"ReportText",false,[["Date",function(f){return shortD(f.WorkDate);}],["Job",function(f){return ((f.JobNo||"")+" "+(f.JobName||"")).trim();}],["Status",function(f){return f.ServiceStatus||"";}],["Hours",function(f){return (f.LaborHours||0)+(f.OvertimeHours?" + "+f.OvertimeHours+" OT":"");}]]);
+  }catch(e){ E("svcTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+async function loadSU(){
+  try{ var token=await getToken();
+    var L=await fetch(GRAPH.replace(/lists\/$/,"lists?$select=id,displayName&$top=999"),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    var hit=(L.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()==="start-up reports";})[0];
+    if(!hit){ E("suTbl").innerHTML='<div class="empty">Start-up reports aren\'t set up yet.</div>'; return; }
+    SU_LIST=hit.id;
+    var rows=await getMineBy(SU_LIST,"ServiceDate","LoginEmail",iso(addDays(new Date(),-120)),"ServiceDate,JobNo,JobName,EquipmentType,TagID,Model,SerialNumber,LoginEmail");
+    renderReports("suTbl",rows,SU_LIST,"ReportHTML",true,[["Date",function(f){return shortD(f.ServiceDate);}],["Job",function(f){return ((f.JobNo||"")+" "+(f.JobName||"")).trim();}],["Equipment",function(f){return [f.EquipmentType,f.TagID].filter(Boolean).join(" · ");}],["Model / Serial",function(f){return [f.Model,f.SerialNumber].filter(Boolean).join(" / ");}]]);
+  }catch(e){ E("suTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
 
 /* ===== Timecards (weekly grid) ===== */
