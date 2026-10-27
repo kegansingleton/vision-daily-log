@@ -32,6 +32,8 @@ textarea{min-height:80px;resize:vertical}
 .chip.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
 .chip.ppe.on{background:#1d4ed8;border-color:#1d4ed8}
 .chip.permit.on{background:var(--amb);border-color:var(--amb)}
+.addrow{display:flex;gap:8px;margin-top:10px}.addrow input{flex:1;min-width:0}.addrow button{flex:0 0 auto;border:1.5px dashed var(--vm);background:#fff;color:var(--vm);border-radius:9px;padding:0 14px;font-weight:800;font-size:14px;cursor:pointer}
+.chip.custom{border-style:dashed}
 .ctrl{border-left:4px solid var(--vm2);background:#fff8f7;border-radius:8px;padding:8px 10px;margin-top:8px}
 .ctrl b{font-size:12.5px;color:var(--vm2)}
 .ctrl textarea{min-height:56px;margin-top:4px;font-size:14px;background:#fff}
@@ -88,13 +90,16 @@ textarea{min-height:80px;resize:vertical}
     <h2><span class="n">2</span>Hazards &amp; controls</h2>
     <div class="desc">Tap every hazard on today's work. Standard controls fill in — edit them to fit the job.</div>
     <div class="chips" id="hazChips"></div>
+    <div class="addrow"><input type="text" id="hazAdd" placeholder="Other hazard not listed…"><button type="button" data-add="haz">+ Add</button></div>
     <div id="ctrls"></div>
   </div>
 
   <div class="card">
     <h2><span class="n">3</span>PPE &amp; permits</h2>
     <label>PPE required</label><div class="chips" id="ppeChips"></div>
+    <div class="addrow"><input type="text" id="ppeAdd" placeholder="Other PPE…"><button type="button" data-add="ppe">+ Add</button></div>
     <label>Permits / special requirements</label><div class="chips" id="permitChips"></div>
+    <div class="addrow"><input type="text" id="permitAdd" placeholder="Other permit / requirement…"><button type="button" data-add="permit">+ Add</button></div>
   </div>
 
   <div class="card">
@@ -178,7 +183,11 @@ var TALKS=[
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", LIST_ID=null, LIST_COLS=null, EMPS=[];
-var ST={haz:{},ctrl:{},ppe:{},permit:{},crew:{}};
+var ST={haz:{},ctrl:{},ppe:{},permit:{},crew:{},xhaz:[],xppe:[],xpermit:[]};
+var MONTH_TALKS=[], TALK_LIST="Toolbox Talks";
+function allHaz(){ return HAZARDS.concat((ST.xhaz||[]).map(function(n){return [n,"",1];})); }
+function allPpe(){ return PPE.concat(ST.xppe||[]); }
+function allPermits(){ return PERMITS.concat(ST.xpermit||[]); }
 
 function E(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -199,7 +208,7 @@ function afterLogin(a){
   ["pdate","area","job","tasks","others","foreman","customTalk"].forEach(function(id){ var el=E(id); var f=function(){ el.classList.remove("bad"); saveDraft(); }; el.addEventListener("input",f); el.addEventListener("change",f); });
   E("talk").onchange=function(){ E("talk").classList.remove("bad"); renderTalk(); saveDraft(); };
   E("certify").onchange=saveDraft; E("crewSearch").oninput=renderCrew;
-  loadJobs(); loadCrew(); findList();
+  loadJobs(); loadCrew(); findList(); loadMonthTalks();
 }
 async function pullAll(listId,select){ var t=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
 function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
@@ -217,9 +226,9 @@ async function findList(){
 /* ===== chips / controls ===== */
 function chipHtml(cls,key,label,on){ return '<span class="chip '+cls+(on?" on":"")+'" data-k="'+key+'" data-v="'+esc(label)+'">'+esc(label)+'</span>'; }
 function renderChips(){
-  E("hazChips").innerHTML=HAZARDS.map(function(h){ return chipHtml("haz","haz",h[0],ST.haz[h[0]]); }).join("");
-  E("ppeChips").innerHTML=PPE.map(function(p){ return chipHtml("ppe","ppe",p,ST.ppe[p]); }).join("");
-  E("permitChips").innerHTML=PERMITS.map(function(p){ return chipHtml("permit","permit",p,ST.permit[p]); }).join("");
+  E("hazChips").innerHTML=allHaz().map(function(h){ return chipHtml("haz"+(h[2]?" custom":""),"haz",h[0],ST.haz[h[0]]); }).join("");
+  E("ppeChips").innerHTML=allPpe().map(function(p){ return chipHtml("ppe"+(PPE.indexOf(p)<0?" custom":""),"ppe",p,ST.ppe[p]); }).join("");
+  E("permitChips").innerHTML=allPermits().map(function(p){ return chipHtml("permit"+(PERMITS.indexOf(p)<0?" custom":""),"permit",p,ST.permit[p]); }).join("");
   document.querySelectorAll(".chip").forEach(function(c){ c.onclick=function(){ var k=c.getAttribute("data-k"), v=c.getAttribute("data-v");
     if(ST[k][v]) delete ST[k][v]; else ST[k][v]=true;
     if(k==="permit"){ if(v==="None required"&&ST.permit[v]) ST.permit={"None required":true}; else if(v!=="None required") delete ST.permit["None required"]; }
@@ -231,13 +240,15 @@ function autoPpe(h){ var map={"Falls / ladders":["Fall harness"],"Aerial / sciss
 function autoPermit(h){ var map={"Hot work (brazing / welding)":"Hot work permit","Confined space":"Confined space permit","Electrical / LOTO":"LOTO / energy isolation","Excavation / trench":"Excavation permit","Crane / rigging / heavy lift":"Lift / crane plan"};
   if(map[h]){ ST.permit[map[h]]=true; delete ST.permit["None required"]; } }
 function renderCtrls(){
-  var sel=HAZARDS.filter(function(h){return ST.haz[h[0]];});
-  E("ctrls").innerHTML=sel.map(function(h){ var v=(ST.ctrl[h[0]]!=null)?ST.ctrl[h[0]]:h[1]; return '<div class="ctrl"><b>'+esc(h[0])+' — controls</b><textarea data-h="'+esc(h[0])+'">'+esc(v)+'</textarea></div>'; }).join("");
+  var sel=allHaz().filter(function(h){return ST.haz[h[0]];});
+  E("ctrls").innerHTML=sel.map(function(h){ var v=(ST.ctrl[h[0]]!=null)?ST.ctrl[h[0]]:h[1]; return '<div class="ctrl"><b>'+esc(h[0])+' — controls</b><textarea data-h="'+esc(h[0])+'"'+(h[2]?' placeholder="How will the crew control this hazard? (required)"':'')+'>'+esc(v)+'</textarea></div>'; }).join("");
   E("ctrls").querySelectorAll("textarea").forEach(function(t){ t.oninput=function(){ ST.ctrl[t.getAttribute("data-h")]=t.value; saveDraft(); }; });
 }
 function renderTalk(){
   var v=E("talk").value; E("customTalkWrap").style.display=v==="custom"?"block":"none";
   if(v===""||v==="custom"){ E("talkBox").innerHTML=""; return; }
+  if(v.charAt(0)==="m"){ var m=MONTH_TALKS[+v.slice(1)]; if(!m){ E("talkBox").innerHTML=""; return; } var pts=String(m.f.Points||"").split(/\n/).filter(function(x){return x.trim();});
+    E("talkBox").innerHTML='<div class="talk"><b>'+esc(m.f.Title)+'</b> — this month\'s company talk'+(pts.length?'<ul>'+pts.map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul>':'')+'<div style="margin-top:6px"><a href="toolbox.html?talk='+encodeURIComponent(m.id)+'" target="_blank" style="color:#c0392b;font-weight:800">Read the full talk &rsaquo;</a></div></div>'; return; }
   var t=TALKS[+v]; E("talkBox").innerHTML='<div class="talk"><b>Talking points — '+esc(t[0])+'</b><ul>'+t[1].map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul></div>';
 }
 function renderCrew(){
@@ -249,11 +260,32 @@ function renderCrew(){
   E("crew").querySelectorAll("input").forEach(function(c){ c.onchange=function(){ var n=c.getAttribute("data-n"); if(c.checked) ST.crew[n]=new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}); else delete ST.crew[n]; renderCrew(); saveDraft(); }; });
 }
 
+/* ===== custom hazards / PPE / permits ===== */
+document.querySelectorAll("[data-add]").forEach(function(b){ var k=b.getAttribute("data-add"), inp=E(k+"Add");
+  function add(){ var v=inp.value.trim().replace(/\s+/g," "); if(!v) return; var lst=ST["x"+k]=ST["x"+k]||[], base=k==="haz"?HAZARDS.map(function(h){return h[0];}):(k==="ppe"?PPE:PERMITS);
+    var hit=base.concat(lst).filter(function(x){return x.toLowerCase()===v.toLowerCase();})[0]; if(!hit){ lst.push(v); hit=v; }
+    ST[k][hit]=true; if(k==="permit") delete ST.permit["None required"]; inp.value=""; renderChips(); if(k==="haz"){ renderCtrls(); var t=E("ctrls").querySelector('textarea[data-h="'+hit.replace(/"/g,'\\"')+'"]'); if(t) t.focus(); } saveDraft(); }
+  b.onclick=add; inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); add(); } }); });
+
+/* ===== this month's company toolbox talks (uploaded by HR on the Toolbox Talks page) ===== */
+async function loadMonthTalks(){
+  try{ var t=await getToken(); var j=await fetch(SITEURL+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
+    var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===TALK_LIST.toLowerCase();})[0]; if(!L) return;
+    var d=new Date(), mo=d.getFullYear()+"-"+pad(d.getMonth()+1);
+    var r=await fetch(GRAPH+L.id+"/items?$expand=fields($select=Title,Month,TalkOrder,Points)&$top=999",{headers:{Authorization:"Bearer "+t}}).then(function(x){return x.json();});
+    MONTH_TALKS=(r.value||[]).map(function(it){return {id:it.id,f:it.fields||{}};}).filter(function(x){return String(x.f.Month||"").slice(0,7)===mo;}).sort(function(a,b){return (+a.f.TalkOrder||0)-(+b.f.TalkOrder||0);});
+    if(!MONTH_TALKS.length) return;
+    var keep=E("talk").value, og='<optgroup label="This month\'s company talks">'+MONTH_TALKS.map(function(m,i){return '<option value="m'+i+'">'+esc(m.f.Title)+'</option>';}).join("")+'</optgroup>';
+    E("talk").innerHTML='<option value="">— Pick today\'s topic —</option>'+og+'<optgroup label="Talk library">'+TALKS.map(function(t,i){return '<option value="'+i+'">'+esc(t[0])+'</option>';}).join("")+'</optgroup><option value="custom">Other / custom topic</option>';
+    if(keep) E("talk").value=keep; renderTalk();
+  }catch(e){}
+}
+
 /* ===== report + submit ===== */
 function jobParts(){ var v=String(E("job").value||"").trim(), i=v.indexOf(" "); return {no:i<0?v:v.slice(0,i), name:i<0?"":v.slice(i+1)}; }
-function talkName(){ var v=E("talk").value; return v==="custom"?E("customTalk").value.trim():(v===""?"":TALKS[+v][0]); }
+function talkName(){ var v=E("talk").value; if(v.charAt(0)==="m"){ var m=MONTH_TALKS[+v.slice(1)]; return m?m.f.Title:""; } return v==="custom"?E("customTalk").value.trim():(v===""?"":TALKS[+v][0]); }
 function buildReport(){
-  var H=[], haz=HAZARDS.filter(function(h){return ST.haz[h[0]];}), crew=Object.keys(ST.crew);
+  var H=[], haz=allHaz().filter(function(h){return ST.haz[h[0]];}), crew=Object.keys(ST.crew);
   H.push('<h2 style="color:#7f1d1d;margin:0">Daily Pre-Task Plan</h2><p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical</p>');
   H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Job",E("job").value],["Date",E("pdate").value],["Area",E("area").value],["Foreman",E("foreman").value]].map(function(r){return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
   H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Tasks</h3><div style="white-space:pre-wrap">'+esc(E("tasks").value)+'</div>');
@@ -261,7 +293,7 @@ function buildReport(){
   H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">PPE</h3><p>'+(esc(Object.keys(ST.ppe).join(", "))||"—")+'</p>');
   H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Permits</h3><p>'+(esc(Object.keys(ST.permit).join(", "))||"—")+'</p>');
   var tn=talkName(); H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Toolbox talk</h3><p><b>'+esc(tn||"—")+'</b></p>');
-  var tv=E("talk").value; if(tv!==""&&tv!=="custom") H.push('<ul>'+TALKS[+tv][1].map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul>');
+  var tv=E("talk").value; if(tv!==""&&tv!=="custom"&&tv.charAt(0)!=="m") H.push('<ul>'+TALKS[+tv][1].map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ul>');
   H.push('<h3 style="color:#7f1d1d;margin:12px 0 4px">Crew sign-on ('+crew.length+')</h3><table style="border-collapse:collapse">'+crew.map(function(n){return '<tr><td style="padding:3px 14px 3px 0">&#10003; '+esc(n)+'</td><td style="color:#6b7280;font-size:12px">'+esc(ST.crew[n])+'</td></tr>';}).join("")+'</table>');
   if(E("others").value.trim()) H.push('<p><b>Subs / visitors:</b> '+esc(E("others").value)+'</p>');
   H.push('<p style="color:#6b7280;font-size:12px;margin-top:12px">Reviewed with the crew by '+esc(E("foreman").value)+'. Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'. Anyone can stop work.</p>');
@@ -273,6 +305,7 @@ async function submit(){
   need("pdate","Date"); need("job","Job"); need("tasks","Today's tasks"); need("talk","Toolbox talk topic"); need("foreman","Foreman");
   if(E("talk").value==="custom") need("customTalk","Custom topic");
   if(!Object.keys(ST.haz).length) miss.push("at least one hazard");
+  (ST.xhaz||[]).forEach(function(h){ if(ST.haz[h]&&!String(ST.ctrl[h]||"").trim()) miss.push("controls for \u201c"+h+"\u201d"); });
   if(!Object.keys(ST.ppe).length) miss.push("PPE");
   if(!Object.keys(ST.crew).length) miss.push("crew sign-on");
   if(!E("certify").checked) miss.push("Foreman checkbox");

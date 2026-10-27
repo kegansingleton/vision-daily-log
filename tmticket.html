@@ -163,7 +163,8 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var LIST_NAME="T&M Tickets", PHOTO_ROOT="T&M Ticket Photos", DRAFT_KEY="vm_tm_draft_v1";
-var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var DEFAULT_TO="reports@visionmech.net", PM_BY_JOB={}, EMAIL_BY_NAME={};
 var CLASSES=["Foreman","Journeyman","Apprentice","Helper/Laborer","Service Tech","Welder"];
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
@@ -194,14 +195,21 @@ function afterLogin(a){
   renderLab(); renderMat(); renderEq(); setSigMode(SIGMODE); initSig();
   ["wdate","cat","job","area","directed","desc","cname","ccomp","cemail","noSigWhy","cname2","foreman"].forEach(function(id){ var el=E(id); var f=function(){ el.classList.remove("bad"); saveDraft(); if(id==="job"||id==="wdate") showTno(); }; el.addEventListener("input",f); el.addEventListener("change",f); });
   E("certify").onchange=saveDraft;
-  showTno(); loadJobs(); loadTechs(); findList();
+  showTno(); loadJobs(); loadTechs(); loadPMs(); findList();
 }
 
 /* ===== lookups ===== */
 async function pullAll(listId,select){ var t=await getToken(), url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
 function loadJobs(){ pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
   arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){}); }
-function loadTechs(){ pullAll(EMP,"EmployeeName,Active").then(function(rows){ E("techlist").innerHTML=rows.filter(function(f){return (f.Active||"Yes")!=="No"&&f.EmployeeName;}).map(function(f){return f.EmployeeName.trim();}).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join(""); }).catch(function(){}); }
+function loadTechs(){ pullAll(EMP,"EmployeeName,LoginEmail,Active").then(function(rows){ rows.forEach(function(f){ if(f.EmployeeName) EMAIL_BY_NAME[f.EmployeeName.trim().toLowerCase()]=(f.LoginEmail||"").trim().toLowerCase()||autoEmail(f.EmployeeName); }); E("techlist").innerHTML=rows.filter(function(f){return (f.Active||"Yes")!=="No"&&f.EmployeeName;}).map(function(f){return f.EmployeeName.trim();}).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join(""); }).catch(function(){}); }
+/* PM for each job comes from Job Setup (Jobs list, PMName). The T&M email goes to that PM; if none is found it goes to reports@. */
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(p.length<2)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function loadPMs(){ pullAll(JOBS,"Title,PMName").then(function(rows){ rows.forEach(function(f){ var no=String(f.Title||"").trim(); if(no&&f.PMName) PM_BY_JOB[no]=String(f.PMName).trim(); }); }).catch(function(){}); }
+function pmFor(jobNo){ var name=PM_BY_JOB[String(jobNo||"").trim()]||"", email="";
+  if(name){ var m=/[\w.+-]+@[\w.-]+\.\w+/.exec(name); if(m){ email=m[0].toLowerCase(); name=name.replace(m[0],"").replace(/[<>()]/g,"").trim()||email; }
+    else email=EMAIL_BY_NAME[name.toLowerCase()]||autoEmail(name); }
+  return {name:name, email:email||DEFAULT_TO}; }
 async function findList(){
   try{ var t=await getToken(); var j=await fetch(SITEURL+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();});
     var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
@@ -320,6 +328,7 @@ async function submit(){
       Category:E("cat").value, Area:E("area").value, DirectedBy:E("directed").value, Description:E("desc").value, Foreman:E("foreman").value,
       SignedStatus:signedOk?"Signed":"Unsigned", CustomerRep:signedOk?E("cname").value:E("cname2").value, CustomerCompany:signedOk?E("ccomp").value:"", CustomerEmail:signedOk?E("cemail").value.trim():"",
       NotSignedReason:signedOk?"":E("noSigWhy").value, LaborHours:t.reg, OTHours:t.ot, LineItems:JSON.stringify(L), PhotoFolder:FOLDER_URL||"", SignatureFile:sigUrl,
+      PMName:pmFor(j.no).name, PMEmail:pmFor(j.no).email,
       LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport(L,t,sigData,sigUrl) };
     if(LIST_COLS) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
     await retry(function(){ return vmFetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); });
