@@ -36,6 +36,17 @@ input[type=date],input[type=number],input[type=text]{width:100%;padding:11px;fon
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
 .msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.rcpt{margin-top:10px;border:1.5px dashed #c0392b;border-radius:10px;padding:10px;background:#fff8f7}
+.rcpt.has{border-style:solid;border-color:#15803d;background:#f0fdf4}
+.rcpt.bad{border-color:#b91c1c;background:#fde8e8}
+.rcpt .lbl{font-size:12px;font-weight:800;color:#7f1d1d;margin-bottom:6px}
+.rcpt.has .lbl{color:#15803d}
+.rbtns{display:flex;gap:8px;flex-wrap:wrap}
+.rbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #c0392b;color:#7f1d1d;background:#fff;border-radius:9px;padding:9px 12px;font-weight:800;font-size:13.5px;cursor:pointer}
+.rthumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.rthumb{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid #d1d5db;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#7f1d1d;text-align:center;padding:4px}
+.rthumb img{width:100%;height:100%;object-fit:cover}
+.rthumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -83,12 +94,36 @@ function fillJobList(arr){var dl=document.getElementById("joblist");if(!dl){dl=d
 var RTOKEN=null;function jobsCacheGet(){try{var r=localStorage.getItem("vm_jobs_v1");if(r){var a=JSON.parse(r);if(Array.isArray(a)&&a.length)return a;}}catch(e){}return null;}function jobsCacheSet(a){try{localStorage.setItem("vm_jobs_v1",JSON.stringify(a));}catch(e){}}function loadJobPicks(){var cached=jobsCacheGet();if(cached)fillJobList(cached);var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];if(!acct)return;var gp=RTOKEN?Promise.resolve({accessToken:RTOKEN}):msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct});gp.then(function(tok){var seen={},arr=[];function page(u){return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(r){return r.json();}).then(function(j){(j.value||[]).forEach(function(it){var fl=it.fields||{};if((fl.Active||"Yes")==="No")return;var jn=(fl.JobNo||"").trim();if(!jn||seen[jn])return;seen[jn]=1;arr.push(jn+" "+(fl.JobName||"").trim());});if(j["@odata.nextLink"])return page(j["@odata.nextLink"]);});}return page(JOBS_URL).then(function(){if(!arr.length)return;arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); /* alphabetical by job name */fillJobList(arr);jobsCacheSet(arr);});}).catch(function(){});}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
-var formType="Expense";var items=[];
+var formType="Expense";var items=[];var LIST_COLS=null;
 function E(id){return document.getElementById(id);}
 function today(){return new Date().toISOString().slice(0,10);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function setType(t){formType=t;document.querySelectorAll(".toggle .t").forEach(function(el){el.classList.toggle("on",el.getAttribute("data-type")===t);});E("ccWrap").style.display=(t==="Expense")?"block":"none";E("ttl").textContent=(t==="Expense")?"Company Expense":"Reimbursement";}
-function addItem(){items.push({date:"",project:"",code:"",desc:"",receipt:"",amount:""});render();}
+function addItem(){items.push({date:"",project:"",code:"",desc:"",receipt:"",amount:"",files:[]});render();}
+/* ===== Receipts: required on every line (photo or PDF), uploaded to SharePoint Documents/Expense Receipts ===== */
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, RC_ROOT="Expense Receipts", RC_FOLDER=null, RC_FOLDER_URL=null;
+function scaleImg(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function addReceipt(i,file){
+  items[i].bad=false; var m=E("msg"); if(m&&/receipt is required/.test(m.textContent)){ m.className="msg"; m.textContent=""; }
+  if(/^image\//.test(file.type)){ var rd=new FileReader(); rd.onload=function(e){ var img=new Image(); img.onload=function(){ items[i].files.push({kind:"img",data:scaleImg(img,2000,0.85),thumb:scaleImg(img,200,0.6),url:null}); render(); }; img.src=e.target.result; }; rd.readAsDataURL(file); }
+  else if(file.type==="application/pdf"||/\.pdf$/i.test(file.name)){ if(file.size>3.8*1024*1024){ alert("That PDF is over 4 MB. Take a photo of the receipt instead."); return; } items[i].files.push({kind:"pdf",blob:file,name:file.name,url:null}); render(); }
+  else alert("Receipts must be a photo or a PDF.");
+}
+function b64Blob(u){var b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(var k=0;k<b.length;k++)a[k]=b.charCodeAt(k);return new Blob([a],{type:"image/jpeg"});}
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+function cleanName(t){return String(t||"").replace(/["*:<>?\/\\|#%~&{}]/g,"-").replace(/\s+/g," ").trim().slice(0,70);}
+function putOnce(token,path,blob,type){return new Promise(function(res,rej){var ctl=("AbortController"in window)?new AbortController():null,done=false;var to=setTimeout(function(){done=true;if(ctl)try{ctl.abort();}catch(e){}rej(new Error("timed out"));},45000);
+  var o={method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":type},body:blob};if(ctl)o.signal=ctl.signal;
+  fetch(SITEURL+"/drive/root:/"+encPath(path)+":/content",o).then(function(r){if(!r.ok)return r.text().then(function(t){var e=new Error("receipt upload HTTP "+r.status+" "+t.slice(0,140));e.httpStatus=r.status;throw e;});return r.json();}).then(function(j){if(done)return;clearTimeout(to);res(j);},function(e){if(done)return;clearTimeout(to);rej(e);});});}
+function putRetry(token,path,blob,type){var n=0;function go(){n++;return putOnce(token,path,blob,type).catch(function(e){var s=e.httpStatus;if(((s===undefined)||s>=500||s===429)&&n<3)return new Promise(function(r){setTimeout(r,1500*n);}).then(go);throw e;});}return go();}
+async function uploadReceipts(token,its,progress){
+  var p2=function(n){return (n<10?"0":"")+n;};
+  if(!RC_FOLDER){var d=new Date();RC_FOLDER=RC_ROOT+"/"+cleanName(E("fdate").value+" "+E("name").value+" "+formType+" "+p2(d.getHours())+p2(d.getMinutes())+p2(d.getSeconds()));}
+  var all=[]; its.forEach(function(it,li){ it.files.forEach(function(f,fi){ all.push({f:f,name:"item-"+p2(li+1)+"-receipt-"+(fi+1)+(f.kind==="pdf"?".pdf":".jpg")}); }); });
+  for(var k=0;k<all.length;k++){ var x=all[k]; if(x.f.url) continue; progress(k+1,all.length);
+    var j=await putRetry(token,RC_FOLDER+"/"+x.name,x.f.kind==="pdf"?x.f.blob:b64Blob(x.f.data),x.f.kind==="pdf"?"application/pdf":"image/jpeg"); x.f.url=j.webUrl||""; }
+  if(!RC_FOLDER_URL){try{var t=await fetch(SITEURL+"/drive/root:/"+encPath(RC_FOLDER),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});RC_FOLDER_URL=t.webUrl||null;}catch(e){}}
+}
 function render(){
   var h="";
   items.forEach(function(it,i){
@@ -98,31 +133,44 @@ function render(){
       '<div class="grid2"><div><label>Project no.</label><input type="text" list="joblist" data-f="project" data-i="'+i+'" value="'+esc(it.project)+'"></div>'+
       '<div><label>Cost code</label><input type="text" data-f="code" data-i="'+i+'" value="'+esc(it.code)+'"></div></div>'+
       '<label>Description</label><input type="text" data-f="desc" data-i="'+i+'" value="'+esc(it.desc)+'">'+
-      '<label>Receipt #</label><input type="text" data-f="receipt" data-i="'+i+'" value="'+esc(it.receipt)+'"></div>';
+      '<label>Receipt # (optional)</label><input type="text" data-f="receipt" data-i="'+i+'" value="'+esc(it.receipt)+'">'+
+      '<div class="rcpt'+(it.files.length?" has":"")+(it.bad?" bad":"")+'" id="rc'+i+'"><div class="lbl">'+(it.files.length?"&#10003; Receipt attached":"Receipt required *")+'</div>'+
+      '<div class="rbtns"><label class="rbtn" for="rcam'+i+'">&#128247; Photo of receipt</label><label class="rbtn" for="rfile'+i+'">&#128193; Upload photo / PDF</label></div>'+
+      '<input type="file" id="rcam'+i+'" accept="image/*" capture="environment" data-rc="'+i+'" style="display:none">'+
+      '<input type="file" id="rfile'+i+'" accept="image/*,application/pdf" multiple data-rc="'+i+'" style="display:none">'+
+      '<div class="rthumbs">'+it.files.map(function(f,fi){return '<div class="rthumb">'+(f.kind==="pdf"?'PDF<br>'+esc(f.name.slice(0,18)):'<img src="'+f.thumb+'">')+'<div class="x" data-rx="'+i+'" data-fi="'+fi+'">&times;</div></div>';}).join("")+'</div></div></div>';
   });
   E("items").innerHTML=h;
   E("items").querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){items.splice(+b.getAttribute("data-del"),1);render();};});
+  E("items").querySelectorAll("[data-rc]").forEach(function(inp){inp.onchange=function(){var i=+inp.getAttribute("data-rc");items[i].bad=false;Array.prototype.forEach.call(inp.files,function(f){addReceipt(i,f);});inp.value="";};});
+  E("items").querySelectorAll("[data-rx]").forEach(function(x){x.onclick=function(){items[+x.getAttribute("data-rx")].files.splice(+x.getAttribute("data-fi"),1);render();};});
   E("items").querySelectorAll("[data-f]").forEach(function(inp){inp.oninput=function(){items[+inp.getAttribute("data-i")][inp.getAttribute("data-f")]=inp.value;total();};});
   total();
 }
 function total(){var t=0;items.forEach(function(it){t+=parseFloat(it.amount)||0;});E("tot").textContent="$"+t.toFixed(2);}
-function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("name").value)E("name").value=(a.name||"").trim();if(!E("fdate").value)E("fdate").value=today();document.querySelectorAll(".toggle .t").forEach(function(el){el.onclick=function(){setType(el.getAttribute("data-type"));};});if(items.length===0)addItem();loadJobPicks();}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("name").value)E("name").value=(a.name||"").trim();if(!E("fdate").value)E("fdate").value=today();document.querySelectorAll(".toggle .t").forEach(function(el){el.onclick=function(){setType(el.getAttribute("data-type"));};});if(items.length===0)addItem();loadJobPicks();loadCols();}
+function loadCols(){var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(t){return fetch(SITEURL+"/lists/"+LIST+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+t.accessToken}});}).then(function(r){return r.json();}).then(function(j){if(!j.value)return;LIST_COLS={};j.value.forEach(function(c){if(!c.readOnly)LIST_COLS[c.name]=1;});}).catch(function(){});}
 function start(){msal_i.handleRedirectPromise().then(function(resp){RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null;var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
 E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
 E("addItem").onclick=addItem;
-function buildText(a){var L=["VISION MECHANICAL - "+(a.formType==="Expense"?"EXPENSE REPORT":"REIMBURSEMENT FORM"),"========================================","Name: "+a.name,"Date: "+a.fdate];if(a.formType==="Expense")L.push("Credit card: "+a.cc);L.push("");L.push("Date | Project | Cost Code | Description | Receipt # | Amount");a.items.forEach(function(it){L.push((it.date||"-")+" | "+(it.project||"-")+" | "+(it.code||"-")+" | "+(it.desc||"-")+" | "+(it.receipt||"-")+" | $"+((parseFloat(it.amount)||0).toFixed(2)));});L.push("");L.push("TOTAL: $"+a.total.toFixed(2));L.push("Submitted: "+a.submittedAt+" by "+a.loginEmail);L.push("========================================");return L.join("\n");}
+function buildText(a){var L=["VISION MECHANICAL - "+(a.formType==="Expense"?"EXPENSE REPORT":"REIMBURSEMENT FORM"),"========================================","Name: "+a.name,"Date: "+a.fdate];if(a.formType==="Expense")L.push("Credit card: "+a.cc);L.push("");L.push("Date | Project | Cost Code | Description | Receipt # | Amount");a.items.forEach(function(it){L.push((it.date||"-")+" | "+(it.project||"-")+" | "+(it.code||"-")+" | "+(it.desc||"-")+" | "+(it.receipt||"-")+" | $"+((parseFloat(it.amount)||0).toFixed(2)));(it.receipts||[]).forEach(function(u,k){if(u)L.push("    Receipt "+(k+1)+": "+u);});});if(RC_FOLDER_URL){L.push("");L.push("All receipts: "+RC_FOLDER_URL);}L.push("");L.push("TOTAL: $"+a.total.toFixed(2));L.push("Submitted: "+a.submittedAt+" by "+a.loginEmail);L.push("========================================");return L.join("\n");}
 function submitForm(){
   var msg=E("msg"),btn=E("submitBtn");
   if(!E("name").value.trim()){msg.className="msg err";msg.textContent="Enter name";return;}
   if(!E("fdate").value){msg.className="msg err";msg.textContent="Pick a date";return;}
   var its=items.filter(function(it){return it.date||it.project||it.desc||it.amount;});
   if(its.length===0){msg.className="msg err";msg.textContent="Add at least one line item";return;}
+  var noRc=[]; items.forEach(function(it,i){ if(its.indexOf(it)>-1 && !it.files.length){ it.bad=true; noRc.push(i+1); } });
+  if(noRc.length){ render(); msg.className="msg err"; msg.textContent="A receipt is required on every item — missing on item "+noRc.join(", ")+". Take a photo or upload the PDF."; var b=document.querySelector(".rcpt.bad"); if(b) b.scrollIntoView({behavior:"smooth",block:"center"}); return; }
   var t=0;its.forEach(function(it){t+=parseFloat(it.amount)||0;});
   var a={formType:formType,cc:E("cc").value.trim(),name:E("name").value.trim(),fdate:E("fdate").value,items:its,total:Math.round(t*100)/100,loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
+  var buildFields=function(){ a.items=its.map(function(it){ return {date:it.date,project:it.project,code:it.code,desc:it.desc,receipt:it.receipt,amount:it.amount,receipts:it.files.map(function(f){return f.url;})}; });
   var fields={Title:a.formType+" | "+a.name+" | "+a.fdate,FormType:a.formType,EmployeeName:a.name,FormDate:a.fdate+"T12:00:00Z",FormDateText:a.fdate,CreditCardNo:(a.formType==="Expense"?a.cc:""),LineItems:JSON.stringify(a.items),TotalAmount:a.total,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a)};
+  if(LIST_COLS&&LIST_COLS.ReceiptFolder) fields.ReceiptFolder=RC_FOLDER_URL||""; if(LIST_COLS&&LIST_COLS.ReceiptCount) fields.ReceiptCount=String(its.reduce(function(n,it){return n+it.files.length;},0));
+  return fields; };
   if(navigator.onLine===false){msg.className="msg err";msg.textContent="You’re offline right now — move to better signal and tap Submit again.";return;}btn.disabled=true;msg.className="msg ok";msg.textContent="Submitting...";
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
-  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){return vmPostRetry(GRAPH_ITEMS_URL,tok.accessToken,{fields:fields});}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Sent to accounting.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again.";btn.disabled=false;});
+  msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){ return uploadReceipts(tok.accessToken,its,function(k,n){msg.textContent="Uploading receipt "+k+" of "+n+"…";}).then(function(){ msg.textContent="Submitting…"; return vmPostRetry(GRAPH_ITEMS_URL,tok.accessToken,{fields:buildFields()}); }); }).then(function(){msg.className="msg ok";msg.textContent="Submitted. Sent to accounting.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again — receipts already uploaded won't upload twice.";btn.disabled=false;});
 }
 E("submitBtn").onclick=submitForm;start();
 </script>
