@@ -55,6 +55,7 @@ table.bo{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 table.bo th{font-size:10.5px;text-transform:uppercase;color:var(--vm2);text-align:right;padding:6px 4px;border-bottom:2px solid var(--line)}
 table.bo th.l,table.bo td.l{text-align:left}
 table.bo td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+table.bo td input.cost{width:90px}
 table.bo td input{width:80px;font-size:15px;padding:6px;margin:0;text-align:right}
 table.bo td .sug{display:block;font-size:10.5px;color:var(--muted)}
 table.bo tr.zero td{color:#9ca3af}
@@ -163,10 +164,11 @@ table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom
 
   <div class="card">
     <h2>Bill-out</h2>
-    <div class="cap">Suggested quantities fill in as you go. Change any quantity to what was actually used.</div>
+    <div class="cap">Suggested quantities fill in as you go. Change any quantity to what was actually used. Tap a unit cost to change it — the new price is remembered for next time.</div>
     <div id="boWarn"></div>
     <div style="overflow-x:auto"><table class="bo" id="boTbl"></table></div>
     <div class="boadd"><select id="boPick"></select><button id="boAddBtn" type="button">Add</button></div>
+    <div class="boadd hide" id="customRow"><input type="text" id="cName" placeholder="Item name" style="flex:2;margin:0;font-size:15px;padding:8px"><input type="text" id="cUnit" placeholder="Unit (ea, ft…)" style="flex:1;margin:0;font-size:15px;padding:8px"><input type="number" id="cCost" inputmode="decimal" step="0.01" placeholder="$ each" style="flex:1;margin:0;font-size:15px;padding:8px"><button id="cAdd" type="button">Add</button></div>
   </div>
 
   <div class="card">
@@ -249,6 +251,23 @@ var DEFAULT_ITEMS=[
   {t:"Duct piece length (ft)",u:"",c:0,f:5,b:"SETTING"}
 ];
 var ITEMS=[], ITEMS_FROM_LIST=false, SETTINGS={liner:0.85,vane:1.5,len:5};
+/* ===== Prices: whatever Nate typed last wins. Kept on this device AND read back from past bill-outs,
+   so a new price follows him to any phone or PC after the next saved run. No list to maintain. ===== */
+var PRICE_KEY="vm_shop_prices_v1", PRICES={};
+function lsPrices(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function mergePrice(t,c,u,ts){ if(!t||!(c>=0)) return; var cur=PRICES[t]; if(!cur||(ts||0)>(cur.ts||0)) PRICES[t]={c:c,u:u||(cur&&cur.u)||"",ts:ts||0}; }
+function savePrices(){ try{ localStorage.setItem(PRICE_KEY,JSON.stringify(PRICES)); }catch(e){} }
+function applyPrices(){
+  ITEMS.forEach(function(it){ var p=PRICES[it.t]; if(p) it.c=p.c; });
+  Object.keys(PRICES).forEach(function(t){ if(!ITEMS.some(function(it){return it.t===t;})) ITEMS.push({t:t,u:PRICES[t].u||"ea",c:PRICES[t].c,f:1,b:"MANUAL"}); });
+}
+async function loadPriceHistory(){
+  var l=lsPrices(); Object.keys(l).forEach(function(t){ mergePrice(t,l[t].c,l[t].u,l[t].ts); });
+  async function from(listId,field){ var rows=await pull(listId,field+",Created"); rows.forEach(function(r){ var ts=Date.parse(r.Created)||0, lines=[]; try{ lines=JSON.parse(r[field]||"[]"); }catch(e){}
+    (lines||[]).forEach(function(x){ if(x&&x.item&&typeof x.cost==="number"&&x.cost>0) mergePrice(x.item,x.cost,x.unit,ts); }); }); }
+  try{ if(BO_LIST) await from(BO_LIST,"Lines"); else await from(SHOP,"BillOutLines"); }catch(e){}
+  applyPrices(); renderBO();
+}
 var BO={}; /* key -> {qty: user-entered or null} */
 var EXTRA=[]; /* manually added item titles */
 
@@ -264,7 +283,7 @@ async function afterLogin(acct){
   if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Fab Run is limited to shop staff — tick <b>Shop access</b> in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName;
   E("rundate").value=todayISO();
-  await loadItems();
+  await loadItems(); E("customRow").classList.add("hide");
   setType("Sheet Metal"); loadJobs(); loadLists();
 }
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
@@ -331,7 +350,7 @@ async function loadJobs(){
 async function loadLists(){
   try{ SHOP_COLS=await colsOf(SHOP); }catch(e){}
   try{ BO_LIST=await listIdByName(BILLOUT_LIST); if(BO_LIST) BO_COLS=await colsOf(BO_LIST); }catch(e){}
-  renderBO();
+  renderBO(); loadPriceHistory();
 }
 function fillPhases(){
   var list=SHOP_PHASES[fabType]||[];
@@ -397,20 +416,27 @@ function renderBO(){
     if(s>0||manual||(st&&st.qty!=null)){ var q=(st&&st.qty!=null&&st.qty!=="")?num(st.qty):r2(s); rows.push({it:it,s:s,q:q,edited:!!(st&&st.qty!=null&&st.qty!=="")}); tot+=q*it.c; } });
   var h='<thead><tr><th class="l">Item</th><th>Qty</th><th class="l">Unit</th><th>Unit cost</th><th>Total</th><th></th></tr></thead><tbody>';
   if(!rows.length) h+='<tr><td class="l" colspan="6" style="color:#9ca3af;padding:12px 4px">'+(fabType==="Sheet Metal"?"Nothing to bill yet. Enter pounds, gauge and liner, and add what was built.":"Use Add below to bill out material for this run.")+'</td></tr>';
-  rows.forEach(function(r){ h+='<tr class="'+(r.q>0?"":"zero")+'"><td class="l">'+esc(r.it.t)+'</td><td><input type="number" inputmode="decimal" step="any" data-bo="'+esc(r.it.t)+'" value="'+r.q+'">'+(r.s>0?'<span class="sug">'+(r.edited?"suggested ":"")+(r.edited?qfmt(r.s):"auto")+'</span>':'')+'</td><td class="l">'+esc(r.it.u)+'</td><td>'+(r.it.c?money(r.it.c):'<span style="color:#9ca3af">—</span>')+'</td><td>'+(r.it.c?money(r.q*r.it.c):'—')+'</td><td><button type="button" class="x" data-rm="'+esc(r.it.t)+'" style="border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer" title="Remove">&times;</button></td></tr>'; });
+  rows.forEach(function(r){ h+='<tr class="'+(r.q>0?"":"zero")+'"><td class="l">'+esc(r.it.t)+'</td><td><input type="number" inputmode="decimal" step="any" data-bo="'+esc(r.it.t)+'" value="'+r.q+'">'+(r.s>0?'<span class="sug">'+(r.edited?"suggested ":"")+(r.edited?qfmt(r.s):"auto")+'</span>':'')+'</td><td class="l">'+esc(r.it.u)+'</td><td><input class="cost" type="number" inputmode="decimal" step="0.01" min="0" data-cost="'+esc(r.it.t)+'" value="'+(r.it.c?r.it.c:"")+'" placeholder="$"></td><td>'+(r.it.c?money(r.q*r.it.c):'—')+'</td><td><button type="button" class="x" data-rm="'+esc(r.it.t)+'" style="border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer" title="Remove">&times;</button></td></tr>'; });
   h+='</tbody><tfoot><tr><td class="l" colspan="4">Bill-out total</td><td>'+money(tot)+'</td><td></td></tr></tfoot>';
   E("boTbl").innerHTML=h;
   E("boTbl").querySelectorAll("[data-bo]").forEach(function(inp){ inp.addEventListener("change",function(){ BO[inp.getAttribute("data-bo")]={qty:inp.value}; renderBO(); }); });
+  E("boTbl").querySelectorAll("[data-cost]").forEach(function(inp){ inp.addEventListener("change",function(){ var t=inp.getAttribute("data-cost"), c=Math.max(0,num(inp.value)), it=ITEMS.filter(function(x){return x.t===t;})[0]; if(!it) return; it.c=c; PRICES[t]={c:c,u:it.u,ts:Date.now()}; savePrices(); renderBO(); }); });
   E("boTbl").querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ var t=b.getAttribute("data-rm"); BO[t]={qty:"0",hidden:true}; var i=EXTRA.indexOf(t); if(i>-1) EXTRA.splice(i,1); renderBO(); }; });
   var shown={}; rows.forEach(function(r){ shown[r.it.t]=1; });
-  E("boPick").innerHTML='<option value="">+ Add an item…</option>'+ITEMS.filter(function(it){return it.b!=="SETTING"&&!shown[it.t];}).map(function(it){return '<option>'+esc(it.t)+'</option>';}).join("");
-  var w=[]; if(!ITEMS_FROM_LIST) w.push("Using built-in items with no prices yet. The office sets prices and factors in the “"+ITEMS_LIST+"” SharePoint list.");
+  E("boPick").innerHTML='<option value="">+ Add an item…</option>'+ITEMS.filter(function(it){return it.b!=="SETTING"&&!shown[it.t];}).map(function(it){return '<option>'+esc(it.t)+'</option>';}).join("")+'<option value="__custom">Other item (type it in)…</option>';
+  var w=[]; if(rows.some(function(r){return r.q>0&&!r.it.c;})) w.push("Some items have no unit cost yet — type it in the Unit cost box. It's remembered for next time.");
   if(R.detail.length) w.push(R.detail.join(" · "));
-  E("boWarn").innerHTML=w.map(function(x,i){ return '<div class="'+(i===0&&!ITEMS_FROM_LIST?"warn":"cap")+'" style="margin-top:6px">'+esc(x)+'</div>'; }).join("");
+  E("boWarn").innerHTML=w.map(function(x,i){ return '<div class="'+(/no unit cost/.test(x)?"warn":"cap")+'" style="margin-top:6px">'+esc(x)+'</div>'; }).join("");
   LAST_ROWS=rows; LAST_TOT=tot;
 }
 var LAST_ROWS=[], LAST_TOT=0;
-E("boAddBtn").onclick=function(){ var t=E("boPick").value; if(!t) return; if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; renderBO(); var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } };
+E("boPick").onchange=function(){ var c=E("boPick").value==="__custom"; E("customRow").classList.toggle("hide",!c); if(c) E("cName").focus(); };
+E("cAdd").onclick=function(){ var t=E("cName").value.trim(), u=E("cUnit").value.trim()||"ea", c=Math.max(0,num(E("cCost").value)); if(!t){ E("cName").focus(); return; }
+  var it=ITEMS.filter(function(x){return x.t.toLowerCase()===t.toLowerCase();})[0]; if(!it){ it={t:t,u:u,c:c,f:1,b:"MANUAL"}; ITEMS.push(it); } else { t=it.t; if(c>0) it.c=c; }
+  if(c>0){ PRICES[t]={c:it.c,u:it.u,ts:Date.now()}; savePrices(); }
+  if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; E("cName").value=""; E("cUnit").value=""; E("cCost").value=""; E("customRow").classList.add("hide"); renderBO();
+  var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } };
+E("boAddBtn").onclick=function(){ var t=E("boPick").value; if(t==="__custom"){ E("customRow").classList.remove("hide"); E("cName").focus(); return; } if(!t) return; if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; renderBO(); var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } };
 ["output","material","liner"].forEach(function(id){ E(id).addEventListener(id==="output"?"input":"change",recalc); });
 E("phase").addEventListener("change",showGroup);
 
@@ -472,6 +498,7 @@ E("logBtn").onclick=async function(){
   if(!rundate){ return fail("Pick a run date."); }
   var lines=LAST_ROWS.filter(function(r){return r.q>0;}).map(function(r){ return {item:r.it.t,qty:r2(r.q),unit:r.it.u,cost:r.it.c,total:r2(r.q*r.it.c),suggested:r2(r.s)}; });
   var total=r2(lines.reduce(function(s,l){return s+l.total;},0)), built=builtText();
+  lines.forEach(function(l){ if(l.cost>0&&(!PRICES[l.item]||PRICES[l.item].c!==l.cost)) PRICES[l.item]={c:l.cost,u:l.unit,ts:Date.now()}; }); savePrices();
   var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, LoggedBy:loginName, Notes:notes,
     SMGroup:g, Built:built, BillOutTotal:total, BillOutLines:JSON.stringify(lines) };
   if(fabType==="Sheet Metal"){ fields.Material=E("material").value; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
