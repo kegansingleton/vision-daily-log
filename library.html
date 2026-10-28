@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Document Library</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--red:#b91c1c;--redbg:#fde8e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:900px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .sub{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:900px;margin:0 auto;padding:12px 12px 60px}
+.tabs{display:flex;gap:6px;margin:4px 0 10px;flex-wrap:wrap}
+.tabs a{border:1.5px solid #cbd5e1;background:#fff;border-radius:20px;padding:8px 14px;font-weight:800;font-size:13.5px;color:#374151;text-decoration:none}
+.tabs a.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.search{position:sticky;top:62px;z-index:20;background:var(--bg);padding:6px 0 8px}
+input[type=text]{width:100%;padding:12px;font-size:16px;border:1.5px solid #9ca3af;border-radius:10px;background:#fff;font-family:inherit;color:var(--ink)}
+input:focus{outline:none;border-color:var(--vm);box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{border:1.5px solid #cbd5e1;background:#fff;border-radius:16px;padding:6px 11px;font-size:13px;font-weight:700;color:#374151;cursor:pointer}
+.chip.on{background:var(--vm);border-color:var(--vm);color:#fff}
+.stat{font-size:12.5px;color:var(--mut);margin:6px 2px}
+.doc{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin:6px 0;cursor:pointer}
+.doc:active{background:#fafafa}
+.doc .ic{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:0 0 auto;background:#64748b}
+.doc .ic.pdf{background:#b91c1c}.doc .ic.doc_{background:#1d4ed8}.doc .ic.xls{background:#15803d}
+.doc .m{flex:1;min-width:0}.doc .t{font-weight:700;font-size:14.5px;word-break:break-word}.doc .s{font-size:12px;color:var(--mut);margin-top:2px}
+.sec{font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin:14px 2px 4px}
+.empty{text-align:center;color:var(--mut);padding:36px 10px}
+.viewer{position:fixed;inset:0;background:#e5e7eb;z-index:80;display:none;flex-direction:column}
+.viewer .vh{background:var(--vm2);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 12px}
+.viewer .vh b{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer .vh button{background:#fff;color:var(--vm2);border:none;border-radius:8px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer}
+.viewer .vb{flex:1;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch}
+.viewer canvas{display:block;width:100%;max-width:900px;margin:0 auto 10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.viewer iframe{width:100%;height:100%;border:none;background:#fff}
+.viewer .vb.frame{padding:0;overflow:hidden}
+.vmsg{text-align:center;color:#374151;padding:40px 16px;font-size:14px}
+.err{background:var(--redbg);color:var(--red);border-radius:10px;padding:12px;margin:10px 0;font-size:14px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.admin{font-size:12px;margin-top:16px;text-align:center}.admin a{color:var(--mut)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1 id="gTitle">Document Library</h1><p>Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1 id="hTitle">Document Library</h1><div class="sub" id="hSub"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="tabs" id="tabs"></div>
+  <div class="search">
+    <input type="text" id="q" placeholder="Search…" autocomplete="off">
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="stat" id="stat">Loading…</div>
+  <div id="list"></div>
+  <div class="admin" id="admin"></div>
+</div>
+<div class="viewer" id="viewer">
+  <div class="vh"><button id="vBack">&#8592; Back</button><b id="vTitle"></b><button id="vDl">Download</button></div>
+  <div class="vb" id="vBody"></div>
+</div>
+
+<script>
+/* Read-only library viewer. People search and open documents here instead of landing in SharePoint.
+   Each library is found by its name on the site; nothing here can edit, move or delete files. */
+var LIBS={
+  sds:{name:"Safety Data Sheets",title:"Safety Data Sheets (SDS)",sub:"Search by product, manufacturer or chemical",ph:"Search product, manufacturer, chemical…"},
+  sop:{name:"Standard Operating Procedures",title:"SOP Library",sub:"Standard Operating Procedures",ph:"Search procedures…"}
+};
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, G="https://graph.microsoft.com/v1.0";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", KEY=(new URLSearchParams(location.search).get("lib")||"sds").toLowerCase(), LIB=LIBS[KEY]||LIBS.sds, DRIVE=null, FILES=[], FOLDER="", CUR=null, VIEWSEQ=0;
+if(!LIBS[KEY]) KEY="sds";
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(p.length<2)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function ext(n){var m=/\.([a-z0-9]+)$/i.exec(n||"");return m?m[1].toLowerCase():"";}
+function base(n){return String(n||"").replace(/\.[a-z0-9]+$/i,"");}
+function norm(s){return String(s||"").toLowerCase().replace(/[_\-.]+/g," ");}
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gget(url){ var t=await getToken(); for(var i=0;i<3;i++){ var r=await fetch(url,{headers:{Authorization:"Bearer "+t}}); if(r.status===429||r.status>=500){ await new Promise(function(s){setTimeout(s,700*(i+1));}); continue; } var j=await r.json(); if(j.error) throw new Error(j.error.message); return j; } throw new Error("SharePoint is busy — try again"); }
+
+document.title="Vision Mechanical — "+LIB.title; E("gTitle").textContent=LIB.title; E("hTitle").textContent=LIB.title; E("hSub").textContent=LIB.sub; E("q").placeholder=LIB.ph;
+E("tabs").innerHTML=Object.keys(LIBS).map(function(k){ return '<a href="?lib='+k+'" class="'+(k===KEY?"on":"")+'">'+esc(LIBS[k].title)+'</a>'; }).join("");
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block";
+  E("q").oninput=render;
+  try{
+    var d=await gget(SITEURL+"/drives?$select=id,name,webUrl");
+    DRIVE=(d.value||[]).filter(function(x){ return (x.name||"").toLowerCase()===LIB.name.toLowerCase(); })[0]
+       ||(d.value||[]).filter(function(x){ return decodeURIComponent(x.webUrl||"").toLowerCase().indexOf("/"+LIB.name.toLowerCase())>-1; })[0];
+    if(!DRIVE) throw new Error("couldn't find the “"+LIB.name+"” library");
+    await walk();
+  }catch(e){ E("stat").textContent=""; E("list").innerHTML='<div class="err">Couldn\'t load the library ('+esc(e.message)+'). If this keeps happening, tell the office.</div>'; return; }
+  render(); adminLink();
+}
+/* walk every folder (a few at a time) and collect files */
+async function walk(){
+  var queue=[{id:"root",path:""}], seen=0;
+  async function one(f){
+    var url=G+"/drives/"+DRIVE.id+"/items/"+f.id+"/children?$select=id,name,file,folder,size,lastModifiedDateTime&$top=999";
+    while(url){ var j=await gget(url);
+      (j.value||[]).forEach(function(it){ if(it.folder) queue.push({id:it.id,path:(f.path?f.path+" / ":"")+it.name}); else if(it.file) FILES.push({id:it.id,name:it.name,folder:f.path,top:f.path.split(" / ")[0]||"",size:it.size,mod:it.lastModifiedDateTime,key:norm(f.path+" "+it.name)}); });
+      url=j["@odata.nextLink"]||null; }
+    seen++; if(seen%5===0) E("stat").textContent="Loading… "+FILES.length+" documents";
+  }
+  while(queue.length){ var batch=queue.splice(0,6); await Promise.all(batch.map(one)); }
+  FILES.sort(function(a,b){ return base(a.name).localeCompare(base(b.name),undefined,{numeric:true,sensitivity:"base"}); });
+}
+function recentKey(){ return "vm_lib_recent_"+KEY; }
+function getRecent(){ try{ return JSON.parse(localStorage.getItem(recentKey())||"[]"); }catch(e){ return []; } }
+function addRecent(id){ try{ var r=getRecent().filter(function(x){return x!==id;}); r.unshift(id); localStorage.setItem(recentKey(),JSON.stringify(r.slice(0,6))); }catch(e){} }
+function row(f){ var x=ext(f.name), cls=x==="pdf"?"pdf":(/^docx?$/.test(x)?"doc_":(/^xlsx?$/.test(x)?"xls":""));
+  return '<div class="doc" data-id="'+f.id+'"><div class="ic '+cls+'">'+esc((x||"FILE").toUpperCase().slice(0,4))+'</div><div class="m"><div class="t">'+esc(base(f.name))+'</div>'+(f.folder?'<div class="s">'+esc(f.folder)+'</div>':'')+'</div></div>'; }
+function render(){
+  var tops={}; FILES.forEach(function(f){ if(f.top) tops[f.top]=(tops[f.top]||0)+1; });
+  var tk=Object.keys(tops).sort(function(a,b){return a.localeCompare(b);});
+  E("chips").innerHTML=tk.length>1&&tk.length<=40?('<span class="chip'+(FOLDER?"":" on")+'" data-f="">All</span>'+tk.map(function(t){ return '<span class="chip'+(FOLDER===t?" on":"")+'" data-f="'+esc(t)+'">'+esc(t)+'</span>'; }).join("")):"";
+  E("chips").querySelectorAll(".chip").forEach(function(c){ c.onclick=function(){ FOLDER=c.getAttribute("data-f"); render(); }; });
+  var words=norm(E("q").value).split(/\s+/).filter(Boolean);
+  var rows=FILES.filter(function(f){ if(FOLDER&&f.top!==FOLDER) return false; return words.every(function(w){ return f.key.indexOf(w)>-1; }); });
+  var H="";
+  if(!words.length&&!FOLDER){ var rec=getRecent().map(function(id){ return FILES.filter(function(f){return f.id===id;})[0]; }).filter(Boolean);
+    if(rec.length) H+='<div class="sec">Recently opened</div>'+rec.map(row).join("")+'<div class="sec">All documents</div>'; }
+  var cap=words.length||FOLDER?400:200;
+  H+=rows.slice(0,cap).map(row).join("");
+  if(rows.length>cap) H+='<div class="empty">Showing '+cap+' of '+rows.length+' — type to narrow it down.</div>';
+  if(!rows.length) H='<div class="empty">'+(FILES.length?"Nothing matches “"+esc(E("q").value)+"”.":"This library is empty.")+'</div>';
+  E("list").innerHTML=H; E("stat").textContent=rows.length+" of "+FILES.length+" documents";
+  E("list").querySelectorAll(".doc").forEach(function(d){ d.onclick=function(){ openDoc(FILES.filter(function(f){return f.id===d.getAttribute("data-id");})[0]); }; });
+}
+
+/* ===== viewer: PDFs drawn on the page; Word/Excel shown in Microsoft's read-only preview ===== */
+async function openDoc(f){
+  if(!f) return; CUR=f; addRecent(f.id); var seq=++VIEWSEQ;
+  E("vTitle").textContent=base(f.name); E("viewer").style.display="flex"; document.body.style.overflow="hidden";
+  var vb=E("vBody"); vb.className="vb"; vb.innerHTML='<div class="vmsg">Opening…</div>';
+  history.pushState({v:1},"");
+  try{
+    if(ext(f.name)==="pdf"&&window.pdfjsLib){
+      var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+f.id+"?$select=id,@microsoft.graph.downloadUrl");
+      var buf=await fetch(meta["@microsoft.graph.downloadUrl"]).then(function(r){ if(!r.ok) throw new Error("download "+r.status); return r.arrayBuffer(); });
+      if(seq!==VIEWSEQ) return;
+      var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise; vb.innerHTML="";
+      var w=Math.min(vb.clientWidth-20||700,900), ratio=Math.min(window.devicePixelRatio||1,2);
+      for(var i=1;i<=pdf.numPages;i++){ if(seq!==VIEWSEQ) return; var pg=await pdf.getPage(i), v1=pg.getViewport({scale:1}), vp=pg.getViewport({scale:(w/v1.width)*ratio});
+        var c=document.createElement("canvas"); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height); vb.appendChild(c); await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise; }
+    } else {
+      var t=await getToken(); var r=await fetch(G+"/drives/"+DRIVE.id+"/items/"+f.id+"/preview",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:"{}"});
+      var j=await r.json(); if(!j.getUrl) throw new Error("no preview for this file type");
+      if(seq!==VIEWSEQ) return; vb.className="vb frame"; vb.innerHTML='<iframe src="'+esc(j.getUrl)+'" title="Document preview"></iframe>';
+    }
+  }catch(e){ if(seq===VIEWSEQ) vb.innerHTML='<div class="vmsg">Couldn\'t show this file here ('+esc(e.message)+').<br><br>Tap <b>Download</b> to open it on your device.</div>'; }
+}
+function closeDoc(){ VIEWSEQ++; E("viewer").style.display="none"; E("vBody").innerHTML=""; document.body.style.overflow=""; render(); }
+E("vBack").onclick=function(){ if(history.state&&history.state.v) history.back(); else closeDoc(); };
+window.addEventListener("popstate",function(){ if(E("viewer").style.display==="flex") closeDoc(); });
+E("vDl").onclick=async function(){ if(!CUR) return; try{ var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+CUR.id+"?$select=id,@microsoft.graph.downloadUrl");
+  var b=await fetch(meta["@microsoft.graph.downloadUrl"]).then(function(r){return r.blob();}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=CUR.name; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ alert("Download failed: "+e.message); } };
+
+/* office admins get a small link to manage files in SharePoint; nobody else sees where the library lives */
+async function adminLink(){
+  var ok=VM_SUPER.indexOf(loginEmail)>-1;
+  if(!ok){ try{ var url=SITEURL+"/lists/"+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999"; while(url&&!ok){ var j=await gget(url);
+    (j.value||[]).forEach(function(it){ var f=it.fields||{}; var em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(em===loginEmail&&yes(f.Admin)&&(f.Active||"Yes")!=="No") ok=true; }); url=j["@odata.nextLink"]||null; } }catch(e){} }
+  if(ok&&DRIVE&&DRIVE.webUrl) E("admin").innerHTML='Admins: <a href="'+esc(DRIVE.webUrl)+'" target="_blank" rel="noopener">add or update files in SharePoint</a>';
+}
+</script>
+</body>
+</html>
