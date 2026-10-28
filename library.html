@@ -39,6 +39,15 @@ input:focus{outline:none;border-color:var(--vm);box-shadow:0 0 0 3px rgba(192,57
 .viewer canvas{display:block;width:100%;max-width:900px;margin:0 auto 10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .viewer iframe{width:100%;height:100%;border:none;background:#fff}
 .viewer .vb.frame{padding:0;overflow:hidden}
+.pbar{position:sticky;top:-10px;z-index:5;background:#e5e7eb;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0 8px;max-width:900px;margin:0 auto}
+.pbar span{font-size:13px;font-weight:700;color:#374151}
+.pbar input{padding:8px;font-size:15px;border:1.5px solid #9ca3af;border-radius:8px;background:#fff;min-width:0}
+.pbar input[type=number]{width:90px}.pbar input[type=text]{flex:1;min-width:140px}
+.pbar button{background:var(--vm);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:800;cursor:pointer}
+.hits{max-width:900px;margin:0 auto 8px;background:#fff;border-radius:8px;padding:8px 10px;font-size:13.5px}.hits a{color:var(--vm);font-weight:800;margin-right:6px}
+.pg{position:relative;max-width:900px;margin:0 auto 10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.pg canvas{margin:0;box-shadow:none}
+.pgn{position:absolute;right:6px;top:4px;font-size:11px;color:#9ca3af}
 .vmsg{text-align:center;color:#374151;padding:40px 16px;font-size:14px}
 .err{background:var(--redbg);color:var(--red);border-radius:10px;padding:12px;margin:10px 0;font-size:14px}
 .gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
@@ -125,7 +134,7 @@ async function walk(){
   async function one(f){
     var url=G+"/drives/"+DRIVE.id+"/items/"+f.id+"/children?$select=id,name,file,folder,size,lastModifiedDateTime&$top=999";
     while(url){ var j=await gget(url);
-      (j.value||[]).forEach(function(it){ if(it.folder) queue.push({id:it.id,path:(f.path?f.path+" / ":"")+it.name}); else if(it.file) FILES.push({id:it.id,name:it.name,folder:f.path,top:f.path.split(" / ")[0]||"",size:it.size,mod:it.lastModifiedDateTime,key:norm(f.path+" "+it.name)}); });
+      (j.value||[]).forEach(function(it){ if(/^_/.test(it.name||"")) return; /* folders/files starting with _ (archive, index) stay hidden */ if(it.folder) queue.push({id:it.id,path:(f.path?f.path+" / ":"")+it.name}); else if(it.file) FILES.push({id:it.id,name:it.name,folder:f.path,top:f.path.split(" / ")[0]||"",size:it.size,mod:it.lastModifiedDateTime,key:norm(f.path+" "+it.name)}); });
       url=j["@odata.nextLink"]||null; }
     seen++; if(seen%5===0) E("stat").textContent="Loading… "+FILES.length+" documents";
   }
@@ -155,21 +164,38 @@ function render(){
   E("list").querySelectorAll(".doc").forEach(function(d){ d.onclick=function(){ openDoc(FILES.filter(function(f){return f.id===d.getAttribute("data-id");})[0]); }; });
 }
 
-/* ===== viewer: PDFs drawn on the page; Word/Excel shown in Microsoft's read-only preview ===== */
+/* ===== file bytes: try the item's download link, then Graph /content (with ?format=pdf to convert Word/Excel/PowerPoint) ===== */
+async function fileBytes(id,asPdf){
+  if(!asPdf){ try{ var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+id); var dl=meta["@microsoft.graph.downloadUrl"]; if(dl){ var r=await fetch(dl); if(r.ok) return await r.arrayBuffer(); } }catch(e){} }
+  var t=await getToken(), r2=await fetch(G+"/drives/"+DRIVE.id+"/items/"+id+"/content"+(asPdf?"?format=pdf":""),{headers:{Authorization:"Bearer "+t}});
+  if(!r2.ok) throw new Error((asPdf?"convert ":"download ")+r2.status);
+  return await r2.arrayBuffer();
+}
+var CONVERT=/^(docx?|docm|dotx?|xlsx?|xlsm|xlsb|pptx?|pptm|ppsx?|rtf|odt|ods|odp|csv|htm|html|txt|eml|msg|tiff?)$/;
+/* ===== viewer: everything is drawn as PDF pages on this screen (Word/Excel are converted by Microsoft first) ===== */
 async function openDoc(f){
   if(!f) return; CUR=f; addRecent(f.id); var seq=++VIEWSEQ;
   E("vTitle").textContent=base(f.name); E("viewer").style.display="flex"; document.body.style.overflow="hidden";
   var vb=E("vBody"); vb.className="vb"; vb.innerHTML='<div class="vmsg">Opening…</div>';
   history.pushState({v:1},"");
   try{
-    if(ext(f.name)==="pdf"&&window.pdfjsLib){
-      var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+f.id+"?$select=id,@microsoft.graph.downloadUrl");
-      var buf=await fetch(meta["@microsoft.graph.downloadUrl"]).then(function(r){ if(!r.ok) throw new Error("download "+r.status); return r.arrayBuffer(); });
+    var x=ext(f.name);
+    if(/^(png|jpe?g|gif|webp|bmp)$/.test(x)){ var ib=await fileBytes(f.id,false); if(seq!==VIEWSEQ) return; vb.innerHTML='<img src="'+URL.createObjectURL(new Blob([ib]))+'" style="display:block;max-width:100%;margin:0 auto;background:#fff">'; return; }
+    if((x==="pdf"||CONVERT.test(x))&&window.pdfjsLib){
+      var pdf;
+      if(x==="pdf"){
+        vb.innerHTML='<div class="vmsg" id="vProg">Opening…</div>';
+        var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+f.id), dl=meta["@microsoft.graph.downloadUrl"];
+        if(dl){ var task=pdfjsLib.getDocument({url:dl,disableAutoFetch:true,disableStream:true,rangeChunkSize:262144});
+          task.onProgress=function(pr){ var el=E("vProg"); if(el&&pr.total) el.textContent="Opening… "+Math.round(pr.loaded/1e6)+" MB"; };
+          try{ pdf=await task.promise; }catch(e){ pdf=null; } }
+        if(!pdf){ var b1=await fileBytes(f.id,false); pdf=await pdfjsLib.getDocument({data:new Uint8Array(b1)}).promise; }
+      } else {
+        vb.innerHTML='<div class="vmsg">Converting for viewing…</div>';
+        var buf=await fileBytes(f.id,true); pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+      }
       if(seq!==VIEWSEQ) return;
-      var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise; vb.innerHTML="";
-      var w=Math.min(vb.clientWidth-20||700,900), ratio=Math.min(window.devicePixelRatio||1,2);
-      for(var i=1;i<=pdf.numPages;i++){ if(seq!==VIEWSEQ) return; var pg=await pdf.getPage(i), v1=pg.getViewport({scale:1}), vp=pg.getViewport({scale:(w/v1.width)*ratio});
-        var c=document.createElement("canvas"); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height); vb.appendChild(c); await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise; }
+      await showPdf(pdf,seq,f.startPage||1);
     } else {
       var t=await getToken(); var r=await fetch(G+"/drives/"+DRIVE.id+"/items/"+f.id+"/preview",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:"{}"});
       var j=await r.json(); if(!j.getUrl) throw new Error("no preview for this file type");
@@ -177,11 +203,40 @@ async function openDoc(f){
     }
   }catch(e){ if(seq===VIEWSEQ) vb.innerHTML='<div class="vmsg">Couldn\'t show this file here ('+esc(e.message)+').<br><br>Tap <b>Download</b> to open it on your device.</div>'; }
 }
-function closeDoc(){ VIEWSEQ++; E("viewer").style.display="none"; E("vBody").innerHTML=""; document.body.style.overflow=""; render(); }
+/* pages are drawn only as you scroll to them, so a 250-page binder opens fast and only downloads what you look at */
+var CURPDF=null, OBS=null;
+async function showPdf(pdf,seq,start){
+  CURPDF=pdf; var vb=E("vBody"), n=pdf.numPages;
+  var p1=await pdf.getPage(1), v1=p1.getViewport({scale:1}), w=Math.min((vb.clientWidth||700)-20,900), ratio=Math.min(window.devicePixelRatio||1,2), h=Math.round(w*v1.height/v1.width);
+  var bar=n>3?'<div class="pbar"><span>'+n+' pages</span><input type="number" id="pgGo" min="1" max="'+n+'" placeholder="Page #"><button id="pgBtn">Go</button><input type="text" id="pgFind" placeholder="Find in this file…"><button id="pgFindBtn">Find</button></div><div id="pgHits"></div>':'';
+  var html=bar; for(var i=1;i<=n;i++) html+='<div class="pg" data-p="'+i+'" style="min-height:'+h+'px"><div class="pgn">'+i+'</div></div>';
+  vb.innerHTML=html;
+  if(OBS) OBS.disconnect();
+  OBS=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting&&!e.target.dataset.done){ e.target.dataset.done="1"; drawPage(pdf,+e.target.getAttribute("data-p"),e.target,w,ratio,seq); } }); },{root:vb,rootMargin:"600px 0px"});
+  vb.querySelectorAll(".pg").forEach(function(d){ OBS.observe(d); });
+  if(n>3){ E("pgBtn").onclick=function(){ goPage(+E("pgGo").value); }; E("pgGo").onkeydown=function(e){ if(e.key==="Enter") goPage(+E("pgGo").value); };
+    E("pgFindBtn").onclick=function(){ findIn(pdf,seq); }; E("pgFind").onkeydown=function(e){ if(e.key==="Enter") findIn(pdf,seq); }; }
+  if(start>1) setTimeout(function(){ goPage(start); },50);
+}
+async function drawPage(pdf,i,host,w,ratio,seq){
+  try{ var pg=await pdf.getPage(i); if(seq!==VIEWSEQ) return; var v1=pg.getViewport({scale:1}), vp=pg.getViewport({scale:(w/v1.width)*ratio});
+    var c=document.createElement("canvas"); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height); host.appendChild(c); host.style.minHeight="";
+    await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise; }catch(e){ host.insertAdjacentHTML("beforeend",'<div class="vmsg">Page '+i+' didn\'t load — scroll away and back.</div>'); host.dataset.done=""; }
+}
+function goPage(n){ var el=E("vBody").querySelector('.pg[data-p="'+n+'"]'); if(el) el.scrollIntoView({block:"start"}); }
+var FINDSEQ=0;
+async function findIn(pdf,seq){
+  var q=norm(E("pgFind").value).trim(), my=++FINDSEQ, hits=[], box=E("pgHits"); if(!q){ box.innerHTML=""; return; }
+  for(var i=1;i<=pdf.numPages;i++){ if(my!==FINDSEQ||seq!==VIEWSEQ) return; box.innerHTML='<div class="hits">Searching page '+i+' of '+pdf.numPages+'… <a href="#" id="stopFind">stop</a></div>'; E("stopFind").onclick=function(e){ e.preventDefault(); FINDSEQ++; show(); };
+    try{ var tc=await (await pdf.getPage(i)).getTextContent(); var t=norm(tc.items.map(function(x){return x.str;}).join(" ")); if(t.indexOf(q)>-1) hits.push(i); }catch(e){} }
+  show();
+  function show(){ box.innerHTML='<div class="hits">'+(hits.length?'Found on page'+(hits.length>1?'s':'')+': '+hits.slice(0,60).map(function(p){return '<a href="#" data-go="'+p+'">'+p+'</a>';}).join(" "):'Not found in this file\'s text (scanned pages can\'t be searched).')+'</div>';
+    box.querySelectorAll("[data-go]").forEach(function(a){ a.onclick=function(e){ e.preventDefault(); goPage(+a.getAttribute("data-go")); }; }); }
+}
+function closeDoc(){ VIEWSEQ++; FINDSEQ++; if(OBS) OBS.disconnect(); if(CURPDF){ try{CURPDF.destroy();}catch(e){} CURPDF=null; } E("viewer").style.display="none"; E("vBody").innerHTML=""; document.body.style.overflow=""; render(); }
 E("vBack").onclick=function(){ if(history.state&&history.state.v) history.back(); else closeDoc(); };
 window.addEventListener("popstate",function(){ if(E("viewer").style.display==="flex") closeDoc(); });
-E("vDl").onclick=async function(){ if(!CUR) return; try{ var meta=await gget(G+"/drives/"+DRIVE.id+"/items/"+CUR.id+"?$select=id,@microsoft.graph.downloadUrl");
-  var b=await fetch(meta["@microsoft.graph.downloadUrl"]).then(function(r){return r.blob();}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=CUR.name; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ alert("Download failed: "+e.message); } };
+E("vDl").onclick=async function(){ if(!CUR) return; try{ var b=new Blob([await fileBytes(CUR.id,false)]); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=CUR.name; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ alert("Download failed: "+e.message); } };
 
 /* office admins get a small link to manage files in SharePoint; nobody else sees where the library lives */
 async function adminLink(){
