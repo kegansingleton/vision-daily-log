@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Shop Daily Log</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:760px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .sub{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:12px 12px 130px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:800;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.desc{font-size:12.5px;color:var(--mut);margin:0 0 6px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.req{color:var(--vm)}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;color:var(--ink);font-family:inherit}
+input::placeholder,textarea::placeholder{color:#8a919c;opacity:1}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff;box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+input:not(:placeholder-shown),textarea:not(:placeholder-shown){background:#fff;border-color:#6b7280}
+textarea{min-height:70px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bad{border-color:var(--red)!important;background:#fff7f7!important}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1.5px solid #9ca3af;background:#f3f5f8;border-radius:20px;padding:8px 12px;font-size:13.5px;font-weight:700;color:#374151;cursor:pointer;user-select:none}
+.chip.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.chip.add{border-style:dashed;border-color:var(--vm);color:var(--vm);background:#fff}
+.job{border:2px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:#fff}
+.job .jh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.job .jh b{font-size:15.5px}
+.job .hrs{font-size:12.5px;font-weight:800;color:var(--ok);background:var(--okbg);border-radius:10px;padding:3px 9px;white-space:nowrap}
+.job .hrs.zero{color:var(--amb);background:var(--ambbg)}
+.job .rm{border:none;background:none;color:var(--red);font-size:22px;cursor:pointer}
+.sub2{border-left:4px solid #e5e7eb;padding:6px 0 6px 10px;margin-top:10px}
+.sub2.prob{border-left-color:var(--red)}.sub2.conv{border-left-color:#2563eb}
+.sub2 .tt{font-weight:800;font-size:13px}
+.ai{background:#f8fafc;border:1px dashed #94a3b8;border-radius:9px;padding:8px 10px;margin-top:8px}
+.ai .chk{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:700;color:var(--ink);margin:0}
+.ai .chk input{width:20px;height:20px}
+.photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.photos img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photos .ph{position:relative}.photos .ph button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--red);color:#fff;font-weight:800;cursor:pointer;line-height:1}
+.pbtn{display:inline-block;margin-top:6px;border:1.5px dashed var(--vm);color:var(--vm);background:#fff;border-radius:9px;padding:8px 12px;font-weight:800;font-size:13.5px;cursor:pointer}
+.pbtn input{display:none}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:10px;font-weight:600;color:var(--ink)}
+.chk input{width:20px;height:20px;margin-top:1px}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.foot .inner{max-width:760px;margin:0 auto}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer}
+.btn-primary{background:var(--vm);color:#fff}.btn-primary:disabled{opacity:.55}
+.btn-ghost{background:#fff;color:var(--vm);border:1.5px dashed var(--vm);margin-top:6px}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:#eef2f7;color:#334155;display:block}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Shop Daily Log</h1><p>The shop foreman's end-of-day report: every job worked, problems, and conversations with field foremen.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Shop Daily Log</h1><div class="sub" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg info" id="listWarn" style="display:none"></div>
+  <div class="card">
+    <h2>Day</h2>
+    <div class="grid2">
+      <div><label>Date <span class="req">*</span></label><input type="date" id="ldate"></div>
+      <div><label>Shop foreman <span class="req">*</span></label><input type="text" id="foreman" placeholder="Your name"></div>
+    </div>
+    <label>Crew in the shop today</label>
+    <input type="text" id="crew" placeholder="Names, or leave blank">
+  </div>
+
+  <div class="card">
+    <h2>Jobs worked today</h2>
+    <div class="desc">Tap every job the shop touched. Jobs with shop time on today's timecards are listed first.</div>
+    <div class="chips" id="jobChips"></div>
+    <label>Add another job</label>
+    <select id="jobPick"><option value="">Loading jobs…</option></select>
+  </div>
+
+  <div id="jobs"></div>
+
+  <div class="card">
+    <h2>Shop-wide notes</h2>
+    <label>Equipment / tools (breakdowns, maintenance)</label>
+    <textarea id="equip" placeholder="e.g. Plasma table down 2 hrs, new tip installed"></textarea>
+    <label>Deliveries / material</label>
+    <textarea id="material" placeholder="e.g. Coil of 24 ga received; short 1&quot; liner"></textarea>
+    <label>Safety</label>
+    <textarea id="safety" placeholder="Near misses, injuries, housekeeping — or None"></textarea>
+    <label>Tomorrow's plan</label>
+    <textarea id="tomorrow" placeholder="What's next in the shop"></textarea>
+    <label class="chk"><input type="checkbox" id="certify"> This log is accurate for today's shop work.</label>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="foot" id="foot" style="display:none"><div class="inner">
+  <button class="btn btn-primary" id="submitBtn">Submit shop log</button>
+  <button class="btn btn-ghost" id="newBtn" style="display:none">Start a new log</button>
+</div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LIST_NAME="Shop Daily Logs", PHOTO_ROOT="Shop Log Photos", DRAFT_KEY="vm_shoplog_draft_v1";
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", TC="91c4a3db-97f6-4b52-a855-516d5c414124", ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8";
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"], SHOP_FOREMAN=["nholliday@visionmech.net"];
+var SHOP_PHASES={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
+var PROBLEMS=["Missing / unclear info","Dimension conflict","Material shortage","Rework","Equipment down","Waiting on approval","Schedule / priority change","Other"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", myName="", LIST_ID=null, LIST_COLS=null, ALLJOBS=[], PEOPLE=[], FOREMEN=[], TCROWS=null, HRS={};
+var ENT=[]; /* one per job: {no,name,work,probs:{},probText,talkWho,talkNotes,aiProb,aiConv, photos:[]} */
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function truthy(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(p.length<2)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gjson(url,extra){ var t=await getToken(); var j=await fetch(url,{headers:Object.assign({Authorization:"Bearer "+t},extra||{})}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); return j; }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999"+(filter?("&$filter="+filter):""), out=[]; while(url){ var j=await gjson(url,filter?{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}:null); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+async function post(url,body){ var t=await getToken(); for(var i=0;i<3;i++){ try{ var r=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(body)}); if(r.ok) return r.json(); if(r.status<500&&r.status!==429) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140)); }catch(e){ if(i===2||/HTTP 4/.test(e.message)) throw e; } await new Promise(function(s){setTimeout(s,1200*(i+1));}); } throw new Error("server busy"); }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase(); myName=a.name||"";
+  E("gate").style.display="none";
+  var emps=[]; try{ emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Foreman,ShopAccess,Active"); }catch(e){}
+  var ok=SUPERADMIN.indexOf(loginEmail)>-1||SHOP_FOREMAN.indexOf(loginEmail)>-1;
+  emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+    PEOPLE.push({name:n,email:em}); if(truthy(f.Foreman)) FOREMEN.push(n); if(em===loginEmail){ myName=n; if(truthy(f.Admin)) ok=true; } });
+  if(!ok){ document.body.innerHTML='<div class="denied"><h2 style="color:#7f1d1d">Not authorized</h2><p>The Shop Daily Log is for the shop foreman and admins. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
+  PEOPLE.sort(function(x,y){return x.name.localeCompare(y.name);}); FOREMEN.sort();
+  E("app").style.display="block"; E("foot").style.display="block"; E("who").textContent=myName||loginEmail;
+  loadDraft();
+  if(!E("ldate").value) E("ldate").value=iso(new Date());
+  if(!E("foreman").value) E("foreman").value=myName;
+  ["ldate","foreman","crew","equip","material","safety","tomorrow"].forEach(function(id){ E(id).addEventListener("input",function(){ E(id).classList.remove("bad"); saveDraft(); }); });
+  E("certify").onchange=saveDraft;
+  E("ldate").addEventListener("change",function(){ loadHours(); });
+  E("jobPick").onchange=function(){ var v=E("jobPick").value; if(v) addJob(v); E("jobPick").value=""; };
+  renderJobs(); loadJobs(); loadHours(); findList();
+}
+async function loadJobs(){
+  try{ var tasks=await pullAll(JOBTASKS,"JobNo,JobName,Active"), seen={};
+    var arch={}; try{ (await pullAll(JOBS,"Title,Archive")).forEach(function(j){ if(truthy(j.Archive)) arch[(j.Title||"").trim()]=1; }); }catch(e){}
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]||arch[jn]) return; seen[jn]=1; ALLJOBS.push({no:jn,name:(t.JobName||"").trim()}); });
+    ALLJOBS.sort(function(a,b){return a.name.toLowerCase().localeCompare(b.name.toLowerCase())||a.no.localeCompare(b.no);});
+  }catch(e){}
+  renderPick(); renderChips();
+}
+async function loadHours(){
+  HRS={}; var d=E("ldate").value; if(!d){ renderChips(); return; }
+  try{ var rows;
+    try{ rows=await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours,EmployeeName","fields/WorkDate ge '"+d+"T00:00:00Z' and fields/WorkDate le '"+d+"T23:59:59Z'"); }
+    catch(e1){ rows=(await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours,EmployeeName")).filter(function(f){return String(f.WorkDate||"").slice(0,10)===d;}); }
+    rows.forEach(function(f){ if(String(f.WorkDate||"").slice(0,10)!==d) return; if(!SHOP_PHASES[f.PhaseCode]) return; var j=(f.JobNo||"").trim(); if(!j) return;
+      HRS[j]=HRS[j]||{h:0,ph:{},crew:{}}; var h=parseFloat(f.Hours)||0; HRS[j].h+=h; HRS[j].ph[f.PhaseCode]=(HRS[j].ph[f.PhaseCode]||0)+h; if(f.EmployeeName) HRS[j].crew[f.EmployeeName]=1; });
+  }catch(e){}
+  if(!E("crew").value.trim()){ var c={}; Object.keys(HRS).forEach(function(j){ Object.keys(HRS[j].crew).forEach(function(n){c[n]=1;}); }); if(Object.keys(c).length) E("crew").value=Object.keys(c).sort().join(", "); }
+  renderChips(); renderJobs();
+}
+async function findList(){
+  try{ var j=await gjson(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("listWarn").style.display="block"; E("listWarn").textContent="Heads up: the “"+LIST_NAME+"” list isn't set up in SharePoint yet, so logs can't be filed. Your entries are saved on this device."; return; }
+    LIST_ID=L.id; var c=await gjson(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){}
+}
+function jobName(no){ var j=ALLJOBS.filter(function(x){return x.no===no;})[0]; return j?j.name:""; }
+function renderPick(){ var have={}; ENT.forEach(function(e){have[e.no]=1;}); E("jobPick").innerHTML='<option value="">— Pick a job —</option>'+ALLJOBS.filter(function(j){return !have[j.no];}).map(function(j){return '<option value="'+esc(j.no)+'">'+esc(j.no+" "+j.name)+'</option>';}).join(""); }
+function renderChips(){
+  var have={}; ENT.forEach(function(e){have[e.no]=1;});
+  var withHrs=Object.keys(HRS).sort(function(a,b){return HRS[b].h-HRS[a].h;});
+  E("jobChips").innerHTML=withHrs.length?withHrs.map(function(no){ return '<span class="chip'+(have[no]?" on":"")+'" data-no="'+esc(no)+'">'+esc(no+" "+(jobName(no)||""))+' · '+(Math.round(HRS[no].h*10)/10)+'h</span>'; }).join(""):'<span class="desc">No shop time on timecards for this date yet — pick jobs below.</span>';
+  E("jobChips").querySelectorAll(".chip[data-no]").forEach(function(c){ c.onclick=function(){ var no=c.getAttribute("data-no"); if(have[no]){ var e=ENT.filter(function(x){return x.no===no;})[0]; var el=document.querySelector('.job[data-no="'+CSS.escape(no)+'"]'); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); } else addJob(no); }; });
+}
+function addJob(no){ if(ENT.some(function(e){return e.no===no;})) return; ENT.push({no:no,name:jobName(no),work:"",probs:{},probText:"",talkWho:"",talkNotes:"",aiProb:{on:false,who:"",due:"",title:""},aiConv:{on:false,who:"",due:"",title:""},photos:[]}); renderJobs(); renderChips(); renderPick(); saveDraft();
+  var el=document.querySelector('.job[data-no="'+CSS.escape(no)+'"]'); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
+function peopleOpts(sel){ return '<option value="">— Assign to —</option>'+PEOPLE.map(function(p){return '<option value="'+esc(p.email)+'"'+(p.email===sel?" selected":"")+'>'+esc(p.name)+'</option>';}).join(""); }
+function aiBlock(i,k,label){ var a=ENT[i][k];
+  return '<div class="ai"><label class="chk"><input type="checkbox" data-ai="'+k+'" data-f="on"'+(a.on?" checked":"")+'> Make this an Action Item</label>'+(a.on?'<label>Action item</label><input type="text" data-ai="'+k+'" data-f="title" value="'+esc(a.title)+'" placeholder="'+esc(label)+'"><div class="grid2"><div><label>Assign to</label><select data-ai="'+k+'" data-f="who">'+peopleOpts(a.who)+'</select></div><div><label>Due</label><input type="date" data-ai="'+k+'" data-f="due" value="'+esc(a.due)+'"></div></div>':'')+'</div>'; }
+function renderJobs(){
+  E("jobs").innerHTML=ENT.map(function(e,i){ var h=HRS[e.no], hrs=h?Math.round(h.h*10)/10:0, ph=h?Object.keys(h.ph).map(function(p){return p+" "+SHOP_PHASES[p]+" "+(Math.round(h.ph[p]*10)/10)+"h";}).join(", "):"";
+    return '<div class="job" data-no="'+esc(e.no)+'" data-i="'+i+'"><div class="jh"><b>'+esc(e.no+" "+(e.name||jobName(e.no)))+'</b><span class="hrs'+(hrs?"":" zero")+'">'+(hrs?hrs+" shop hrs":"no shop hrs yet")+'</span><button class="rm" data-rm="1" title="Remove job">&times;</button></div>'+
+      (ph?'<div class="desc" style="margin-top:4px">'+esc(ph)+'</div>':'')+
+      '<label>Work done <span class="req">*</span></label><textarea data-k="work" placeholder="What the shop built or did for this job">'+esc(e.work)+'</textarea>'+
+      '<div class="sub2 prob"><div class="tt">Problems / holdups</div><div class="chips">'+PROBLEMS.map(function(p){return '<span class="chip'+(e.probs[p]?" on":"")+'" data-prob="'+esc(p)+'">'+esc(p)+'</span>';}).join("")+'</div>'+
+        '<textarea data-k="probText" placeholder="What happened, what\'s needed to fix it" style="margin-top:8px">'+esc(e.probText)+'</textarea>'+((Object.keys(e.probs).length||e.probText.trim())?aiBlock(i,"aiProb","e.g. Get revised dims for RTU-3 curb"):'')+'</div>'+
+      '<div class="sub2 conv"><div class="tt">Conversation with field foreman</div><label>Who</label><input type="text" data-k="talkWho" list="foremenList" value="'+esc(e.talkWho)+'" placeholder="Foreman name">'+
+        '<label>What was discussed / decided</label><textarea data-k="talkNotes" placeholder="e.g. Mason wants the L2 fittings before Friday; OK to sub 24 ga for 26">'+esc(e.talkNotes)+'</textarea>'+(e.talkNotes.trim()?aiBlock(i,"aiConv","e.g. Ship L2 fittings by Friday"):'')+'</div>'+
+      '<div class="photos">'+e.photos.map(function(p,k){return '<div class="ph"><img src="'+p+'" alt=""><button data-delph="'+k+'">&times;</button></div>';}).join("")+'</div>'+
+      '<label class="pbtn">+ Photo<input type="file" accept="image/*" multiple data-photo="1"></label></div>'; }).join("")+
+    '<datalist id="foremenList">'+FOREMEN.map(function(n){return '<option value="'+esc(n)+'">';}).join("")+'</datalist>';
+  E("jobs").querySelectorAll(".job").forEach(function(el){ var i=+el.getAttribute("data-i"), e=ENT[i];
+    el.querySelectorAll("[data-k]").forEach(function(inp){ inp.addEventListener("input",function(){ var before=!!(Object.keys(e.probs).length||e.probText.trim()), bt=!!e.talkNotes.trim(); e[inp.getAttribute("data-k")]=inp.value; inp.classList.remove("bad"); saveDraft();
+      var after=!!(Object.keys(e.probs).length||e.probText.trim()), at=!!e.talkNotes.trim(); if(before!==after||bt!==at){ var pos=inp.selectionStart; renderJobs(); var n=document.querySelector('.job[data-i="'+i+'"] [data-k="'+inp.getAttribute("data-k")+'"]'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(x){} } } }); });
+    el.querySelectorAll("[data-prob]").forEach(function(c){ c.onclick=function(){ var p=c.getAttribute("data-prob"); if(e.probs[p]) delete e.probs[p]; else e.probs[p]=true; renderJobs(); saveDraft(); }; });
+    el.querySelectorAll("[data-ai]").forEach(function(inp){ inp.addEventListener(inp.type==="checkbox"||inp.tagName==="SELECT"?"change":"input",function(){ var a=e[inp.getAttribute("data-ai")], f=inp.getAttribute("data-f"); a[f]=inp.type==="checkbox"?inp.checked:inp.value; inp.classList.remove("bad");
+      if(f==="on"){ if(a.on&&!a.due) a.due=iso(addDays(new Date(),3)); if(a.on&&!a.title) a.title=(inp.getAttribute("data-ai")==="aiProb"?(Object.keys(e.probs)[0]||"Shop problem")+": ":"Follow up: ")+((inp.getAttribute("data-ai")==="aiProb"?e.probText:e.talkNotes).trim().split(/\n/)[0].slice(0,90)); renderJobs(); } saveDraft(); }); });
+    el.querySelector("[data-rm]").onclick=function(){ if((e.work||e.probText||e.talkNotes||e.photos.length)&&!confirm("Remove "+e.no+" from today's log?")) return; ENT.splice(i,1); renderJobs(); renderChips(); renderPick(); saveDraft(); };
+    el.querySelectorAll("[data-delph]").forEach(function(b){ b.onclick=function(){ e.photos.splice(+b.getAttribute("data-delph"),1); renderJobs(); }; });
+    el.querySelector("[data-photo]").onchange=function(ev){ var files=Array.prototype.slice.call(ev.target.files||[]); files.forEach(function(f){ var img=new Image(); img.onload=function(){ e.photos.push(scale(img,1600,0.82)); renderJobs(); }; img.src=URL.createObjectURL(f); }); };
+  });
+}
+function scale(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function dataBlob(d){ var b=atob(d.split(",")[1]), a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return new Blob([a],{type:"image/jpeg"}); }
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+function safe(s){return String(s||"").replace(/[\\\/:*?"<>|#%]/g,"-").trim();}
+function personName(email){ var p=PEOPLE.filter(function(x){return x.email===email;})[0]; return p?p.name:email; }
+
+/* ===== report ===== */
+function buildReport(photoLinks,aiMade){
+  var H=[], tot=0; ENT.forEach(function(e){ tot+=HRS[e.no]?HRS[e.no].h:0; });
+  H.push('<h2 style="color:#7f1d1d;margin:0">Shop Daily Log</h2><p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical &middot; Shop</p>');
+  H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Date",E("ldate").value],["Shop foreman",E("foreman").value],["Crew",E("crew").value||"—"],["Jobs worked",ENT.length+" ("+(Math.round(tot*10)/10)+" shop hrs on timecards)"]].map(function(r){return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
+  ENT.forEach(function(e){ var h=HRS[e.no];
+    H.push('<h3 style="color:#7f1d1d;margin:16px 0 4px;border-bottom:2px solid #f1d5d2">'+esc(e.no+" "+(e.name||jobName(e.no)))+(h?' <span style="font-size:13px;color:#15803d">· '+(Math.round(h.h*10)/10)+' shop hrs</span>':'')+'</h3>');
+    if(h) H.push('<p style="font-size:12.5px;color:#6b7280;margin:0">'+esc(Object.keys(h.ph).map(function(p){return p+" "+SHOP_PHASES[p]+" "+(Math.round(h.ph[p]*10)/10)+"h";}).join(" · "))+'</p>');
+    H.push('<p><b>Work done:</b> '+esc(e.work).replace(/\n/g,"<br>")+'</p>');
+    if(Object.keys(e.probs).length||e.probText.trim()) H.push('<p style="border-left:4px solid #b91c1c;padding-left:8px"><b>Problems:</b> '+esc(Object.keys(e.probs).join(", "))+(e.probText.trim()?'<br>'+esc(e.probText).replace(/\n/g,"<br>"):'')+'</p>');
+    if(e.talkNotes.trim()) H.push('<p style="border-left:4px solid #2563eb;padding-left:8px"><b>Talked with '+esc(e.talkWho||"field foreman")+':</b><br>'+esc(e.talkNotes).replace(/\n/g,"<br>")+'</p>');
+    (aiMade[e.no]||[]).forEach(function(a){ H.push('<p style="font-size:13px">&#9745; Action item: <b>'+esc(a.title)+'</b> — '+esc(a.name)+', due '+esc(a.due)+'</p>'); });
+    if(photoLinks[e.no]) H.push('<p style="font-size:13px">'+photoLinks[e.no].n+' photo(s): <a href="'+esc(photoLinks[e.no].url)+'">open folder</a></p>');
+  });
+  [["Equipment / tools","equip"],["Deliveries / material","material"],["Safety","safety"],["Tomorrow's plan","tomorrow"]].forEach(function(x){ var v=E(x[1]).value.trim(); if(v) H.push('<h3 style="color:#7f1d1d;margin:16px 0 4px">'+x[0]+'</h3><p>'+esc(v).replace(/\n/g,"<br>")+'</p>'); });
+  H.push('<p style="color:#6b7280;font-size:12px;margin-top:14px">Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'.</p>');
+  return H.join("\n");
+}
+
+/* ===== submit ===== */
+async function submit(){
+  var msg=E("msg"), btn=E("submitBtn"); saveDraft(); var miss=[];
+  if(!E("ldate").value){ E("ldate").classList.add("bad"); miss.push("Date"); }
+  if(!E("foreman").value.trim()){ E("foreman").classList.add("bad"); miss.push("Shop foreman"); }
+  if(!ENT.length) miss.push("at least one job");
+  ENT.forEach(function(e){ var el=document.querySelector('.job[data-no="'+CSS.escape(e.no)+'"]');
+    if(!e.work.trim()){ miss.push("work done for "+e.no); if(el){ var t=el.querySelector('[data-k="work"]'); if(t) t.classList.add("bad"); } }
+    ["aiProb","aiConv"].forEach(function(k){ var a=e[k]; if(!a.on) return; if(!a.title.trim()||!a.who||!a.due) miss.push("action item details for "+e.no); }); });
+  if(!E("certify").checked) miss.push("the accuracy checkbox");
+  if(miss.length){ msg.className="msg err"; msg.textContent="Still needed: "+miss.join(", ")+"."; var b=document.querySelector(".bad"); if(b) b.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You're offline — your entries are saved. Tap Submit again when you have signal."; return; }
+  if(!LIST_ID){ await findList(); if(!LIST_ID){ msg.className="msg err"; msg.textContent="The “"+LIST_NAME+"” list isn't set up yet. Your entries are saved on this device."; return; } }
+  btn.disabled=true; msg.className="msg info"; msg.textContent="Saving…";
+  try{
+    var t=await getToken(), d=E("ldate").value, photoLinks={}, aiMade={}, rootUrl="";
+    for(var i=0;i<ENT.length;i++){ var e=ENT[i]; if(!e.photos.length) continue; var folder=PHOTO_ROOT+"/"+d+" "+safe(E("foreman").value)+"/"+safe(e.no+" "+(e.name||""));
+      for(var k=0;k<e.photos.length;k++){ msg.textContent="Uploading photos for "+e.no+" ("+(k+1)+"/"+e.photos.length+")…";
+        var r=await fetch(SITEURL+"/drive/root:/"+encPath(folder+"/photo-"+pad(k+1)+".jpg")+":/content",{method:"PUT",headers:{Authorization:"Bearer "+t,"Content-Type":"image/jpeg"},body:dataBlob(e.photos[k])}); if(!r.ok) throw new Error("photo upload "+r.status); }
+      try{ var fj=await gjson(SITEURL+"/drive/root:/"+encPath(folder)+"?$select=webUrl"); photoLinks[e.no]={url:fj.webUrl||"",n:e.photos.length}; }catch(x){ photoLinks[e.no]={url:"",n:e.photos.length}; }
+      if(!rootUrl){ try{ var rj=await gjson(SITEURL+"/drive/root:/"+encPath(PHOTO_ROOT+"/"+d+" "+safe(E("foreman").value))+"?$select=webUrl"); rootUrl=rj.webUrl||""; }catch(x){} } }
+    msg.textContent="Creating action items…";
+    for(var j=0;j<ENT.length;j++){ var en=ENT[j];
+      for(var kk of ["aiProb","aiConv"]){ var a=en[kk]; if(!a.on||a.done) continue;
+        var det=(kk==="aiProb"?("Shop problem ("+Object.keys(en.probs).join(", ")+"): "+en.probText):("From shop conversation with "+(en.talkWho||"field foreman")+": "+en.talkNotes))+"\n— Shop Daily Log "+d;
+        await post(GRAPH+ACTIONS+"/items",{fields:{Title:a.title.trim(),JobNo:en.no,JobName:en.name||jobName(en.no),AssignedTo:a.who,AssignedToName:personName(a.who),DueDate:a.due+"T12:00:00Z",Priority:"Normal",Status:"Open",Details:det,CreatedByEmail:loginEmail,CreatedByName:myName}});
+        a.done=true; saveDraft(); (aiMade[en.no]=aiMade[en.no]||[]).push({title:a.title.trim(),name:personName(a.who),due:a.due}); } }
+    msg.textContent="Saving log…";
+    var tot=0; ENT.forEach(function(e){ tot+=HRS[e.no]?HRS[e.no].h:0; });
+    var f={ Title:d+" | Shop | "+E("foreman").value.trim(), LogDate:d+"T12:00:00Z", Foreman:E("foreman").value.trim(), Crew:E("crew").value.trim(),
+      Jobs:ENT.map(function(e){return e.no+" "+(e.name||jobName(e.no));}).join("; "), JobCount:ENT.length, ShopHours:Math.round(tot*10)/10,
+      Problems:ENT.filter(function(e){return Object.keys(e.probs).length||e.probText.trim();}).map(function(e){return e.no+": "+Object.keys(e.probs).join(", ")+(e.probText.trim()?" — "+e.probText.trim():"");}).join("\n"),
+      Conversations:ENT.filter(function(e){return e.talkNotes.trim();}).map(function(e){return e.no+" ("+(e.talkWho||"foreman")+"): "+e.talkNotes.trim();}).join("\n"),
+      ActionItemsCreated:Object.keys(aiMade).reduce(function(s,k){return s+aiMade[k].length;},0),
+      Equipment:E("equip").value.trim(), Material:E("material").value.trim(), Safety:E("safety").value.trim(), Tomorrow:E("tomorrow").value.trim(),
+      Entries:JSON.stringify(ENT.map(function(e){return {no:e.no,name:e.name,work:e.work,problems:Object.keys(e.probs),problemNotes:e.probText,talkedWith:e.talkWho,talkNotes:e.talkNotes,shopHours:HRS[e.no]?HRS[e.no].h:0,photos:e.photos.length};})),
+      PhotoFolder:rootUrl, LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport(photoLinks,aiMade) };
+    if(LIST_COLS) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
+    await post(GRAPH+LIST_ID+"/items",{fields:f});
+    msg.className="msg ok"; msg.textContent="Submitted. Shop log for "+d+" filed with "+ENT.length+" job"+(ENT.length===1?"":"s")+(f.ActionItemsCreated?(" and "+f.ActionItemsCreated+" action item"+(f.ActionItemsCreated===1?"":"s")):"")+".";
+    btn.textContent="Submitted"; clearDraft(); E("newBtn").style.display="block";
+  }catch(e){ btn.disabled=false; msg.className="msg err"; msg.textContent="Couldn't submit yet ("+(e.message||e)+"). Your entries are saved — tap Submit again."; }
+}
+E("submitBtn").onclick=submit;
+E("newBtn").onclick=function(){ if(confirm("Start a new blank shop log?")){ clearDraft(); location.reload(); } };
+
+/* ===== drafts (text only; photos stay in memory) ===== */
+var FIELDS=["ldate","foreman","crew","equip","material","safety","tomorrow"];
+function saveDraft(){ try{ var d={ts:Date.now(),cert:E("certify").checked,ENT:ENT.map(function(e){ var c=Object.assign({},e); c.photos=[]; return c; })}; FIELDS.forEach(function(id){ d[id]=E(id).value; }); localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch(e){} }
+function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); if(!d) return; if(Date.now()-(d.ts||0)>36*3600e3){ clearDraft(); return; } FIELDS.forEach(function(id){ if(d[id]) E(id).value=d[id]; }); ENT=(d.ENT||[]).map(function(e){ e.photos=[]; return e; }); E("certify").checked=!!d.cert; }catch(e){} }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+</script>
+</body>
+</html>

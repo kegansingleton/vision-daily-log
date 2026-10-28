@@ -108,7 +108,13 @@ var TABS=[
   row:function(f){return [d10(f.WorkDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.TicketNo||"",f.Foreman||"",tags(f.SignedStatus),hrs(f.LaborHours,f.OTHours)];},hd:["Date","Job","Ticket","Foreman","Signed","Hours"]},
  {k:"pt",t:"Pre-Task Plans",name:"Pre-Task Plans",date:"PlanDate",body:"ReportHTML",html:true,
   cols:["PlanDate","JobNo","JobName","Foreman","ToolboxTopic","CrewCount"],
-  row:function(f){return [d10(f.PlanDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.Foreman||"",f.ToolboxTopic||"",f.CrewCount||""];},hd:["Date","Job","Foreman","Toolbox talk","Crew"]}
+  row:function(f){return [d10(f.PlanDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),f.Foreman||"",f.ToolboxTopic||"",f.CrewCount||""];},hd:["Date","Job","Foreman","Toolbox talk","Crew"]},
+ {k:"shop",t:"Shop Daily Logs",name:"Shop Daily Logs",date:"LogDate",body:"ReportHTML",html:true,
+  cols:["LogDate","Foreman","JobCount","ShopHours","ActionItemsCreated"],
+  row:function(f){return [d10(f.LogDate),f.Foreman||"",(f.JobCount||0)+" jobs",(f.ShopHours||0)+" h",f.ActionItemsCreated?(f.ActionItemsCreated+" action items"):""];},hd:["Date","Shop foreman","Jobs","Shop hrs","Action items"]},
+ {k:"bo",t:"Shop Bill-Outs",name:"Shop Bill-Outs",date:"RunDate",body:"ReportHTML",html:true,
+  cols:["RunDate","JobNo","JobName","PhaseCode","SMGroup","Total","LoggedBy"],
+  row:function(f){return [d10(f.RunDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),(f.PhaseCode||"")+(f.SMGroup?(" "+f.SMGroup):""),"$"+(Math.round((parseFloat(f.Total)||0)*100)/100).toFixed(2),f.LoggedBy||""];},hd:["Run date","Job","Phase / group","Total","Logged by"]}
 ];
 var SKIP={ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};

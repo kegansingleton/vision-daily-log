@@ -41,6 +41,7 @@ th.l,td.l{text-align:left}
 .bar>div{height:100%;background:var(--vm)}
 .tablewrap{overflow-x:auto}
 .loading,.empty{padding:34px;text-align:center;color:var(--muted)}
+.grprow{margin-top:14px}.grprow h3{margin:0 0 -4px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}.grprow h3 i{width:12px;height:12px;border-radius:3px;display:inline-block}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
@@ -73,7 +74,7 @@ th.l,td.l{text-align:left}
     <button data-t="Fixture">Fixture</button>
     <button data-t="Hangers">Hangers</button>
   </div>
-  <div class="kpis" id="kpis"></div>
+  <div id="kpis"></div>
 
   <div class="card">
     <h2 id="chartTitle">Rate vs. batch size</h2>
@@ -89,6 +90,12 @@ th.l,td.l{text-align:left}
   <div class="card" id="brk2Card" style="display:none">
     <h2 id="brk2Title">Rate by gauge</h2>
     <div class="tablewrap"><table id="brk2Tbl"></table></div>
+  </div>
+
+  <div class="card" id="boCard" style="display:none">
+    <h2>Bill-outs</h2>
+    <div class="cap">Shop material billed out to jobs, from logged runs.</div>
+    <div class="tablewrap"><table id="boTbl"></table></div>
   </div>
 
   <div class="card">
@@ -112,7 +119,10 @@ var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea","Hangers":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr","Hangers":"ea/hr"};
-var BAND={"Sheet Metal":[600,3500]};
+var BAND={"Sheet Metal":[600,3500]};  /* historical optimal range for fittings */
+var SM_GROUP={"1230":"Duct","1250":"Fittings","1210":"Pre-assembly","1240":"Welded steel"};
+var GROUPS=["Duct","Fittings","Pre-assembly","Welded steel"], GCOLOR={"Duct":"#7f1d1d","Fittings":"#c8932a","Pre-assembly":"#2563eb","Welded steel":"#475569","Other":"#9ca3af"};
+function grpOf(f){ return f.SMGroup||SM_GROUP[f.PhaseCode]||"Other"; }
 var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
@@ -149,7 +159,7 @@ async function pullAll(listId,select){ var token=await getToken(); var url=GRAPH
 async function load(){
   E("loading").style.display="block";
   try{
-    var runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy");
+    var runs; try{ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy,SMGroup,BillOutTotal,Built"); }catch(e0){ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy"); }
     var tc=await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours");
     var hrs={}; tc.forEach(function(f){ var k=(f.JobNo||"")+"|"+(f.PhaseCode||"")+"|"+dkey(f.WorkDate); hrs[k]=(hrs[k]||0)+(parseFloat(f.Hours)||0); });
     /* total output + run count per job|phase|day, so the day's hours split across runs by pound-share */
@@ -175,39 +185,64 @@ function render(){
   var rows=RUNS.filter(function(r){return r.f.FabType===fabType;});
   var rated=rows.filter(function(r){return r.rate!=null;});
   var u=RATEU[fabType], unit=OUT[fabType];
-  /* KPIs */
-  var k="";
-  var all=blended(rows);
+  /* KPIs — sheet metal is split by group (Duct / Fittings / Pre-assembly / Welded steel) everywhere */
   var ws=iso(payWeekStart(new Date())), we=iso(addDays(payWeekStart(new Date()),6));
-  var wkRows=rows.filter(function(r){ var d=dkey(r.f.RunDate); return d>=ws && d<=we; });
-  var wk=blended(wkRows);
-  k+=kpi(wk!=null?n1(wk):"—","This week "+u,(wk!=null&&all!=null?((wk>=all?"▲":"▼")+" vs "+n1(all)+" all-time"):"this pay week"),(wk!=null&&all!=null?(wk>=all?"hi":"lo"):""));
-  k+=kpi(all!=null?n1(all):"—","All-time "+u,rated.length+" rated runs");
-  if(fabType==="Sheet Metal"){
-    var unl=rows.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=rows.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
-    k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u);
+  var SM=(fabType==="Sheet Metal");
+  var grps=SM?GROUPS.concat(["Other"]).filter(function(g){ return rows.some(function(r){return grpOf(r.f)===g;}); }):[fabType];
+  function kpiRow(list,label){
+    var k="", all=blended(list), wk=blended(list.filter(function(r){ var d=dkey(r.f.RunDate); return d>=ws && d<=we; }));
+    k+=kpi(wk!=null?n1(wk):"—","This week "+u,(wk!=null&&all!=null?((wk>=all?"▲":"▼")+" vs "+n1(all)+" all-time"):"this pay week"),(wk!=null&&all!=null?(wk>=all?"hi":"lo"):""));
+    k+=kpi(all!=null?n1(all):"—","All-time "+u,list.filter(function(r){return r.rate!=null;}).length+" rated runs");
+    if(SM){ var unl=list.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=list.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
+      k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u); }
+    k+=kpi(n0(list.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(list.length,"Runs logged");
+    var bo=list.reduce(function(s,r){return s+(parseFloat(r.f.BillOutTotal)||0);},0); if(bo>0) k+=kpi(money(bo),"Billed out");
+    return '<div class="grprow">'+(label?'<h3><i style="background:'+(GCOLOR[label]||"#999")+'"></i>'+esc(label)+'</h3>':'')+'<div class="kpis">'+k+'</div></div>';
   }
-  k+=kpi(n0(rows.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(rows.length,"Runs logged");
-  E("kpis").innerHTML=k;
+  E("kpis").innerHTML=!rows.length?'<div class="kpis">'+kpi("—","No runs yet")+'</div>':grps.map(function(g){ return kpiRow(SM?rows.filter(function(r){return grpOf(r.f)===g;}):rows, SM?g:""); }).join("");
 
-  /* scatter */
+  /* scatter — one colored series per group */
   E("chartTitle").textContent=u+" vs. batch size ("+unit+")";
-  E("chartCap").textContent = BAND[fabType] ? ("Each dot = one run. Shaded band = measured optimal range ("+BAND[fabType][0]+"–"+BAND[fabType][1]+" "+unit+").") : "Each dot = one run. Optimal band fills in as the study builds.";
-  drawScatter(rated, unit, u);
+  E("chartCap").textContent = BAND[fabType] ? ("Each dot = one run, colored by group. Shaded band = historical optimal range for fittings ("+BAND[fabType][0]+"–"+BAND[fabType][1]+" "+unit+").") : "Each dot = one run. Optimal band fills in as the study builds.";
+  drawScatter(rated, unit, u, SM?grps:null);
 
-  /* breakdown by phase (phase now carries category/material) */
+  /* breakdown by phase (each phase is one group) */
   breakdownTable("brkTbl", rows, function(r){return r.f.PhaseCode||"(none)";}, function(key){return key+(PHASE_NAME[key]?(" "+PHASE_NAME[key]):"");}, u, unit, "Phase");
-  if(fabType==="Sheet Metal"){ E("brk2Card").style.display="block"; breakdownTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, function(k){return k;}, u, unit, "Gauge"); }
+  if(SM){ E("brk2Card").style.display="block"; E("brk2Title").textContent="Rate by gauge — split by group"; splitTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, grps, u, unit, "Gauge"); }
   else { E("brk2Card").style.display="none"; }
+  renderBillouts(rows, SM, grps);
 
   /* runs table */
   if(!rows.length){ E("runsTbl").innerHTML='<tbody><tr><td class="l empty">No '+fabType.toLowerCase()+' runs logged yet.</td></tr></tbody>'; return; }
-  var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Liner / gauge":(fabType==="Pipe"?"Size":"Detail"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th></tr></thead><tbody>';
+  var hasBO=rows.some(function(r){return parseFloat(r.f.BillOutTotal)>0;});
+  var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th>'+(SM?'<th class="l">Group</th>':'')+'<th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Liner / gauge":(fabType==="Pipe"?"Size":"Detail"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th>'+(hasBO?'<th>Bill-out</th>':'')+'</tr></thead><tbody>';
   rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? (f.PipeSize||"") : "");
-    rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td><td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?(n1(r.rate)+(r.mixed?' <span style="color:var(--muted);font-weight:400" title="Hours split by pounds across multiple runs this day">~</span>':'')):'<span style="color:#b91c1c">pending</span>')+'</b></td></tr>'; });
+    rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td>'+(SM?'<td class="l"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+(GCOLOR[grpOf(f)]||"#999")+';margin-right:5px"></span>'+esc(grpOf(f))+'</td>':'')+'<td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?(n1(r.rate)+(r.mixed?' <span style="color:var(--muted);font-weight:400" title="Hours split by pounds across multiple runs this day">~</span>':'')):'<span style="color:#b91c1c">pending</span>')+'</b></td>'+(hasBO?'<td>'+(parseFloat(f.BillOutTotal)>0?money(parseFloat(f.BillOutTotal)):'')+'</td>':'')+'</tr>'; });
   E("runsTbl").innerHTML=rh+'</tbody>';
 }
 function cr(v){ return v!=null?n1(v):"—"; }
+function money(n){ return "$"+Math.round(n).toLocaleString(); }
+/* rows = a key (e.g. gauge), columns = each group's rate and pounds */
+function splitTable(elId, rows, keyFn, grps, u, unit, colName){
+  var keys={}; rows.forEach(function(r){ keys[keyFn(r)]=1; });
+  var ks=Object.keys(keys).filter(function(k){ return grps.some(function(g){ return blended(rows.filter(function(r){return keyFn(r)===k&&grpOf(r.f)===g;}))!=null; }); }).sort();
+  if(!ks.length){ E(elId).innerHTML='<tbody><tr><td class="l empty">No rated runs yet.</td></tr></tbody>'; return; }
+  var h='<thead><tr><th class="l">'+colName+'</th>'+grps.map(function(g){return '<th><span style="color:'+(GCOLOR[g]||"#999")+'">&#9632;</span> '+esc(g)+' '+u+'</th><th>'+esc(g)+' '+unit+'</th>';}).join("")+'</tr></thead><tbody>';
+  ks.forEach(function(k){ h+='<tr><td class="l">'+esc(k)+'</td>'+grps.map(function(g){ var l=rows.filter(function(r){return keyFn(r)===k&&grpOf(r.f)===g;}), b=blended(l), o=l.reduce(function(s,r){return s+r.out;},0); return '<td><b>'+(b!=null?n1(b):'<span style="color:#d1d5db">—</span>')+'</b></td><td style="color:var(--muted)">'+(o?n0(o):'')+'</td>'; }).join("")+'</tr>'; });
+  E(elId).innerHTML=h+'</tbody>';
+}
+function renderBillouts(rows, SM, grps){
+  var b=rows.filter(function(r){return parseFloat(r.f.BillOutTotal)>0;});
+  if(!b.length){ E("boCard").style.display="none"; return; }
+  E("boCard").style.display="block";
+  var by={}; b.forEach(function(r){ var j=r.f.JobNo||"(none)"; by[j]=by[j]||{name:r.f.JobName||"",g:{},t:0}; var g=SM?grpOf(r.f):fabType, v=parseFloat(r.f.BillOutTotal)||0; by[j].g[g]=(by[j].g[g]||0)+v; by[j].t+=v; });
+  var gs=SM?grps:[fabType], jobs=Object.keys(by).sort(function(a,c){return by[c].t-by[a].t;});
+  var h='<thead><tr><th class="l">Job</th>'+gs.map(function(g){return '<th>'+esc(g)+'</th>';}).join("")+'<th>Total</th></tr></thead><tbody>';
+  jobs.forEach(function(j){ h+='<tr><td class="l">'+esc(j+" "+by[j].name)+'</td>'+gs.map(function(g){return '<td>'+(by[j].g[g]?money(by[j].g[g]):'')+'</td>';}).join("")+'<td><b>'+money(by[j].t)+'</b></td></tr>'; });
+  var tot={}; jobs.forEach(function(j){ gs.forEach(function(g){ tot[g]=(tot[g]||0)+(by[j].g[g]||0); }); });
+  h+='</tbody><tfoot><tr><td class="l"><b>All jobs</b></td>'+gs.map(function(g){return '<td><b>'+(tot[g]?money(tot[g]):'')+'</b></td>';}).join("")+'<td><b>'+money(jobs.reduce(function(s,j){return s+by[j].t;},0))+'</b></td></tr></tfoot>';
+  E("boTbl").innerHTML=h;
+}
 function renderGaps(){
   if(!GAPS.length){ E("gapCard").style.display="none"; return; }
   E("gapCard").style.display="block";
@@ -227,12 +262,13 @@ function breakdownTable(elId, rows, keyFn, labelFn, u, unit, colName){
 }
 
 var bandPlugin={id:"band",beforeDatasetsDraw:function(chart){ var b=chart.$band; if(!b) return; var a=chart.chartArea, s=chart.scales.x; if(!a||!s) return; var x1=s.getPixelForValue(b[0]), x2=s.getPixelForValue(b[1]); var ctx=chart.ctx; ctx.save(); ctx.fillStyle="rgba(21,128,61,.09)"; ctx.fillRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.strokeStyle="rgba(21,128,61,.35)"; ctx.setLineDash([4,4]); ctx.strokeRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.restore(); }};
-function drawScatter(rated, unit, u){
-  var pts=[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
+function drawScatter(rated, unit, u, grps){
+  var pts=grps?grps.map(function(g){ return {label:g,data:rated.filter(function(r){return grpOf(r.f)===g;}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:GCOLOR[g]||"#999",pointRadius:5}; }).filter(function(d){return d.data.length;})
+    :[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
   if(scatterChart) scatterChart.destroy();
   scatterChart=new Chart(E("scatter").getContext("2d"),{type:"scatter",data:{datasets:pts},plugins:[bandPlugin],
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(i){return n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
+      plugins:{legend:{display:!!grps},tooltip:{callbacks:{label:function(i){return (grps?i.dataset.label+": ":"")+n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
       scales:{x:{title:{display:true,text:"Batch size ("+unit+")"},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true},y:{title:{display:true,text:u},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true}}}});
   scatterChart.$band=BAND[fabType]||null; scatterChart.update();
 }
