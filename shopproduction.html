@@ -8,7 +8,7 @@
 :root{--vm:#c0392b;--vm2:#7f1d1d;--gold:#c8932a;--bg:#f4f5f7;--card:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-.wrap{max-width:720px;margin:0 auto;padding:0 14px 70px}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px 70px}
 header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;text-align:center;box-shadow:var(--shadow)}
 header.app img.logo{height:46px;background:#fff;border-radius:11px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
 header.app h1{margin:0;font-size:20px;font-weight:800}
@@ -20,18 +20,15 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px;box-shadow:var(--shadow)}
 .denied h2{color:var(--vm2);margin:0 0 8px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-top:16px}
-.card h2{margin:0 0 4px;font-size:16px;color:var(--vm2)}
-.cap{font-size:12.5px;color:var(--muted)}
-.typ{display:flex;gap:8px;margin-bottom:4px;flex-wrap:wrap}
-.typ button{flex:1;font-size:15px;font-weight:800;padding:14px 8px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);cursor:pointer;min-width:120px}
+.typ{display:flex;gap:8px;margin-bottom:4px}
+.typ button{flex:1;font-size:15px;font-weight:800;padding:14px 8px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);cursor:pointer}
 .typ button.on{border-color:var(--vm);background:var(--vm);color:#fff}
 label.f{display:block;margin-top:14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
-input,select,textarea{width:100%;font-size:17px;font-family:inherit;padding:12px;border:1.5px solid #9ca3af;border-radius:10px;margin-top:5px;background:#f3f5f8;color:var(--text)}
-input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none;background:#fff}
+input,select,textarea{width:100%;font-size:17px;font-family:inherit;padding:12px;border:1.5px solid var(--line);border-radius:10px;margin-top:5px;background:#fff;color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
 .row{display:flex;gap:10px}
-.row>div{flex:1;min-width:0}
+.row>div{flex:1}
 .hide{display:none}
-.grp{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:12px;background:#fef3c7;color:#92400e}
 .submit{width:100%;margin-top:20px;font-size:18px;font-weight:800;border:none;border-radius:12px;padding:16px;background:var(--vm);color:#fff;cursor:pointer}
 .submit:disabled{opacity:.5}
 .msg{margin-top:14px;font-size:15px;text-align:center;min-height:20px;font-weight:600}
@@ -40,31 +37,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none;back
 .done .big{font-size:40px}
 .newbtn{margin-top:16px;font-size:16px;font-weight:700;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:12px 20px;cursor:pointer;color:var(--vm2)}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
-/* piece / fitting rows */
-.pr{display:grid;gap:6px;align-items:end;margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fafafa}
-.pr.duct{grid-template-columns:1fr 1fr 1fr 1fr 1.4fr auto}
-.pr.fit{grid-template-columns:1.6fr 1fr 1fr 1fr 1.4fr auto}
-.pr label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block}
-.pr input,.pr select{font-size:15px;padding:8px;margin-top:2px}
-.pr .x{border:none;background:none;color:#b91c1c;font-size:22px;cursor:pointer;padding:6px}
-.pr .vn{grid-column:1/-1;font-size:13px;display:flex;gap:6px;align-items:center;color:var(--text)}
-.pr .vn input{width:18px;height:18px;margin:0}
-.addb{margin-top:8px;border:1.5px dashed var(--vm);background:#fff;color:var(--vm);border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;font-size:14px}
-/* bill-out */
-table.bo{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
-table.bo th{font-size:10.5px;text-transform:uppercase;color:var(--vm2);text-align:right;padding:6px 4px;border-bottom:2px solid var(--line)}
-table.bo th.l,table.bo td.l{text-align:left}
-table.bo td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
-table.bo td input.cost{width:90px}
-table.bo td input{width:80px;font-size:15px;padding:6px;margin:0;text-align:right}
-table.bo td .sug{display:block;font-size:10.5px;color:var(--muted)}
-table.bo tr.zero td{color:#9ca3af}
-table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom:none}
-.boadd{display:flex;gap:8px;margin-top:8px}
-.boadd select{flex:1;font-size:15px;padding:8px;margin:0}
-.boadd button{border:none;background:var(--vm);color:#fff;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer}
-.warn{background:#fef3c7;color:#92400e;border-radius:9px;padding:8px 10px;font-size:13px;margin-top:8px}
-@media(max-width:560px){.pr.duct,.pr.fit{grid-template-columns:1fr 1fr 1fr}.pr .cn{grid-column:span 2}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -80,13 +52,12 @@ table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom
 <header class="app">
 <img class="logo" src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:112,m/qt=q:92" alt="Vision Mechanical">
 <h1>Shop Fab Run</h1>
-<div class="sub">Log a completed fabrication batch and its bill-out</div>
+<div class="sub">Log a completed fabrication batch</div>
 <div id="who"></div>
 </header>
 
 <div class="wrap" id="app" style="display:none">
-  <div id="form">
-  <div class="card">
+  <div class="card" id="form">
     <div class="typ" id="typSeg">
       <button data-t="Sheet Metal" class="on">Sheet Metal</button>
       <button data-t="Pipe">Pipe</button>
@@ -99,7 +70,7 @@ table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom
 
     <label class="f">Fab phase code</label>
     <select id="phase"><option value="">Pick a job first</option></select>
-    <div id="grpTag"></div>
+    <div id="grpTag" style="margin-top:6px"></div>
 
     <label class="f" id="outLbl">Pounds</label>
     <input type="number" id="output" inputmode="decimal" step="any" placeholder="0">
@@ -144,37 +115,9 @@ table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom
 
     <label class="f">Notes (optional)</label>
     <textarea id="notes" rows="2" placeholder="Anything worth noting…"></textarea>
-  </div>
 
-  <!-- what was built (drives the bill-out) -->
-  <div class="card" id="pieceCard">
-    <h2>What was built</h2>
-    <div class="cap">Sizes in inches. This figures joints, bolts, gasket, sealant and turning vanes for the bill-out. Liner, glue and pins come from the pounds and gauge.</div>
-    <div id="ductWrap">
-      <div style="font-weight:800;margin-top:10px">Duct pieces</div>
-      <div id="ductRows"></div>
-      <button class="addb" id="addDuct">+ Add duct size</button>
-    </div>
-    <div id="fitWrap">
-      <div style="font-weight:800;margin-top:14px">Fittings</div>
-      <div id="fitRows"></div>
-      <button class="addb" id="addFit">+ Add fitting</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Bill-out</h2>
-    <div class="cap">Suggested quantities fill in as you go. Change any quantity to what was actually used. Tap a unit cost to change it — the new price is remembered for next time.</div>
-    <div id="boWarn"></div>
-    <div style="overflow-x:auto"><table class="bo" id="boTbl"></table></div>
-    <div class="boadd"><select id="boPick"></select><button id="boAddBtn" type="button">Add</button></div>
-    <div class="boadd hide" id="customRow"><input type="text" id="cName" placeholder="Item name" style="flex:2;margin:0;font-size:15px;padding:8px"><input type="text" id="cUnit" placeholder="Unit (ea, ft…)" style="flex:1;margin:0;font-size:15px;padding:8px"><input type="number" id="cCost" inputmode="decimal" step="0.01" placeholder="$ each" style="flex:1;margin:0;font-size:15px;padding:8px"><button id="cAdd" type="button">Add</button></div>
-  </div>
-
-  <div class="card">
-    <button class="submit" id="logBtn" style="margin-top:0">Log run &amp; bill-out</button>
+    <button class="submit" id="logBtn">Log run</button>
     <div class="msg" id="msg"></div>
-  </div>
   </div>
 
   <div class="card done hide" id="done">
@@ -193,15 +136,13 @@ var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 
 /* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
-var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE_ID;
-var GRAPH=SITEURL+"/lists/";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d";
 var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
 var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
 var JOBS="836523ba-cd20-4736-98ce-5716668b8973";
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";
-var ITEMS_LIST="Shop Bill-Out Items", BILLOUT_LIST="Shop Bill-Outs";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* ===== Dropdown options ===== */
@@ -210,8 +151,6 @@ var MAT={
   "Pipe":["Copper — sweat","Sch 40 steel — weld","Sch 40 steel — thread","Sch 40 steel — Victaulic","Sch 80 steel — weld","Sch 80 steel — thread","Sch 80 steel — Victaulic","PVC Sch 40 — glue","Cast iron — no-hub (bands)","PEX-A — expansion","PEX — crimp"],
   "Fixture":["Lavatory","Water closet","Drinking fountain","Shower valve","Urinal","Mop / service basin"]
 };
-/* pounds per sq ft of sheet — turns pounds into surface area for liner, glue and pins */
-var LB_PER_SQFT={"26 ga galv":0.906,"24 ga galv":1.156,"22 ga galv":1.406,"20 ga galv":1.656,"18 ga galv":2.156,"16 ga galv":2.656,"12 ga galv":4.531,'1/8" MS plate':5.105,'1/4" MS plate':10.21,'3/8" MS plate':15.32,'1/2" MS plate':20.42,"Light gauge SS":2.1,'1/4" SS plate':10.5};
 var SHOP_PHASES={
   "Sheet Metal":[["1230","Duct"],["1250","Fittings"],["1210","Pre-assembly"],["1240","Welded steel"]],
   "Pipe":[["1810","Steel pipe"],["1820","Copper"],["1830","PVC"],["1840","Cast iron"],["1850","Aquatherm"]],
@@ -219,61 +158,13 @@ var SHOP_PHASES={
   "Hangers":[["1220","Hanger fab"]]
 };
 var SM_GROUP={"1230":"Duct","1250":"Fittings","1210":"Pre-assembly","1240":"Welded steel"};
+var SHOP_COLS=null;
 var OUTLABEL={"Sheet Metal":"Pounds","Pipe":"Linear feet","Fixture":"Count (each)","Hangers":"Count (each)"};
 var RATEUNIT={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr","Hangers":"ea/hr"};
-var FIT_TYPES=[["Square elbow",2,true],["Radius elbow",2,false],["Tee",3,false],["Wye",3,false],["Transition",2,false],["Offset",2,false],["Takeoff / tap",1,false],["End cap",1,false],["Other",2,false]];
-
-/* ===== Bill-out items =====
-   Each item: qty = (basis amount) x factor. The office keeps the real list in SharePoint ("Shop Bill-Out Items");
-   these defaults are used only until that list exists. Basis keys are explained below.
-     LINER_x      sq ft of liner of that thickness (metal sq ft x liner coverage)
-     LINED_SQFT   sq ft of liner, any thickness (glue, pins)
-     TDC_ENDS     count of piece/fitting ends with TDC/TDF flanges
-     TDC_PERIM    ft of perimeter at TDC ends          SD_PERIM  ft of perimeter at slip & drive ends
-     ALL_PERIM    ft of perimeter at every end (sealant) VANE_FT   ft of turning vane blade   RAIL_FT  ft of vane rail
-     MANUAL       never auto-filled; added by hand      SETTING   a number used by the math (Title says which) */
-var DEFAULT_ITEMS=[
-  {t:'Duct liner 1/2"',u:"sq ft",c:0,f:1,b:"LINER_1/2"},
-  {t:'Duct liner 1"',u:"sq ft",c:0,f:1,b:"LINER_1"},
-  {t:'Duct liner 1-1/2"',u:"sq ft",c:0,f:1,b:"LINER_1-1/2"},
-  {t:'Duct liner 2"',u:"sq ft",c:0,f:1,b:"LINER_2"},
-  {t:"Liner adhesive (glue)",u:"gal",c:0,f:0.01,b:"LINED_SQFT"},
-  {t:"Liner pins",u:"ea",c:0,f:1,b:"LINED_SQFT"},
-  {t:"TDC corners",u:"ea",c:0,f:4,b:"TDC_ENDS"},
-  {t:'Bolts & nuts 3/8"',u:"ea",c:0,f:2,b:"TDC_ENDS"},
-  {t:"Tacky tape / flange gasket",u:"ft",c:0,f:0.5,b:"TDC_PERIM"},
-  {t:"S & drive cleats",u:"ft",c:0,f:0.5,b:"SD_PERIM"},
-  {t:"Duct sealant (pookey)",u:"gal",c:0,f:0.005,b:"ALL_PERIM"},
-  {t:"Turning vanes",u:"ft",c:0,f:1,b:"VANE_FT"},
-  {t:"Vane rail",u:"ft",c:0,f:1,b:"RAIL_FT"},
-  {t:"Liner coverage (% of metal area)",u:"",c:0,f:0.85,b:"SETTING"},
-  {t:"Vane spacing (in)",u:"",c:0,f:1.5,b:"SETTING"},
-  {t:"Duct piece length (ft)",u:"",c:0,f:5,b:"SETTING"}
-];
-var ITEMS=[], ITEMS_FROM_LIST=false, SETTINGS={liner:0.85,vane:1.5,len:5};
-/* ===== Prices: whatever Nate typed last wins. Kept on this device AND read back from past bill-outs,
-   so a new price follows him to any phone or PC after the next saved run. No list to maintain. ===== */
-var PRICE_KEY="vm_shop_prices_v1", PRICES={};
-function lsPrices(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}")||{}; }catch(e){ return {}; } }
-function mergePrice(t,c,u,ts){ if(!t||!(c>=0)) return; var cur=PRICES[t]; if(!cur||(ts||0)>(cur.ts||0)) PRICES[t]={c:c,u:u||(cur&&cur.u)||"",ts:ts||0}; }
-function savePrices(){ try{ localStorage.setItem(PRICE_KEY,JSON.stringify(PRICES)); }catch(e){} }
-function applyPrices(){
-  ITEMS.forEach(function(it){ var p=PRICES[it.t]; if(p) it.c=p.c; });
-  Object.keys(PRICES).forEach(function(t){ if(!ITEMS.some(function(it){return it.t===t;})) ITEMS.push({t:t,u:PRICES[t].u||"ea",c:PRICES[t].c,f:1,b:"MANUAL"}); });
-}
-async function loadPriceHistory(){
-  var l=lsPrices(); Object.keys(l).forEach(function(t){ mergePrice(t,l[t].c,l[t].u,l[t].ts); });
-  async function from(listId,field){ var rows=await pull(listId,field+",Created"); rows.forEach(function(r){ var ts=Date.parse(r.Created)||0, lines=[]; try{ lines=JSON.parse(r[field]||"[]"); }catch(e){}
-    (lines||[]).forEach(function(x){ if(x&&x.item&&typeof x.cost==="number"&&x.cost>0) mergePrice(x.item,x.cost,x.unit,ts); }); }); }
-  try{ if(BO_LIST) await from(BO_LIST,"Lines"); else await from(SHOP,"BillOutLines"); }catch(e){}
-  applyPrices(); renderBO();
-}
-var BO={}; /* key -> {qty: user-entered or null} */
-var EXTRA=[]; /* manually added item titles */
 
 /* ===== Auth ===== */
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginEmail="", loginName="", fabType="Sheet Metal", SHOP_COLS=null, BO_LIST=null, BO_COLS=null;
+var account=null, loginEmail="", loginName="", fabType="Sheet Metal", PHASES_BY_JOB={};
 function E(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 async function afterLogin(acct){
@@ -283,8 +174,8 @@ async function afterLogin(acct){
   if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Fab Run is limited to shop staff — tick <b>Shop access</b> in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName;
   E("rundate").value=todayISO();
-  await loadItems(); E("customRow").classList.add("hide");
-  setType("Sheet Metal"); loadJobs(); loadLists();
+  setType("Sheet Metal"); loadJobs();
+  try{ var t=await getToken(); var c=await fetch(GRAPH+SHOP+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); SHOP_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) SHOP_COLS[x.name]=1; }); }catch(e){ SHOP_COLS=null; }
 }
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 async function hasShopAccess(){
@@ -299,17 +190,11 @@ msalApp.handleRedirectPromise().then(function(resp){ var a=resp&&resp.account?re
 /* ===== Helpers ===== */
 function pad(n){return (n<10?"0":"")+n;}
 function todayISO(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
-function num(v){ var n=parseFloat(String(v==null?"":v).replace(/,/g,"")); return isNaN(n)?0:n; }
-function r2(n){ return Math.round(n*100)/100; }
-function money(n){ return "$"+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function qfmt(n){ return n>=100?Math.round(n).toLocaleString():(Math.round(n*100)/100).toString(); }
-async function gjson(url){ var t=await getToken(); var j=await fetch(url,{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); return j; }
-async function listIdByName(name){ var j=await gjson(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===name.toLowerCase();})[0]; return L?L.id:null; }
-async function colsOf(id){ var c=await gjson(GRAPH+id+"/columns?$select=name,readOnly"); var o={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) o[x.name]=1; }); return o; }
-function onlyCols(cols,f){ if(cols) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!cols[k]) delete f[k]; }); return f; }
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
 
 /* ===== Type toggle ===== */
 E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setType(b.getAttribute("data-t")); }; });
+
 function setType(t){
   fabType=t;
   E("typSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-t")===t); });
@@ -319,14 +204,7 @@ function setType(t){
   if(isSM) E("material").innerHTML=MAT["Sheet Metal"].map(function(m){return '<option>'+esc(m)+'</option>';}).join("");
   E("smExtra").className = isSM ? "" : "hide";
   E("pipeExtra").className = (t==="Pipe") ? "" : "hide";
-  E("pieceCard").className = isSM ? "card" : "card hide";
   fillPhases();
-}
-function group(){ return fabType==="Sheet Metal"?(SM_GROUP[E("phase").value]||""):fabType; }
-function showGroup(){
-  var g=group(); E("grpTag").innerHTML=fabType==="Sheet Metal"&&g?'<span class="grp">Reports as: '+esc(g)+'</span>':'';
-  if(fabType==="Sheet Metal"){ E("ductWrap").style.display=(g==="Fittings")?"none":""; E("fitWrap").style.display=(g==="Duct")?"none":""; }
-  recalc();
 }
 
 /* ===== Jobs + phase codes ===== */
@@ -347,103 +225,18 @@ async function loadJobs(){
     E("job").onchange=function(){ lookupHours(); };
   }catch(e){ E("msg").className="msg err"; E("msg").textContent="Could not load jobs: "+(e.message||e); }
 }
-async function loadLists(){
-  try{ SHOP_COLS=await colsOf(SHOP); }catch(e){}
-  try{ BO_LIST=await listIdByName(BILLOUT_LIST); if(BO_LIST) BO_COLS=await colsOf(BO_LIST); }catch(e){}
-  renderBO(); loadPriceHistory();
-}
 function fillPhases(){
   var list=SHOP_PHASES[fabType]||[];
   E("phase").innerHTML=list.map(function(p){return '<option value="'+esc(p[0])+'">'+esc(p[0]+" — "+p[1])+'</option>';}).join("");
   showGroup(); lookupHours();
 }
 
-/* ===== Bill-out items (SharePoint list, else defaults) ===== */
-async function loadItems(){
-  ITEMS=DEFAULT_ITEMS.map(function(x){return {t:x.t,u:x.u,c:x.c,f:x.f,b:x.b};});
-  try{ var id=await listIdByName(ITEMS_LIST);
-    if(id){ var rows=await pull(id,"Title,Unit,UnitCost,Factor,Basis,SortOrder,Active");
-      rows=rows.filter(function(r){ return r.Title && String(r.Active==null?"Yes":r.Active)!=="false" && r.Active!==false && r.Active!=="No"; });
-      rows.sort(function(a,b){ return (num(a.SortOrder)||999)-(num(b.SortOrder)||999)||String(a.Title).localeCompare(String(b.Title)); });
-      if(rows.length){ ITEMS=rows.map(function(r){ return {t:String(r.Title).trim(),u:r.Unit||"",c:num(r.UnitCost),f:(r.Factor==null||r.Factor==="")?1:num(r.Factor),b:String(r.Basis||"MANUAL").trim().toUpperCase()}; }); ITEMS_FROM_LIST=true; } }
-  }catch(e){}
-  ITEMS.forEach(function(it){ if(it.b!=="SETTING") return; var t=it.t.toLowerCase();
-    if(t.indexOf("liner coverage")>-1) SETTINGS.liner=it.f>1?it.f/100:it.f;
-    else if(t.indexOf("vane spacing")>-1) SETTINGS.vane=it.f||1.5;
-    else if(t.indexOf("piece length")>-1) SETTINGS.len=it.f||5; });
-}
-
-/* ===== Piece / fitting rows ===== */
-var DUCT=[], FIT=[];
-function connSel(v){ return '<select data-k="conn">'+["TDC / TDF","Slip & drive","Other / none"].map(function(o){return '<option'+(o===v?' selected':'')+'>'+o+'</option>';}).join("")+'</select>'; }
-function renderPieces(){
-  E("ductRows").innerHTML=DUCT.map(function(r,i){ return '<div class="pr duct" data-a="d" data-i="'+i+'"><div><label>W in</label><input type="number" inputmode="decimal" data-k="w" value="'+esc(r.w)+'"></div><div><label>H in</label><input type="number" inputmode="decimal" data-k="h" value="'+esc(r.h)+'"></div><div><label>Pieces</label><input type="number" inputmode="numeric" data-k="q" value="'+esc(r.q)+'"></div><div><label>Length ft</label><input type="number" inputmode="decimal" data-k="len" value="'+esc(r.len)+'"></div><div class="cn"><label>Connection</label>'+connSel(r.conn)+'</div><button class="x" type="button" data-del="1" title="Remove">&times;</button></div>'; }).join("");
-  E("fitRows").innerHTML=FIT.map(function(r,i){ var ft=FIT_TYPES.filter(function(x){return x[0]===r.type;})[0]||FIT_TYPES[0];
-    return '<div class="pr fit" data-a="f" data-i="'+i+'"><div><label>Type</label><select data-k="type">'+FIT_TYPES.map(function(x){return '<option'+(x[0]===r.type?' selected':'')+'>'+x[0]+'</option>';}).join("")+'</select></div><div><label>W in</label><input type="number" inputmode="decimal" data-k="w" value="'+esc(r.w)+'"></div><div><label>H in</label><input type="number" inputmode="decimal" data-k="h" value="'+esc(r.h)+'"></div><div><label>Qty</label><input type="number" inputmode="numeric" data-k="q" value="'+esc(r.q)+'"></div><div class="cn"><label>Connection</label>'+connSel(r.conn)+'</div><button class="x" type="button" data-del="1" title="Remove">&times;</button>'+
-      (/elbow/i.test(r.type)?'<label class="vn"><input type="checkbox" data-k="vanes"'+(r.vanes?' checked':'')+'> Turning vanes (W = the side the air turns across, H = vane length)</label>':'')+'</div>'; }).join("");
-  document.querySelectorAll(".pr").forEach(function(el){ var arr=el.getAttribute("data-a")==="d"?DUCT:FIT, i=+el.getAttribute("data-i");
-    el.querySelectorAll("[data-k]").forEach(function(inp){ var ev=(inp.tagName==="SELECT"||inp.type==="checkbox")?"change":"input";
-      inp.addEventListener(ev,function(){ var k=inp.getAttribute("data-k"); arr[i][k]=inp.type==="checkbox"?inp.checked:inp.value;
-        if(k==="type"){ var ft=FIT_TYPES.filter(function(x){return x[0]===inp.value;})[0]; arr[i].vanes=!!(ft&&ft[2]); renderPieces(); }
-        recalc(); }); });
-    var del=el.querySelector("[data-del]"); if(del) del.onclick=function(){ arr.splice(i,1); renderPieces(); recalc(); }; });
-}
-E("addDuct").onclick=function(){ DUCT.push({w:"",h:"",q:"",len:String(SETTINGS.len),conn:"TDC / TDF"}); renderPieces(); };
-E("addFit").onclick=function(){ FIT.push({type:"Square elbow",w:"",h:"",q:"1",conn:"TDC / TDF",vanes:true}); renderPieces(); };
-
-/* ===== The math ===== */
-function bases(){
-  var B={LINED_SQFT:0,TDC_ENDS:0,TDC_PERIM:0,SD_PERIM:0,ALL_PERIM:0,VANE_FT:0,RAIL_FT:0}, detail=[];
-  if(fabType!=="Sheet Metal") return {B:B,detail:detail};
-  var lbs=num(E("output").value), g=E("material").value, lpsf=LB_PER_SQFT[g]||0, liner=E("liner").value;
-  var metal=(lpsf>0)?lbs/lpsf:0;
-  if(liner&&liner!=="None"&&metal>0){ var sq=metal*SETTINGS.liner; B.LINED_SQFT=sq; B["LINER_"+liner.replace(/"/g,"")]=sq; detail.push(qfmt(lbs)+" lbs of "+g+" ≈ "+qfmt(metal)+" sq ft of metal → "+qfmt(sq)+" sq ft lined ("+Math.round(SETTINGS.liner*100)+"%)"); }
-  var g2=group();
-  function ends(w,h,n,conn){ if(!(w>0&&h>0&&n>0)) return; var per=2*(w+h)/12*n; B.ALL_PERIM+=per;
-    if(/TDC/.test(conn)){ B.TDC_ENDS+=n; B.TDC_PERIM+=per; } else if(/Slip/.test(conn)) B.SD_PERIM+=per; }
-  if(g2!=="Fittings") DUCT.forEach(function(r){ var w=num(r.w),h=num(r.h),q=num(r.q); ends(w,h,q*2,r.conn); });
-  if(g2!=="Duct") FIT.forEach(function(r){ var w=num(r.w),h=num(r.h),q=num(r.q), ft=FIT_TYPES.filter(function(x){return x[0]===r.type;})[0]||FIT_TYPES[0]; ends(w,h,q*ft[1],r.conn);
-    if(/elbow/i.test(r.type)&&r.vanes&&w>0&&h>0&&q>0){ var diag=w*Math.SQRT2, n=Math.ceil(diag/SETTINGS.vane); B.VANE_FT+=n*h/12*q; B.RAIL_FT+=2*diag/12*q; } });
-  return {B:B,detail:detail};
-}
-function itemKey(it){ return it.t; }
-function suggested(it,B){ if(it.b==="MANUAL"||it.b==="SETTING") return 0; var v=B[it.b]; return (v>0)?v*it.f:0; }
-function recalc(){ renderBO(); }
-function renderBO(){
-  var R=bases(), B=R.B, rows=[], tot=0;
-  ITEMS.forEach(function(it){ if(it.b==="SETTING") return; var s=suggested(it,B), st=BO[itemKey(it)], manual=EXTRA.indexOf(it.t)>-1;
-    if(st&&st.hidden) return;
-    if(s>0||manual||(st&&st.qty!=null)){ var q=(st&&st.qty!=null&&st.qty!=="")?num(st.qty):r2(s); rows.push({it:it,s:s,q:q,edited:!!(st&&st.qty!=null&&st.qty!=="")}); tot+=q*it.c; } });
-  var h='<thead><tr><th class="l">Item</th><th>Qty</th><th class="l">Unit</th><th>Unit cost</th><th>Total</th><th></th></tr></thead><tbody>';
-  if(!rows.length) h+='<tr><td class="l" colspan="6" style="color:#9ca3af;padding:12px 4px">'+(fabType==="Sheet Metal"?"Nothing to bill yet. Enter pounds, gauge and liner, and add what was built.":"Use Add below to bill out material for this run.")+'</td></tr>';
-  rows.forEach(function(r){ h+='<tr class="'+(r.q>0?"":"zero")+'"><td class="l">'+esc(r.it.t)+'</td><td><input type="number" inputmode="decimal" step="any" data-bo="'+esc(r.it.t)+'" value="'+r.q+'">'+(r.s>0?'<span class="sug">'+(r.edited?"suggested ":"")+(r.edited?qfmt(r.s):"auto")+'</span>':'')+'</td><td class="l">'+esc(r.it.u)+'</td><td><input class="cost" type="number" inputmode="decimal" step="0.01" min="0" data-cost="'+esc(r.it.t)+'" value="'+(r.it.c?r.it.c:"")+'" placeholder="$"></td><td>'+(r.it.c?money(r.q*r.it.c):'—')+'</td><td><button type="button" class="x" data-rm="'+esc(r.it.t)+'" style="border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer" title="Remove">&times;</button></td></tr>'; });
-  h+='</tbody><tfoot><tr><td class="l" colspan="4">Bill-out total</td><td>'+money(tot)+'</td><td></td></tr></tfoot>';
-  E("boTbl").innerHTML=h;
-  E("boTbl").querySelectorAll("[data-bo]").forEach(function(inp){ inp.addEventListener("change",function(){ BO[inp.getAttribute("data-bo")]={qty:inp.value}; renderBO(); }); });
-  E("boTbl").querySelectorAll("[data-cost]").forEach(function(inp){ inp.addEventListener("change",function(){ var t=inp.getAttribute("data-cost"), c=Math.max(0,num(inp.value)), it=ITEMS.filter(function(x){return x.t===t;})[0]; if(!it) return; it.c=c; PRICES[t]={c:c,u:it.u,ts:Date.now()}; savePrices(); renderBO(); }); });
-  E("boTbl").querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ var t=b.getAttribute("data-rm"); BO[t]={qty:"0",hidden:true}; var i=EXTRA.indexOf(t); if(i>-1) EXTRA.splice(i,1); renderBO(); }; });
-  var shown={}; rows.forEach(function(r){ shown[r.it.t]=1; });
-  E("boPick").innerHTML='<option value="">+ Add an item…</option>'+ITEMS.filter(function(it){return it.b!=="SETTING"&&!shown[it.t];}).map(function(it){return '<option>'+esc(it.t)+'</option>';}).join("")+'<option value="__custom">Other item (type it in)…</option>';
-  var w=[]; if(rows.some(function(r){return r.q>0&&!r.it.c;})) w.push("Some items have no unit cost yet — type it in the Unit cost box. It's remembered for next time.");
-  if(R.detail.length) w.push(R.detail.join(" · "));
-  E("boWarn").innerHTML=w.map(function(x,i){ return '<div class="'+(/no unit cost/.test(x)?"warn":"cap")+'" style="margin-top:6px">'+esc(x)+'</div>'; }).join("");
-  LAST_ROWS=rows; LAST_TOT=tot;
-}
-var LAST_ROWS=[], LAST_TOT=0;
-E("boPick").onchange=function(){ var c=E("boPick").value==="__custom"; E("customRow").classList.toggle("hide",!c); if(c) E("cName").focus(); };
-E("cAdd").onclick=function(){ var t=E("cName").value.trim(), u=E("cUnit").value.trim()||"ea", c=Math.max(0,num(E("cCost").value)); if(!t){ E("cName").focus(); return; }
-  var it=ITEMS.filter(function(x){return x.t.toLowerCase()===t.toLowerCase();})[0]; if(!it){ it={t:t,u:u,c:c,f:1,b:"MANUAL"}; ITEMS.push(it); } else { t=it.t; if(c>0) it.c=c; }
-  if(c>0){ PRICES[t]={c:it.c,u:it.u,ts:Date.now()}; savePrices(); }
-  if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; E("cName").value=""; E("cUnit").value=""; E("cCost").value=""; E("customRow").classList.add("hide"); renderBO();
-  var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } };
-E("boAddBtn").onclick=function(){ var t=E("boPick").value; if(t==="__custom"){ E("customRow").classList.remove("hide"); E("cName").focus(); return; } if(!t) return; if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; renderBO(); var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } };
-["output","material","liner"].forEach(function(id){ E(id).addEventListener(id==="output"?"input":"change",recalc); });
-E("phase").addEventListener("change",showGroup);
-
 /* ===== Live hours from timecards (Job + PhaseCode + date) ===== */
 var curHours=null, hoursCache={}, lookupSeq=0;
-E("output").addEventListener("input",renderRate);
+E("output").oninput=renderRate;
 E("phase").addEventListener("change", lookupHours);
+E("phase").addEventListener("change", showGroup);
+function showGroup(){ var g=fabType==="Sheet Metal"?SM_GROUP[E("phase").value]:""; E("grpTag").innerHTML=g?'<span style="display:inline-block;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:12px;background:#fef3c7;color:#92400e">Reports as: '+esc(g)+'</span>':""; }
 E("rundate").addEventListener("change", lookupHours);
 function renderRate(){ var o=parseFloat(E("output").value); E("rate").value=(o>0 && curHours>0)?((Math.round(o/curHours*10)/10)+" "+RATEUNIT[fabType]):"—"; }
 async function lookupHours(){
@@ -468,71 +261,35 @@ function showHours(jn,phase,dt){
   renderRate();
 }
 
-/* ===== Bill-out report (for the accounts payable PDF) ===== */
-function buildBillOut(ctx,lines){
-  var H=[];
-  H.push('<h2 style="color:#7f1d1d;margin:0">Shop Bill-Out</h2><p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical &middot; Shop fabrication material</p>');
-  H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Job",ctx.jn+" "+ctx.jname],["Phase",ctx.phase+(ctx.group?(" — "+ctx.group):"")],["Run date",ctx.date],["Output",ctx.output],["Logged by",loginName]].map(function(r){return '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
-  H.push('<table style="border-collapse:collapse;width:100%;font-size:13.5px;margin-top:12px"><tr>'+["Item","Qty","Unit","Unit cost","Total"].map(function(x,i){return '<th style="border:1px solid #ddd;padding:5px 8px;background:#f6f7f9;text-align:'+(i===0||i===2?"left":"right")+'">'+x+'</th>';}).join("")+'</tr>'+
-    lines.map(function(l){ return '<tr><td style="border:1px solid #ddd;padding:5px 8px">'+esc(l.item)+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+esc(l.qty)+'</td><td style="border:1px solid #ddd;padding:5px 8px">'+esc(l.unit)+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+(l.cost?money(l.cost):"—")+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+(l.cost?money(l.total):"—")+'</td></tr>'; }).join("")+
-    '<tr><td colspan="4" style="border:1px solid #ddd;padding:6px 8px;font-weight:800">Total</td><td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:800">'+money(ctx.total)+'</td></tr></table>');
-  if(ctx.built) H.push('<p style="font-size:13px"><b>Built:</b> '+esc(ctx.built)+'</p>');
-  if(ctx.notes) H.push('<p style="font-size:13px"><b>Notes:</b> '+esc(ctx.notes)+'</p>');
-  H.push('<p style="font-size:12px;color:#6b7280">Quantities suggested from pounds, gauge, liner and piece counts, then confirmed by the shop. Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'.</p>');
-  return H.join("\n");
-}
-function builtText(){ var a=[], g=group();
-  if(fabType!=="Sheet Metal") return "";
-  if(g!=="Fittings") DUCT.forEach(function(r){ if(num(r.q)>0) a.push(num(r.q)+" pc "+num(r.w)+"x"+num(r.h)+" duct @ "+num(r.len)+" ft ("+r.conn+")"); });
-  if(g!=="Duct") FIT.forEach(function(r){ if(num(r.q)>0) a.push(num(r.q)+" "+r.type.toLowerCase()+" "+num(r.w)+"x"+num(r.h)+(r.vanes&&/elbow/i.test(r.type)?" w/ vanes":"")+" ("+r.conn+")"); });
-  return a.join("; "); }
-
 /* ===== Submit ===== */
 E("logBtn").onclick=async function(){
   var jn=E("job").value, jname=(E("job").selectedOptions[0]&&E("job").selectedOptions[0].getAttribute("data-name"))||"";
   var phase=E("phase").value, output=parseFloat(E("output").value);
-  var rundate=E("rundate").value, notes=E("notes").value.trim(), g=group();
+  var rundate=E("rundate").value, notes=E("notes").value.trim();
   if(!jn){ return fail("Pick a job."); }
   if(!phase){ return fail("Pick a phase code."); }
   if(!(output>0)){ return fail("Enter the "+OUTLABEL[fabType].toLowerCase()+"."); }
   if(!rundate){ return fail("Pick a run date."); }
-  var lines=LAST_ROWS.filter(function(r){return r.q>0;}).map(function(r){ return {item:r.it.t,qty:r2(r.q),unit:r.it.u,cost:r.it.c,total:r2(r.q*r.it.c),suggested:r2(r.s)}; });
-  var total=r2(lines.reduce(function(s,l){return s+l.total;},0)), built=builtText();
-  lines.forEach(function(l){ if(l.cost>0&&(!PRICES[l.item]||PRICES[l.item].c!==l.cost)) PRICES[l.item]={c:l.cost,u:l.unit,ts:Date.now()}; }); savePrices();
-  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, LoggedBy:loginName, Notes:notes,
-    SMGroup:g, Built:built, BillOutTotal:total, BillOutLines:JSON.stringify(lines) };
+  var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, LoggedBy:loginName, Notes:notes };
   if(fabType==="Sheet Metal"){ fields.Material=E("material").value; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
   if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); }
-  onlyCols(SHOP_COLS,fields);
+  if(fabType==="Sheet Metal") fields.SMGroup=SM_GROUP[phase]||"";
+  if(SHOP_COLS) Object.keys(fields).forEach(function(k){ if(k!=="Title"&&!SHOP_COLS[k]) delete fields[k]; });
   E("logBtn").disabled=true; E("msg").className="msg"; E("msg").textContent="Saving…";
   try{ var token=await getToken();
     var r=await fetch(GRAPH+SHOP+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
-    var runId=(await r.json()).id||"";
-    var boNote="";
-    if(lines.length){
-      if(BO_LIST){
-        var unit={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea","Hangers":"ea"}[fabType];
-        var ctx={jn:jn,jname:jname,phase:phase,group:fabType==="Sheet Metal"?g:fabType,date:rundate,output:output+" "+unit,total:total,built:built,notes:notes};
-        var bf=onlyCols(BO_COLS,{ Title:rundate+" | "+jn+" | "+phase+" | "+money(total), RunDate:rundate+"T12:00:00Z", JobNo:jn, JobName:jname, PhaseCode:phase, FabType:fabType, SMGroup:ctx.group,
-          Total:total, Lines:JSON.stringify(lines), LinesText:lines.map(function(l){return l.item+": "+l.qty+" "+l.unit+(l.cost?(" @ "+money(l.cost)+" = "+money(l.total)):"");}).join("\n"),
-          RunRef:String(runId), LoggedBy:loginName, LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildBillOut(ctx,lines) });
-        var r2b=await fetch(GRAPH+BO_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:bf})});
-        boNote=r2b.ok?(" · bill-out "+money(total)+" sent"):(" · run saved, but the bill-out didn't save (HTTP "+r2b.status+") — tell the office");
-      } else boNote=" · bill-out kept on the run (the “"+BILLOUT_LIST+"” list isn't set up yet)";
-    }
-    E("form").className="hide";
+    E("form").className="card hide";
     var rt=(curHours>0)?(" ("+(Math.round(output/curHours*10)/10)+" "+RATEUNIT[fabType]+")"):" (rate fills in once hours post)";
-    E("doneDetail").textContent=jn+" · "+phase+(fabType==="Sheet Metal"&&g?(" "+g):"")+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+rt+boNote;
+    E("doneDetail").textContent=jn+" · "+phase+" · "+output+" "+OUTLABEL[fabType].toLowerCase()+rt;
     E("done").className="card done";
   }catch(e){ E("logBtn").disabled=false; fail("Save failed: "+(e.message||e)); }
 };
 function fail(m){ E("msg").className="msg err"; E("msg").textContent=m; }
 E("newRun").onclick=function(){
   E("output").value=""; E("stretch").value=""; E("pipesize").value=""; E("notes").value=""; E("rate").value="—"; E("hoursAuto").value="—"; E("hoursHint").textContent=""; E("liner").selectedIndex=0; curHours=null;
-  DUCT=[]; FIT=[]; BO={}; EXTRA=[]; renderPieces();
   E("rundate").value=todayISO(); E("msg").textContent=""; E("logBtn").disabled=false;
-  E("done").className="card done hide"; E("form").className=""; lookupHours(); recalc();
+  E("done").className="card done hide"; E("form").className="card"; lookupHours();
 };
 </script>
 </body>

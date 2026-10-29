@@ -92,12 +92,6 @@ th.l,td.l{text-align:left}
     <div class="tablewrap"><table id="brk2Tbl"></table></div>
   </div>
 
-  <div class="card" id="boCard" style="display:none">
-    <h2>Bill-outs</h2>
-    <div class="cap">Shop material billed out to jobs, from logged runs.</div>
-    <div class="tablewrap"><table id="boTbl"></table></div>
-  </div>
-
   <div class="card">
     <h2>Runs</h2>
     <div class="cap">Every logged batch, newest first. Blank rate = crew hours not posted yet. <b>~</b> = that day's hours split by pounds across the runs on the same job/phase/day.</div>
@@ -159,7 +153,7 @@ async function pullAll(listId,select){ var token=await getToken(); var url=GRAPH
 async function load(){
   E("loading").style.display="block";
   try{
-    var runs; try{ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy,SMGroup,BillOutTotal,Built"); }catch(e0){ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy"); }
+    var runs; try{ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy,SMGroup"); }catch(e0){ runs=await pullAll(SHOP,"RunDate,FabType,JobNo,JobName,PhaseCode,Output,Material,Category,Liner,StretchOut,PipeSize,LoggedBy"); }
     var tc=await pullAll(TC,"JobNo,PhaseCode,WorkDate,Hours");
     var hrs={}; tc.forEach(function(f){ var k=(f.JobNo||"")+"|"+(f.PhaseCode||"")+"|"+dkey(f.WorkDate); hrs[k]=(hrs[k]||0)+(parseFloat(f.Hours)||0); });
     /* total output + run count per job|phase|day, so the day's hours split across runs by pound-share */
@@ -196,7 +190,6 @@ function render(){
     if(SM){ var unl=list.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=list.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
       k+=kpi(cr(blended(unl)),"Unlined "+u)+kpi(cr(blended(lin)),"Lined "+u); }
     k+=kpi(n0(list.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(list.length,"Runs logged");
-    var bo=list.reduce(function(s,r){return s+(parseFloat(r.f.BillOutTotal)||0);},0); if(bo>0) k+=kpi(money(bo),"Billed out");
     return '<div class="grprow">'+(label?'<h3><i style="background:'+(GCOLOR[label]||"#999")+'"></i>'+esc(label)+'</h3>':'')+'<div class="kpis">'+k+'</div></div>';
   }
   E("kpis").innerHTML=!rows.length?'<div class="kpis">'+kpi("—","No runs yet")+'</div>':grps.map(function(g){ return kpiRow(SM?rows.filter(function(r){return grpOf(r.f)===g;}):rows, SM?g:""); }).join("");
@@ -210,11 +203,10 @@ function render(){
   breakdownTable("brkTbl", rows, function(r){return r.f.PhaseCode||"(none)";}, function(key){return key+(PHASE_NAME[key]?(" "+PHASE_NAME[key]):"");}, u, unit, "Phase");
   if(SM){ E("brk2Card").style.display="block"; E("brk2Title").textContent="Rate by gauge — split by group"; splitTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, grps, u, unit, "Gauge"); }
   else { E("brk2Card").style.display="none"; }
-  renderBillouts(rows, SM, grps);
 
   /* runs table */
   if(!rows.length){ E("runsTbl").innerHTML='<tbody><tr><td class="l empty">No '+fabType.toLowerCase()+' runs logged yet.</td></tr></tbody>'; return; }
-  var hasBO=rows.some(function(r){return parseFloat(r.f.BillOutTotal)>0;});
+  var hasBO=false; /* bill-outs live on their own page now */
   var rh='<thead><tr><th class="l">Date</th><th class="l">Job</th>'+(SM?'<th class="l">Group</th>':'')+'<th class="l">Phase</th><th class="l">'+(fabType==="Sheet Metal"?"Liner / gauge":(fabType==="Pipe"?"Size":"Detail"))+'</th><th>'+unit+'</th><th>Hrs</th><th>'+u+'</th>'+(hasBO?'<th>Bill-out</th>':'')+'</tr></thead><tbody>';
   rows.forEach(function(r){ var f=r.f; var dsc = fabType==="Sheet Metal" ? ((f.Liner&&f.Liner!=="None"?("liner "+f.Liner):"unlined")+" · "+(f.Material||"")) : (fabType==="Pipe" ? (f.PipeSize||"") : "");
     rh+='<tr><td class="l">'+esc(shortD(f.RunDate))+'</td><td class="l">'+esc(f.JobNo||"")+'</td>'+(SM?'<td class="l"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+(GCOLOR[grpOf(f)]||"#999")+';margin-right:5px"></span>'+esc(grpOf(f))+'</td>':'')+'<td class="l">'+esc(f.PhaseCode||"")+'</td><td class="l" style="color:var(--muted)">'+esc(dsc)+'</td><td>'+n0(r.out)+'</td><td>'+(r.hrs>0?n1(r.hrs):'<span style="color:#b91c1c">—</span>')+'</td><td><b>'+(r.rate!=null?(n1(r.rate)+(r.mixed?' <span style="color:var(--muted);font-weight:400" title="Hours split by pounds across multiple runs this day">~</span>':'')):'<span style="color:#b91c1c">pending</span>')+'</b></td>'+(hasBO?'<td>'+(parseFloat(f.BillOutTotal)>0?money(parseFloat(f.BillOutTotal)):'')+'</td>':'')+'</tr>'; });
