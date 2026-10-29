@@ -26,6 +26,7 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .navbar button{font-size:13px;font-weight:600;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer}
 .navbar button.today{background:var(--vm);color:#fff;border-color:var(--vm)}
 .tablewrap{overflow-x:auto}
+.subh{margin:16px 0 6px;font-size:14px;color:var(--vm2)}
 table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px}
 th,td{padding:9px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{background:#faf7f7;color:var(--vm2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
@@ -75,6 +76,8 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="tab" data-tab="look">Look-Aheads</div>
     <div class="tab" data-tab="svc">Service Reports</div>
     <div class="tab" data-tab="su">Start-Up Reports</div>
+    <div class="tab" data-tab="tm" style="display:none">T&amp;M / Pre-Task</div>
+    <div class="tab" data-tab="shop" style="display:none">Shop</div>
   </div>
 
   <div class="panel" id="panel-tc">
@@ -97,6 +100,14 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
   </div>
   <div class="panel" id="panel-su" style="display:none">
     <div class="tablewrap" id="suTbl"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="panel" id="panel-tm" style="display:none">
+    <h3 class="subh">T&amp;M tickets</h3><div class="tablewrap" id="tmTbl"><div class="empty">Loading…</div></div>
+    <h3 class="subh">Pre-task plans</h3><div class="tablewrap" id="ptTbl"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="panel" id="panel-shop" style="display:none">
+    <h3 class="subh">Shop daily logs</h3><div class="tablewrap" id="slTbl"><div class="empty">Loading…</div></div>
+    <h3 class="subh">Shop bill-outs</h3><div class="tablewrap" id="sbTbl"><div class="empty">Loading…</div></div>
   </div>
   <div class="panel" id="panel-look" style="display:none">
     <div class="tablewrap" id="lookTbl"><div class="empty">Loading…</div></div>
@@ -123,8 +134,9 @@ function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct);
   loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username||"";
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=loginName;
-  loadTC(); loadEditable(); loadLogs(); loadLook(); loadSvc(); loadSU();
+  loadTC(); loadEditable(); loadLogs(); loadLook(); loadSvc(); loadSU(); loadExtras();
   if(/service|svc/.test(location.hash)){ var st=document.querySelector('.tab[data-tab="svc"]'); if(st) st.click(); }
+  if(/shop/.test(location.hash)){ var sh=document.querySelector('.tab[data-tab="shop"]'); if(sh) setTimeout(function(){ sh.style.display=""; sh.click(); },50); }
   if(/startup|su$/.test(location.hash)){ var su=document.querySelector('.tab[data-tab="su"]'); if(su) su.click(); }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }
@@ -141,6 +153,8 @@ document.querySelectorAll(".tab").forEach(function(t){
     E("panel-look").style.display=id==="look"?"block":"none";
     E("panel-svc").style.display=id==="svc"?"block":"none";
     E("panel-su").style.display=id==="su"?"block":"none";
+    E("panel-tm").style.display=id==="tm"?"block":"none";
+    E("panel-shop").style.display=id==="shop"?"block":"none";
   };
 });
 
@@ -220,6 +234,25 @@ async function loadSU(){
     var rows=await getMineBy(SU_LIST,"ServiceDate","LoginEmail",iso(addDays(new Date(),-120)),"ServiceDate,JobNo,JobName,EquipmentType,TagID,Model,SerialNumber,LoginEmail");
     renderReports("suTbl",rows,SU_LIST,"ReportHTML",true,[["Date",function(f){return shortD(f.ServiceDate);}],["Job",function(f){return ((f.JobNo||"")+" "+(f.JobName||"")).trim();}],["Equipment",function(f){return [f.EquipmentType,f.TagID].filter(Boolean).join(" · ");}],["Model / Serial",function(f){return [f.Model,f.SerialNumber].filter(Boolean).join(" / ");}]]);
   }catch(e){ E("suTbl").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+}
+
+/* ===== T&M, pre-task, shop log, shop bill-outs: found by list name; a tab only appears if you have something in it ===== */
+async function loadExtras(){
+  var L={}; try{ var token=await getToken(); var j=await fetch(GRAPH.replace(/lists\/$/,"lists?$select=id,displayName&$top=999"),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); (j.value||[]).forEach(function(l){ L[(l.displayName||"").toLowerCase()]=l.id; }); }catch(e){}
+  var from=iso(addDays(new Date(),-120)), found={tm:0,shop:0};
+  function job(f){ return ((f.JobNo||"")+" "+(f.JobName||"")).trim(); }
+  function money(n){ return "$"+(Math.round((parseFloat(n)||0)*100)/100).toFixed(2); }
+  var defs=[
+    {name:"t&m tickets",el:"tmTbl",tab:"tm",date:"WorkDate",sel:"WorkDate,TicketNo,JobNo,JobName,SignedStatus,LaborHours,OTHours,LoginEmail",cols:[["Date",function(f){return shortD(f.WorkDate);}],["Ticket",function(f){return f.TicketNo||"";}],["Job",job],["Signed",function(f){return f.SignedStatus||"";}],["Hours",function(f){return (f.LaborHours||0)+(f.OTHours?" + "+f.OTHours+" OT":"");}]]},
+    {name:"pre-task plans",el:"ptTbl",tab:"tm",date:"PlanDate",sel:"PlanDate,JobNo,JobName,ToolboxTopic,CrewCount,LoginEmail",cols:[["Date",function(f){return shortD(f.PlanDate);}],["Job",job],["Toolbox talk",function(f){return f.ToolboxTopic||"";}],["Crew",function(f){return f.CrewCount||"";}]]},
+    {name:"shop daily logs",el:"slTbl",tab:"shop",date:"LogDate",sel:"LogDate,Foreman,Jobs,JobCount,ShopHours,ActionItemsCreated,LoginEmail",cols:[["Date",function(f){return shortD(f.LogDate);}],["Jobs",function(f){return (f.JobCount||0)+": "+(f.Jobs||"");}],["Shop hrs",function(f){return f.ShopHours||0;}],["Action items",function(f){return f.ActionItemsCreated||"";}]]},
+    {name:"shop bill-outs",el:"sbTbl",tab:"shop",date:"RunDate",sel:"RunDate,JobNo,JobName,PhaseCode,Total,LoginEmail",cols:[["Date",function(f){return shortD(f.RunDate);}],["Job",job],["Phase",function(f){return f.PhaseCode||"";}],["Total",function(f){return money(f.Total);}]]}
+  ];
+  for(var i=0;i<defs.length;i++){ var d=defs[i], id=L[d.name];
+    if(!id){ E(d.el).innerHTML='<div class="empty">Not set up yet.</div>'; continue; }
+    try{ var rows=await getMineBy(id,d.date,"LoginEmail",from,d.sel); if(rows.length) found[d.tab]++; renderReports(d.el,rows,id,"ReportHTML",true,d.cols); }
+    catch(e){ E(d.el).innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; } }
+  Object.keys(found).forEach(function(t){ if(found[t]){ var tb=document.querySelector('.tab[data-tab="'+t+'"]'); if(tb) tb.style.display=""; } });
 }
 
 /* ===== Timecards (weekly grid) ===== */
