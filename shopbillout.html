@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vision Mechanical — Shop Bill-Out</title>
 <style>
-:root{--vm:#c0392b;--vm2:#7f1d1d;--bg:#f4f5f7;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);}
+:root{--vm:#c0392b;--vm2:#7f1d1d;--bg:#f4f5f7;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--good:#15803d;--shadow:0 1px 3px rgba(0,0,0,.06);--duct:#7f1d1d;--fit:#c8932a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-.wrap{max-width:760px;margin:0 auto;padding:0 14px 70px}
+.wrap{max-width:780px;margin:0 auto;padding:0 14px 70px}
 header.app{background:linear-gradient(120deg,var(--vm2),var(--vm));color:#fff;padding:16px;text-align:center;box-shadow:var(--shadow)}
 header.app img.logo{height:46px;background:#fff;border-radius:11px;padding:5px 9px;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
 header.app h1{margin:0;font-size:20px;font-weight:800}
@@ -22,7 +22,9 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .tabs button{flex:1;border:1.5px solid #cbd5e1;background:#fff;border-radius:20px;padding:10px;font-weight:800;font-size:14px;color:#374151;cursor:pointer}
 .tabs button.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-top:16px}
-.card h2{margin:0 0 4px;font-size:16px;color:var(--vm2)}
+.card h2{margin:0 0 4px;font-size:16px;color:var(--vm2);display:flex;align-items:center;gap:8px}
+.card h2 .ph{font-size:12px;font-weight:800;color:#fff;border-radius:10px;padding:2px 9px}
+.card.duct{border-top:4px solid var(--duct)}.card.fit{border-top:4px solid var(--fit)}
 .cap{font-size:12.5px;color:var(--muted)}
 .typ{display:flex;gap:8px;flex-wrap:wrap}
 .typ button{flex:1;font-size:15px;font-weight:800;padding:13px 8px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--muted);cursor:pointer;min-width:110px}
@@ -32,20 +34,21 @@ input,select,textarea{width:100%;font-size:17px;font-family:inherit;padding:12px
 input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none;background:#fff}
 .row{display:flex;gap:10px}.row>div{flex:1;min-width:0}
 .hide{display:none!important}
-.grp{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:12px;background:#fef3c7;color:#92400e}
+.sh{font-weight:800;margin-top:12px;font-size:14px}
 .submit{width:100%;font-size:18px;font-weight:800;border:none;border-radius:12px;padding:16px;background:var(--vm);color:#fff;cursor:pointer}
 .submit:disabled{opacity:.5}
 .msg{margin-top:14px;font-size:15px;text-align:center;min-height:20px;font-weight:600}
 .ok{color:var(--good)} .err{color:#b91c1c}
 .pr{display:grid;gap:6px;align-items:end;margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fafafa}
+.pr.steel{grid-template-columns:1.4fr 1fr 1fr auto}
 .pr.duct{grid-template-columns:1fr 1fr 1fr 1fr 1.4fr auto}
-.pr.fit{grid-template-columns:1.6fr 1fr 1fr 1fr 1.4fr auto}
 .pr.pipe{grid-template-columns:2fr 1fr 1fr auto}
 .pr label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block}
 .pr input,.pr select{font-size:15px;padding:8px;margin-top:2px}
 .pr .x{border:none;background:none;color:#b91c1c;font-size:22px;cursor:pointer;padding:6px}
-.pr .vn{grid-column:1/-1;font-size:13px;display:flex;gap:6px;align-items:center;color:var(--text)}
-.pr .vn input{width:18px;height:18px;margin:0}
+.cnt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.cnt label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block}
+.cnt input{font-size:15px;padding:8px;margin-top:2px}
 .addb{margin-top:8px;border:1.5px dashed var(--vm);background:#fff;color:var(--vm);border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;font-size:14px}
 table.bo{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 table.bo th{font-size:10.5px;text-transform:uppercase;color:var(--vm2);text-align:right;padding:6px 4px;border-bottom:2px solid var(--line)}
@@ -55,11 +58,13 @@ table.bo td input{width:80px;font-size:15px;padding:6px;margin:0;text-align:righ
 table.bo td input.cost{width:90px}
 table.bo td .sug{display:block;font-size:10.5px;color:var(--muted)}
 table.bo tr.zero td{color:#9ca3af}
+table.bo tr.sec td{background:#faf7f7;font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:.3px;text-align:left;color:var(--vm2)}
+table.bo tr.sub td{font-weight:700;color:var(--muted);font-size:12.5px}
 table.bo tfoot td{font-weight:800;border-top:2px solid var(--line);border-bottom:none}
-.boadd{display:flex;gap:8px;margin-top:8px}
+.boadd{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .boadd select,.boadd input{font-size:15px;padding:8px;margin:0}
-.boadd select{flex:1}
-.boadd button{border:none;background:var(--vm);color:#fff;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer}
+.boadd select{flex:1;min-width:140px}
+.boadd button{border:none;background:var(--vm);color:#fff;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer;min-height:40px}
 .warn{background:#fef3c7;color:#92400e;border-radius:9px;padding:8px 10px;font-size:13px;margin-top:8px}
 table.h{width:100%;border-collapse:collapse;font-size:13.5px}
 table.h th{font-size:10.5px;text-transform:uppercase;color:var(--vm2);text-align:right;padding:6px;border-bottom:2px solid var(--line)}
@@ -69,7 +74,7 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
 .modal .box{background:#fff;max-width:760px;margin:0 auto;border-radius:12px;padding:16px;position:relative}
 .modal .xx{position:absolute;right:10px;top:6px;border:none;background:none;font-size:26px;cursor:pointer}
-@media(max-width:560px){.pr.duct,.pr.fit{grid-template-columns:1fr 1fr 1fr}.pr .cn{grid-column:span 2}}
+@media(max-width:560px){.pr.duct{grid-template-columns:1fr 1fr 1fr}.pr .cn{grid-column:span 2}.cnt{grid-template-columns:1fr 1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -98,35 +103,57 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
       <button data-t="Pipe">Pipe</button>
       <button data-t="Other">Other</button>
     </div>
-    <label class="f">Job</label>
-    <select id="job"><option value="">Loading jobs…</option></select>
-    <label class="f">Phase code</label>
-    <select id="phase"></select>
-    <div id="grpTag"></div>
-    <label class="f">Date</label>
-    <input type="date" id="bdate">
-    <div id="smIn">
+    <div class="row">
+      <div style="flex:2"><label class="f">Job</label><select id="job"><option value="">Loading jobs…</option></select></div>
+      <div><label class="f">Date</label><input type="date" id="bdate"></div>
+    </div>
+    <div id="phaseWrap" class="hide"><label class="f">Phase code</label><select id="phase"></select></div>
+    <div id="smTop">
       <div class="row">
-        <div><label class="f">Finished pounds</label><input type="number" id="lbs" inputmode="decimal" step="any" placeholder="0"></div>
-        <div><label class="f">Gauge</label><select id="gauge"></select></div>
+        <div><label class="f">Scrap / drop % on steel</label><input type="number" id="scrap" inputmode="decimal" step="any" min="0" placeholder="0"></div>
+        <div style="flex:2;align-self:flex-end"><div class="cap">Duct bills to 1230 and fittings to 1250 automatically. Stainless, plate and odd items: use <b>Other item</b> at the bottom.</div></div>
       </div>
-      <div class="row">
-        <div><label class="f">Liner</label><select id="liner"><option>None</option><option>1/2"</option><option>1"</option><option>1-1/2"</option><option>2"</option></select></div>
-        <div><label class="f">Scrap / drop %</label><input type="number" id="scrap" inputmode="decimal" step="any" min="0" placeholder="0"></div>
-      </div>
-      <div class="cap" style="margin-top:6px">Galvanized steel bills by the pound at the gauge's price. Stainless, plate and other odd items: use <b>Other item</b> in the bill-out below.</div>
     </div>
     <label class="f">Notes (optional)</label>
     <textarea id="notes" rows="2" placeholder="Anything accounting should know…"></textarea>
   </div>
 
-  <div class="card" id="smCard">
-    <h2>What was built</h2>
-    <div class="cap">Sizes in inches. Figures joints, bolts, gasket, sealant and turning vanes. Liner, glue and pins come from the pounds and gauge.</div>
-    <div id="ductWrap"><div style="font-weight:800;margin-top:10px">Duct pieces</div><div id="ductRows"></div><button class="addb" id="addDuct">+ Add duct size</button></div>
-    <div id="fitWrap"><div style="font-weight:800;margin-top:14px">Fittings</div><div id="fitRows"></div><button class="addb" id="addFit">+ Add fitting</button></div>
+  <!-- DUCT -->
+  <div class="card duct sm" id="ductCard">
+    <h2>Duct <span class="ph" style="background:var(--duct)">1230</span></h2>
+    <div class="sh">Steel by gauge</div>
+    <div class="cap">Finished pounds of duct for each gauge. Lined pounds figure liner, glue and pins.</div>
+    <div id="ductSteel"></div>
+    <button class="addb" data-addsteel="duct">+ Add gauge</button>
+    <div class="sh" style="margin-top:16px">Duct pieces</div>
+    <div class="cap">Sizes in inches — figures TDC corners, bolts, gasket, cleats and sealant.</div>
+    <div id="ductRows"></div>
+    <button class="addb" id="addDuct">+ Add duct size</button>
   </div>
 
+  <!-- FITTINGS -->
+  <div class="card fit sm" id="fitCard">
+    <h2>Fittings <span class="ph" style="background:var(--fit)">1250</span></h2>
+    <div class="sh">Steel by gauge</div>
+    <div class="cap">Total finished pounds of fittings for each gauge.</div>
+    <div id="fitSteel"></div>
+    <button class="addb" data-addsteel="fit">+ Add gauge</button>
+    <div class="sh" style="margin-top:16px">Fitting counts</div>
+    <div class="cap">Each fitting counts as 2 connections. The average size figures gasket, cleats and sealant; leave it blank and those lines are left for you to fill in.</div>
+    <div class="cnt">
+      <div><label>TDF fittings</label><input type="number" inputmode="numeric" id="fTdf" placeholder="0"></div>
+      <div><label>Slip &amp; drive fittings</label><input type="number" inputmode="numeric" id="fSd" placeholder="0"></div>
+      <div></div>
+      <div><label>Avg size W (in)</label><input type="number" inputmode="decimal" id="fW" placeholder="e.g. 24"></div>
+      <div><label>Avg size H (in)</label><input type="number" inputmode="decimal" id="fH" placeholder="e.g. 14"></div>
+      <div></div>
+      <div><label>Elbows w/ vanes</label><input type="number" inputmode="numeric" id="fVn" placeholder="0"></div>
+      <div><label>Avg elbow W (in)</label><input type="number" inputmode="decimal" id="fVw" placeholder="turn side"></div>
+      <div><label>Avg vane length (in)</label><input type="number" inputmode="decimal" id="fVh" placeholder="H"></div>
+    </div>
+  </div>
+
+  <!-- PIPE -->
   <div class="card hide" id="pipeCard">
     <h2>Pipe</h2>
     <div class="cap">One line per material and size. Each material + size keeps its own price per foot.</div>
@@ -139,8 +166,8 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
     <div class="cap">Quantities fill in as you go — change any to what was actually used. Tap a unit cost to change it; the new price is remembered for next time.</div>
     <div id="boWarn"></div>
     <div style="overflow-x:auto"><table class="bo" id="boTbl"></table></div>
-    <div class="boadd"><select id="boPick"></select><button id="boAddBtn" type="button">Add</button></div>
-    <div class="boadd hide" id="customRow"><input type="text" id="cName" placeholder="Item name" style="flex:2"><input type="text" id="cUnit" placeholder="Unit (ea, ft, lb…)" style="flex:1"><input type="number" id="cCost" inputmode="decimal" step="0.01" placeholder="$ each" style="flex:1"><button id="cAdd" type="button">Add</button></div>
+    <div class="boadd"><select id="boSec" style="flex:0 0 150px"></select><select id="boPick"></select><button id="boAddBtn" type="button">Add</button></div>
+    <div class="boadd hide" id="customRow"><input type="text" id="cName" placeholder="Item name" style="flex:2;min-width:140px"><input type="text" id="cUnit" placeholder="Unit (ea, ft, lb…)" style="flex:1;min-width:90px"><input type="number" id="cCost" inputmode="decimal" step="0.01" placeholder="$ each" style="flex:1;min-width:80px"><button id="cAdd" type="button">Add</button></div>
   </div>
 
   <div class="card">
@@ -157,15 +184,8 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
   </div>
 
   <div id="v-hist" class="hide">
-    <div class="card">
-      <h2>Billed out by job</h2>
-      <div class="cap" id="hCap">Loading…</div>
-      <div style="overflow-x:auto"><table class="h" id="hJobs"></table></div>
-    </div>
-    <div class="card">
-      <h2>Recent bill-outs</h2>
-      <div style="overflow-x:auto"><table class="h" id="hRecent"></table></div>
-    </div>
+    <div class="card"><h2>Billed out by job</h2><div class="cap" id="hCap">Loading…</div><div style="overflow-x:auto"><table class="h" id="hJobs"></table></div></div>
+    <div class="card"><h2>Recent bill-outs</h2><div style="overflow-x:auto"><table class="h" id="hRecent"></table></div></div>
   </div>
 </div>
 <div class="modal" id="modal"><div class="box"><button class="xx" id="mx">&times;</button><div id="mbody"></div></div></div>
@@ -179,17 +199,15 @@ var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d
 var BILLOUT_LIST="Shop Bill-Outs";
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
-/* galvanized gauges: pounds per sq ft (turns pounds into liner area) — stainless/plate go in as Other items */
+/* galvanized gauges: pounds per sq ft (turns pounds into liner area) */
 var GALV={"26 ga galv":0.906,"24 ga galv":1.156,"22 ga galv":1.406,"20 ga galv":1.656,"18 ga galv":2.156,"16 ga galv":2.656,"14 ga galv":3.281,"12 ga galv":4.531};
+var LINERS=["None",'1/2"','1"','1-1/2"','2"'];
 var PIPE_MATS=["Copper type L","Copper type K","Copper type M","Sch 40 black steel","Sch 40 galvanized","Sch 80 black steel","PVC Sch 40","PVC Sch 80","CPVC","Cast iron no-hub","PEX","Aquatherm"];
 var PIPE_SIZES=['1/2"','3/4"','1"','1-1/4"','1-1/2"','2"','2-1/2"','3"','4"','5"','6"','8"','10"','12"'];
-var PHASES={"Sheet Metal":[["1230","Duct"],["1250","Fittings"],["1210","Pre-assembly"],["1240","Welded steel"],["1220","Hanger fab"]],
-  "Pipe":[["1810","Steel pipe"],["1820","Copper"],["1830","PVC"],["1840","Cast iron"],["1850","Aquatherm"],["1860","Fixture fab"]],
-  "Other":[["1210","Pre-assembly"],["1220","Hanger fab"],["1230","Duct"],["1240","Welded steel"],["1250","Fittings"],["1810","Steel pipe"],["1820","Copper"],["1830","PVC"],["1840","Cast iron"],["1850","Aquatherm"],["1860","Fixture fab"]]};
-var SM_GROUP={"1230":"Duct","1250":"Fittings","1210":"Pre-assembly","1240":"Welded steel"};
-var FIT_TYPES=[["Square elbow",2,true],["Radius elbow",2,false],["Tee",3,false],["Wye",3,false],["Transition",2,false],["Offset",2,false],["Takeoff / tap",1,false],["End cap",1,false],["Other",2,false]];
-/* qty = basis x factor.  Change a factor here if Nate finds one consistently off. */
-var SETTINGS={liner:0.85, vane:1.5, len:5};  /* liner coverage of metal area, vane spacing (in), duct piece length (ft) */
+var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
+var PIPE_PHASES=["1810","1820","1830","1840","1850","1860"], ALL_PHASES=Object.keys(PHASE_NAME);
+/* qty = basis x factor.  Tell Kegan / Claude if Nate finds one consistently off. */
+var SETTINGS={liner:0.85, vane:1.5, len:5, fitEnds:2};  /* liner coverage of metal area · vane spacing (in) · duct piece length (ft) · connections per fitting */
 var BASE_ITEMS=[
   {t:'Duct liner 1/2"',u:"sq ft",f:1,b:"LINER_1/2"},{t:'Duct liner 1"',u:"sq ft",f:1,b:"LINER_1"},{t:'Duct liner 1-1/2"',u:"sq ft",f:1,b:"LINER_1-1/2"},{t:'Duct liner 2"',u:"sq ft",f:1,b:"LINER_2"},
   {t:"Liner adhesive (glue)",u:"gal",f:0.01,b:"LINED_SQFT"},{t:"Liner pins",u:"ea",f:1,b:"LINED_SQFT"},
@@ -197,7 +215,8 @@ var BASE_ITEMS=[
   {t:"S & drive cleats",u:"ft",f:0.5,b:"SD_PERIM"},{t:"Duct sealant (pookey)",u:"gal",f:0.005,b:"ALL_PERIM"},
   {t:"Turning vanes",u:"ft",f:1,b:"VANE_FT"},{t:"Vane rail",u:"ft",f:1,b:"RAIL_FT"}
 ];
-var ITEMS=[], PRICES={}, PRICE_KEY="vm_shop_prices_v1", BO={}, EXTRA=[], DUCT=[], FIT=[], PIPE=[], LAST_ROWS=[];
+var ITEMS=[], PRICES={}, PRICE_KEY="vm_shop_prices_v1", BO={}, EXTRA=[], LAST_ROWS=[];
+var STEEL={duct:[],fit:[]}, DUCT=[], PIPE=[];
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", loginName="", fabType="Sheet Metal", BO_LIST=null, BO_COLS=null, JOBLIST=[];
@@ -224,9 +243,8 @@ async function afterLogin(acct){
   if(!ok){ try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName"); ok=emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"), a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; return ((e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName))===loginEmail; }); }catch(e){} }
   if(!ok){ document.body.innerHTML='<div class="denied"><h2 style="color:#7f1d1d">Not authorized</h2><p>Shop Bill-Out is limited to shop staff and admins. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName; E("bdate").value=todayISO();
-  E("gauge").innerHTML=Object.keys(GALV).map(function(g){return '<option'+(g==="24 ga galv"?" selected":"")+'>'+g+'</option>';}).join("");
   try{ var sv=localStorage.getItem("vm_shop_scrap"); if(sv!=null) E("scrap").value=sv; }catch(e){}
-  buildItems(); setType("Sheet Metal");
+  buildItems(); resetSheet(); setType("Sheet Metal");
   loadJobs();
   try{ var j=await gjson(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===BILLOUT_LIST.toLowerCase();})[0];
     if(L){ BO_LIST=L.id; var c=await gjson(GRAPH+BO_LIST+"/columns?$select=name,readOnly"); BO_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) BO_COLS[x.name]=1; }); } }catch(e){}
@@ -242,28 +260,29 @@ async function loadJobs(){
   }catch(e){ E("job").innerHTML='<option value="">Couldn\'t load jobs</option>'; }
 }
 
-/* ===== tabs ===== */
+/* ===== tabs + type ===== */
 E("tabs").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ var v=b.getAttribute("data-v"); E("tabs").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); E("v-new").classList.toggle("hide",v!=="new"); E("v-hist").classList.toggle("hide",v!=="hist"); if(v==="hist") loadHistory(); }; });
-
-/* ===== type ===== */
 E("typSeg").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ setType(b.getAttribute("data-t")); }; });
 function setType(t){ fabType=t;
   E("typSeg").querySelectorAll("button").forEach(function(b){ b.classList.toggle("on",b.getAttribute("data-t")===t); });
-  E("smIn").classList.toggle("hide",t!=="Sheet Metal"); E("smCard").classList.toggle("hide",t!=="Sheet Metal"); E("pipeCard").classList.toggle("hide",t!=="Pipe");
-  E("phase").innerHTML=(PHASES[t]||[]).map(function(p){return '<option value="'+p[0]+'">'+p[0]+" — "+p[1]+'</option>';}).join("");
+  var sm=t==="Sheet Metal"; E("smTop").classList.toggle("hide",!sm); E("ductCard").classList.toggle("hide",!sm); E("fitCard").classList.toggle("hide",!sm);
+  E("pipeCard").classList.toggle("hide",t!=="Pipe"); E("phaseWrap").classList.toggle("hide",sm);
+  if(!sm){ var list=t==="Pipe"?PIPE_PHASES:ALL_PHASES; E("phase").innerHTML=list.map(function(p){return '<option value="'+p+'">'+p+" — "+PHASE_NAME[p]+'</option>';}).join(""); }
   if(t==="Pipe"&&!PIPE.length) PIPE.push({mat:"Copper type L",size:'1"',ft:""});
-  renderPieces(); renderPipe(); showGroup(); }
-function group(){ return fabType==="Sheet Metal"?(SM_GROUP[E("phase").value]||"Sheet metal"):fabType; }
-function showGroup(){ var g=fabType==="Sheet Metal"?SM_GROUP[E("phase").value]:""; E("grpTag").innerHTML=g?'<span class="grp">Group: '+esc(g)+'</span>':'';
-  if(fabType==="Sheet Metal"){ E("ductWrap").style.display=(g==="Fittings")?"none":""; E("fitWrap").style.display=(g==="Duct")?"none":""; } renderBO(); }
-E("phase").addEventListener("change",showGroup);
-["lbs","scrap"].forEach(function(id){ E(id).addEventListener("input",function(){ if(id==="scrap"){ try{localStorage.setItem("vm_shop_scrap",E("scrap").value);}catch(e){} } renderBO(); }); });
-["gauge","liner"].forEach(function(id){ E(id).addEventListener("change",renderBO); });
+  renderSteel(); renderDuct(); renderPipe(); renderBO(); }
+E("phase").addEventListener("change",renderBO);
+E("scrap").addEventListener("input",function(){ try{localStorage.setItem("vm_shop_scrap",E("scrap").value);}catch(e){} renderBO(); });
+["fTdf","fSd","fW","fH","fVn","fVw","fVh"].forEach(function(id){ E(id).addEventListener("input",renderBO); });
+
+/* ===== sections: sheet metal = Duct 1230 + Fittings 1250 (+ any phase you add other items to); pipe/other = the chosen phase ===== */
+function sections(){
+  if(fabType==="Sheet Metal"){ var s=[{k:"duct",ph:"1230",n:"Duct"},{k:"fit",ph:"1250",n:"Fittings"}];
+    EXTRA.forEach(function(x){ if(!s.some(function(y){return y.k===x.sec;})) s.push({k:x.sec,ph:x.sec,n:PHASE_NAME[x.sec]||x.sec}); }); return s; }
+  var p=E("phase").value||"0000"; return [{k:"main",ph:p,n:PHASE_NAME[p]||p}];
+}
 
 /* ===== items + prices ===== */
-function buildItems(){
-  ITEMS=Object.keys(GALV).map(function(g){ return {t:g+" — sheet metal",u:"lb",c:0,f:1,b:"METAL_"+g}; }).concat(BASE_ITEMS.map(function(x){ return {t:x.t,u:x.u,c:0,f:x.f,b:x.b}; }));
-}
+function buildItems(){ ITEMS=Object.keys(GALV).map(function(g){ return {t:g+" — sheet metal",u:"lb",c:0,f:1,b:"METAL_"+g}; }).concat(BASE_ITEMS.map(function(x){ return {t:x.t,u:x.u,c:0,f:x.f,b:x.b}; })); }
 function pipeTitle(p){ return "Pipe — "+p.mat+" "+p.size; }
 function ensureItem(t,u,b){ var it=ITEMS.filter(function(x){return x.t===t;})[0]; if(!it){ it={t:t,u:u,c:(PRICES[t]?PRICES[t].c:0),f:1,b:b}; ITEMS.push(it); } else if(b&&(it.b==="MANUAL"||it.b==="PIPEHIST")) it.b=b; return it; }
 function lsPrices(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}")||{}; }catch(e){ return {}; } }
@@ -277,66 +296,84 @@ async function loadPrices(){
   applyPrices(); renderBO();
 }
 
-/* ===== sheet metal pieces ===== */
-function connSel(v){ return '<select data-k="conn">'+["TDC / TDF","Slip & drive","Other / none"].map(function(o){return '<option'+(o===v?' selected':'')+'>'+o+'</option>';}).join("")+'</select>'; }
+/* ===== sheet metal inputs ===== */
+function resetSheet(){ STEEL={duct:[{g:"24 ga galv",lbs:"",liner:"None"}],fit:[{g:"24 ga galv",lbs:"",liner:"None"}]}; DUCT=[]; ["fTdf","fSd","fW","fH","fVn","fVw","fVh"].forEach(function(id){E(id).value="";}); }
 function bindRows(sel,arr,rerender){ document.querySelectorAll(sel).forEach(function(el){ var i=+el.getAttribute("data-i");
-  el.querySelectorAll("[data-k]").forEach(function(inp){ var ev=(inp.tagName==="SELECT"||inp.type==="checkbox")?"change":"input";
-    inp.addEventListener(ev,function(){ var k=inp.getAttribute("data-k"); arr[i][k]=inp.type==="checkbox"?inp.checked:inp.value;
-      if(k==="type"){ var ft=FIT_TYPES.filter(function(x){return x[0]===inp.value;})[0]; arr[i].vanes=!!(ft&&ft[2]); rerender(); } renderBO(); }); });
+  el.querySelectorAll("[data-k]").forEach(function(inp){ var ev=(inp.tagName==="SELECT")?"change":"input"; inp.addEventListener(ev,function(){ arr[i][inp.getAttribute("data-k")]=inp.value; renderBO(); }); });
   var d=el.querySelector("[data-del]"); if(d) d.onclick=function(){ arr.splice(i,1); rerender(); renderBO(); }; }); }
-function renderPieces(){
+function opts(list,sel){ return list.map(function(o){return '<option'+(o===sel?' selected':'')+'>'+esc(o)+'</option>';}).join(""); }
+function renderSteel(){ ["duct","fit"].forEach(function(k){ var host=E(k+"Steel");
+  host.innerHTML=STEEL[k].map(function(r,i){ return '<div class="pr steel" data-i="'+i+'"><div><label>Gauge</label><select data-k="g">'+opts(Object.keys(GALV),r.g)+'</select></div><div><label>Finished lbs</label><input type="number" inputmode="decimal" data-k="lbs" value="'+esc(r.lbs)+'" placeholder="0"></div><div><label>Liner</label><select data-k="liner">'+opts(LINERS,r.liner)+'</select></div><button class="x" type="button" data-del="1">&times;</button></div>'; }).join("");
+  bindRows("#"+k+"Steel .pr",STEEL[k],renderSteel); }); }
+document.querySelectorAll("[data-addsteel]").forEach(function(b){ b.onclick=function(){ var k=b.getAttribute("data-addsteel"), last=STEEL[k][STEEL[k].length-1]; STEEL[k].push({g:last?last.g:"24 ga galv",lbs:"",liner:last?last.liner:"None"}); renderSteel(); }; });
+function connSel(v){ return '<select data-k="conn">'+opts(["TDC / TDF","Slip & drive","Other / none"],v)+'</select>'; }
+function renderDuct(){
   E("ductRows").innerHTML=DUCT.map(function(r,i){ return '<div class="pr duct" data-i="'+i+'"><div><label>W in</label><input type="number" inputmode="decimal" data-k="w" value="'+esc(r.w)+'"></div><div><label>H in</label><input type="number" inputmode="decimal" data-k="h" value="'+esc(r.h)+'"></div><div><label>Pieces</label><input type="number" inputmode="numeric" data-k="q" value="'+esc(r.q)+'"></div><div><label>Length ft</label><input type="number" inputmode="decimal" data-k="len" value="'+esc(r.len)+'"></div><div class="cn"><label>Connection</label>'+connSel(r.conn)+'</div><button class="x" type="button" data-del="1">&times;</button></div>'; }).join("");
-  E("fitRows").innerHTML=FIT.map(function(r,i){ return '<div class="pr fit" data-i="'+i+'"><div><label>Type</label><select data-k="type">'+FIT_TYPES.map(function(x){return '<option'+(x[0]===r.type?' selected':'')+'>'+x[0]+'</option>';}).join("")+'</select></div><div><label>W in</label><input type="number" inputmode="decimal" data-k="w" value="'+esc(r.w)+'"></div><div><label>H in</label><input type="number" inputmode="decimal" data-k="h" value="'+esc(r.h)+'"></div><div><label>Qty</label><input type="number" inputmode="numeric" data-k="q" value="'+esc(r.q)+'"></div><div class="cn"><label>Connection</label>'+connSel(r.conn)+'</div><button class="x" type="button" data-del="1">&times;</button>'+(/elbow/i.test(r.type)?'<label class="vn"><input type="checkbox" data-k="vanes"'+(r.vanes?' checked':'')+'> Turning vanes (W = side the air turns across, H = vane length)</label>':'')+'</div>'; }).join("");
-  bindRows("#ductRows .pr",DUCT,renderPieces); bindRows("#fitRows .pr",FIT,renderPieces);
-}
-E("addDuct").onclick=function(){ DUCT.push({w:"",h:"",q:"",len:String(SETTINGS.len),conn:"TDC / TDF"}); renderPieces(); };
-E("addFit").onclick=function(){ FIT.push({type:"Square elbow",w:"",h:"",q:"1",conn:"TDC / TDF",vanes:true}); renderPieces(); };
-/* ===== pipe ===== */
+  bindRows("#ductRows .pr",DUCT,renderDuct); }
+E("addDuct").onclick=function(){ DUCT.push({w:"",h:"",q:"",len:String(SETTINGS.len),conn:"TDC / TDF"}); renderDuct(); };
 function renderPipe(){
-  E("pipeRows").innerHTML=PIPE.map(function(r,i){ return '<div class="pr pipe" data-i="'+i+'"><div><label>Material</label><select data-k="mat">'+PIPE_MATS.map(function(m){return '<option'+(m===r.mat?' selected':'')+'>'+m+'</option>';}).join("")+'</select></div><div><label>Size</label><select data-k="size">'+PIPE_SIZES.map(function(s){return '<option'+(s===r.size?' selected':'')+'>'+esc(s)+'</option>';}).join("")+'</select></div><div><label>Feet</label><input type="number" inputmode="decimal" data-k="ft" value="'+esc(r.ft)+'"></div><button class="x" type="button" data-del="1">&times;</button></div>'; }).join("");
-  bindRows("#pipeRows .pr",PIPE,renderPipe);
-}
+  E("pipeRows").innerHTML=PIPE.map(function(r,i){ return '<div class="pr pipe" data-i="'+i+'"><div><label>Material</label><select data-k="mat">'+opts(PIPE_MATS,r.mat)+'</select></div><div><label>Size</label><select data-k="size">'+opts(PIPE_SIZES,r.size)+'</select></div><div><label>Feet</label><input type="number" inputmode="decimal" data-k="ft" value="'+esc(r.ft)+'"></div><button class="x" type="button" data-del="1">&times;</button></div>'; }).join("");
+  bindRows("#pipeRows .pr",PIPE,renderPipe); }
 E("addPipe").onclick=function(){ var last=PIPE[PIPE.length-1]; PIPE.push({mat:last?last.mat:"Copper type L",size:last?last.size:'1"',ft:""}); renderPipe(); };
 
-/* ===== math ===== */
+/* ===== math: one basis table per section ===== */
+function zero(){ return {LINED_SQFT:0,TDC_ENDS:0,TDC_PERIM:0,SD_PERIM:0,ALL_PERIM:0,VANE_FT:0,RAIL_FT:0}; }
+function steelInto(B,rows,scrap,notes,label){ var lbsT=0, linT=0;
+  rows.forEach(function(r){ var lbs=num(r.lbs); if(!(lbs>0)) return; lbsT+=lbs; B["METAL_"+r.g]=(B["METAL_"+r.g]||0)+lbs*(1+scrap/100);
+    if(r.liner&&r.liner!=="None"){ var sq=lbs/GALV[r.g]*SETTINGS.liner; B.LINED_SQFT+=sq; var k="LINER_"+r.liner.replace(/"/g,""); B[k]=(B[k]||0)+sq; linT+=sq; } });
+  if(lbsT) notes.push(label+": "+qfmt(lbsT)+" lbs"+(scrap?(" +"+scrap+"% scrap"):"")+(linT?(", "+qfmt(linT)+" sq ft lined"):""));
+  return lbsT; }
+function ends(B,w,h,n,conn){ if(!(n>0)) return; var per=(w>0&&h>0)?2*(w+h)/12*n:0; B.ALL_PERIM+=per; if(/TDC|TDF/.test(conn)){ B.TDC_ENDS+=n; B.TDC_PERIM+=per; } else if(/Slip/.test(conn)) B.SD_PERIM+=per; }
 function bases(){
-  var B={LINED_SQFT:0,TDC_ENDS:0,TDC_PERIM:0,SD_PERIM:0,ALL_PERIM:0,VANE_FT:0,RAIL_FT:0}, detail=[];
+  var out={}, notes=[], scrap=Math.max(0,num(E("scrap").value));
   if(fabType==="Sheet Metal"){
-    var lbs=num(E("lbs").value), g=E("gauge").value, lpsf=GALV[g]||0, liner=E("liner").value, scrap=Math.max(0,num(E("scrap").value)), metal=lpsf?lbs/lpsf:0;
-    if(lbs>0){ B["METAL_"+g]=lbs*(1+scrap/100); detail.push("Steel: "+qfmt(lbs)+" lbs finished"+(scrap?(" + "+scrap+"% scrap = "+qfmt(lbs*(1+scrap/100))+" lbs"):"")); }
-    if(liner!=="None"&&metal>0){ var sq=metal*SETTINGS.liner; B.LINED_SQFT=sq; B["LINER_"+liner.replace(/"/g,"")]=sq; detail.push(qfmt(lbs)+" lbs of "+g+" ≈ "+qfmt(metal)+" sq ft of metal → "+qfmt(sq)+" sq ft lined ("+Math.round(SETTINGS.liner*100)+"%)"); }
-    var g2=SM_GROUP[E("phase").value]||"";
-    function ends(w,h,n,conn){ if(!(w>0&&h>0&&n>0)) return; var per=2*(w+h)/12*n; B.ALL_PERIM+=per; if(/TDC/.test(conn)){ B.TDC_ENDS+=n; B.TDC_PERIM+=per; } else if(/Slip/.test(conn)) B.SD_PERIM+=per; }
-    if(g2!=="Fittings") DUCT.forEach(function(r){ ends(num(r.w),num(r.h),num(r.q)*2,r.conn); });
-    if(g2!=="Duct") FIT.forEach(function(r){ var w=num(r.w),h=num(r.h),q=num(r.q), ft=FIT_TYPES.filter(function(x){return x[0]===r.type;})[0]||FIT_TYPES[0]; ends(w,h,q*ft[1],r.conn);
-      if(/elbow/i.test(r.type)&&r.vanes&&w>0&&h>0&&q>0){ var diag=w*Math.SQRT2, n=Math.ceil(diag/SETTINGS.vane); B.VANE_FT+=n*h/12*q; B.RAIL_FT+=2*diag/12*q; } });
+    var D=zero(); steelInto(D,STEEL.duct,scrap,notes,"Duct");
+    DUCT.forEach(function(r){ var w=num(r.w),h=num(r.h),q=num(r.q); if(w>0&&h>0&&q>0) ends(D,w,h,q*2,r.conn); });
+    out.duct=D;
+    var F=zero(); steelInto(F,STEEL.fit,scrap,notes,"Fittings");
+    var w=num(E("fW").value), h=num(E("fH").value), tdf=num(E("fTdf").value), sd=num(E("fSd").value);
+    ends(F,w,h,tdf*SETTINGS.fitEnds,"TDF"); ends(F,w,h,sd*SETTINGS.fitEnds,"Slip");
+    if((tdf||sd)&&!(w>0&&h>0)) notes.push("Fittings: enter an average size to figure gasket, cleats and sealant");
+    var vn=num(E("fVn").value), vw=num(E("fVw").value), vh=num(E("fVh").value);
+    if(vn>0&&vw>0&&vh>0){ var diag=vw*Math.SQRT2, n=Math.ceil(diag/SETTINGS.vane); F.VANE_FT+=n*vh/12*vn; F.RAIL_FT+=2*diag/12*vn; }
+    else if(vn>0) notes.push("Vanes: enter the average elbow W and vane length");
+    out.fit=F;
   }
-  if(fabType==="Pipe") PIPE.forEach(function(p){ var ft=num(p.ft); if(ft>0){ var t=pipeTitle(p), key="PIPE|"+t; ensureItem(t,"ft",key); B[key]=(B[key]||0)+ft; } });
-  return {B:B,detail:detail};
+  if(fabType==="Pipe"){ var P=zero(); PIPE.forEach(function(p){ var ft=num(p.ft); if(ft>0){ var t=pipeTitle(p), key="PIPE|"+t; ensureItem(t,"ft",key); P[key]=(P[key]||0)+ft; } }); out.main=P; }
+  return {S:out,notes:notes};
 }
-function suggested(it,B){ if(it.b==="MANUAL"||it.b==="PIPEHIST") return 0; var v=B[it.b]; return v>0?v*it.f:0; }
+function suggested(it,B){ if(!B||it.b==="MANUAL"||it.b==="PIPEHIST") return 0; var v=B[it.b]; return v>0?v*it.f:0; }
+function bkey(sec,t){ return sec+"|"+t; }
 function renderBO(){
-  var R=bases(), B=R.B, rows=[], tot=0;
-  ITEMS.forEach(function(it){ var s=suggested(it,B), st=BO[it.t], manual=EXTRA.indexOf(it.t)>-1;
-    if(st&&st.hidden&&!(s>0&&st.hiddenS!==r2(s))) return;
-    if(s>0||manual||(st&&st.qty!=null&&!st.hidden)){ var ed=!!(st&&st.qty!=null&&st.qty!==""&&!st.hidden), q=ed?num(st.qty):r2(s); rows.push({it:it,s:s,q:q,ed:ed}); tot+=q*it.c; } });
-  var h='<thead><tr><th class="l">Item</th><th>Qty</th><th class="l">Unit</th><th>Unit cost</th><th>Total</th><th></th></tr></thead><tbody>';
-  if(!rows.length) h+='<tr><td class="l" colspan="6" style="color:#9ca3af;padding:12px 4px">'+(fabType==="Sheet Metal"?"Enter pounds and gauge, and add what was built.":(fabType==="Pipe"?"Add pipe above, or items below.":"Add items below."))+'</td></tr>';
-  rows.forEach(function(r){ h+='<tr class="'+(r.q>0?"":"zero")+'"><td class="l">'+esc(r.it.t)+'</td><td><input type="number" inputmode="decimal" step="any" data-bo="'+esc(r.it.t)+'" value="'+r.q+'">'+(r.s>0?'<span class="sug">'+(r.ed?"suggested "+qfmt(r.s):"auto")+'</span>':'')+'</td><td class="l">'+esc(r.it.u)+'</td><td><input class="cost" type="number" inputmode="decimal" step="0.01" min="0" data-cost="'+esc(r.it.t)+'" value="'+(r.it.c||"")+'" placeholder="$"></td><td>'+(r.it.c?money(r.q*r.it.c):'—')+'</td><td><button type="button" data-rm="'+esc(r.it.t)+'" style="border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer">&times;</button></td></tr>'; });
+  var R=bases(), secs=sections(), rows=[], tot=0, h='<thead><tr><th class="l">Item</th><th>Qty</th><th class="l">Unit</th><th>Unit cost</th><th>Total</th><th></th></tr></thead><tbody>';
+  secs.forEach(function(sec){ var B=R.S[sec.k], srows=[], st=0;
+    ITEMS.forEach(function(it){ var s=suggested(it,B), k=bkey(sec.k,it.t), b=BO[k], manual=EXTRA.some(function(x){return x.sec===sec.k&&x.t===it.t;});
+      if(b&&b.hidden&&!(s>0&&b.hiddenS!==r2(s))) return;
+      if(s>0||manual||(b&&b.qty!=null&&!b.hidden)){ var ed=!!(b&&b.qty!=null&&b.qty!==""&&!b.hidden), q=ed?num(b.qty):r2(s); srows.push({sec:sec,it:it,s:s,q:q,ed:ed,k:k}); st+=q*it.c; } });
+    if(!srows.length) return;
+    h+='<tr class="sec"><td colspan="6">'+esc(sec.n)+' · '+esc(sec.ph)+'</td></tr>';
+    srows.forEach(function(r){ h+='<tr class="'+(r.q>0?"":"zero")+'"><td class="l">'+esc(r.it.t)+'</td><td><input type="number" inputmode="decimal" step="any" data-bo="'+esc(r.k)+'" value="'+r.q+'">'+(r.s>0?'<span class="sug">'+(r.ed?"suggested "+qfmt(r.s):"auto")+'</span>':'')+'</td><td class="l">'+esc(r.it.u)+'</td><td><input class="cost" type="number" inputmode="decimal" step="0.01" min="0" data-cost="'+esc(r.it.t)+'" value="'+(r.it.c||"")+'" placeholder="$"></td><td>'+(r.it.c?money(r.q*r.it.c):'—')+'</td><td><button type="button" data-rm="'+esc(r.k)+'" style="border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer">&times;</button></td></tr>'; });
+    if(secs.length>1) h+='<tr class="sub"><td class="l" colspan="4">'+esc(sec.n)+' subtotal</td><td>'+money(st)+'</td><td></td></tr>';
+    rows=rows.concat(srows); tot+=st; });
+  if(!rows.length) h+='<tr><td class="l" colspan="6" style="color:#9ca3af;padding:12px 4px">'+(fabType==="Sheet Metal"?"Enter pounds by gauge for duct and/or fittings.":(fabType==="Pipe"?"Add pipe above, or items below.":"Add items below."))+'</td></tr>';
   h+='</tbody><tfoot><tr><td class="l" colspan="4">Bill-out total</td><td>'+money(tot)+'</td><td></td></tr></tfoot>';
   E("boTbl").innerHTML=h;
   E("boTbl").querySelectorAll("[data-bo]").forEach(function(inp){ inp.addEventListener("change",function(){ BO[inp.getAttribute("data-bo")]={qty:inp.value}; renderBO(); }); });
   E("boTbl").querySelectorAll("[data-cost]").forEach(function(inp){ inp.addEventListener("change",function(){ var t=inp.getAttribute("data-cost"), c=Math.max(0,num(inp.value)), it=ITEMS.filter(function(x){return x.t===t;})[0]; if(!it) return; it.c=c; PRICES[t]={c:c,u:it.u,ts:Date.now()}; savePrices(); renderBO(); }); });
-  E("boTbl").querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ var t=b.getAttribute("data-rm"), it=ITEMS.filter(function(x){return x.t===t;})[0]; BO[t]={hidden:true,hiddenS:r2(suggested(it,bases().B))}; var i=EXTRA.indexOf(t); if(i>-1) EXTRA.splice(i,1); renderBO(); }; });
-  var shown={}; rows.forEach(function(r){ shown[r.it.t]=1; });
-  E("boPick").innerHTML='<option value="">+ Add an item…</option>'+ITEMS.filter(function(it){return !shown[it.t];}).map(function(it){return '<option>'+esc(it.t)+'</option>';}).join("")+'<option value="__custom">Other item (type it in)…</option>';
+  E("boTbl").querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ var k=b.getAttribute("data-rm"), r=rows.filter(function(x){return x.k===k;})[0]; BO[k]={hidden:true,hiddenS:r?r2(r.s):0}; EXTRA=EXTRA.filter(function(x){return bkey(x.sec,x.t)!==k;}); renderBO(); }; });
+  /* add-item controls */
+  var secOpts=fabType==="Sheet Metal"?[["duct","Duct 1230"],["fit","Fittings 1250"],["1210","Pre-assembly 1210"],["1240","Welded steel 1240"],["1220","Hanger fab 1220"]]:[["main",(E("phase").value||"")+" "+(PHASE_NAME[E("phase").value]||"")]];
+  var keep=E("boSec").value; E("boSec").innerHTML=secOpts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join(""); if(secOpts.some(function(o){return o[0]===keep;})) E("boSec").value=keep;
+  E("boSec").style.display=secOpts.length>1?"":"none";
+  E("boPick").innerHTML='<option value="">+ Add an item…</option>'+ITEMS.map(function(it){return '<option>'+esc(it.t)+'</option>';}).join("")+'<option value="__custom">Other item (type it in)…</option>';
   var w=[]; if(rows.some(function(r){return r.q>0&&!r.it.c;})) w.push("Some items have no unit cost yet — type it in the Unit cost box. It's remembered for next time.");
-  if(R.detail.length) w.push(R.detail.join(" · "));
-  E("boWarn").innerHTML=w.map(function(x){ return '<div class="'+(/no unit cost/.test(x)?"warn":"cap")+'" style="margin-top:6px">'+esc(x)+'</div>'; }).join("");
+  if(R.notes.length) w.push(R.notes.join(" · "));
+  E("boWarn").innerHTML=w.map(function(x){ return '<div class="'+(/no unit cost|enter an average|enter the average/.test(x)?"warn":"cap")+'" style="margin-top:6px">'+esc(x)+'</div>'; }).join("");
   LAST_ROWS=rows;
 }
 E("boPick").onchange=function(){ var c=E("boPick").value==="__custom"; E("customRow").classList.toggle("hide",!c); if(c) E("cName").focus(); };
-function addExtra(t){ if(EXTRA.indexOf(t)<0) EXTRA.push(t); BO[t]={qty:""}; renderBO(); var inp=E("boTbl").querySelector('[data-bo="'+t.replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } }
+function addExtra(t){ var sec=E("boSec").value||"main"; if(!EXTRA.some(function(x){return x.sec===sec&&x.t===t;})) EXTRA.push({sec:sec,t:t}); BO[bkey(sec,t)]={qty:""}; renderBO();
+  var inp=E("boTbl").querySelector('[data-bo="'+bkey(sec,t).replace(/"/g,'\\"')+'"]'); if(inp){ inp.focus(); inp.select(); } }
 E("boAddBtn").onclick=function(){ var t=E("boPick").value; if(t==="__custom"){ E("customRow").classList.remove("hide"); E("cName").focus(); return; } if(t) addExtra(t); };
 E("cAdd").onclick=function(){ var t=E("cName").value.trim(), u=E("cUnit").value.trim()||"ea", c=Math.max(0,num(E("cCost").value)); if(!t){ E("cName").focus(); return; }
   var it=ITEMS.filter(function(x){return x.t.toLowerCase()===t.toLowerCase();})[0]; if(!it){ it={t:t,u:u,c:c,f:1,b:"MANUAL"}; ITEMS.push(it); } else { t=it.t; if(c>0) it.c=c; }
@@ -344,59 +381,68 @@ E("cAdd").onclick=function(){ var t=E("cName").value.trim(), u=E("cUnit").value.
   E("cName").value=""; E("cUnit").value=""; E("cCost").value=""; E("customRow").classList.add("hide"); addExtra(t); };
 
 /* ===== report + save ===== */
-function builtText(){ var a=[], g=SM_GROUP[E("phase").value]||"";
-  if(fabType==="Sheet Metal"){ if(g!=="Fittings") DUCT.forEach(function(r){ if(num(r.q)>0) a.push(num(r.q)+" pc "+num(r.w)+"x"+num(r.h)+" duct @ "+num(r.len)+" ft ("+r.conn+")"); });
-    if(g!=="Duct") FIT.forEach(function(r){ if(num(r.q)>0) a.push(num(r.q)+" "+r.type.toLowerCase()+" "+num(r.w)+"x"+num(r.h)+(r.vanes&&/elbow/i.test(r.type)?" w/ vanes":"")+" ("+r.conn+")"); }); }
+function builtText(){ var a=[];
+  if(fabType==="Sheet Metal"){
+    ["duct","fit"].forEach(function(k){ STEEL[k].forEach(function(r){ if(num(r.lbs)>0) a.push((k==="duct"?"Duct":"Fittings")+": "+num(r.lbs)+" lbs "+r.g+(r.liner!=="None"?(" lined "+r.liner):"")); }); });
+    DUCT.forEach(function(r){ if(num(r.q)>0) a.push(num(r.q)+" pc "+num(r.w)+"x"+num(r.h)+" duct @ "+num(r.len)+" ft ("+r.conn+")"); });
+    var tdf=num(E("fTdf").value), sd=num(E("fSd").value), vn=num(E("fVn").value);
+    if(tdf||sd) a.push((tdf?tdf+" TDF":"")+(tdf&&sd?" + ":"")+(sd?sd+" S&D":"")+" fittings"+(num(E("fW").value)?(" avg "+num(E("fW").value)+"x"+num(E("fH").value)):""));
+    if(vn) a.push(vn+" vaned elbows avg "+num(E("fVw").value)+"x"+num(E("fVh").value)); }
   if(fabType==="Pipe") PIPE.forEach(function(p){ if(num(p.ft)>0) a.push(num(p.ft)+" ft "+p.size+" "+p.mat); });
   return a.join("; "); }
 function buildReport(ctx,lines){
-  var H=[];
+  var H=[], phases=[]; lines.forEach(function(l){ if(phases.indexOf(l.phase)<0) phases.push(l.phase); });
   H.push('<h2 style="color:#7f1d1d;margin:0">Shop Bill-Out</h2><p style="margin:4px 0 10px;color:#6b7280">Vision Mechanical &middot; Shop fabrication material</p>');
-  H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Job",ctx.jn+" "+ctx.jname],["Phase",ctx.phase+" — "+ctx.group],["Date",ctx.date],["Submitted by",loginName]].concat(ctx.lbs?[["Steel",ctx.lbs]]:[]).map(function(r){return '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
-  H.push('<table style="border-collapse:collapse;width:100%;font-size:13.5px;margin-top:12px"><tr>'+["Item","Qty","Unit","Unit cost","Total"].map(function(x,i){return '<th style="border:1px solid #ddd;padding:5px 8px;background:#f6f7f9;text-align:'+(i===0||i===2?"left":"right")+'">'+x+'</th>';}).join("")+'</tr>'+
-    lines.map(function(l){ return '<tr><td style="border:1px solid #ddd;padding:5px 8px">'+esc(l.item)+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+esc(l.qty)+'</td><td style="border:1px solid #ddd;padding:5px 8px">'+esc(l.unit)+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+(l.cost?money(l.cost):"—")+'</td><td style="border:1px solid #ddd;padding:5px 8px;text-align:right">'+(l.cost?money(l.total):"—")+'</td></tr>'; }).join("")+
-    '<tr><td colspan="4" style="border:1px solid #ddd;padding:6px 8px;font-weight:800">Total</td><td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:800">'+money(ctx.total)+'</td></tr></table>');
+  H.push('<table style="border-collapse:collapse;font-size:14px">'+[["Job",ctx.jn+" "+ctx.jname],["Phase(s)",phases.map(function(p){return p+" "+(PHASE_NAME[p]||"");}).join(", ")],["Date",ctx.date],["Submitted by",loginName]].map(function(r){return '<tr><td style="padding:3px 14px 3px 0;color:#6b7280">'+r[0]+'</td><td style="font-weight:600">'+esc(r[1])+'</td></tr>';}).join("")+'</table>');
+  var td='border:1px solid #ddd;padding:5px 8px';
+  H.push('<table style="border-collapse:collapse;width:100%;font-size:13.5px;margin-top:12px"><tr>'+["Phase","Item","Qty","Unit","Unit cost","Total"].map(function(x,i){return '<th style="'+td+';background:#f6f7f9;text-align:'+(i<2||i===3?"left":"right")+'">'+x+'</th>';}).join("")+'</tr>');
+  phases.forEach(function(p){ var pl=lines.filter(function(l){return l.phase===p;}), st=pl.reduce(function(s,l){return s+l.total;},0);
+    pl.forEach(function(l){ H.push('<tr><td style="'+td+'">'+esc(p)+'</td><td style="'+td+'">'+esc(l.item)+'</td><td style="'+td+';text-align:right">'+esc(l.qty)+'</td><td style="'+td+'">'+esc(l.unit)+'</td><td style="'+td+';text-align:right">'+(l.cost?money(l.cost):"—")+'</td><td style="'+td+';text-align:right">'+(l.cost?money(l.total):"—")+'</td></tr>'); });
+    if(phases.length>1) H.push('<tr><td colspan="5" style="'+td+';font-weight:700;color:#6b7280">'+esc(p+" "+(PHASE_NAME[p]||""))+' subtotal</td><td style="'+td+';text-align:right;font-weight:700">'+money(st)+'</td></tr>'); });
+  H.push('<tr><td colspan="5" style="'+td+';font-weight:800">Total</td><td style="'+td+';text-align:right;font-weight:800">'+money(ctx.total)+'</td></tr></table>');
   if(ctx.built) H.push('<p style="font-size:13px"><b>Built:</b> '+esc(ctx.built)+'</p>');
   if(ctx.notes) H.push('<p style="font-size:13px"><b>Notes:</b> '+esc(ctx.notes)+'</p>');
   H.push('<p style="font-size:12px;color:#6b7280">Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'.</p>');
   return H.join("\n");
 }
 E("saveBtn").onclick=async function(){
-  var msg=E("msg"), jn=E("job").value, opt=E("job").selectedOptions[0], jname=(opt&&opt.getAttribute("data-name"))||"", phase=E("phase").value, d=E("bdate").value;
-  var lines=LAST_ROWS.filter(function(r){return r.q>0;}).map(function(r){ return {item:r.it.t,qty:r2(r.q),unit:r.it.u,cost:r.it.c,total:r2(r.q*r.it.c),suggested:r2(r.s)}; });
+  var msg=E("msg"), jn=E("job").value, opt=E("job").selectedOptions[0], jname=(opt&&opt.getAttribute("data-name"))||"", d=E("bdate").value;
+  var lines=LAST_ROWS.filter(function(r){return r.q>0;}).map(function(r){ return {phase:r.sec.ph,group:r.sec.n,item:r.it.t,qty:r2(r.q),unit:r.it.u,cost:r.it.c,total:r2(r.q*r.it.c),suggested:r2(r.s)}; });
   var miss=[]; if(!jn) miss.push("job"); if(!d) miss.push("date"); if(!lines.length) miss.push("at least one item with a quantity");
   if(miss.length){ msg.className="msg err"; msg.textContent="Still needed: "+miss.join(", ")+"."; return; }
   var noPrice=lines.filter(function(l){return !l.cost;}); if(noPrice.length&&!confirm(noPrice.length+" item(s) have no unit cost ("+noPrice.map(function(l){return l.item;}).join(", ")+"). Submit anyway?")) return;
   if(!BO_LIST){ msg.className="msg err"; msg.textContent="The \u201c"+BILLOUT_LIST+"\u201d list isn't set up yet."; return; }
-  var total=r2(lines.reduce(function(s,l){return s+l.total;},0)), grp=group(), built=builtText(), notes=E("notes").value.trim();
+  var total=r2(lines.reduce(function(s,l){return s+l.total;},0)), built=builtText(), notes=E("notes").value.trim();
+  var phases=[], groups=[]; lines.forEach(function(l){ if(phases.indexOf(l.phase)<0) phases.push(l.phase); if(groups.indexOf(l.group)<0) groups.push(l.group); });
   lines.forEach(function(l){ if(l.cost>0) PRICES[l.item]={c:l.cost,u:l.unit,ts:Date.now()}; }); savePrices();
-  var lbsTxt=fabType==="Sheet Metal"&&num(E("lbs").value)>0?(num(E("lbs").value)+" lbs "+E("gauge").value+(E("liner").value!=="None"?(", liner "+E("liner").value):"")):"";
-  var f={ Title:d+" | "+jn+" | "+phase+" | "+money(total), RunDate:d+"T12:00:00Z", JobNo:jn, JobName:jname, PhaseCode:phase, FabType:fabType, SMGroup:grp, Total:total,
-    Lines:JSON.stringify(lines), LinesText:lines.map(function(l){return l.item+": "+l.qty+" "+l.unit+(l.cost?(" @ "+money(l.cost)+" = "+money(l.total)):"");}).join("\n"),
+  var f={ Title:d+" | "+jn+" | "+phases.join("/")+" | "+money(total), RunDate:d+"T12:00:00Z", JobNo:jn, JobName:jname, PhaseCode:phases.join(", "), FabType:fabType, SMGroup:groups.join(" + "), Total:total,
+    Lines:JSON.stringify(lines), LinesText:lines.map(function(l){return l.phase+" | "+l.item+": "+l.qty+" "+l.unit+(l.cost?(" @ "+money(l.cost)+" = "+money(l.total)):"");}).join("\n"),
     Built:built, Notes:notes, LoggedBy:loginName, LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(),
-    ReportHTML:buildReport({jn:jn,jname:jname,phase:phase,group:grp,date:d,total:total,built:built,notes:notes,lbs:lbsTxt},lines) };
+    ReportHTML:buildReport({jn:jn,jname:jname,date:d,total:total,built:built,notes:notes},lines) };
   if(BO_COLS) Object.keys(f).forEach(function(k){ if(k!=="Title"&&!BO_COLS[k]) delete f[k]; });
   E("saveBtn").disabled=true; msg.className="msg"; msg.textContent="Saving…";
   try{ var t=await getToken(), r=await fetch(GRAPH+BO_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
-    E("form").classList.add("hide"); E("done").classList.remove("hide"); E("doneDetail").textContent=jn+" · "+phase+" "+grp+" · "+lines.length+" items · "+money(total)+" — sent to accounts payable";
+    E("form").classList.add("hide"); E("done").classList.remove("hide"); E("doneDetail").textContent=jn+" · "+phases.join(", ")+" · "+lines.length+" items · "+money(total)+" — sent to accounts payable";
   }catch(e){ E("saveBtn").disabled=false; msg.className="msg err"; msg.textContent="Couldn't save ("+e.message+"). Tap Submit again."; }
 };
-E("newBtn").onclick=function(){ BO={}; EXTRA=[]; DUCT=[]; FIT=[]; PIPE=[]; E("lbs").value=""; E("notes").value=""; E("liner").selectedIndex=0; E("bdate").value=todayISO(); E("msg").textContent=""; E("saveBtn").disabled=false;
+E("newBtn").onclick=function(){ BO={}; EXTRA=[]; PIPE=[]; resetSheet(); E("notes").value=""; E("bdate").value=todayISO(); E("msg").textContent=""; E("saveBtn").disabled=false;
   E("done").classList.add("hide"); E("form").classList.remove("hide"); setType(fabType); window.scrollTo(0,0); };
 
-/* ===== history ===== */
-var HIST=null;
+/* ===== history: totals by job and group (from each bill-out's lines) ===== */
 async function loadHistory(){
   if(!BO_LIST){ E("hCap").textContent="The \u201c"+BILLOUT_LIST+"\u201d list isn't set up yet."; return; }
-  try{ HIST=await pull(BO_LIST,"RunDate,JobNo,JobName,PhaseCode,FabType,SMGroup,Total,LoggedBy"); }catch(e){ E("hCap").textContent="Couldn't load ("+e.message+")."; return; }
-  HIST.sort(function(a,b){ return String(b.RunDate||"").localeCompare(String(a.RunDate||"")); });
-  var gs=["Duct","Fittings","Pre-assembly","Welded steel","Pipe","Other","Sheet metal"].filter(function(g){ return HIST.some(function(h){return (h.SMGroup||h.FabType)===g;}); });
-  var by={}; HIST.forEach(function(h){ var j=h.JobNo||"(none)"; by[j]=by[j]||{n:h.JobName||"",g:{},t:0}; var g=h.SMGroup||h.FabType||"Other", v=num(h.Total); by[j].g[g]=(by[j].g[g]||0)+v; by[j].t+=v; });
+  var H; try{ H=await pull(BO_LIST,"RunDate,JobNo,JobName,PhaseCode,FabType,SMGroup,Total,LoggedBy,Lines"); }catch(e){ E("hCap").textContent="Couldn't load ("+e.message+")."; return; }
+  H.sort(function(a,b){ return String(b.RunDate||"").localeCompare(String(a.RunDate||"")); });
+  var by={}, gset={};
+  H.forEach(function(h){ var j=h.JobNo||"(none)"; by[j]=by[j]||{n:h.JobName||"",g:{},t:0}; var lines=[]; try{ lines=JSON.parse(h.Lines||"[]"); }catch(e){}
+    if(lines.length&&lines[0].group){ lines.forEach(function(l){ var g=l.group||"Other", v=num(l.total); by[j].g[g]=(by[j].g[g]||0)+v; gset[g]=1; by[j].t+=v; }); }
+    else { var g=h.SMGroup||h.FabType||"Other", v=num(h.Total); by[j].g[g]=(by[j].g[g]||0)+v; gset[g]=1; by[j].t+=v; } });
+  var order=["Duct","Fittings","Pre-assembly","Welded steel","Hanger fab"], gs=Object.keys(gset).sort(function(a,b){ var x=order.indexOf(a), y=order.indexOf(b); return (x<0?99:x)-(y<0?99:y)||a.localeCompare(b); });
   var jobs=Object.keys(by).sort(function(a,b){return by[b].t-by[a].t;}), all=jobs.reduce(function(s,j){return s+by[j].t;},0);
-  E("hCap").textContent=HIST.length+" bill-outs · "+money(all)+" total";
+  E("hCap").textContent=H.length+" bill-outs · "+money(all)+" total";
   E("hJobs").innerHTML='<thead><tr><th class="l">Job</th>'+gs.map(function(g){return '<th>'+esc(g)+'</th>';}).join("")+'<th>Total</th></tr></thead><tbody>'+jobs.map(function(j){ return '<tr><td class="l">'+esc(j+" "+by[j].n)+'</td>'+gs.map(function(g){return '<td>'+(by[j].g[g]?money(by[j].g[g]):'')+'</td>';}).join("")+'<td><b>'+money(by[j].t)+'</b></td></tr>'; }).join("")+'</tbody>';
-  E("hRecent").innerHTML='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Group</th><th>Total</th><th class="l">By</th><th></th></tr></thead><tbody>'+HIST.slice(0,60).map(function(h){ return '<tr><td class="l">'+esc(String(h.RunDate||"").slice(0,10))+'</td><td class="l">'+esc(h.JobNo||"")+'</td><td class="l">'+esc(h.SMGroup||h.FabType||"")+'</td><td>'+money(num(h.Total))+'</td><td class="l">'+esc(h.LoggedBy||"")+'</td><td><a href="#" data-v="'+h._id+'">View</a></td></tr>'; }).join("")+'</tbody>';
+  E("hRecent").innerHTML='<thead><tr><th class="l">Date</th><th class="l">Job</th><th class="l">Phase</th><th>Total</th><th class="l">By</th><th></th></tr></thead><tbody>'+H.slice(0,60).map(function(h){ return '<tr><td class="l">'+esc(String(h.RunDate||"").slice(0,10))+'</td><td class="l">'+esc(h.JobNo||"")+'</td><td class="l">'+esc(h.PhaseCode||"")+'</td><td>'+money(num(h.Total))+'</td><td class="l">'+esc(h.LoggedBy||"")+'</td><td><a href="#" data-v="'+h._id+'">View</a></td></tr>'; }).join("")+'</tbody>';
   E("hRecent").querySelectorAll("[data-v]").forEach(function(a){ a.onclick=async function(ev){ ev.preventDefault(); E("modal").style.display="block"; E("mbody").innerHTML="Loading…"; try{ var j=await gjson(GRAPH+BO_LIST+"/items/"+a.getAttribute("data-v")+"?$expand=fields"); E("mbody").innerHTML=(j.fields&&j.fields.ReportHTML)||'<pre>'+esc((j.fields&&j.fields.LinesText)||"")+'</pre>'; }catch(e){ E("mbody").textContent="Couldn't load."; } }; });
 }
 E("mx").onclick=function(){ E("modal").style.display="none"; };
