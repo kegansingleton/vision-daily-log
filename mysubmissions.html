@@ -250,8 +250,10 @@ async function loadExtras(){
   ];
   for(var i=0;i<defs.length;i++){ var d=defs[i], id=L[d.name];
     if(!id){ E(d.el).innerHTML='<div class="empty">Not set up yet.</div>'; continue; }
-    try{ var rows=await getMineBy(id,d.date,"LoginEmail",from,d.sel); if(rows.length) found[d.tab]++; renderReports(d.el,rows,id,"ReportHTML",true,d.cols); }
+    try{ var rows=await getMineBy(id,d.date,"LoginEmail",from,d.sel); if(rows.length) found[d.tab]++; if(rows.length) renderReports(d.el,rows,id,"ReportHTML",true,d.cols); else E(d.el).innerHTML='<div class="empty">None submitted yet.</div>'; }
     catch(e){ E(d.el).innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; } }
+  /* the shop foreman and the owners always see the Shop tab, even before the first log is in */
+  if(["nholliday@visionmech.net","kegan.singleton@visionmech.net","bsingleton@visionmech.net"].indexOf(loginEmail)>-1) found.shop++;
   Object.keys(found).forEach(function(t){ if(found[t]){ var tb=document.querySelector('.tab[data-tab="'+t+'"]'); if(tb) tb.style.display=""; } });
 }
 
