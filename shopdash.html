@@ -126,10 +126,10 @@ var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea","Hangers":"ea"}, RATEU={
 var BAND={"Sheet Metal":[600,3500]};  /* historical optimal range for fittings */
 var SM_GROUP={"1230":"Duct","1250":"Fittings","1210":"Pre-assembly","1240":"Welded steel"};
 var GROUPS=["Duct","Fittings","Pre-assembly","Welded steel"];
-var PIPE_GROUP={"1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm"}, PIPE_GROUPS=["Steel pipe","Copper","PVC","Cast iron","Aquatherm"];
-/* validated categorical palette, fixed order: slot 1 blue, 2 orange, 3 aqua, 4 yellow, 5 magenta */
-var GCOLOR={"Duct":"#2a78d6","Fittings":"#eb6834","Pre-assembly":"#1baf7a","Welded steel":"#eda100","Steel pipe":"#2a78d6","Copper":"#eb6834","PVC":"#1baf7a","Cast iron":"#eda100","Aquatherm":"#e87ba4","Other":"#9ca3af"};
-function grpOf(f){ if(f.FabType==="Pipe") return PIPE_GROUP[f.PhaseCode]||"Other"; return f.SMGroup||SM_GROUP[f.PhaseCode]||"Other"; }
+var PIPE_GROUP={"1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm"}, PIPE_GROUPS=["Steel — threaded","Steel — welded","Steel — grooved","Steel pipe","Copper","PVC","Cast iron","Aquatherm"];
+/* validated categorical palette, fixed order: 1 blue, 2 orange, 3 aqua, 4 yellow, 5 magenta, 6 green, 7 violet (pipe uses all 7; old unmarked steel = gray) */
+var GCOLOR={"Duct":"#2a78d6","Fittings":"#eb6834","Pre-assembly":"#1baf7a","Welded steel":"#eda100","Steel — threaded":"#2a78d6","Steel — welded":"#eb6834","Steel — grooved":"#1baf7a","Copper":"#eda100","PVC":"#e87ba4","Cast iron":"#008300","Aquatherm":"#6250d6","Steel pipe":"#9ca3af","Other":"#9ca3af"};
+function grpOf(f){ if(f.FabType==="Pipe"){ if(f.PhaseCode==="1810"){ var m=String(f.Material||"").toLowerCase(); if(/thread/.test(m)) return "Steel — threaded"; if(/weld/.test(m)) return "Steel — welded"; if(/groov|victaulic/.test(m)) return "Steel — grooved"; } return PIPE_GROUP[f.PhaseCode]||"Other"; } return f.SMGroup||SM_GROUP[f.PhaseCode]||"Other"; }
 /* batch-size bands for the bar charts */
 var BINS={"Sheet Metal":[0,300,600,1000,2000,3500],"Pipe":[0,25,50,100,200,400],"Fixture":[0,5,10,25,50],"Hangers":[0,10,25,50,100,250]};
 var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};

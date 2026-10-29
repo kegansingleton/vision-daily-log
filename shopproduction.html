@@ -96,6 +96,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--vm);outline:none}
     <div id="pipeExtra" class="hide">
       <label class="f">Pipe size</label>
       <input type="text" id="pipesize" placeholder='e.g. 2"'>
+      <div id="joinWrap" class="hide">
+        <label class="f">Steel pipe — how was it joined?</label>
+        <select id="pipejoin"><option value="">— Pick one —</option><option>Threaded</option><option>Welded</option><option>Grooved</option></select>
+      </div>
     </div>
 
     <label class="f">Run date</label>
@@ -228,7 +232,7 @@ async function loadJobs(){
 function fillPhases(){
   var list=SHOP_PHASES[fabType]||[];
   E("phase").innerHTML=list.map(function(p){return '<option value="'+esc(p[0])+'">'+esc(p[0]+" — "+p[1])+'</option>';}).join("");
-  showGroup(); lookupHours();
+  showGroup(); showJoin(); lookupHours();
 }
 
 /* ===== Live hours from timecards (Job + PhaseCode + date) ===== */
@@ -236,6 +240,8 @@ var curHours=null, hoursCache={}, lookupSeq=0;
 E("output").oninput=renderRate;
 E("phase").addEventListener("change", lookupHours);
 E("phase").addEventListener("change", showGroup);
+E("phase").addEventListener("change", showJoin);
+function showJoin(){ var on=(fabType==="Pipe"&&E("phase").value==="1810"); E("joinWrap").className=on?"":"hide"; }
 function showGroup(){ var g=fabType==="Sheet Metal"?SM_GROUP[E("phase").value]:""; E("grpTag").innerHTML=g?'<span style="display:inline-block;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:12px;background:#fef3c7;color:#92400e">Reports as: '+esc(g)+'</span>':""; }
 E("rundate").addEventListener("change", lookupHours);
 function renderRate(){ var o=parseFloat(E("output").value); E("rate").value=(o>0 && curHours>0)?((Math.round(o/curHours*10)/10)+" "+RATEUNIT[fabType]):"—"; }
@@ -272,7 +278,7 @@ E("logBtn").onclick=async function(){
   if(!rundate){ return fail("Pick a run date."); }
   var fields={ Title:rundate+" "+fabType+" "+jn, RunDate:rundate+"T12:00:00Z", FabType:fabType, JobNo:jn, JobName:jname, PhaseCode:phase, Output:output, LoggedBy:loginName, Notes:notes };
   if(fabType==="Sheet Metal"){ fields.Material=E("material").value; fields.Liner=E("liner").value; var st=parseFloat(E("stretch").value); if(!isNaN(st)) fields.StretchOut=st; }
-  if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); }
+  if(fabType==="Pipe"){ fields.PipeSize=E("pipesize").value.trim(); if(phase==="1810"){ if(!E("pipejoin").value) return fail("Pick threaded, welded or grooved for steel pipe."); fields.Material="Steel — "+E("pipejoin").value.toLowerCase(); } }
   if(fabType==="Sheet Metal") fields.SMGroup=SM_GROUP[phase]||"";
   if(SHOP_COLS) Object.keys(fields).forEach(function(k){ if(k!=="Title"&&!SHOP_COLS[k]) delete fields[k]; });
   E("logBtn").disabled=true; E("msg").className="msg"; E("msg").textContent="Saving…";
@@ -287,7 +293,7 @@ E("logBtn").onclick=async function(){
 };
 function fail(m){ E("msg").className="msg err"; E("msg").textContent=m; }
 E("newRun").onclick=function(){
-  E("output").value=""; E("stretch").value=""; E("pipesize").value=""; E("notes").value=""; E("rate").value="—"; E("hoursAuto").value="—"; E("hoursHint").textContent=""; E("liner").selectedIndex=0; curHours=null;
+  E("output").value=""; E("stretch").value=""; E("pipesize").value=""; E("pipejoin").value=""; E("notes").value=""; E("rate").value="—"; E("hoursAuto").value="—"; E("hoursHint").textContent=""; E("liner").selectedIndex=0; curHours=null;
   E("rundate").value=todayISO(); E("msg").textContent=""; E("logBtn").disabled=false;
   E("done").className="card done hide"; E("form").className="card"; lookupHours();
 };
