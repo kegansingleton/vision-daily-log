@@ -33,6 +33,16 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .card h2{margin:0 0 2px;font-size:16px;font-weight:700}
 .card .cap{font-size:12px;color:var(--muted);margin-bottom:12px}
 .chartbox{position:relative;height:340px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+@media(max-width:760px){.mgrid{grid-template-columns:1fr}}
+.kt{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-top:14px}
+.kt th{font-size:10.5px}.kt td{font-size:14px}.kt td.g{font-weight:800;text-align:left;white-space:nowrap}.kt td.g i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}.kt .hi{color:var(--good);font-weight:800}.kt .lo{color:#b91c1c;font-weight:800}
+.mini{border:1px solid var(--line);border-radius:12px;padding:10px 12px 6px}
+.mini .mh{display:block;font-size:13px}
+.mini .mh b{display:flex;align-items:center;gap:6px;font-size:14px}.mini .mh b i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.mini .best{display:block;color:var(--muted);font-size:12px;margin-top:1px;min-height:17px}
+.mini .mbox{position:relative;height:190px;margin-top:4px}
+.mini .mnote{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th{background:#faf7f7;color:var(--vm2);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
@@ -77,9 +87,9 @@ th.l,td.l{text-align:left}
   <div id="kpis"></div>
 
   <div class="card">
-    <h2 id="chartTitle">Rate vs. batch size</h2>
+    <h2 id="chartTitle">Rate by batch size</h2>
     <div class="cap" id="chartCap"></div>
-    <div class="chartbox"><canvas id="scatter"></canvas></div>
+    <div class="mgrid" id="minis"></div>
   </div>
 
   <div class="card">
@@ -115,8 +125,13 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 var OUT={"Sheet Metal":"lbs","Pipe":"ft","Fixture":"ea","Hangers":"ea"}, RATEU={"Sheet Metal":"lbs/hr","Pipe":"ft/hr","Fixture":"ea/hr","Hangers":"ea/hr"};
 var BAND={"Sheet Metal":[600,3500]};  /* historical optimal range for fittings */
 var SM_GROUP={"1230":"Duct","1250":"Fittings","1210":"Pre-assembly","1240":"Welded steel"};
-var GROUPS=["Duct","Fittings","Pre-assembly","Welded steel"], GCOLOR={"Duct":"#7f1d1d","Fittings":"#c8932a","Pre-assembly":"#2563eb","Welded steel":"#475569","Other":"#9ca3af"};
-function grpOf(f){ return f.SMGroup||SM_GROUP[f.PhaseCode]||"Other"; }
+var GROUPS=["Duct","Fittings","Pre-assembly","Welded steel"];
+var PIPE_GROUP={"1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm"}, PIPE_GROUPS=["Steel pipe","Copper","PVC","Cast iron","Aquatherm"];
+/* validated categorical palette, fixed order: slot 1 blue, 2 orange, 3 aqua, 4 yellow, 5 magenta */
+var GCOLOR={"Duct":"#2a78d6","Fittings":"#eb6834","Pre-assembly":"#1baf7a","Welded steel":"#eda100","Steel pipe":"#2a78d6","Copper":"#eb6834","PVC":"#1baf7a","Cast iron":"#eda100","Aquatherm":"#e87ba4","Other":"#9ca3af"};
+function grpOf(f){ if(f.FabType==="Pipe") return PIPE_GROUP[f.PhaseCode]||"Other"; return f.SMGroup||SM_GROUP[f.PhaseCode]||"Other"; }
+/* batch-size bands for the bar charts */
+var BINS={"Sheet Metal":[0,300,600,1000,2000,3500],"Pipe":[0,25,50,100,200,400],"Fixture":[0,5,10,25,50],"Hangers":[0,10,25,50,100,250]};
 var PHASE_NAME={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
@@ -181,8 +196,8 @@ function render(){
   var u=RATEU[fabType], unit=OUT[fabType];
   /* KPIs — sheet metal is split by group (Duct / Fittings / Pre-assembly / Welded steel) everywhere */
   var ws=iso(payWeekStart(new Date())), we=iso(addDays(payWeekStart(new Date()),6));
-  var SM=(fabType==="Sheet Metal");
-  var grps=SM?GROUPS.concat(["Other"]).filter(function(g){ return rows.some(function(r){return grpOf(r.f)===g;}); }):[fabType];
+  var SPLIT=(fabType==="Sheet Metal"||fabType==="Pipe"), SM=SPLIT;
+  var grps=SPLIT?(fabType==="Pipe"?PIPE_GROUPS:GROUPS).concat(["Other"]).filter(function(g){ return rows.some(function(r){return grpOf(r.f)===g;}); }):[fabType];
   function kpiRow(list,label){
     var k="", all=blended(list), wk=blended(list.filter(function(r){ var d=dkey(r.f.RunDate); return d>=ws && d<=we; }));
     k+=kpi(wk!=null?n1(wk):"—","This week "+u,(wk!=null&&all!=null?((wk>=all?"▲":"▼")+" vs "+n1(all)+" all-time"):"this pay week"),(wk!=null&&all!=null?(wk>=all?"hi":"lo"):""));
@@ -192,16 +207,23 @@ function render(){
     k+=kpi(n0(list.reduce(function(s,r){return s+r.out;},0)),"Total "+unit)+kpi(list.length,"Runs logged");
     return '<div class="grprow">'+(label?'<h3><i style="background:'+(GCOLOR[label]||"#999")+'"></i>'+esc(label)+'</h3>':'')+'<div class="kpis">'+k+'</div></div>';
   }
-  E("kpis").innerHTML=!rows.length?'<div class="kpis">'+kpi("—","No runs yet")+'</div>':grps.map(function(g){ return kpiRow(SM?rows.filter(function(r){return grpOf(r.f)===g;}):rows, SM?g:""); }).join("");
+  if(SPLIT&&rows.length){
+    var th='<div class="tablewrap"><table class="kt"><thead><tr><th class="l">'+(fabType==="Pipe"?"Material":"Group")+'</th><th>This week '+u+'</th><th>All-time '+u+'</th>'+(fabType==="Sheet Metal"?'<th>Unlined</th><th>Lined</th>':'')+'<th>Total '+unit+'</th><th>Runs</th></tr></thead><tbody>';
+    grps.forEach(function(g){ var list=rows.filter(function(r){return grpOf(r.f)===g;}), all=blended(list), wk=blended(list.filter(function(r){ var d=dkey(r.f.RunDate); return d>=ws && d<=we; }));
+      var unl=list.filter(function(r){var L=r.f.Liner;return !L||L==="None";}), lin=list.filter(function(r){var L=r.f.Liner;return L&&L!=="None";});
+      th+='<tr><td class="g"><i style="background:'+(GCOLOR[g]||"#999")+'"></i>'+esc(g)+'</td><td class="'+(wk!=null&&all!=null?(wk>=all?"hi":"lo"):"")+'">'+(wk!=null?n1(wk)+(all!=null?(wk>=all?" ▲":" ▼"):""):"—")+'</td><td><b>'+(all!=null?n1(all):"—")+'</b></td>'+(fabType==="Sheet Metal"?'<td>'+cr(blended(unl))+'</td><td>'+cr(blended(lin))+'</td>':'')+'<td>'+n0(list.reduce(function(s,r){return s+r.out;},0))+'</td><td>'+list.length+'</td></tr>'; });
+    E("kpis").innerHTML=th+'</tbody></table></div><div style="font-size:12px;color:var(--muted);margin-top:4px">This week = current pay week, ▲/▼ vs. all-time. Rates are '+(fabType==="Pipe"?"feet":"pounds")+' per crew hour. Swipe the table for more columns.</div>';
+  } else E("kpis").innerHTML=!rows.length?'<div class="kpis">'+kpi("—","No runs yet")+'</div>':grps.map(function(g){ return kpiRow(SM?rows.filter(function(r){return grpOf(r.f)===g;}):rows, SM?g:""); }).join("");
 
   /* scatter — one colored series per group */
-  E("chartTitle").textContent=u+" vs. batch size ("+unit+")";
-  E("chartCap").textContent = BAND[fabType] ? ("Each dot = one run, colored by group. Shaded band = historical optimal range for fittings ("+BAND[fabType][0]+"–"+BAND[fabType][1]+" "+unit+").") : "Each dot = one run. Optimal band fills in as the study builds.";
-  drawScatter(rated, unit, u, SM?grps:null);
+  E("chartTitle").textContent=u+" by batch size";
+  E("chartCap").textContent="Each bar = the blended rate of every run in that batch-size band"+(SPLIT?(", one chart per "+(fabType==="Pipe"?"material":"group")):"")+". Darker bar = fastest band. Hover a bar for the run count.";
+  drawMinis(rated, unit, u, grps);
 
   /* breakdown by phase (each phase is one group) */
   breakdownTable("brkTbl", rows, function(r){return r.f.PhaseCode||"(none)";}, function(key){return key+(PHASE_NAME[key]?(" "+PHASE_NAME[key]):"");}, u, unit, "Phase");
-  if(SM){ E("brk2Card").style.display="block"; E("brk2Title").textContent="Rate by gauge — split by group"; splitTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, grps, u, unit, "Gauge"); }
+  if(fabType==="Sheet Metal"){ E("brk2Card").style.display="block"; E("brk2Title").textContent="Rate by gauge — split by group"; splitTable("brk2Tbl", rows, function(r){return r.f.Material||"(none)";}, grps, u, unit, "Gauge"); }
+  else if(fabType==="Pipe"){ E("brk2Card").style.display="block"; E("brk2Title").textContent="Rate by pipe size — split by material"; splitTable("brk2Tbl", rows, function(r){return String(r.f.PipeSize||"(none)").trim()||"(none)";}, grps, u, unit, "Size"); }
   else { E("brk2Card").style.display="none"; }
 
   /* runs table */
@@ -253,16 +275,32 @@ function breakdownTable(elId, rows, keyFn, labelFn, u, unit, colName){
   E(elId).innerHTML=h+'</tbody>';
 }
 
-var bandPlugin={id:"band",beforeDatasetsDraw:function(chart){ var b=chart.$band; if(!b) return; var a=chart.chartArea, s=chart.scales.x; if(!a||!s) return; var x1=s.getPixelForValue(b[0]), x2=s.getPixelForValue(b[1]); var ctx=chart.ctx; ctx.save(); ctx.fillStyle="rgba(21,128,61,.09)"; ctx.fillRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.strokeStyle="rgba(21,128,61,.35)"; ctx.setLineDash([4,4]); ctx.strokeRect(x1,a.top,x2-x1,a.bottom-a.top); ctx.restore(); }};
-function drawScatter(rated, unit, u, grps){
-  var pts=grps?grps.map(function(g){ return {label:g,data:rated.filter(function(r){return grpOf(r.f)===g;}).map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:GCOLOR[g]||"#999",pointRadius:5}; }).filter(function(d){return d.data.length;})
-    :[{label:fabType,data:rated.map(function(r){return {x:r.out,y:Math.round(r.rate*10)/10};}),backgroundColor:"#7f1d1d",pointRadius:5}];
-  if(scatterChart) scatterChart.destroy();
-  scatterChart=new Chart(E("scatter").getContext("2d"),{type:"scatter",data:{datasets:pts},plugins:[bandPlugin],
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:!!grps},tooltip:{callbacks:{label:function(i){return (grps?i.dataset.label+": ":"")+n0(i.parsed.x)+" "+unit+" → "+i.parsed.y+" "+u;}}}},
-      scales:{x:{title:{display:true,text:"Batch size ("+unit+")"},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true},y:{title:{display:true,text:u},ticks:{color:"#6b7280"},grid:{color:"#eee"},beginAtZero:true}}}});
-  scatterChart.$band=BAND[fabType]||null; scatterChart.update();
+var MINI_CHARTS=[];
+function binLabel(a,b,unit){ function k(n){ return n>=1000?(Math.round(n/100)/10)+"k":String(n); } return b==null?(k(a)+"+"):(k(a)+"–"+k(b)); }
+var valueLabels={id:"vlab",afterDatasetsDraw:function(ch){ var ctx=ch.ctx, ds=ch.data.datasets[0], meta=ch.getDatasetMeta(0); ctx.save(); ctx.font="600 11px -apple-system,Segoe UI,sans-serif"; ctx.fillStyle="#374151"; ctx.textAlign="center";
+  meta.data.forEach(function(bar,i){ var v=ds.data[i]; if(v==null) return; ctx.fillText(n1(v), bar.x, bar.y-5); }); ctx.restore(); }};
+function drawMinis(rated, unit, u, grps){
+  MINI_CHARTS.forEach(function(c){ c.destroy(); }); MINI_CHARTS=[];
+  var edges=BINS[fabType]||[0,10,100], host=E("minis");
+  var charts=grps.map(function(g){ return {g:g, runs:rated.filter(function(r){ return grps.length===1||grpOf(r.f)===g; })}; }).filter(function(c){return c.runs.length;});
+  if(!charts.length){ host.innerHTML='<div class="empty">No rated runs yet — rates appear once crew hours post to the job/phase/day.</div>'; return; }
+  host.innerHTML=charts.map(function(c,i){ return '<div class="mini"><div class="mh"><b>'+(grps.length>1?'<i style="background:'+(GCOLOR[c.g]||"#999")+'"></i>':'')+esc(c.g)+'</b><span class="best" id="best'+i+'"></span></div>'+(c.g==="Fittings"&&BAND["Sheet Metal"]?'<div class="mnote">Historical best for fittings: '+BAND["Sheet Metal"][0]+'–'+n0(BAND["Sheet Metal"][1])+' lbs</div>':'')+'<div class="mbox"><canvas id="mini'+i+'"></canvas></div></div>'; }).join("");
+  charts.forEach(function(c,i){
+    var bins=edges.map(function(a,k){ return {a:a,b:(k<edges.length-1)?edges[k+1]:null,runs:[]}; });
+    c.runs.forEach(function(r){ for(var k=bins.length-1;k>=0;k--){ if(r.out>=bins[k].a){ bins[k].runs.push(r); break; } } });
+    var used=bins.filter(function(b){return b.runs.length;}); if(!used.length) return;
+    var first=bins.indexOf(used[0]), last=bins.indexOf(used[used.length-1]); bins=bins.slice(first,last+1);
+    var vals=bins.map(function(b){ var v=blended(b.runs); return v!=null?Math.round(v*10)/10:null; });
+    var best=-1, bv=-1; vals.forEach(function(v,k){ if(v!=null&&v>bv){ bv=v; best=k; } });
+    var col=GCOLOR[c.g]||"#c0392b";
+    E("best"+i).textContent=best>-1?("Fastest: "+binLabel(bins[best].a,bins[best].b)+" "+unit+" · "+n1(bv)+" "+u):"";
+    MINI_CHARTS.push(new Chart(E("mini"+i).getContext("2d"),{type:"bar",plugins:[valueLabels],
+      data:{labels:bins.map(function(b){return binLabel(b.a,b.b);}),datasets:[{data:vals,backgroundColor:vals.map(function(v,k){return k===best?col:col+"8c";}),borderRadius:{topLeft:4,topRight:4},borderSkipped:"bottom",maxBarThickness:46,categoryPercentage:.8,barPercentage:.9}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){ var b=bins[it[0].dataIndex]; return binLabel(b.a,b.b)+" "+unit+" batches"; },label:function(it){ var b=bins[it.dataIndex]; return (it.parsed.y!=null?n1(it.parsed.y)+" "+u:"no rate")+" · "+b.runs.length+" run"+(b.runs.length===1?"":"s"); }}}},
+        scales:{x:{grid:{display:false},ticks:{color:"#6b7280",font:{size:10.5},maxRotation:0,autoSkip:false},title:{display:true,text:"Batch size ("+unit+")",color:"#6b7280",font:{size:11}}},
+          y:{beginAtZero:true,grid:{color:"#f0f0f0"},border:{display:false},ticks:{color:"#9ca3af",font:{size:10},maxTicksLimit:5},title:{display:true,text:u,color:"#6b7280",font:{size:11}}}}}}));
+  });
 }
 </script>
 </body>
