@@ -40,6 +40,19 @@ textarea{min-height:80px;resize:vertical}
 .ai .det span{white-space:pre-wrap;word-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ai .det.full span{display:block}
 .ai .by{font-size:11.5px;color:var(--mut);margin-top:3px}
+.ai .mv{color:var(--vm);font-weight:700;text-decoration:none}
+.ai .mvbox{display:none;margin-top:8px;background:#fff8f7;border:1px solid #f3d4d0;border-radius:10px;padding:10px}
+.ai .mvbox.open{display:block}
+.ai .mvbox .eg{display:grid;grid-template-columns:2fr 1.4fr;gap:8px}
+.ai .mvbox .eg3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin-top:6px}
+@media(max-width:600px){.ai .mvbox .eg,.ai .mvbox .eg3{grid-template-columns:1fr}}
+.ai .mvbox label{margin:2px 0 3px;font-size:11px}
+.ai .mvbox input,.ai .mvbox select,.ai .mvbox textarea{width:100%;padding:8px;font-size:14px;border:1.5px solid #9ca3af;border-radius:8px;background:#fff}
+.ai .mvbox textarea{min-height:54px;margin-top:6px}
+.ai .mvbox .ebtns{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ai .mvbox button{border:none;border-radius:8px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:13px}
+.ai .mvgo{background:var(--vm);color:#fff}.ai .mvx{background:#eef0f2;color:var(--ink)}
+.ai .mvmsg{font-size:12px;color:#b91c1c}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .kpi b{display:block;font-size:26px;font-weight:800;line-height:1}
 .kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
@@ -195,7 +208,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
 var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
 var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";   /* Weekly 2-Week Look Ahead */
-var LA={}, LA_LOADED=false, OPEN_ADD={}, ASSIGNEE_OPTS="";
+var LA={}, LA_LOADED=false, OPEN_ADD={}, ASSIGNEE_OPTS="", IS_ADMIN=false;
 var GROUP=(function(){ try{ return localStorage.getItem("vm_ai_group")||"job"; }catch(e){ return "job"; } })();
 
 function E(id){return document.getElementById(id);}
@@ -226,6 +239,7 @@ async function showApp(a){
     var emps=await pull(EMP_LIST,"EmployeeName,Active,Foreman,LoginEmail,Admin");
     var active=emps.filter(function(e){ return (e.Active||"Yes")!=="No"; });
     var me=emps.filter(function(e){ return emailOf(e)===loginEmail; })[0];
+    IS_ADMIN = SUPERADMIN.indexOf(loginEmail)>-1 || !!(me&&truthy(me.Admin));
     var canAssign = SUPERADMIN.indexOf(loginEmail)>-1 || NAMED_PM.indexOf(loginEmail)>-1 || (me&&(truthy(me.Admin)||truthy(me.Foreman)));
     if(!canAssign){ E("denied").style.display="block"; return; }
     E("main").style.display="block";
@@ -360,7 +374,7 @@ function render(){
   var byPerson=(GROUP==="person");
   document.body.classList.toggle("mtg",!byPerson);
   var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
-    return { id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
+    return { email:em, id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
       jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
       due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), details:String(f.Details||"").trim(), by:f.CreatedByName||f.CreatedByEmail||"", doneOn:String(f.CompletedDate||"").slice(0,10) }; });
   rows.forEach(function(r){ r.recent=(r.status==="Done" && r.doneOn && r.doneOn>=since); });
@@ -401,7 +415,8 @@ function render(){
         '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
         '<div class="meta">'+lead+' · '+duePart+'</div>'+
         (r.details?'<div class="det" title="Tap to expand"><span>'+esc(r.details)+'</span></div>':'')+
-        (r.by?'<div class="by">Assigned by '+esc(r.by)+'</div>':'')+'</div></div>';
+        (r.by?'<div class="by">Assigned by '+esc(r.by)+(IS_ADMIN?' · <a href="#" class="mv">&#9998; Edit</a>':'')+'</div>':(IS_ADMIN?'<div class="by"><a href="#" class="mv">&#9998; Edit</a></div>':''))+
+        (IS_ADMIN?editBox(r):'')+'</div></div>';
     }).join("");
     if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">'+(byPerson?'Nothing open':'No open action items')+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
     if(byPerson) return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
@@ -419,7 +434,51 @@ function render(){
     box.querySelector(".q-task").onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); quickAdd(box); } }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".lafull button"),function(b){ b.onclick=function(){ showLaFull(b); }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .det"),function(d){ d.onclick=function(){ d.classList.toggle("full"); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mv"),function(a){ a.onclick=function(e){ e.preventDefault(); var box=a.closest(".ai").querySelector(".mvbox"); box.classList.toggle("open"); if(box.classList.contains("open")){ box.querySelector(".e-task").focus(); } }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvx"),function(b){ b.onclick=function(){ b.closest(".mvbox").classList.remove("open"); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvgo"),function(b){ b.onclick=function(){ moveItem(b.closest(".ai").getAttribute("data-id"),b.closest(".mvbox")); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvjob"),function(i){ i.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); moveItem(i.closest(".ai").getAttribute("data-id"),i.closest(".mvbox")); } }; });
   Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
+}
+/* ===== Admins: edit an item — task, job, assignee, due date, priority, details ===== */
+function editBox(r){
+  var opts=ASSIGNEE_OPTS.replace(/ selected/g,""); var em=String(r.email||"").toLowerCase();
+  if(em){ if(opts.indexOf('value="'+em+'"')>-1) opts=opts.replace('value="'+em+'"','value="'+em+'" selected'); else opts+='<option value="'+esc(em)+'" selected>'+esc(r.who||em)+'</option>'; }
+  return '<div class="mvbox">'+
+    '<div class="eg"><div><label>Task</label><input type="text" class="e-task" value="'+esc(r.task)+'"></div>'+
+    '<div><label>Job (blank = General)</label><input type="text" list="joblist" class="mvjob" value="'+esc(r.jobNo?(r.jobNo+" "+r.jobName):"")+'"></div></div>'+
+    '<div class="eg3"><div><label>Assigned to</label><select class="e-who">'+opts+'</select></div>'+
+    '<div><label>Due</label><input type="date" class="e-due" value="'+esc(r.due)+'"></div>'+
+    '<div><label>Priority</label><select class="e-pri">'+["High","Normal","Low"].map(function(o){return '<option'+(o===r.pri?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div></div>'+
+    '<textarea class="e-det" placeholder="Details">'+esc(r.details)+'</textarea>'+
+    '<div class="ebtns"><button class="mvgo">Save changes</button><button class="mvx">Cancel</button><span class="mvmsg"></span></div></div>';
+}
+function moveItem(id,box){
+  if(!IS_ADMIN) return;
+  var msg=box.querySelector(".mvmsg"), btn=box.querySelector(".mvgo");
+  var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return;
+  var task=box.querySelector(".e-task").value.trim(), whoSel=box.querySelector(".e-who"), due=box.querySelector(".e-due").value, pri=box.querySelector(".e-pri").value, det=box.querySelector(".e-det").value.trim();
+  if(!task){ msg.style.color="#b91c1c"; msg.textContent="Task can't be blank."; return; }
+  if(!whoSel.value){ msg.style.color="#b91c1c"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.style.color="#b91c1c"; msg.textContent="Pick a due date."; return; }
+  var j=parseJob(box.querySelector(".mvjob").value);
+  if(j.no && !j.name){ var hit=Array.prototype.filter.call(E("joblist").options,function(o){ return o.value.split(" ")[0]===j.no; })[0];
+    if(hit) j=parseJob(hit.value); else { msg.style.color="#b91c1c"; msg.textContent="Pick the job from the list so the name comes with it."; return; } }
+  var f=it.f, body={};
+  if(task!==(f.Title||"")) body.Title=task;
+  if(j.no!==(f.JobNo||"").trim()){ body.JobNo=j.no; body.JobName=j.no?j.name:"General"; }
+  if(whoSel.value.toLowerCase()!==String(f.AssignedTo||"").toLowerCase()){ body.AssignedTo=whoSel.value; body.AssignedToName=whoSel.selectedOptions[0].textContent; }
+  if(due!==String(f.DueDate||"").slice(0,10)) body.DueDate=due+"T12:00:00Z";
+  if(pri!==(f.Priority||"Normal")) body.Priority=pri;
+  if(det!==String(f.Details||"").trim()) body.Details=det;
+  if(!Object.keys(body).length){ box.classList.remove("open"); return; }
+  btn.disabled=true; msg.style.color="#6b7280"; msg.textContent="Saving…";
+  getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
+  .then(function(){ Object.keys(body).forEach(function(k){ f[k]=body[k]; }); render();
+    var row=document.querySelector('.ai[data-id="'+CSS.escape(id)+'"]');
+    if(row){ row.style.transition="background 1.2s"; row.style.background="#fff3c4"; setTimeout(function(){row.style.background="";},1600); row.scrollIntoView({behavior:"smooth",block:"center"}); } })
+  .catch(function(e){ btn.disabled=false; msg.style.color="#b91c1c"; msg.textContent="Didn't save: "+(e.message||e); });
 }
 function toggleDone(id,status,btn){
   var makeDone=(status!=="Done");
