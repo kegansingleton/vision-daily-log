@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vision Mechanical — Action Items</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--amb:#b45309;--ambbg:#fef3c7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px}
+header img{height:38px;width:auto;background:#fff;border-radius:8px;padding:4px 6px;box-shadow:0 1px 3px rgba(0,0,0,.2);flex:0 0 auto}
+header h1{margin:0;font-size:18px;font-weight:700}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:760px;margin:0 auto;padding:14px 12px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 6px;font-size:15px;font-weight:700;color:var(--vm2)}
+.card .desc{font-size:12.5px;color:var(--mut);margin:0 0 8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:8px 0 4px}
+input[type=date],input[type=text],textarea,select{width:100%;padding:11px;font-size:16px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.req{color:var(--vm)}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:var(--vm);color:#fff}
+.btn:disabled{opacity:.5}
+.msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.collapse{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.collapse .caret{font-size:12px;color:var(--mut);font-weight:600}
+/* KPI bar */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}
+@media(max-width:430px){.kpi b{font-size:22px}.kpi span{font-size:9.5px}}
+.kpi.grn b{color:var(--ok)}
+.pill.grn{background:var(--okbg);color:var(--ok)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.seg button{border:none;background:#fff;padding:9px 13px;font-size:13px;font-weight:700;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--vm2);color:#fff}
+.ai .meta .jb{color:var(--vm2);font-weight:600}
+.ai .det{font-size:13px;color:#374151;margin-top:5px;background:#f9fafb;border-left:3px solid var(--line);padding:5px 8px;border-radius:4px;cursor:pointer}
+.ai .det span{white-space:pre-wrap;word-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ai .det.full span{display:block}
+.ai .by{font-size:11.5px;color:var(--mut);margin-top:3px}
+.ai .mv{color:var(--vm);font-weight:700;text-decoration:none}
+.ai .mvbox{display:none;margin-top:8px;background:#fff8f7;border:1px solid #f3d4d0;border-radius:10px;padding:10px}
+.ai .mvbox.open{display:block}
+.ai .mvbox .eg{display:grid;grid-template-columns:2fr 1.4fr;gap:8px}
+.ai .mvbox .eg3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin-top:6px}
+@media(max-width:600px){.ai .mvbox .eg,.ai .mvbox .eg3{grid-template-columns:1fr}}
+.ai .mvbox label{margin:2px 0 3px;font-size:11px}
+.ai .mvbox input,.ai .mvbox select,.ai .mvbox textarea{width:100%;padding:8px;font-size:14px;border:1.5px solid #9ca3af;border-radius:8px;background:#fff}
+.ai .mvbox textarea{min-height:54px;margin-top:6px}
+.ai .mvbox .ebtns{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ai .mvbox button{border:none;border-radius:8px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:13px}
+.ai .mvgo{background:var(--vm);color:#fff}.ai .mvx{background:#eef0f2;color:var(--ink)}
+.ai .mvmsg{font-size:12px;color:#b91c1c}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi b{display:block;font-size:26px;font-weight:800;line-height:1}
+.kpi span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+.kpi.red b{color:#b91c1c}.kpi.amb b{color:var(--amb)}.kpi.ink b{color:var(--ink)}
+/* controls */
+.controls{display:flex;gap:10px;align-items:center;margin:8px 0 2px;flex-wrap:wrap}
+.controls input[type=text]{flex:1;min-width:150px;padding:10px;font-size:14px}
+.controls label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);margin:0}
+.controls label input{width:auto}
+/* job section */
+.job{background:#fff;border:1px solid var(--line);border-radius:12px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.job>.jh{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fafbfc;border-bottom:1px solid var(--line);flex-wrap:wrap;border-radius:12px 12px 0 0}
+/* ===== Meeting board (By job) ===== */
+body.mtg .wrap{max-width:1180px}
+.mtg .job{scroll-margin-top:calc(var(--hdr,66px) + 8px)}
+.mtg .job>.jh{position:sticky;top:var(--hdr,66px);z-index:20;background:linear-gradient(135deg,#fff,#fdf2f1);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.mtg .job .jname{font-size:17px}
+.addbtn{border:none;background:var(--vm);color:#fff;font-weight:800;font-size:13px;border-radius:9px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.addbtn.on{background:var(--vm2)}
+.tslink{font-size:13px;font-weight:700;color:var(--vm2);text-decoration:none;border:1px solid #f0c9c4;background:#fff;border-radius:9px;padding:7px 10px;white-space:nowrap}
+.tslink:hover{border-color:var(--vm)}
+.qadd{display:none;padding:12px 14px;background:#fff8f7;border-bottom:1px solid #f3d4d0}
+.qadd.open{display:block}
+.qadd .row1{display:grid;grid-template-columns:2.2fr 1.3fr 1fr .9fr auto;gap:8px;align-items:end}
+.qadd input,.qadd select,.qadd textarea{padding:9px;font-size:14px}
+.qadd textarea{min-height:44px;margin-top:8px}
+.qadd label{margin:0 0 3px}
+.qadd .go{border:none;background:var(--ok);color:#fff;font-weight:800;border-radius:9px;padding:10px 14px;cursor:pointer;font-size:14px}
+.qadd .qmsg{font-size:12.5px;margin-top:6px;min-height:16px}
+.mtg .jgrid{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:900px){.mtg .jgrid{grid-template-columns:1fr 1fr;align-items:start}.mtg .jgrid .lacol{border-left:1px solid var(--line);position:sticky;top:calc(var(--hdr,66px) + 62px);max-height:calc(100vh - var(--hdr,66px) - 80px);overflow:auto}}
+@media(max-width:700px){.mtg .job .jname{flex-basis:100%}.mtg .job>.jh .tslink,.mtg .job>.jh .addbtn{flex:1;text-align:center}}
+@media(max-width:700px){.qadd .row1{grid-template-columns:1fr 1fr}.qadd .row1 .tcell{grid-column:1/-1}}
+.lacol{padding:10px 14px 12px;background:#fcfcfd;border-radius:0 0 12px 0}
+.lacol h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lacol h4 .who{color:var(--ink);text-transform:none;letter-spacing:0;font-size:13px;font-weight:700}
+.lacol .stale{background:var(--ambbg);color:var(--amb);border-radius:10px;padding:1px 8px;font-size:10.5px}
+.lacol .none{color:var(--mut);font-size:13px;padding:6px 0}
+table.wk2{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+table.wk2 th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);padding:3px 6px;border-bottom:1px solid var(--line)}
+table.wk2 th:first-child{width:80px}
+table.wk2 td{vertical-align:top;padding:6px;border-bottom:1px solid #f1f2f4;white-space:pre-wrap;word-wrap:break-word}
+table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:11.5px;white-space:normal}
+.lablk{margin-top:8px;font-size:13px;white-space:pre-wrap;word-wrap:break-word}
+.lablk .t{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);font-weight:800}
+.lablk.hz{background:var(--ambbg);border-radius:8px;padding:7px 9px}.lablk.hz .t{color:var(--amb)}
+.lafull{margin-top:8px}.lafull button{border:none;background:none;color:var(--vm);font-weight:700;font-size:12.5px;cursor:pointer;padding:0}
+.lafull .box{display:none;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;max-height:480px;overflow:auto;background:#fff}.lafull .box img{max-width:100%}
+.jumpbar{display:none;gap:6px;overflow-x:auto;padding:6px 0 4px;margin:6px 0 0;-webkit-overflow-scrolling:touch}
+.mtg .jumpbar{display:flex}
+.jumpbar a{flex:0 0 auto;text-decoration:none;font-size:12.5px;font-weight:700;color:var(--vm2);background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 11px;white-space:nowrap}
+.jumpbar a .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+.jumpbar a .d.r{background:#dc2626}.jumpbar a .d.a{background:#f59e0b}.jumpbar a .d.g{background:#22c55e}.jumpbar a .d.n{background:#cbd5e1}
+.job .jname{font-size:15px;font-weight:800;color:var(--vm2);flex:1;min-width:120px}
+.job .jname .jn{color:var(--ink)}
+.pill{font-size:11px;font-weight:800;border-radius:20px;padding:2px 9px}
+.pill.red{background:#fde8e8;color:#b91c1c}.pill.amb{background:var(--ambbg);color:var(--amb)}.pill.ink{background:#eef2f7;color:#475569}
+.jbody{padding:4px 14px 8px}
+.ai{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ai:last-child{border-bottom:none}
+.ai .chk{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ok);padding:0}
+.ai.done .chk{background:var(--okbg);border-color:var(--ok)}
+.ai .body{flex:1;min-width:0}
+.ai .t{font-size:14px;font-weight:600;color:var(--ink);word-wrap:break-word}
+.ai.done .t{text-decoration:line-through;color:var(--mut)}
+.ai .meta{font-size:12px;color:var(--mut);margin-top:2px}
+.ai .meta .ov{color:#b91c1c;font-weight:700}.ai .meta .soon{color:var(--amb);font-weight:700}
+.pri{display:inline-block;font-size:10.5px;font-weight:700;border-radius:8px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.pri.High{background:#fde8e8;color:#b91c1c}.pri.Normal{background:#eef2f7;color:#475569}.pri.Low{background:#f3f4f6;color:#9ca3af}
+.empty{color:var(--mut);font-size:13px;padding:16px 2px;text-align:center}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}.noaccess b{color:var(--vm2)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Vision Mechanical</h1><p>Action Items — assign &amp; track by job. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px;opacity:.9"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Action Items</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div id="denied" class="noaccess" style="display:none">
+    <b>You don't have access to assign or manage tasks.</b><br>
+    This is limited to Project Managers, Admins, and Foremen. If you need it, ask an admin to set your Foreman flag in Employee Setup.
+  </div>
+
+  <div id="main" style="display:none">
+    <!-- Assign form -->
+    <div class="card">
+      <h2 class="collapse" id="formToggle"><span>Assign a task</span><span class="caret" id="formCaret">&#9650; hide</span></h2>
+      <div id="formBody">
+        <label>Task <span class="req">*</span></label>
+        <input type="text" id="task" placeholder="e.g. Order duct for level 2, Verify RFI 114 answer, Close out punch list">
+        <div class="grid2">
+          <div><label>Assign to <span class="req">*</span></label><select id="assignee"><option value="">&mdash; Select person &mdash;</option></select></div>
+          <div><label>Job</label><input type="text" id="job" list="joblist" placeholder="Job # — blank = General"><datalist id="joblist"></datalist></div>
+        </div>
+        <div class="grid2">
+          <div><label>Due date <span class="req">*</span></label><input type="date" id="due"></div>
+          <div><label>Priority</label><select id="priority"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
+        </div>
+        <label>Details</label>
+        <textarea id="details" placeholder="Anything the assignee needs — specifics, location, who to coordinate with"></textarea>
+        <div class="msg" id="msg"></div>
+        <button class="btn" id="submitBtn" style="margin-top:8px">Assign task</button>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="kpis">
+      <div class="kpi red"><b id="kOver">0</b><span>Overdue</span></div>
+      <div class="kpi amb"><b id="kWeek">0</b><span>Due this week</span></div>
+      <div class="kpi ink"><b id="kOpen">0</b><span>Open total</span></div>
+      <div class="kpi grn"><b id="kDone">0</b><span id="kDoneLbl">Done since Mon</span></div>
+    </div>
+    <div class="controls">
+      <div class="seg" id="groupSeg"><button data-g="job">By job</button><button data-g="person">By person</button></div>
+      <input type="text" id="search" placeholder="Filter by task, person, or job…">
+      <label><input type="checkbox" id="showDone"> show completed</label>
+    </div>
+    <div class="jumpbar" id="jumpbar"></div>
+    <div id="jobs"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<script>
+/* ===== Config ===== */
+var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/";
+var LIST="25279cba-004d-4b8c-8356-4b32f24d9cc8";         /* Action Items */
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";     /* Employee Master */
+var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";     /* Job Tasks (job #/name source) */
+var ITEMS_URL=GRAPH+LIST+"/items";
+var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+
+/* ===== v1.8 resilient upload ===== */
+function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}
+function vmPostRetry(url,token,body){var n=0,max=3;function go(){n++;return vmPost(url,token,body,20000).catch(function(e){var s=e.httpStatus;var transient=(s===undefined)||(s>=500)||(s===429);if(transient&&n<max){return new Promise(function(res){setTimeout(res,1200*n);}).then(go);}throw e;});}return go();}
+
+/* ===== MSAL ===== */
+var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
+var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
+var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
+var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";   /* Weekly 2-Week Look Ahead */
+var LA={}, LA_LOADED=false, OPEN_ADD={}, ASSIGNEE_OPTS="", IS_ADMIN=false;
+var GROUP=(function(){ try{ return localStorage.getItem("vm_ai_group")||"job"; }catch(e){ return "job"; } })();
+
+function E(id){return document.getElementById(id);}
+function pad2(n){return (n<10?"0":"")+n;}
+function isoLocal(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}  /* local (Colorado) date, not UTC */
+function today(){return isoLocal(new Date());}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+function emailOf(e){ return (e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); }
+function truthy(v){ return v===true||v==="Yes"||v==="true"; }
+function shortDate(iso){ var p=String(iso||"").slice(0,10).split("-"); return p.length===3?(+p[1]+"/"+ +p[2]):iso; }
+function addDaysISO(n){ var d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
+/* most recent Monday strictly before today — on a Monday morning that's last week's meeting */
+function lastMeeting(){ var d=new Date(); var back=((d.getDay()+6)%7)||7; d.setDate(d.getDate()-back); return isoLocal(d); }
+
+async function getToken(){ if(RTOKEN) return RTOKEN; var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ var r=await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}); return r.accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
+async function pull(listId,select){ var token=await getToken(); var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } return out; }
+async function pullItems(){ var token=await getToken(); var url=GRAPH+LIST+"/items?$expand=fields&$top=999", out=[]; while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } return out; }
+
+/* ===== Boot ===== */
+E("signin").onclick=function(){ msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); };
+function start(){ msal_i.handleRedirectPromise().then(function(resp){ RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null; var a=msal_i.getAllAccounts()[0]; if(a){ msal_i.setActiveAccount(a); showApp(a); } }).catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+String(e); }); }
+
+async function showApp(a){
+  E("gate").style.display="none"; E("app").style.display="block";
+  loginEmail=(a.username||"").toLowerCase().trim(); myName=(a.name||"").trim(); E("who").textContent=a.username||"";
+  try{
+    var emps=await pull(EMP_LIST,"EmployeeName,Active,Foreman,LoginEmail,Admin");
+    var active=emps.filter(function(e){ return (e.Active||"Yes")!=="No"; });
+    var me=emps.filter(function(e){ return emailOf(e)===loginEmail; })[0];
+    IS_ADMIN = SUPERADMIN.indexOf(loginEmail)>-1 || !!(me&&truthy(me.Admin));
+    var canAssign = SUPERADMIN.indexOf(loginEmail)>-1 || NAMED_PM.indexOf(loginEmail)>-1 || (me&&(truthy(me.Admin)||truthy(me.Foreman)));
+    if(!canAssign){ E("denied").style.display="block"; return; }
+    E("main").style.display="block";
+    var opts=active.map(function(e){ return {name:(e.EmployeeName||"").trim(), email:emailOf(e)}; }).filter(function(o){ return o.name&&o.email; }).sort(function(x,y){ return x.name.localeCompare(y.name); });
+    var sel=E("assignee"); opts.forEach(function(o){ var op=document.createElement("option"); op.value=o.email; op.textContent=o.name; sel.appendChild(op); });
+    ASSIGNEE_OPTS=E("assignee").innerHTML;
+    if(!E("due").value) E("due").value=today();
+    setHdr(); window.addEventListener("resize",setHdr);
+    loadLookAheads();
+    E("submitBtn").onclick=assign;
+    E("search").oninput=render; E("showDone").onchange=render;
+    Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-g")===GROUP); b.onclick=function(){ GROUP=b.getAttribute("data-g"); try{ localStorage.setItem("vm_ai_group",GROUP); }catch(e){} Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(x){ x.classList.toggle("on",x===b); }); render(); }; });
+    E("formToggle").onclick=function(){ var b=E("formBody"); var hid=b.style.display==="none"; b.style.display=hid?"block":"none"; E("formCaret").innerHTML=hid?"&#9650; hide":"&#9660; assign"; };
+    loadJobs(); loadItems();
+  }catch(e){ E("denied").style.display="block"; E("denied").innerHTML='<b>Could not load.</b><br>'+esc(e.message||e); }
+}
+
+function setHdr(){ var h=document.querySelector("header"); if(h) document.documentElement.style.setProperty("--hdr",h.offsetHeight+"px"); }
+function mondayOfISO(iso){ var p=iso.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()-((d.getDay()+6)%7)); return isoLocal(d); }
+var MONS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function niceD(iso){ var p=String(iso).split("-"); return MONS[+p[1]-1]+" "+(+p[2]); }
+function addDaysTo(iso,n){ var p=iso.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return isoLocal(d); }
+
+/* ===== Foremen's 2-week look-aheads: latest one per job from the last ~3 weeks (summary fields only) ===== */
+async function loadLookAheads(){
+  try{
+    var token=await getToken(), from=addDaysISO(-21);
+    var base=GRAPH+LOOK+"/items?$expand=fields($select=WeekOf,Project,SubmittedBy,ForemanSuper,AreasWeek1,AreasWeek2,MaterialsWeek1,MaterialsWeek2,ManpowerWeek1,ManpowerWeek2,Hurdles,LookAheadStatus,Additionalnotes,DrawingNotes,SubmittedAt,LateFlag)&$top=999", out=[];
+    async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } }
+    try{ await page(base+"&$filter=fields/WeekOf ge '"+from+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+    catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
+    var map={};
+    out.forEach(function(r){ var f=r.f, wk=String(f.WeekOf||"").slice(0,10); if(!wk||wk<from) return; var jn=String(f.Project||"").trim().split(/\s+/)[0]; if(!jn) return;
+      var cur=map[jn]; var key=wk+"|"+String(f.SubmittedAt||"")+"|"+r.id; if(!cur||key>cur._k){ r._k=key; r.wk=mondayOfISO(wk); r.name=String(f.Project||"").trim().slice(jn.length).trim(); map[jn]=r; } });
+    LA=map;
+  }catch(e){ LA={}; }
+  LA_LOADED=true; render();
+}
+function hasTxt(v){ v=String(v||"").trim(); return v.length>0 && !/^(none|n\/a|na|no|-)$/i.test(v); }
+function laCell(v){ return hasTxt(v)?esc(v):'<span style="color:#c4c8cf">—</span>'; }
+function laPanel(jn){
+  if(!LA_LOADED) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">Loading…</div></div>';
+  var r=LA[jn];
+  if(!r) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">No look-ahead submitted in the last 3 weeks.</div></div>';
+  var f=r.f, thisMon=mondayOfISO(today()), stale=r.wk<thisMon;
+  return '<div class="lacol"><h4>2-week look-ahead <span class="who">'+esc(f.ForemanSuper||f.SubmittedBy||"")+'</span> · week of '+niceD(r.wk)+
+      (stale?' <span class="stale">from '+(r.wk===addDaysTo(thisMon,-7)?"last week":"an older week")+'</span>':'')+
+      (f.LookAheadStatus?' <span class="pill ink">'+esc(f.LookAheadStatus)+'</span>':'')+(f.LateFlag==="Yes"?' <span class="pill red">Late</span>':'')+'</h4>'+
+    '<table class="wk2"><thead><tr><th></th><th>Wk 1 · '+niceD(r.wk)+'</th><th>Wk 2 · '+niceD(addDaysTo(r.wk,7))+'</th></tr></thead><tbody>'+
+      '<tr><td class="lbl">Areas / work</td><td>'+laCell(f.AreasWeek1)+'</td><td>'+laCell(f.AreasWeek2)+'</td></tr>'+
+      '<tr><td class="lbl">Materials</td><td>'+laCell(f.MaterialsWeek1)+'</td><td>'+laCell(f.MaterialsWeek2)+'</td></tr>'+
+      '<tr><td class="lbl">Manpower</td><td>'+laCell(f.ManpowerWeek1)+'</td><td>'+laCell(f.ManpowerWeek2)+'</td></tr></tbody></table>'+
+    (hasTxt(f.Hurdles)?'<div class="lablk hz"><div class="t">Hurdles / needs</div>'+esc(f.Hurdles)+'</div>':'')+
+    (hasTxt(f.DrawingNotes)?'<div class="lablk"><div class="t">Drawings / notes</div>'+esc(f.DrawingNotes)+'</div>':'')+
+    (hasTxt(f.Additionalnotes)?'<div class="lablk"><div class="t">Additional notes</div>'+esc(f.Additionalnotes)+'</div>':'')+
+    '<div class="lafull" data-la="'+esc(r.id)+'"><button>Show full look-ahead</button><div class="box"></div></div></div>';
+}
+async function showLaFull(btn){
+  var wrap=btn.parentNode, box=wrap.querySelector(".box"), id=wrap.getAttribute("data-la");
+  if(box.style.display==="block"){ box.style.display="none"; btn.textContent="Show full look-ahead"; return; }
+  box.style.display="block"; btn.textContent="Hide full look-ahead";
+  if(box.getAttribute("data-ok")) return; box.textContent="Loading…";
+  try{ var token=await getToken(); var j=await fetch(GRAPH+LOOK+"/items/"+id+"?$expand=fields($select=LogText)",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    if(j.error) throw new Error(j.error.message); box.innerHTML=(j.fields&&j.fields.LogText)||"(no detail saved)"; box.setAttribute("data-ok","1");
+  }catch(e){ box.textContent="Could not load ("+(e.message||e)+")."; }
+}
+
+/* ===== Quick-add on a job card ===== */
+function qaddHtml(k,no,name){
+  return '<div class="qadd'+(OPEN_ADD[k]?" open":"")+'" data-k="'+esc(k)+'" data-no="'+esc(no)+'" data-name="'+esc(name)+'">'+
+    '<div class="row1"><div class="tcell"><label>New item for '+(no?esc(no):"General")+'</label><input type="text" class="q-task" placeholder="What needs to happen?"></div>'+
+    '<div><label>Assign to</label><select class="q-who">'+ASSIGNEE_OPTS+'</select></div>'+
+    '<div><label>Due</label><input type="date" class="q-due" value="'+addDaysISO(7)+'"></div>'+
+    '<div><label>Priority</label><select class="q-pri"><option>High</option><option selected>Normal</option><option>Low</option></select></div>'+
+    '<div><button class="go">Add</button></div></div>'+
+    '<textarea class="q-det" placeholder="Details (optional)"></textarea><div class="qmsg"></div></div>';
+}
+function quickAdd(box){
+  var task=box.querySelector(".q-task").value.trim(), whoSel=box.querySelector(".q-who"), who=whoSel.value, due=box.querySelector(".q-due").value,
+      pri=box.querySelector(".q-pri").value, det=box.querySelector(".q-det").value.trim(), msg=box.querySelector(".qmsg"), btn=box.querySelector(".go");
+  var whoName=whoSel.selectedOptions.length?whoSel.selectedOptions[0].textContent:"";
+  if(!task){ msg.style.color="#b91c1c"; msg.textContent="Type the item."; box.querySelector(".q-task").focus(); return; }
+  if(!who){ msg.style.color="#b91c1c"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.style.color="#b91c1c"; msg.textContent="Pick a due date."; return; }
+  if(navigator.onLine===false){ msg.style.color="#b91c1c"; msg.textContent="You're offline — move to better signal and tap Add again."; return; }
+  var no=box.getAttribute("data-no"), name=box.getAttribute("data-name");
+  var fields={ Title:task, JobNo:no, JobName:no?name:"General", AssignedTo:who, AssignedToName:whoName, DueDate:due+"T12:00:00Z", Priority:pri, Status:"Open", Details:det, CreatedByEmail:loginEmail, CreatedByName:myName };
+  btn.disabled=true; msg.style.color=""; msg.textContent="Adding…";
+  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,{fields:fields}); }).then(function(j){
+    ITEMS.push({id:(j&&j.id)||("tmp"+Date.now()), f:fields}); render();
+    var nb=document.querySelector('.qadd[data-k="'+CSS.escape(box.getAttribute("data-k"))+'"]');
+    if(nb){ nb.querySelector(".qmsg").style.color="#15803d"; nb.querySelector(".qmsg").textContent="Added for "+whoName+". Add another, or close."; nb.querySelector(".q-task").focus(); }
+  }).catch(function(e){ btn.disabled=false; msg.style.color="#b91c1c"; msg.textContent="Didn't save ("+(e.message||e)+"). Tap Add again."; });
+}
+
+/* ===== Job picker ===== */
+function loadJobs(){
+  pull(JOBTASKS,"JobNo,JobName,Active").then(function(tasks){
+    var seen={},arr=[];
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var jn=(t.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(t.JobName||"").trim()); });
+    arr.sort(function(a,b){var x=a.slice(a.indexOf(" ")+1).toLowerCase(),y=b.slice(b.indexOf(" ")+1).toLowerCase();return x.localeCompare(y)||a.localeCompare(b);}); /* alphabetical by job name */ E("joblist").innerHTML=arr.map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
+  }).catch(function(){});
+}
+function parseJob(v){ v=String(v||"").trim(); if(!v||/^general\b/i.test(v)) return {no:"",name:"General"}; var sp=v.indexOf(" "); if(sp<0) return {no:v,name:""}; return {no:v.slice(0,sp).trim(), name:v.slice(sp+1).trim()}; }
+
+/* ===== Assign ===== */
+function assign(){
+  var msg=E("msg"), btn=E("submitBtn");
+  var task=E("task").value.trim(), assignee=E("assignee").value, due=E("due").value, prio=E("priority").value, details=E("details").value.trim();
+  var aName=E("assignee").selectedOptions.length?E("assignee").selectedOptions[0].textContent:"";
+  if(!task){ msg.className="msg err"; msg.textContent="Enter the task."; return; }
+  if(!assignee){ msg.className="msg err"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.className="msg err"; msg.textContent="Pick a due date."; return; }
+  var j=parseJob(E("job").value);
+  var fields={ Title:task, JobNo:j.no, JobName:j.name, AssignedTo:assignee, AssignedToName:aName, DueDate:due+"T12:00:00Z", Priority:prio, Status:"Open", Details:details, CreatedByEmail:loginEmail, CreatedByName:myName };
+  if(navigator.onLine===false){ msg.className="msg err"; msg.textContent="You’re offline right now — move to better signal and tap Assign again."; return; }
+  btn.disabled=true; msg.className="msg ok"; msg.textContent="Assigning...";
+  getToken().then(function(tok){ return vmPostRetry(ITEMS_URL,tok,{fields:fields}); })  /* Graph requires the {fields:{...}} wrapper — without it an empty item is created */.then(function(){
+    msg.className="msg ok"; msg.textContent="Assigned to "+aName+". Assign another, or change the fields above.";
+    E("task").value=""; E("details").value=""; btn.disabled=false; btn.textContent="Assign task"; E("task").focus(); loadItems();
+  }).catch(function(e){
+    msg.className="msg err"; msg.textContent="Could not assign yet ("+e.message+"). Move to better signal and tap Assign again."; btn.disabled=false;
+  });
+}
+
+/* ===== Board (per-job) ===== */
+function loadItems(){ E("jobs").innerHTML='<div class="empty">Loading…</div>'; pullItems().then(function(rows){ ITEMS=rows; render(); }).catch(function(e){ E("jobs").innerHTML='<div class="empty">Could not load the board ('+esc(e.message||e)+')</div>'; }); }
+function render(){
+  var q=(E("search").value||"").toLowerCase().trim();
+  var showDone=E("showDone").checked;
+  var td=today(), weekEnd=addDaysISO(7), since=lastMeeting();
+  var byPerson=(GROUP==="person");
+  document.body.classList.toggle("mtg",!byPerson);
+  var rows=ITEMS.map(function(r){ var f=r.f; var jn=(f.JobNo||"").trim(); var em=String(f.AssignedTo||"").toLowerCase().trim(); var who=f.AssignedToName||f.AssignedTo||"";
+    return { email:em, id:r.id, task:f.Title||"(blank item — delete in SharePoint)", who:who, whoKey:em||("name:"+who.toLowerCase())||"__NOBODY__",
+      jobNo:jn, jobName:(f.JobName||"").trim(), jobKey:jn||"__GENERAL__",
+      due:(f.DueDate||"").slice(0,10), pri:f.Priority||"Normal", status:(f.Status||"Open"), details:String(f.Details||"").trim(), by:f.CreatedByName||f.CreatedByEmail||"", doneOn:String(f.CompletedDate||"").slice(0,10) }; });
+  rows.forEach(function(r){ r.recent=(r.status==="Done" && r.doneOn && r.doneOn>=since); });
+  var kOver=0,kWeek=0,kOpen=0,kDone=0;
+  rows.forEach(function(r){ if(r.status==="Done"){ if(r.recent)kDone++; return; } kOpen++; if(r.due&&r.due<td)kOver++; else if(r.due&&r.due<=weekEnd)kWeek++; });
+  E("kOver").textContent=kOver; E("kWeek").textContent=kWeek; E("kOpen").textContent=kOpen; E("kDone").textContent=kDone;
+  E("kDoneLbl").textContent="Done since "+shortDate(since);
+  var match=function(r){ if(!q)return true; return (r.task+" "+r.who+" "+r.jobNo+" "+r.jobName+" "+r.details).toLowerCase().indexOf(q)>-1; };
+  /* group: open items + anything done since last meeting (so a person/job with only finished work still gets credit) */
+  var groups={};
+  rows.forEach(function(r){
+    if(!match(r)) return;
+    if(r.status==="Done" && !r.recent && !showDone) return;
+    var k=byPerson?r.whoKey:r.jobKey;
+    var g=groups[k]=groups[k]||{key:k,no:r.jobNo,name:r.jobName,who:r.who,items:[],over:0,week:0,open:0,done:0};
+    if(r.status==="Done"){ if(r.recent) g.done++; if(showDone) g.items.push(r); }
+    else { g.items.push(r); g.open++; if(r.due&&r.due<td)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }
+  });
+  if(!byPerson){ Object.keys(LA).forEach(function(jn){ var r=LA[jn]; if(groups[jn]) return; if(q && (jn+" "+r.name).toLowerCase().indexOf(q)<0) return;
+    groups[jn]={key:jn,no:jn,name:r.name,who:"",items:[],over:0,week:0,open:0,done:0}; }); }
+  var keys=Object.keys(groups);
+  if(!keys.length){ E("jobs").innerHTML='<div class="empty">'+(q?"Nothing matches that filter.":"No open items yet — assign one above.")+'</div>'; return; }
+  if(!byPerson) keys.sort(function(a,b){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; var x=(groups[a].name||groups[a].no||"").toLowerCase(), y=(groups[b].name||groups[b].no||"").toLowerCase(); return x.localeCompare(y)||String(a).localeCompare(String(b)); });
+  else keys.sort(function(a,b){ if(!byPerson){ if(a==="__GENERAL__")return 1; if(b==="__GENERAL__")return -1; } var ga=groups[a],gb=groups[b]; if(gb.over!==ga.over)return gb.over-ga.over; if(gb.week!==ga.week)return gb.week-ga.week; if(gb.open!==ga.open)return gb.open-ga.open; return byPerson?(ga.who||"").localeCompare(gb.who||""):(ga.no||"").localeCompare(gb.no||""); });
+  E("jobs").innerHTML=keys.map(function(k){
+    var g=groups[k];
+    var title = byPerson ? esc(g.who||"(unassigned)") : (k==="__GENERAL__" ? 'General <span class="jn">(no job)</span>' : esc(g.no)+' <span class="jn">'+esc(g.name)+'</span>');
+    var pills=""; if(g.over)pills+='<span class="pill red">'+g.over+' overdue</span> '; if(g.week)pills+='<span class="pill amb">'+g.week+' this week</span> '; pills+='<span class="pill ink">'+g.open+' open</span>'; if(g.done)pills+=' <span class="pill grn">&#10003; '+g.done+' done since '+shortDate(since)+'</span>';
+    g.items.sort(function(a,b){ var ad=a.status==="Done",bd=b.status==="Done"; if(ad!==bd)return ad?1:-1; if(ad)return (b.doneOn||"").localeCompare(a.doneOn||""); return (a.due||"9999").localeCompare(b.due||"9999"); });
+    var body=g.items.map(function(r){
+      var done=r.status==="Done";
+      var overdue=!done&&r.due&&r.due<td, soon=!done&&!overdue&&r.due&&r.due<=weekEnd;
+      var dtxt=r.due?shortDate(r.due):"no date";
+      var duePart=done?("done"+(r.doneOn?" "+shortDate(r.doneOn):"")):(overdue?'<span class="ov">'+dtxt+' (overdue)</span>':(soon?'<span class="soon">due '+dtxt+'</span>':"due "+dtxt));
+      var lead=byPerson?'<span class="jb">'+(r.jobNo?esc(r.jobNo):"General")+'</span>':esc(r.who);
+      return '<div class="ai'+(done?" done":"")+'" data-id="'+esc(r.id)+'" data-status="'+esc(r.status)+'">'+
+        '<button class="chk" title="'+(done?"Reopen":"Mark done")+'">'+(done?"↩":"✓")+'</button>'+
+        '<div class="body"><div class="t">'+esc(r.task)+'<span class="pri '+esc(r.pri)+'">'+esc(r.pri)+'</span></div>'+
+        '<div class="meta">'+lead+' · '+duePart+'</div>'+
+        (r.details?'<div class="det" title="Tap to expand"><span>'+esc(r.details)+'</span></div>':'')+
+        (r.by?'<div class="by">Assigned by '+esc(r.by)+(IS_ADMIN?' · <a href="#" class="mv">&#9998; Edit</a>':'')+'</div>':(IS_ADMIN?'<div class="by"><a href="#" class="mv">&#9998; Edit</a></div>':''))+
+        (IS_ADMIN?editBox(r):'')+'</div></div>';
+    }).join("");
+    if(!body) body='<div class="empty" style="padding:10px 2px;text-align:left">'+(byPerson?'Nothing open':'No open action items')+(g.done?' — tick "show completed" to see what got done.':'.')+'</div>';
+    if(byPerson) return '<div class="job"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div></div><div class="jbody">'+body+'</div></div>';
+    var jid="job-"+String(k).replace(/[^A-Za-z0-9_-]/g,"_");
+    return '<div class="job" id="'+jid+'"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div>'+(k!=="__GENERAL__"?'<a class="tslink" href="/taskschedule.html?job='+encodeURIComponent(g.no||k)+'" target="_blank" rel="noopener" title="Budget vs earned hours for this job">&#128202; Task schedule</a>':'')+'<button class="addbtn'+(OPEN_ADD[k]?" on":"")+'" data-k="'+esc(k)+'">'+(OPEN_ADD[k]?"&times; Close":"+ Add item")+'</button></div>'+
+      qaddHtml(k,g.no||"",g.name||"")+
+      '<div class="jgrid"><div class="jbody">'+body+'</div>'+(k==="__GENERAL__"?'':laPanel(k))+'</div></div>';
+  }).join("");
+  /* jump bar (By job): one chip per job, dot = red overdue / amber due this week / green open / grey look-ahead only */
+  E("jumpbar").innerHTML=byPerson?"":keys.map(function(k){ var g=groups[k]; var d=g.over?"r":g.week?"a":g.open?"g":"n"; var lbl=k==="__GENERAL__"?"General":((g.name||g.no)+"");
+    return '<a href="#job-'+String(k).replace(/[^A-Za-z0-9_-]/g,"_")+'"><span class="d '+d+'"></span>'+esc(lbl.length>28?lbl.slice(0,27)+"…":lbl)+'</a>'; }).join("");
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".addbtn"),function(b){ b.onclick=function(){ var k=b.getAttribute("data-k"); if(OPEN_ADD[k]) delete OPEN_ADD[k]; else OPEN_ADD[k]=1;
+    var box=b.closest(".job").querySelector(".qadd"); box.classList.toggle("open",!!OPEN_ADD[k]); b.classList.toggle("on",!!OPEN_ADD[k]); b.innerHTML=OPEN_ADD[k]?"&times; Close":"+ Add item"; if(OPEN_ADD[k]) box.querySelector(".q-task").focus(); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".qadd"),function(box){ box.querySelector(".go").onclick=function(){ quickAdd(box); };
+    box.querySelector(".q-task").onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); quickAdd(box); } }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".lafull button"),function(b){ b.onclick=function(){ showLaFull(b); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .det"),function(d){ d.onclick=function(){ d.classList.toggle("full"); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mv"),function(a){ a.onclick=function(e){ e.preventDefault(); var box=a.closest(".ai").querySelector(".mvbox"); box.classList.toggle("open"); if(box.classList.contains("open")){ box.querySelector(".e-task").focus(); } }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvx"),function(b){ b.onclick=function(){ b.closest(".mvbox").classList.remove("open"); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvgo"),function(b){ b.onclick=function(){ moveItem(b.closest(".ai").getAttribute("data-id"),b.closest(".mvbox")); }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .mvjob"),function(i){ i.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); moveItem(i.closest(".ai").getAttribute("data-id"),i.closest(".mvbox")); } }; });
+  Array.prototype.forEach.call(E("jobs").querySelectorAll(".ai .chk"),function(btn){ btn.onclick=function(){ var row=btn.parentNode; toggleDone(row.getAttribute("data-id"),row.getAttribute("data-status"),btn); }; });
+}
+/* ===== Admins: edit an item — task, job, assignee, due date, priority, details ===== */
+function editBox(r){
+  var opts=ASSIGNEE_OPTS.replace(/ selected/g,""); var em=String(r.email||"").toLowerCase();
+  if(em){ if(opts.indexOf('value="'+em+'"')>-1) opts=opts.replace('value="'+em+'"','value="'+em+'" selected'); else opts+='<option value="'+esc(em)+'" selected>'+esc(r.who||em)+'</option>'; }
+  return '<div class="mvbox">'+
+    '<div class="eg"><div><label>Task</label><input type="text" class="e-task" value="'+esc(r.task)+'"></div>'+
+    '<div><label>Job (blank = General)</label><input type="text" list="joblist" class="mvjob" value="'+esc(r.jobNo?(r.jobNo+" "+r.jobName):"")+'"></div></div>'+
+    '<div class="eg3"><div><label>Assigned to</label><select class="e-who">'+opts+'</select></div>'+
+    '<div><label>Due</label><input type="date" class="e-due" value="'+esc(r.due)+'"></div>'+
+    '<div><label>Priority</label><select class="e-pri">'+["High","Normal","Low"].map(function(o){return '<option'+(o===r.pri?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div></div>'+
+    '<textarea class="e-det" placeholder="Details">'+esc(r.details)+'</textarea>'+
+    '<div class="ebtns"><button class="mvgo">Save changes</button><button class="mvx">Cancel</button><span class="mvmsg"></span></div></div>';
+}
+function moveItem(id,box){
+  if(!IS_ADMIN) return;
+  var msg=box.querySelector(".mvmsg"), btn=box.querySelector(".mvgo");
+  var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return;
+  var task=box.querySelector(".e-task").value.trim(), whoSel=box.querySelector(".e-who"), due=box.querySelector(".e-due").value, pri=box.querySelector(".e-pri").value, det=box.querySelector(".e-det").value.trim();
+  if(!task){ msg.style.color="#b91c1c"; msg.textContent="Task can't be blank."; return; }
+  if(!whoSel.value){ msg.style.color="#b91c1c"; msg.textContent="Pick who it's assigned to."; return; }
+  if(!due){ msg.style.color="#b91c1c"; msg.textContent="Pick a due date."; return; }
+  var j=parseJob(box.querySelector(".mvjob").value);
+  if(j.no && !j.name){ var hit=Array.prototype.filter.call(E("joblist").options,function(o){ return o.value.split(" ")[0]===j.no; })[0];
+    if(hit) j=parseJob(hit.value); else { msg.style.color="#b91c1c"; msg.textContent="Pick the job from the list so the name comes with it."; return; } }
+  var f=it.f, body={};
+  if(task!==(f.Title||"")) body.Title=task;
+  if(j.no!==(f.JobNo||"").trim()){ body.JobNo=j.no; body.JobName=j.no?j.name:"General"; }
+  if(whoSel.value.toLowerCase()!==String(f.AssignedTo||"").toLowerCase()){ body.AssignedTo=whoSel.value; body.AssignedToName=whoSel.selectedOptions[0].textContent; }
+  if(due!==String(f.DueDate||"").slice(0,10)) body.DueDate=due+"T12:00:00Z";
+  if(pri!==(f.Priority||"Normal")) body.Priority=pri;
+  if(det!==String(f.Details||"").trim()) body.Details=det;
+  if(!Object.keys(body).length){ box.classList.remove("open"); return; }
+  btn.disabled=true; msg.style.color="#6b7280"; msg.textContent="Saving…";
+  getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
+  .then(function(){ Object.keys(body).forEach(function(k){ f[k]=body[k]; }); render();
+    var row=document.querySelector('.ai[data-id="'+CSS.escape(id)+'"]');
+    if(row){ row.style.transition="background 1.2s"; row.style.background="#fff3c4"; setTimeout(function(){row.style.background="";},1600); row.scrollIntoView({behavior:"smooth",block:"center"}); } })
+  .catch(function(e){ btn.disabled=false; msg.style.color="#b91c1c"; msg.textContent="Didn't save: "+(e.message||e); });
+}
+function toggleDone(id,status,btn){
+  var makeDone=(status!=="Done");
+  var body=makeDone?{Status:"Done",CompletedDate:today()+"T12:00:00Z",CompletedBy:loginEmail}:{Status:"Open",CompletedDate:null,CompletedBy:""};
+  btn.disabled=true;
+  getToken().then(function(tok){ return fetch(GRAPH+LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)}); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+t.slice(0,120));}); return r.json(); })
+  .then(function(){ var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(it){ it.f.Status=body.Status; it.f.CompletedDate=body.CompletedDate; it.f.CompletedBy=body.CompletedBy; } render(); })
+  .catch(function(e){ btn.disabled=false; alert("Could not update that item: "+(e.message||e)); });
+}
+start();
+</script>
+</body>
+</html>
