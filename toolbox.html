@@ -267,10 +267,9 @@ E("sCancel").onclick=function(){ if(Object.keys(PEOPLE).length&&!confirm("Cancel
 function parsePages(s,max){ var out=[]; String(s||"").split(/[,\s]+/).forEach(function(part){ var m=/^(\d+)(?:-(\d+))?$/.exec(part); if(!m) return; var a=+m[1], b=m[2]?+m[2]:a; for(var i=a;i<=b&&i<=(max||999);i++) if(i>0&&out.indexOf(i)<0) out.push(i); }); return out; }
 async function getPdf(path){
   if(PDFS[path]) return PDFS[path];
-  var meta=await gfetch(SITEURL+"/drive/root:/"+encPath(path)+"?$select=id,name,@microsoft.graph.downloadUrl");
-  var dl=meta["@microsoft.graph.downloadUrl"], buf;
-  if(dl) buf=await fetch(dl).then(function(r){ if(!r.ok) throw new Error("download "+r.status); return r.arrayBuffer(); });
-  else { var t=await getToken(); buf=await fetch(SITEURL+"/drive/items/"+meta.id+"/content",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.arrayBuffer();}); }
+  var meta=await gfetch(SITEURL+"/drive/root:/"+encPath(path)), dl=meta["@microsoft.graph.downloadUrl"], buf=null;
+  if(dl){ try{ var r=await fetch(dl); if(r.ok) buf=await r.arrayBuffer(); }catch(e){} }
+  if(!buf){ var t=await getToken(), r2=await fetch(SITEURL+"/drive/items/"+meta.id+"/content",{headers:{Authorization:"Bearer "+t}}); if(!r2.ok) throw new Error("download "+r2.status); buf=await r2.arrayBuffer(); }
   PDFS[path]=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise; return PDFS[path];
 }
 async function renderPages(pdf,pages,host){
@@ -476,6 +475,43 @@ async function loadAtt(){
     E("aTable").innerHTML='<table class="att"><tr><th>Employee</th>'+cols.map(function(c){return '<th>'+esc(c.title)+'</th>';}).join("")+'</tr>'+rows.map(function(r){ return '<tr><td>'+esc(r.n)+'</td>'+r.marks.map(function(x){return x?'<td class="y">&#10003;</td>':'<td class="n">—</td>';}).join("")+'</tr>'; }).join("")+'</table>'+(rows.length?'':'<div class="empty">Everyone is covered.</div>');
   }catch(e){ E("aTable").innerHTML='<div class="empty">Couldn\'t load ('+esc(e.message)+').</div>'; }
 }
+</script>
+<script>
+/* ===== Job lists show NAME first, A–Z (e.g. "Epic Phase II · A26103") =====
+   Works on any <select> or <datalist> whose options are jobs. Values the page saves are unchanged:
+   a picked datalist entry is turned back into "A26103 Epic Phase II" before the page reads it. */
+(function(){
+  var NO="[A-Z]?\\d{2}[A-Z]?-?\\d{3,}";
+  var FWD=new RegExp("^("+NO+")(?:\\s*·\\s*|\\s+)(.+)$"), REV=new RegExp("^(.+?)\\s+·\\s+("+NO+")$");
+  function fl(t){ var m=FWD.exec(String(t||"").trim()); return m?{no:m[1],name:m[2].trim()}:null; }
+  function cmp(a,b){ return a.k.localeCompare(b.k,undefined,{sensitivity:"base",numeric:true}); }
+  function doSelect(sel){
+    var opts=Array.prototype.slice.call(sel.options), real=opts.filter(function(o){return o.value!=="";});
+    var jobs=real.filter(function(o){ return o.getAttribute("data-vmflip")||fl(o.textContent); });
+    if(jobs.length<2||jobs.length<real.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmflip");})) return;
+    var v=sel.value;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
+    var items=jobs.map(function(o){return {o:o,k:o.textContent.toLowerCase()};}).sort(cmp);
+    items.forEach(function(it){ sel.appendChild(it.o); });
+    opts.filter(function(o){return jobs.indexOf(o)<0&&o.value!=="";}).forEach(function(o){ sel.appendChild(o); });
+    sel.value=v;
+  }
+  function doList(dl){
+    var opts=Array.prototype.slice.call(dl.options), jobs=opts.filter(function(o){ return o.getAttribute("data-vmorig")||fl(o.value); });
+    if(jobs.length<2||jobs.length<opts.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmorig");})) return;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmorig")) return; var f=fl(o.value); o.setAttribute("data-vmorig",o.value); o.value=f.name+" · "+f.no; });
+    jobs.map(function(o){return {o:o,k:o.value.toLowerCase()};}).sort(cmp).forEach(function(it){ dl.appendChild(it.o); });
+  }
+  var busy=false;
+  function scan(){ if(busy) return; busy=true; try{ document.querySelectorAll("select").forEach(doSelect); document.querySelectorAll("datalist").forEach(doList); }catch(e){} busy=false; }
+  function back(e){ var t=e.target; if(!t||t.tagName!=="INPUT"||!t.getAttribute("list")) return; var m=REV.exec(String(t.value||"").trim()); if(m) t.value=m[2]+" "+m[1]; }
+  document.addEventListener("input",back,true); document.addEventListener("change",back,true); document.addEventListener("focusout",back,true);
+  var tmr=null; new MutationObserver(function(){ if(busy) return; clearTimeout(tmr); tmr=setTimeout(scan,30); }).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState!=="loading") scan(); else document.addEventListener("DOMContentLoaded",scan);
+  window.vmJobScan=scan;
+})();
 </script>
 </body>
 </html>
