@@ -330,10 +330,12 @@ document.getElementById("loadBtn").onclick=async function(){
 
 async function ensureJob(token, jobsRel, jn, name){
   // check if job exists
-  var url="https://graph.microsoft.com"+jobsRel+"?$expand=fields($select=Title)&$top=999";
+  /* was building the URL without /v1.0, so the check always failed and a new job row was added on every load */
+  var url=GRAPH+LIST.jobs+"/items?$expand=fields($select=Title)&$top=999";
   var exists=false;
   while(url){
     var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(r=>r.json());
+    if(j.error) throw new Error("Couldn't check the Jobs list: "+j.error.message);
     (j.value||[]).forEach(function(it){ if(it.fields && String(it.fields.Title).trim()===jn) exists=true; });
     url=j["@odata.nextLink"]||null;
     if(exists) break;
@@ -354,7 +356,10 @@ async function loadJobDetails(){
   try{ var token=await getToken();
     var url=GRAPH+LIST.jobs+"/items?$expand=fields($select=Title,StartDate,FinishDate,DattoLink,PMName,GC,Address,Archive)&$top=999", out=[];
     while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; }
-    JOBSDATA=out.sort(function(a,b){return String(a.f.Title).localeCompare(String(b.f.Title));});
+    /* one entry per job number — if duplicates exist, use the row with the most filled-in details */
+    var F=["StartDate","FinishDate","DattoLink","PMName","GC","Address"], best={};
+    out.forEach(function(x){ var k=String(x.f.Title||"").trim(); if(!k) return; var sc=F.filter(function(c){return x.f[c];}).length; if(!best[k]||sc>best[k].sc||(sc===best[k].sc&&+x.id<+best[k].x.id)) best[k]={x:x,sc:sc}; });
+    JOBSDATA=Object.keys(best).map(function(k){return best[k].x;}).sort(function(a,b){return String(a.f.Title).localeCompare(String(b.f.Title));});
     var sel=document.getElementById("dJob");
     sel.innerHTML='<option value="">— Select a job —</option>'+JOBSDATA.map(function(x,i){ return '<option value="'+i+'">'+esc(x.f.Title||"")+(isArch(x.f.Archive)?"  (archived)":"")+'</option>'; }).join("");
     sel.onchange=function(){ fillDetails(sel.value); };
