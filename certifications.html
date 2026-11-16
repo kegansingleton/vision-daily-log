@@ -149,14 +149,14 @@ async function start(a){
     if(!L){ E("topMsg").textContent="The “"+LIST_NAME+"” list isn't set up in SharePoint yet. Ask the office."; E("bar").style.display="none"; return; }
     LIST_ID=L.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
   }catch(e){ E("topMsg").textContent="Couldn't load ("+e.message+")."; return; }
-  if(!IS_ADMIN){ E("htitle").textContent="My Certifications"; E("topMsg").textContent="Your cards on file. Add a new card with + Add — the office will verify it."; E("csvBtn").style.display="none"; E("ftype").style.display="none"; E("verWrap").style.display="none"; }
-  else { E("topMsg").style.display="none"; E("vtabs").classList.add("on"); }
+  E("vtabs").classList.add("on");
+  if(!IS_ADMIN){ E("topMsg").textContent="Everyone's cards are listed so you can look up your crew. Add your own card with + Add — the office will verify it. Only the office can change other people's cards."; E("csvBtn").style.display="none"; E("verWrap").style.display="none"; }
+  else E("topMsg").style.display="none";
   ["q","ftype","fstat"].forEach(function(id){ E(id).addEventListener("input",function(){ if(id==="fstat") TILE=""; render(); }); });
   await load();
 }
 async function load(){
   try{ ROWS=await pullAll(LIST_ID,"Title,EmployeeName,CertType,CertNumber,IssueDate,ExpiryDate,CardPhoto,Notes,Verified,AddedBy"); }catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load certifications ('+esc(e.message)+').</div>'; return; }
-  if(!IS_ADMIN){ var me=MY_NAME.toLowerCase().trim(); ROWS=ROWS.filter(function(r){ return String(r.EmployeeName||"").toLowerCase().trim()===me || String(r.AddedBy||"").toLowerCase()===loginEmail; }); }
   render();
 }
 function status(r){ if(!r.ExpiryDate) return "none"; var d=daysLeft(r.ExpiryDate); if(d===null) return "none"; if(d<0) return "exp"; if(d<=60) return "soon"; return "ok"; }

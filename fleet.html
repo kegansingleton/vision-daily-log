@@ -147,7 +147,6 @@ async function start(a){
     emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
       names.push(n); if(e===loginEmail&&yes(f.Admin)) IS_ADMIN=true; });
     if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
-    if(!IS_ADMIN){ document.body.innerHTML='<div style="max-width:420px;margin:80px auto;text-align:center;font-family:sans-serif"><h2>Admins only</h2><p>Fleet &amp; DOT is limited to admins (set in Employee Setup). You are signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
     E("app").style.display="block"; E("vtabs").classList.add("on");
     names.sort(); E("emplist").innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">';}).join("");
     var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999");
@@ -155,7 +154,8 @@ async function start(a){
     if(!L){ E("topMsg").textContent="The “"+LIST_NAME+"” list isn't set up in SharePoint yet."; E("bar").style.display="none"; return; }
     LIST_ID=L.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
   }catch(e){ E("app").style.display="block"; E("topMsg").textContent="Couldn't load ("+e.message+")."; return; }
-  E("topMsg").style.display="none";
+  if(IS_ADMIN) E("topMsg").style.display="none";
+  else { E("topMsg").textContent="View only — the office keeps the fleet list up to date."; E("addBtn").style.display="none"; E("csvBtn").style.display="none"; }
   ["q","ftype"].forEach(function(id){ E(id).addEventListener("input",render); });
   await load();
 }
@@ -187,7 +187,7 @@ function render(){
     return '<div class="cert"'+(oos?' style="opacity:.55"':'')+'><div class="m"><div class="t">'+esc(r.Title||"(no unit #)")+(r.YearMakeModel?' <span style="font-weight:600;color:#6b7280">· '+esc(r.YearMakeModel)+'</span>':'')+(oos?'<span class="unv" style="color:#475569">OUT OF SERVICE</span>':'')+'</div><div class="s">'+
       [r.UnitType?esc(r.UnitType):"",r.Plate?("Plate "+esc(r.Plate)):"",r.GVWR?(esc(r.GVWR)+" lbs GVWR"):"",r.AssignedTo?esc(r.AssignedTo):"",r.LastInspection?("Last inspected "+nice(r.LastInspection)):"",r.Notes?esc(r.Notes):""].filter(Boolean).join(" · ")+
       (r.InspectionDoc?' · <a href="'+esc(r.InspectionDoc)+'" target="_blank">Report</a>':'')+'</div></div>'+
-      (oos?'':'<div class="pills">'+pill("DOT",r.InspectionDue)+pill("Reg",r.RegistrationDue)+'</div>')+'<button class="ed" data-id="'+r._id+'" title="Edit">&#9998;</button></div>'; }).join("")+'</div>';
+      (oos?'':'<div class="pills">'+pill("DOT",r.InspectionDue)+pill("Reg",r.RegistrationDue)+'</div>')+(IS_ADMIN?'<button class="ed" data-id="'+r._id+'" title="Edit">&#9998;</button>':'')+'</div>'; }).join("")+'</div>';
   E("list").querySelectorAll(".ed").forEach(function(b){ b.onclick=function(){ openForm(ROWS.filter(function(r){return r._id===b.getAttribute("data-id");})[0]); }; });
 }
 
