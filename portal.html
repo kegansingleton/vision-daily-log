@@ -184,8 +184,9 @@ function applyRoles(acct){
       showRoles(r);
       try{ localStorage.setItem("vm_roles_v1",JSON.stringify({em:em,r:r})); }catch(e){}
     }).catch(function(e){ roleNote("Couldn't check your access ("+e.message+"). Office buttons may be hidden — tell the office."); });
-  }).catch(function(){
+  }).catch(function(e){
     /* first visit on this device: get the data permission once, then come back */
+    roleNote("Couldn't confirm your access on this device ("+(e&&(e.errorCode||e.message)||"sign-in")+"). Sign out and back in; if office buttons are still missing, tell the office.");
     try{ if(!sessionStorage.getItem("vm_roles_try")){ sessionStorage.setItem("vm_roles_try","1"); msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:acct}); } }catch(e){}
   });
 }
