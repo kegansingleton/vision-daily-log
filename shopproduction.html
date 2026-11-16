@@ -178,10 +178,23 @@ async function afterLogin(acct){
   if(!ok){ document.body.innerHTML='<div class="denied"><h2>Not authorized</h2><p>Shop Fab Run is limited to shop staff — tick <b>Shop access</b> in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName;
   E("rundate").value=todayISO();
-  setType("Sheet Metal"); loadJobs();
+  setType("Sheet Metal"); loadJobs().then(applyPrefill);
   try{ var t=await getToken(); var c=await fetch(GRAPH+SHOP+"/columns?$select=name,readOnly",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}); SHOP_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) SHOP_COLS[x.name]=1; }); }catch(e){ SHOP_COLS=null; }
 }
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
+/* ===== Opened from the Shop Queue: pre-fill from a fitting ticket (?ft=&job=&phase=&lbs=&mat=&liner=&notes=) ===== */
+function applyPrefill(){ var q=new URLSearchParams(location.search); if(!q.get("ft")&&!q.get("job")) return;
+  var ph=q.get("phase")||""; var t=Object.keys(SHOP_PHASES).filter(function(k){ return SHOP_PHASES[k].some(function(p){return p[0]===ph;}); })[0]||"Sheet Metal";
+  setType(t);
+  if(q.get("job")){ E("job").value=q.get("job"); }
+  if(ph) E("phase").value=ph;
+  if(q.get("lbs")) E("output").value=q.get("lbs");
+  var mat=q.get("mat"); if(mat){ var o=Array.prototype.filter.call(E("material").options,function(x){return x.value===mat||x.textContent===mat;})[0]; if(o) E("material").value=o.value; }
+  var ln=q.get("liner"); if(ln){ var o2=Array.prototype.filter.call(E("liner").options,function(x){return x.textContent===ln;})[0]; if(o2) E("liner").value=o2.value; }
+  if(q.get("notes")) E("notes").value=q.get("notes");
+  ["job","phase"].forEach(function(id){ E(id).dispatchEvent(new Event("change")); }); renderRate();
+  E("msg").className="msg info"; E("msg").textContent="Filled in from fitting ticket "+(q.get("ft")||"")+". The pounds are an estimate — weigh it and fix the number before you log.";
+}
 async function hasShopAccess(){
   try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName");
     return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail; });

@@ -78,6 +78,7 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="tab" data-tab="su">Start-Up Reports</div>
     <div class="tab" data-tab="tm" style="display:none">T&amp;M / Pre-Task</div>
     <div class="tab" data-tab="shop" style="display:none">Shop</div>
+    <div class="tab" data-tab="ft" style="display:none">Fittings</div>
   </div>
 
   <div class="panel" id="panel-tc">
@@ -104,6 +105,9 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
   <div class="panel" id="panel-tm" style="display:none">
     <h3 class="subh">T&amp;M tickets</h3><div class="tablewrap" id="tmTbl"><div class="empty">Loading…</div></div>
     <h3 class="subh">Pre-task plans</h3><div class="tablewrap" id="ptTbl"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="panel" id="panel-ft" style="display:none">
+    <h3 class="subh">Fitting tickets sent to the shop</h3><div class="tablewrap" id="ftTbl"><div class="empty">Loading…</div></div>
   </div>
   <div class="panel" id="panel-shop" style="display:none">
     <h3 class="subh">Shop daily logs</h3><div class="tablewrap" id="slTbl"><div class="empty">Loading…</div></div>
@@ -152,6 +156,7 @@ document.querySelectorAll(".tab").forEach(function(t){
     E("panel-logs").style.display=id==="logs"?"block":"none";
     E("panel-look").style.display=id==="look"?"block":"none";
     E("panel-svc").style.display=id==="svc"?"block":"none";
+    if(E("panel-ft")) E("panel-ft").style.display=id==="ft"?"block":"none";
     E("panel-su").style.display=id==="su"?"block":"none";
     E("panel-tm").style.display=id==="tm"?"block":"none";
     E("panel-shop").style.display=id==="shop"?"block":"none";
@@ -239,13 +244,14 @@ async function loadSU(){
 /* ===== T&M, pre-task, shop log, shop bill-outs: found by list name; a tab only appears if you have something in it ===== */
 async function loadExtras(){
   var L={}; try{ var token=await getToken(); var j=await fetch(GRAPH.replace(/lists\/$/,"lists?$select=id,displayName&$top=999"),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); (j.value||[]).forEach(function(l){ L[(l.displayName||"").toLowerCase()]=l.id; }); }catch(e){}
-  var from=iso(addDays(new Date(),-120)), found={tm:0,shop:0};
+  var from=iso(addDays(new Date(),-120)), found={tm:0,shop:0,ft:0};
   function job(f){ return ((f.JobNo||"")+" "+(f.JobName||"")).trim(); }
   function money(n){ return "$"+(Math.round((parseFloat(n)||0)*100)/100).toFixed(2); }
   var defs=[
     {name:"t&m tickets",el:"tmTbl",tab:"tm",date:"WorkDate",sel:"WorkDate,TicketNo,JobNo,JobName,SignedStatus,LaborHours,OTHours,LoginEmail",cols:[["Date",function(f){return shortD(f.WorkDate);}],["Ticket",function(f){return f.TicketNo||"";}],["Job",job],["Signed",function(f){return f.SignedStatus||"";}],["Hours",function(f){return (f.LaborHours||0)+(f.OTHours?" + "+f.OTHours+" OT":"");}]]},
     {name:"pre-task plans",el:"ptTbl",tab:"tm",date:"PlanDate",sel:"PlanDate,JobNo,JobName,ToolboxTopic,CrewCount,LoginEmail",cols:[["Date",function(f){return shortD(f.PlanDate);}],["Job",job],["Toolbox talk",function(f){return f.ToolboxTopic||"";}],["Crew",function(f){return f.CrewCount||"";}]]},
     {name:"shop daily logs",el:"slTbl",tab:"shop",date:"LogDate",sel:"LogDate,Foreman,Jobs,JobCount,ShopHours,ActionItemsCreated,LoginEmail",cols:[["Date",function(f){return shortD(f.LogDate);}],["Jobs",function(f){return (f.JobCount||0)+": "+(f.Jobs||"");}],["Shop hrs",function(f){return f.ShopHours||0;}],["Action items",function(f){return f.ActionItemsCreated||"";}]]},
+    {name:"fitting tickets",el:"ftTbl",tab:"ft",date:"SubmittedDate",sel:"SubmittedDate,TicketNo,JobNo,JobName,NeededBy,Status,Priority,ItemCount,EstLbs,ShopNotes,LoginEmail",cols:[["Ticket",function(f){return (f.TicketNo||"")+(f.Priority==="Rush"?" · RUSH":"");}],["Job",job],["Needed",function(f){return shortD(f.NeededBy);}],["Status",function(f){return (f.Status||"New")+(f.ShopNotes?" — "+f.ShopNotes:"");}],["Fittings",function(f){return (f.ItemCount||0)+" · ≈"+(f.EstLbs||0)+" lb";}]]},
     {name:"shop bill-outs",el:"sbTbl",tab:"shop",date:"RunDate",sel:"RunDate,JobNo,JobName,PhaseCode,Total,LoginEmail",cols:[["Date",function(f){return shortD(f.RunDate);}],["Job",job],["Phase",function(f){return f.PhaseCode||"";}],["Total",function(f){return money(f.Total);}]]}
   ];
   for(var i=0;i<defs.length;i++){ var d=defs[i], id=L[d.name];

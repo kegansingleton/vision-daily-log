@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Shop Queue</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7;--blu:#1d4ed8;--blubg:#dbeafe}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1000px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px 12px 60px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{padding:9px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:13.5px;cursor:pointer;color:var(--gry)}
+.tabs button.on{background:var(--vm);border-color:var(--vm);color:#fff}.tabs .c{display:inline-block;margin-left:6px;background:rgba(0,0,0,.08);border-radius:10px;padding:0 7px;font-size:12px}
+.tk{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;display:flex;gap:12px;align-items:center;cursor:pointer}
+.tk:hover{border-color:#cbd5e1}.tk .m{flex:1;min-width:0}.tk .t{font-weight:800;font-size:15.5px}.tk .s{font-size:13px;color:var(--mut);margin-top:3px}
+.pill{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap;display:inline-block}
+.st-New{background:var(--blubg);color:var(--blu)}.st-Cutting{background:var(--ambbg);color:var(--amb)}.st-Done{background:var(--okbg);color:var(--ok)}.st-Delivered{background:var(--grybg);color:var(--gry)}
+.rush{background:var(--red);color:#fff}.late{color:var(--red);font-weight:800}
+.det{background:#fff;border:2px solid var(--vm);border-radius:12px;padding:12px;margin:8px 0}
+.det .acts{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.sb{display:flex;gap:6px;flex-wrap:wrap}.sb button{flex:1;min-width:90px;padding:10px;border-radius:9px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;cursor:pointer;color:var(--gry)}
+.sb button.on{color:#fff}.sb button.on[data-s="New"]{background:var(--blu);border-color:var(--blu)}.sb button.on[data-s="Cutting"]{background:var(--amb);border-color:var(--amb)}.sb button.on[data-s="Done"]{background:var(--ok);border-color:var(--ok)}.sb button.on[data-s="Delivered"]{background:var(--gry);border-color:var(--gry)}
+.rep{border:1px solid var(--line);border-radius:10px;padding:10px;overflow:auto;margin-top:10px}.rep img{max-width:100%}
+.fab{background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}
+.fab h4{margin:0 0 6px;font-size:13px;color:var(--vm2)}
+.fab a{margin:3px 4px 3px 0}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+textarea{width:100%;padding:10px;font-size:15px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit}
+.log{font-size:12px;color:var(--mut);white-space:pre-wrap;margin-top:6px}
+.empty{color:var(--mut);font-size:14px;padding:30px 4px;text-align:center}
+.msg{font-size:13px;margin-left:6px}
+input[type=search]{width:100%;padding:10px;font-size:15px;border:1.5px solid #9ca3af;border-radius:9px;background:#fff;margin-bottom:8px}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Shop Queue</h1><p>Fitting tickets from the field. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Shop Queue</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="tabs" id="tabs"></div>
+  <input type="search" id="q" placeholder="Search ticket, job, person, mark…">
+  <div id="list"><div class="empty">Loading tickets…</div></div>
+</div>
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", L_FT="Fitting Tickets";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var STATUSES=["New","Cutting","Done","Delivered"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", MY_NAME="", LIST_ID=null, COLS={}, ROWS=[], TAB="open", OPEN=null;
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=d10(s); if(!s) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2]); }
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,160)); } return r.status===204?null:r.json(); }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase(); E("gate").style.display="none"; E("who").textContent=a.name||a.username;
+  var ok=VM_SUPER.indexOf(loginEmail)>-1;
+  try{ var url=GRAPH+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,ShopAccess,Active)&$top=999";
+    while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ var f=it.fields||{}; var em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(em===loginEmail){ MY_NAME=f.EmployeeName||""; if(yes(f.Admin)||yes(f.ShopAccess)) ok=true; } }); url=j["@odata.nextLink"]||null; } }catch(e){}
+  if(!MY_NAME) MY_NAME=a.name||a.username;
+  if(!ok){ document.body.innerHTML='<div style="max-width:440px;margin:60px auto;text-align:center;font-family:sans-serif"><h2 style="color:#7f1d1d">Shop only</h2><p>The Shop Queue is for shop staff and admins (Shop access in Employee Setup). Signed in as <b>'+esc(loginEmail)+'</b>.</p><p>Sent a ticket? Track it in <a href="/mysubmissions.html">My Submissions</a>.</p></div>'; return; }
+  E("app").style.display="block";
+  try{ var L=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999"); var l=(L.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()===L_FT.toLowerCase();})[0];
+    if(!l){ E("list").innerHTML='<div class="empty">The “Fitting Tickets” list isn\'t set up in SharePoint yet.</div>'; return; }
+    LIST_ID=l.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); (c.value||[]).forEach(function(x){ if(!x.readOnly) COLS[x.name]=1; });
+  }catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load ('+esc(e.message)+').</div>'; return; }
+  E("q").oninput=render; await load(); setInterval(function(){ if(!OPEN) load(); },120000);
+}
+async function load(){
+  var sel="TicketNo,JobNo,JobName,RequestedBy,LoginEmail,SubmittedDate,NeededBy,Priority,Status,DeliverTo,Notes,ItemCount,PieceCount,EstLbs,GaugeSummary,Items,ShopNotes,StatusLog,CompletedDate,DeliveredDate,FabRunLogged";
+  sel=sel.split(",").filter(function(k){return COLS[k]||k==="Title";}).join(",");
+  var url=GRAPH+LIST_ID+"/items?$expand=fields($select=Title,"+sel+")&$top=999", out=[];
+  try{ while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; it.fields._mod=it.lastModifiedDateTime; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } }
+  catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load tickets ('+esc(e.message)+').</div>'; return; }
+  ROWS=out; render(); }
+function rank(r){ return (r.Priority==="Rush"?"0":"1")+(d10(r.NeededBy)||"9999")+String(r._id).padStart(8,"0"); }
+function render(){
+  var counts={open:0}; STATUSES.forEach(function(s){counts[s]=0;}); counts.all=ROWS.length;
+  ROWS.forEach(function(r){ var s=r.Status||"New"; counts[s]=(counts[s]||0)+1; if(s==="New"||s==="Cutting") counts.open++; });
+  var T=[["open","Open (new + cutting)"],["New","New"],["Cutting","Cutting"],["Done","Done — ready"],["Delivered","Delivered"],["all","All"]];
+  E("tabs").innerHTML=T.map(function(t){return '<button data-t="'+t[0]+'"'+(TAB===t[0]?' class="on"':'')+'>'+esc(t[1])+'<span class="c">'+(counts[t[0]]||0)+'</span></button>';}).join("");
+  E("tabs").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ TAB=b.getAttribute("data-t"); OPEN=null; render(); }; });
+  var q=E("q").value.toLowerCase().trim(), td=today();
+  var rows=ROWS.filter(function(r){ var s=r.Status||"New"; if(TAB==="open"&&!(s==="New"||s==="Cutting")) return false; if(TAB!=="open"&&TAB!=="all"&&s!==TAB) return false;
+    if(q&&[r.TicketNo,r.JobNo,r.JobName,r.RequestedBy,r.DeliverTo,r.Notes,r.Items].join(" ").toLowerCase().indexOf(q)<0) return false; return true; })
+    .sort(function(a,b){ if(TAB==="Delivered"||TAB==="all") return String(b._id).localeCompare(String(a._id),undefined,{numeric:true}); return rank(a).localeCompare(rank(b)); });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(ROWS.length?"Nothing here.":"No fitting tickets yet.")+'</div>'; return; }
+  E("list").innerHTML=rows.map(function(r){ var s=r.Status||"New", nd=d10(r.NeededBy), late=nd&&nd<td&&(s==="New"||s==="Cutting");
+    var card='<div class="tk" data-id="'+r._id+'"><div class="m"><div class="t">'+esc(r.TicketNo||("#"+r._id))+' · '+esc(r.JobName||r.JobNo||"")+'</div><div class="s">'+esc(r.RequestedBy||"")+' · '+esc(r.ItemCount||0)+' fittings, '+esc(r.PieceCount||0)+' pc · ≈ '+esc(r.EstLbs||0)+' lb'+(r.DeliverTo?' · → '+esc(r.DeliverTo):'')+'</div><div class="s">'+esc(r.GaugeSummary||"")+'</div></div>'+
+      '<div style="text-align:right">'+(r.Priority==="Rush"?'<span class="pill rush">RUSH</span><br>':'')+'<span class="pill st-'+esc(s)+'">'+esc(s)+'</span><div class="s'+(late?' late':'')+'" style="margin-top:4px">'+(nd?(late?"LATE · ":"")+"need "+nice(nd):"")+'</div></div></div>';
+    return card+(OPEN===r._id?'<div class="det" id="det"><div class="empty">Opening…</div></div>':''); }).join("");
+  E("list").querySelectorAll(".tk").forEach(function(el){ el.onclick=function(){ var id=el.getAttribute("data-id"); OPEN=(OPEN===id)?null:id; render(); if(OPEN) openDet(OPEN); }; });
+}
+function rowById(id){ return ROWS.filter(function(r){return r._id===id;})[0]; }
+function fabGroups(r){ var items=[]; try{ items=JSON.parse(r.Items||"[]"); }catch(e){} var g={};
+  items.forEach(function(it){ var k=(it.phase||"1250")+"|"+(it.gauge||""); g[k]=g[k]||{phase:it.phase||"1250",gauge:it.gauge||"",lbs:0,pcs:0,liner:{},marks:[]}; g[k].lbs+=+it.lbs||0; g[k].pcs+=+it.qty||1; g[k].marks.push(it.mark); if(it.liner&&it.liner!=="None") g[k].liner[it.liner]=(g[k].liner[it.liner]||0)+(+it.qty||1); });
+  return Object.keys(g).map(function(k){return g[k];}); }
+async function openDet(id){ var r=rowById(id), box=E("det"); if(!r||!box) return; var html="";
+  try{ var j=await gfetch(GRAPH+LIST_ID+"/items/"+id+"?$expand=fields($select=ReportHTML)"); html=(j.fields||{}).ReportHTML||""; }catch(e){ html='<div class="empty">Couldn\'t load the drawings ('+esc(e.message)+').</div>'; }
+  if(OPEN!==id||!E("det")) return; var s=r.Status||"New";
+  var gs=fabGroups(r), fab=gs.filter(function(g){return g.lbs>0||g.pcs>0;}).map(function(g){ var ln=Object.keys(g.liner).sort(function(a,b){return g.liner[b]-g.liner[a];})[0]||"None";
+    var q="ft="+encodeURIComponent(r.TicketNo||"")+"&job="+encodeURIComponent(r.JobNo||"")+"&phase="+g.phase+"&lbs="+Math.round(g.lbs)+"&mat="+encodeURIComponent(g.gauge+" ga galv")+"&liner="+encodeURIComponent(ln)+"&notes="+encodeURIComponent((r.TicketNo||"")+" "+g.marks.join(", "));
+    return '<a class="btn btn-g btn-s" target="_blank" href="/shopproduction.html?'+q+'">'+g.phase+' '+(g.phase==="1230"?"duct":"fittings")+' · '+esc(g.gauge)+' ga · ≈'+Math.round(g.lbs)+' lb</a>'; }).join("");
+  box.innerHTML='<div class="sb">'+STATUSES.map(function(x){return '<button data-s="'+x+'"'+(x===s?' class="on"':'')+'>'+x+'</button>';}).join("")+'</div>'+
+    '<div class="acts"><button class="btn btn-g btn-s" id="prBtn">&#128424; Print ticket</button><span class="msg" id="dMsg"></span></div>'+
+    (r.Notes?'<div style="padding:8px;background:#fef3c7;border-radius:8px;font-size:14px;white-space:pre-wrap">'+esc(r.Notes)+'</div>':'')+
+    '<div class="fab"><h4>Log it as a Fab Run</h4><div class="s" style="font-size:12.5px;color:#6b7280;margin-bottom:4px">Opens Fab Run pre-filled with the job, phase, gauge and estimated pounds — weigh it and fix the pounds before you log.'+(r.FabRunLogged?' <b style="color:#15803d">Logged: '+esc(r.FabRunLogged)+'</b>':'')+'</div>'+(fab||'<span class="s">Nothing to log.</span>')+'</div>'+
+    '<label>Shop notes (the field sees these in My Submissions)</label><textarea id="sNotes" rows="2">'+esc(r.ShopNotes||"")+'</textarea><button class="btn btn-g btn-s" id="snSave" style="margin-top:6px">Save note</button>'+
+    (r.StatusLog?'<div class="log">'+esc(r.StatusLog)+'</div>':'')+
+    '<div class="rep" id="rep">'+html+'</div>';
+  box.querySelectorAll(".sb button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); setStatus(id,b.getAttribute("data-s")); }; });
+  E("prBtn").onclick=function(){ printTicket(r,html); };
+  E("snSave").onclick=function(){ patch(id,{ShopNotes:E("sNotes").value.trim()},"Note saved."); };
+  box.querySelectorAll(".fab a").forEach(function(a){ a.addEventListener("click",function(){ var lg=String(r.FabRunLogged||""); var tag=a.textContent.split(" · ").slice(0,2).join(" "); if(lg.indexOf(tag)<0) patch(id,{FabRunLogged:(lg?lg+"; ":"")+tag},null); }); });
+  box.onclick=function(e){ e.stopPropagation(); };
+}
+async function patch(id,f,okMsg){ var r=rowById(id); Object.keys(f).forEach(function(k){ if(!COLS[k]) delete f[k]; }); if(!Object.keys(f).length) return;
+  try{ await gfetch(GRAPH+LIST_ID+"/items/"+id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)}); Object.assign(r,f); if(okMsg&&E("dMsg")){ E("dMsg").style.color="#15803d"; E("dMsg").textContent=okMsg; } }
+  catch(e){ if(E("dMsg")){ E("dMsg").style.color="#b91c1c"; E("dMsg").textContent="Didn't save ("+e.message+")"; } } }
+async function setStatus(id,s){ var r=rowById(id); if((r.Status||"New")===s) return;
+  var f={Status:s, StatusLog:(r.StatusLog?r.StatusLog+"\n":"")+new Date().toLocaleString()+" · "+s+" · "+MY_NAME, Title:String(r.Title||"")};
+  if(s==="Done") f.CompletedDate=today()+"T12:00:00Z"; if(s==="Delivered") f.DeliveredDate=today()+"T12:00:00Z";
+  delete f.Title; await patch(id,f,"Marked "+s+".");
+  var keep=OPEN; render(); if(keep){ OPEN=keep; render(); openDet(keep); } }
+function printTicket(r,html){ var w=window.open("","_blank"); if(!w){ alert("Allow pop-ups to print."); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(r.TicketNo||"Fitting ticket")+'</title><style>body{font-family:Arial,Helvetica,sans-serif;margin:18px;color:#111}img{max-width:100%}@media print{body{margin:8mm}.np{display:none}}</style></head><body>'+html+
+    (r.ShopNotes?'<p><b>Shop notes:</b> '+esc(r.ShopNotes)+'</p>':'')+'<p style="font-size:12px;color:#555">Status: '+esc(r.Status||"New")+' · printed '+esc(new Date().toLocaleString())+'</p><div class="np"><button onclick="window.print()">Print</button></div><script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+  w.document.close(); }
+</script>
+</body>
+</html>

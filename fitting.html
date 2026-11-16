@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Fitting Ticket</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:900px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:900px;margin:0 auto;padding:12px 12px 100px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+input,select,textarea{width:100%;padding:10px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:560px){.g3{grid-template-columns:1fr 1fr}}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:10px;border-radius:9px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:var(--gry)}
+.seg button.on{background:var(--vm);border-color:var(--vm);color:#fff}.seg button.on.rush{background:var(--red);border-color:var(--red)}
+.item{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:8px;margin:8px 0;background:#fff}
+.item .th{width:120px;flex:0 0 120px;border:1px solid #eef0f3;border-radius:8px;overflow:hidden;background:#fff}.item .th svg,.item .th img{width:100%;height:auto;display:block}
+.item .m{flex:1;min-width:0}.item .t{font-weight:800;font-size:15px}.item .s{font-size:12.5px;color:var(--mut);margin-top:2px}
+.item .acts{display:flex;flex-direction:column;gap:4px}
+.mark{display:inline-block;background:var(--vm2);color:#fff;border-radius:6px;padding:1px 7px;font-size:12px;margin-right:6px}
+.empty{color:var(--mut);font-size:14px;padding:12px 2px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.bar .in{max-width:900px;margin:0 auto;display:flex;gap:8px;align-items:center}.bar .in .btn{padding:13px 18px}
+.bar .cnt{flex:1;font-size:13px;color:var(--gry);font-weight:700}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:10px;overflow:auto}
+.modal .box{background:#fff;max-width:760px;margin:0 auto;border-radius:12px;padding:14px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center}
+.types .gh{font-size:11.5px;font-weight:800;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+.types .tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.types button{border:1.5px solid #cbd5e1;background:#fff;border-radius:10px;padding:6px;cursor:pointer;text-align:center;font-weight:700;font-size:12.5px;color:var(--ink)}
+.types button svg{width:100%;height:auto;display:block}
+.types button:hover{border-color:var(--vm)}
+.edgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.edgrid{grid-template-columns:1fr}}
+.prev{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;position:sticky;top:6px}
+.prev svg{width:100%;height:auto;display:block}
+.est{font-size:13px;font-weight:800;color:var(--gry);padding:8px 10px;border-top:1px solid var(--line);background:#fafbfc}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;touch-action:none;background:#fff;display:block}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Fitting Ticket</h1><p>Draw up duct &amp; fittings and send them to the shop. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Fitting Ticket</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg" id="topMsg"></div>
+  <div class="card">
+    <h2>1. Ticket</h2>
+    <label>Job</label><select id="job"><option value="">Loading jobs…</option></select>
+    <div class="g2">
+      <div><label>Needed by</label><input type="date" id="need"></div>
+      <div><label>Priority</label><div class="seg" id="prio"><button data-v="Normal" class="on">Normal</button><button data-v="Rush" class="rush">Rush</button></div></div>
+    </div>
+    <label>Deliver to / area</label><input type="text" id="deliver" placeholder="e.g. Level 2 east, or job trailer">
+    <label>Notes to the shop</label><textarea id="notes" rows="2" placeholder="Anything that applies to the whole ticket"></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span>2. Fittings <span id="cnt" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-p btn-s" id="addBtn">+ Add fitting</button></h2>
+    <div id="items"><div class="empty">Tap <b>+ Add fitting</b>. Pick the type, type the dimensions — it draws it for you.</div></div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<div class="bar" id="bar" style="display:none"><div class="in">
+  <div class="cnt" id="barCnt">0 fittings</div>
+  <button class="btn btn-p" id="submitBtn">Send to shop</button>
+</div></div>
+
+<div class="modal" id="typeModal"><div class="box">
+  <h2>Pick a fitting <button class="btn btn-g btn-s" id="tmClose">Close</button></h2>
+  <div class="types" id="typeGrid"></div>
+</div></div>
+
+<div class="modal" id="edModal"><div class="box">
+  <h2><span id="edTitle">Fitting</span><button class="btn btn-g btn-s" id="edType">Change type</button></h2>
+  <div class="edgrid">
+    <div>
+      <div class="g3">
+        <div><label>Mark / tag</label><input type="text" id="eMark" placeholder="F-1"></div>
+        <div><label>Qty</label><input type="number" id="eQty" inputmode="numeric" min="1" value="1"></div>
+        <div><label>Gauge</label><select id="eGa"></select></div>
+      </div>
+      <div id="eDims"></div>
+      <div id="eSketch" style="display:none">
+        <label>Sketch it (finger or mouse)</label>
+        <canvas class="sk" id="skc" width="700" height="480"></canvas>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn btn-g btn-s" id="skUndo">Undo</button><button class="btn btn-g btn-s" id="skClear">Clear</button><label class="btn btn-g btn-s" style="margin:0;color:var(--vm)">&#128247; Photo of a paper sketch<input type="file" id="skPhoto" accept="image/*" style="display:none"></label></div>
+        <img id="skImg" style="max-width:100%;margin-top:6px;border-radius:8px;display:none">
+        <label>Describe it (sizes, what it connects to)</label><textarea id="skDesc" rows="3"></textarea>
+      </div>
+      <div class="g2">
+        <div><label>Connections</label><select id="eConn"></select></div>
+        <div><label>Liner</label><select id="eLiner"></select></div>
+      </div>
+      <label>Dimensions are</label><select id="eDimsAre"><option>Sheet metal (outside)</option><option>Inside clear — add liner</option></select>
+      <label>Notes for this fitting</label><textarea id="eNotes" rows="2" placeholder="e.g. 2&quot; standing seam, insulate, access door"></textarea>
+    </div>
+    <div>
+      <div class="prev"><div id="ePrev"></div><div class="est" id="eEst"></div></div>
+    </div>
+  </div>
+  <div class="msg" id="edMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="edCancel">Cancel</button><button class="btn btn-p" id="edSave">Save fitting</button></div>
+</div></div>
+
+<script>
+/* ===================== Fitting geometry, drawings & weights =====================
+   All dims in inches. Each type: fields [key,label,default,kind] (kind n=number, s=select:opts, b=checkbox),
+   draw(d) -> primitives in inch coords (y down), area(d) -> sq in of sheet (before seam allowance). */
+var GA_LB={"26":0.906,"24":1.156,"22":1.406,"20":1.656,"18":2.156,"16":2.656};
+var GAUGES=["26","24","22","20","18","16"];
+var CONN_R=["TDF","S&D","Raw","Angle flange","Bar slip"], CONN_O=["Crimp","Bead","Raw","Spiral coupling"];
+var LINERS=["None",'1/2"','1"','1-1/2"','2"'];
+var SEAM=1.15; /* +15% for seams, connections, waste */
+function rad(a){return a*Math.PI/180;}
+function arcPts(cx,cy,r,a0,a1,n){ var p=[]; n=n||24; for(var i=0;i<=n;i++){ var a=rad(a0+(a1-a0)*i/n); p.push([cx+r*Math.cos(a),cy-r*Math.sin(a)]); } return p; }
+function P(pts,o){ return Object.assign({t:"poly",pts:pts,closed:true},o||{}); }
+function Ln(a,b,o){ return Object.assign({t:"poly",pts:[a,b],closed:false},o||{}); }
+function D(a,b,off,label){ return {t:"dim",a:a,b:b,off:off,label:label}; }
+function T(p,s,o){ return Object.assign({t:"text",p:p,s:s},o||{}); }
+function f1(n){ n=+n||0; return (Math.round(n*100)/100)+'"'; }
+
+var FT=[
+ {k:"straight",name:"Straight duct",grp:"Rectangular",phase:"1230",
+  fields:[["W","Width",24],["H","Height",12],["L","Length",60]],
+  draw:function(d){ var g=Math.max(d.W,d.H)*0.5+6; var x2=d.L+g;
+    return [P([[0,0],[d.L,0],[d.L,d.H],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,0],[d.L,0],-18,f1(d.L)),D([0,d.H],[0,0],-18,f1(d.H)),
+      P([[x2,0],[x2+d.W,0],[x2+d.W,d.H],[x2,d.H]]),T([x2+d.W/2,d.H/2],"FACE",{c:1,muted:1}),D([x2,d.H],[x2+d.W,d.H],18,f1(d.W))]; },
+  area:function(d){return 2*(d.W+d.H)*d.L;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" × "+d.L+'" long';}},
+ {k:"elbow",name:"Radius elbow",grp:"Rectangular",phase:"1250",
+  fields:[["W","Width (in the turn)",24],["H","Depth",12],["A","Angle °",90],["R","Throat radius",6]],
+  draw:function(d){ var R=d.R, O=d.R+d.W, A=Math.min(Math.max(d.A,5),180);
+    var pts=arcPts(0,0,O,0,A,30).concat(arcPts(0,0,R,A,0,30));
+    return [P(pts),Ln([0,0],[R,0],{dash:1}),Ln([0,0],[R*Math.cos(rad(A)),-R*Math.sin(rad(A))],{dash:1}),D([R,0],[O,0],22,f1(d.W)),Object.assign(D([0,0],[R,0],22,"R "+f1(R)),{keep:1}),
+      T([O*0.55*Math.cos(rad(A/2)),-O*0.55*Math.sin(rad(A/2))],A+"°",{c:1}),T([O*0.5,-O*1.02],"Depth "+f1(d.H),{c:1,muted:1})]; },
+  area:function(d){ var th=rad(d.A); return 2*(d.A/360*Math.PI*(Math.pow(d.R+d.W,2)-d.R*d.R))+d.H*th*(d.R+d.W)+d.H*th*d.R; },
+  max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" "+d.A+"° elbow, "+d.R+'" throat';}},
+ {k:"sqelbow",name:"Square elbow (vanes)",grp:"Rectangular",phase:"1250",
+  fields:[["W1","Inlet width",24],["W2","Outlet width",24],["H","Depth",12],["V","Turning vanes","Yes","s:Yes,No"]],
+  draw:function(d){ var E=Math.max(d.W1,d.W2)*0.35, a=d.W1, b=d.W2;
+    var pr=[P([[0,0],[a+E,0],[a+E,b],[a,b],[a,b+E],[0,b+E]]),D([0,b+E],[a,b+E],18,f1(a)),D([a+E,0],[a+E,b],18,f1(b)),T([a+E+4,b+E*0.7],"Depth "+f1(d.H),{muted:1}),
+      T([a/2,b+E-3],"IN",{c:1,muted:1}),T([a+E-5,b/2],"OUT",{c:1,muted:1})];
+    if(d.V==="Yes"){ var n=Math.max(3,Math.round(Math.max(a,b)/4)); for(var i=1;i<n;i++){ var t=i/n, cx=a*t, cy=b*t, r=Math.min(a,b)*0.12; pr.push({t:"poly",pts:arcPts(cx+r,cy+r,r,90,180,8),closed:false,thin:1}); } }
+    return pr; },
+  area:function(d){return 2*d.W1*d.W2+d.H*(d.W1+d.W2)*1.4;}, max:function(d){return Math.max(d.W1,d.W2,d.H);}, desc:function(d){return d.W1+"→"+d.W2+" x"+d.H+" square elbow"+(d.V==="Yes"?" w/ vanes":"");}},
+ {k:"offset",name:"Offset",grp:"Rectangular",phase:"1250",
+  fields:[["W","Width (offset side)",24],["H","Depth",12],["L","Length",36],["O","Offset",12]],
+  draw:function(d){ var L=d.L, O=d.O, W=d.W, s=L*0.18;
+    return [P([[0,0],[s,0],[L-s,O],[L,O],[L,O+W],[L-s,O+W],[s,W],[0,W]]),D([0,W],[0,0],-18,f1(W)),D([0,O+W],[L,O+W],18,f1(L)),D([L,0],[L,O],18,"Off "+f1(O)),Ln([s,0],[L,0],{dash:1}),T([L/2,-6],"Depth "+f1(d.H),{c:1,muted:1})]; },
+  area:function(d){return 2*(d.W+d.H)*Math.sqrt(d.L*d.L+d.O*d.O);}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+", "+d.O+'" offset in '+d.L+'"';}},
+ {k:"trans",name:"Transition",grp:"Rectangular",phase:"1250",
+  fields:[["W1","Inlet width",24],["H1","Inlet height",12],["W2","Outlet width",18],["H2","Outlet height",12],["L","Length",24],["AL","Alignment","Concentric","s:Concentric,Flat top,Flat bottom,Flat top & side"]],
+  draw:function(d){ var L=d.L, top=function(a,b){ return d.AL==="Flat top"||d.AL==="Flat top & side"?0:(d.AL==="Flat bottom"?(a-b):(a-b)/2); };
+    var y2=top(d.H1,d.H2), gy=d.H1+Math.max(10,d.H1*0.6), sx=(d.AL==="Flat top & side")?0:(d.W1-d.W2)/2;
+    return [P([[0,0],[L,y2],[L,y2+d.H2],[0,d.H1]]),T([L/2,(d.H1)/2],"SIDE",{c:1,muted:1}),D([0,d.H1],[0,0],-18,f1(d.H1)),D([L,y2],[L,y2+d.H2],18,f1(d.H2)),D([0,0],[L,0],-14-Math.max(0,-y2),f1(L)),
+      P([[0,gy],[L,gy+sx],[L,gy+sx+d.W2],[0,gy+d.W1]]),T([L/2,gy+d.W1/2],"TOP",{c:1,muted:1}),D([0,gy+d.W1],[0,gy],-18,f1(d.W1)),D([L,gy+sx],[L,gy+sx+d.W2],18,f1(d.W2))]; },
+  area:function(d){return (2*(d.W1+d.H1)+2*(d.W2+d.H2))/2*Math.sqrt(d.L*d.L+Math.pow(Math.max(Math.abs(d.W1-d.W2),Math.abs(d.H1-d.H2))/2,2));},
+  max:function(d){return Math.max(d.W1,d.H1,d.W2,d.H2);}, desc:function(d){return d.W1+"x"+d.H1+" → "+d.W2+"x"+d.H2+" × "+d.L+'" ('+d.AL.toLowerCase()+")";}},
+ {k:"endcap",name:"End cap",grp:"Rectangular",phase:"1250",
+  fields:[["W","Width",24],["H","Height",12],["DP","Cap depth",2]],
+  draw:function(d){ return [P([[0,0],[d.W,0],[d.W,d.H],[0,d.H]]),Ln([0,0],[d.W,d.H],{thin:1}),Ln([d.W,0],[0,d.H],{thin:1}),D([0,d.H],[d.W,d.H],18,f1(d.W)),D([0,d.H],[0,0],-18,f1(d.H)),T([d.W/2,d.H*0.3],"Cap depth "+f1(d.DP),{c:1})]; },
+  area:function(d){return d.W*d.H+2*(d.W+d.H)*d.DP;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" end cap";}},
+ {k:"tee",name:"Tee",grp:"Rect branches",phase:"1250",
+  fields:[["W","Main width",24],["H","Main depth",12],["L","Main length",36],["WB","Branch width",12],["HB","Branch depth",12],["LB","Branch length",8]],
+  draw:function(d){ var x0=(d.L-d.WB)/2;
+    return [P([[0,0],[x0,0],[x0,-d.LB],[x0+d.WB,-d.LB],[x0+d.WB,0],[d.L,0],[d.L,d.W],[0,d.W]]),D([0,d.W],[d.L,d.W],18,f1(d.L)),D([0,d.W],[0,0],-18,f1(d.W)),D([x0,-d.LB],[x0+d.WB,-d.LB],-16,f1(d.WB)),D([x0+d.WB,-d.LB],[x0+d.WB,0],18,f1(d.LB)),
+      T([d.L/2,d.W/2],"Depth "+f1(d.H)+" / branch "+f1(d.HB),{c:1,muted:1})]; },
+  area:function(d){return 2*(d.W+d.H)*d.L+2*(d.WB+d.HB)*d.LB;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" main × "+d.L+'", '+d.WB+"x"+d.HB+" branch";}},
+ {k:"wye",name:"Wye (45°)",grp:"Rect branches",phase:"1250",
+  fields:[["W","Inlet width",24],["H","Depth",12],["W1","Run outlet width",16],["W2","Branch width",12],["L","Run length",30],["LB","Branch length",18]],
+  draw:function(d){ var c=Math.SQRT1_2, P0=[0,d.W], P1=[P0[0]+d.LB*c,P0[1]+d.LB*c], n=[c,-c], P2=[P1[0]+n[0]*d.W2,P1[1]+n[1]*d.W2], t=(P2[1]-d.W1)/c, P3=[P2[0]-t*c,d.W1];
+    var Y=function(p){return [p[0],-p[1]];};
+    return [P([[0,0],[d.L,0],[d.L,d.W1],P3,P2,P1,P0].map(Y)),D(Y([0,0]),Y([d.L,0]),18,f1(d.L)),D(Y([0,0]),Y([0,d.W]),18,f1(d.W)),D(Y([d.L,0]),Y([d.L,d.W1]),-18,f1(d.W1)),D(Y(P1),Y(P2),16,f1(d.W2)),T([d.L*0.45,-d.W1*0.4],"Depth "+f1(d.H),{c:1,muted:1})]; },
+  area:function(d){return 2*(d.W+d.H)*d.L+2*(d.W2+d.H)*d.LB;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" wye, run "+d.W1+", branch "+d.W2;}},
+ {k:"shoe",name:"Shoe tap / takeoff",grp:"Rect branches",phase:"1250",
+  fields:[["W","Outlet width",12],["H","Outlet depth",10],["L","Height (length)",6],["S","Shoe (45° lead)",4]],
+  draw:function(d){ return [Ln([-6,0],[d.W+d.S+6,0],{dash:1}),T([d.W+d.S+4,8],"main duct",{muted:1}),P([[0,0],[d.S+d.W,0],[d.S+d.W,-d.L],[d.S,-d.L]]),D([d.S,-d.L],[d.S+d.W,-d.L],-16,f1(d.W)),D([d.S+d.W,-d.L],[d.S+d.W,0],18,f1(d.L)),D([0,0],[d.S,0],16,"shoe "+f1(d.S)),T([d.S+d.W/2,-d.L/2],"Depth "+f1(d.H),{c:1,muted:1})]; },
+  area:function(d){return 2*((2*d.W+d.S)/2*d.L)+d.H*(d.L+Math.sqrt(d.L*d.L+d.S*d.S));}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+' shoe tap, '+d.L+'" high';}},
+ {k:"boot",name:"Register boot",grp:"Rect branches",phase:"1250",
+  fields:[["D","Round inlet dia.",8],["W","Register width",12],["H","Register height",6],["L","Boot height",10]],
+  draw:function(d){ var x0=(d.W-d.D)/2; return [P([[x0,0],[x0+d.D,0],[d.W,d.L],[0,d.L]]),D([x0,0],[x0+d.D,0],-16,"Ø"+f1(d.D)),D([0,d.L],[d.W,d.L],18,f1(d.W)),D([d.W,0],[d.W,d.L],18,f1(d.L)),T([d.W/2,d.L/2],"Reg. "+d.W+"x"+d.H,{c:1,muted:1})]; },
+  area:function(d){return (Math.PI*d.D+2*(d.W+d.H))/2*d.L;}, max:function(d){return Math.max(d.W,d.H,d.D);}, desc:function(d){return "Ø"+d.D+" to "+d.W+"x"+d.H+" boot, "+d.L+'" high';}},
+ {k:"rpipe",name:"Round pipe",grp:"Round",phase:"1230",
+  fields:[["D","Diameter",10],["L","Length",60]],
+  draw:function(d){ return [P([[0,0],[d.L,0],[d.L,d.D],[0,d.D]]),Ln([0,d.D/2],[d.L,d.D/2],{dash:1}),D([0,0],[d.L,0],-16,f1(d.L)),D([0,d.D],[0,0],-18,"Ø"+f1(d.D))]; },
+  area:function(d){return Math.PI*d.D*d.L;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" × "+d.L+'" pipe';}},
+ {k:"relbow",name:"Round elbow (gored)",grp:"Round",phase:"1250",
+  fields:[["D","Diameter",10],["A","Angle °",90],["G","Gores (pieces)",5],["CLR","Centerline radius",15]],
+  draw:function(d){ var R=d.CLR, ri=R-d.D/2, ro=R+d.D/2, A=Math.min(Math.max(d.A,5),180), n=Math.max(2,Math.round(d.G));
+    var pr=[P(arcPts(0,0,ro,0,A,30).concat(arcPts(0,0,ri,A,0,30))),{t:"poly",pts:arcPts(0,0,R,0,A,30),closed:false,dash:1}];
+    var seg=A/(n-1); for(var k=1;k<n;k++){ var a=rad(seg*(k-0.5)); pr.push(Ln([ri*Math.cos(a),-ri*Math.sin(a)],[ro*Math.cos(a),-ro*Math.sin(a)],{thin:1})); }
+    pr.push(D([ri,0],[ro,0],16,"Ø"+f1(d.D))); pr.push(Object.assign(D([0,0],[R,0],36,"CLR "+f1(R)),{keep:1})); pr.push(T([ri*0.5*Math.cos(rad(A/2)),-ri*0.5*Math.sin(rad(A/2))],A+"° · "+n+" pc",{c:1}));
+    return pr; },
+  area:function(d){return Math.PI*d.D*rad(d.A)*d.CLR;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" "+d.A+"° "+d.G+"-pc elbow";}},
+ {k:"reducer",name:"Round reducer",grp:"Round",phase:"1250",
+  fields:[["D1","Large dia.",12],["D2","Small dia.",8],["L","Length",12],["AL","Type","Concentric","s:Concentric,Eccentric"]],
+  draw:function(d){ var y=d.AL==="Eccentric"?0:(d.D1-d.D2)/2; return [P([[0,0],[d.L,y],[d.L,y+d.D2],[0,d.D1]]),D([0,d.D1],[0,0],-18,"Ø"+f1(d.D1)),D([d.L,y],[d.L,y+d.D2],18,"Ø"+f1(d.D2)),D([0,d.D1],[d.L,d.D1],18,f1(d.L))]; },
+  area:function(d){return Math.PI*(d.D1+d.D2)/2*d.L;}, max:function(d){return d.D1;}, round:1, desc:function(d){return "Ø"+d.D1+"→Ø"+d.D2+" × "+d.L+'" '+d.AL.toLowerCase()+" reducer";}},
+ {k:"sq2r",name:"Square-to-round",grp:"Round",phase:"1250",
+  fields:[["W","Rect width",24],["H","Rect height",12],["D","Round dia.",12],["L","Length",16]],
+  draw:function(d){ var gy=d.H+Math.max(10,d.H*0.6), yh=(d.H-d.D)/2, yw=(d.W-d.D)/2;
+    return [P([[0,0],[d.L,yh],[d.L,yh+d.D],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,d.H],[0,0],-18,f1(d.H)),D([d.L,yh],[d.L,yh+d.D],18,"Ø"+f1(d.D)),D([0,0],[d.L,0],-14-Math.max(0,-yh),f1(d.L)),
+      P([[0,gy],[d.L,gy+yw],[d.L,gy+yw+d.D],[0,gy+d.W]]),T([d.L/2,gy+d.W/2],"TOP",{c:1,muted:1}),D([0,gy+d.W],[0,gy],-18,f1(d.W))]; },
+  area:function(d){return (2*(d.W+d.H)+Math.PI*d.D)/2*d.L;}, max:function(d){return Math.max(d.W,d.H,d.D);}, desc:function(d){return d.W+"x"+d.H+" to Ø"+d.D+" × "+d.L+'"';}},
+ {k:"spin",name:"Spin-in / collar",grp:"Round",phase:"1250",
+  fields:[["D","Diameter",8],["L","Length",6],["DM","Damper","Yes","s:Yes,No"]],
+  draw:function(d){ var pr=[P([[0,0],[d.D,0],[d.D,d.L],[0,d.L]]),P([[-1.5,d.L],[d.D+1.5,d.L],[d.D+1.5,d.L+1],[-1.5,d.L+1]]),D([0,0],[d.D,0],-16,"Ø"+f1(d.D)),D([d.D,0],[d.D,d.L],22,f1(d.L))];
+    if(d.DM==="Yes") pr.push(Ln([0,d.L*0.65],[d.D,d.L*0.35],{thin:1}),T([d.D/2,d.L*0.3],"damper",{c:1,muted:1})); return pr; },
+  area:function(d){return Math.PI*d.D*d.L;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" spin-in"+(d.DM==="Yes"?" w/ damper":"");}},
+ {k:"sketch",name:"Freehand sketch / other",grp:"Other",phase:"1250",fields:[["EL","Est. lbs (optional)",0]],
+  draw:null, area:function(d){return 0;}, max:function(){return 0;}, desc:function(d){return "Custom — see sketch";}}
+];
+function ftype(k){ return FT.filter(function(t){return t.k===k;})[0]; }
+function suggestGauge(t,d){ var m=t.max(d); if(t.round) return m<=12?"26":m<=24?"24":m<=36?"22":"20"; return m<=12?"26":m<=30?"24":m<=54?"22":m<=84?"20":"18"; }
+function estLbs(it){ var t=ftype(it.type); if(!t) return 0; if(t.k==="sketch") return (+it.d.EL||0)*(+it.qty||1); var a=t.area(it.d)/144*SEAM; return a*(GA_LB[it.gauge]||1.156)*(+it.qty||1); }
+
+/* ===== SVG renderer: fits primitives into a w×h box with dimension lines ===== */
+function renderSVG(prims,w,h){ w=w||360; h=h||250; var m=50, xs=[], ys=[], gx=[], gy=[];
+  prims.forEach(function(p){ if(p.pts) p.pts.forEach(function(q){xs.push(q[0]);ys.push(q[1]); if(p.closed){gx.push(q[0]);gy.push(q[1]);} }); if(p.t==="dim"){ xs.push(p.a[0],p.b[0]); ys.push(p.a[1],p.b[1]); } });
+  if(!gx.length){ gx=xs; gy=ys; }
+  if(!xs.length) return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'"></svg>';
+  var x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs), y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+  var bw=Math.max(x1-x0,1), bh=Math.max(y1-y0,1), s=Math.min((w-2*m)/bw,(h-2*m)/bh), ox=(w-bw*s)/2-x0*s, oy=(h-bh*s)/2-y0*s;
+  var X=function(x){return +(ox+x*s).toFixed(1);}, Y=function(y){return +(oy+y*s).toFixed(1);};
+  /* dims go on the outside: flip the offset away from the nearest shape's middle */
+  var shapes=prims.filter(function(p){return p.t==="poly"&&p.closed;}).map(function(p){ var sx=0,sy=0; p.pts.forEach(function(q){sx+=q[0];sy+=q[1];}); return [X(sx/p.pts.length),Y(sy/p.pts.length)]; });
+  var o=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" font-family="Arial,Helvetica,sans-serif"><rect width="'+w+'" height="'+h+'" fill="#ffffff"/>'];
+  prims.forEach(function(p){
+    if(p.t==="poly"){ var d=p.pts.map(function(q,i){return (i?"L":"M")+X(q[0])+" "+Y(q[1]);}).join(" ")+(p.closed?" Z":"");
+      o.push('<path d="'+d+'" fill="'+(p.closed?"#eef3fa":"none")+'" stroke="'+(p.thin?"#64748b":"#1f2937")+'" stroke-width="'+(p.thin?1:1.8)+'"'+(p.dash?' stroke-dasharray="5 4"':'')+' stroke-linejoin="round"/>'); }
+    else if(p.t==="text"){ o.push('<text x="'+X(p.p[0])+'" y="'+(Y(p.p[1])+4)+'" font-size="11" fill="'+(p.muted?"#64748b":"#1f2937")+'"'+(p.c?' text-anchor="middle"':'')+' font-weight="'+(p.muted?400:700)+'">'+escx(p.s)+'</text>'); }
+    else if(p.t==="dim"){ var ax=X(p.a[0]), ay=Y(p.a[1]), bx=X(p.b[0]), by=Y(p.b[1]), dx=bx-ax, dy=by-ay, L=Math.sqrt(dx*dx+dy*dy)||1, nx=-dy/L, ny=dx/L, off=p.off;
+      if(!p.keep&&shapes.length){ var mx0=(ax+bx)/2, my0=(ay+by)/2, best=null, bd=1e9; shapes.forEach(function(c){ var dd=(c[0]-mx0)*(c[0]-mx0)+(c[1]-my0)*(c[1]-my0); if(dd<bd){bd=dd;best=c;} });
+        var side=nx*(mx0-best[0])+ny*(my0-best[1]); off=Math.abs(off)*(side>=0?1:-1); }
+      var a2=[ax+nx*off,ay+ny*off], b2=[bx+nx*off,by+ny*off], ux=dx/L, uy=dy/L, ah=6;
+      o.push('<g stroke="#c0392b" stroke-width="1" fill="#c0392b"><line x1="'+ax+'" y1="'+ay+'" x2="'+(a2[0]+nx*3*Math.sign(off))+'" y2="'+(a2[1]+ny*3*Math.sign(off))+'" stroke-dasharray="2 2"/><line x1="'+bx+'" y1="'+by+'" x2="'+(b2[0]+nx*3*Math.sign(off))+'" y2="'+(b2[1]+ny*3*Math.sign(off))+'" stroke-dasharray="2 2"/>'+
+        '<line x1="'+a2[0]+'" y1="'+a2[1]+'" x2="'+b2[0]+'" y2="'+b2[1]+'"/>'+
+        '<path d="M'+a2[0]+' '+a2[1]+' L'+(a2[0]+ux*ah+nx*2.5)+' '+(a2[1]+uy*ah+ny*2.5)+' L'+(a2[0]+ux*ah-nx*2.5)+' '+(a2[1]+uy*ah-ny*2.5)+' Z"/>'+
+        '<path d="M'+b2[0]+' '+b2[1]+' L'+(b2[0]-ux*ah+nx*2.5)+' '+(b2[1]-uy*ah+ny*2.5)+' L'+(b2[0]-ux*ah-nx*2.5)+' '+(b2[1]-uy*ah-ny*2.5)+' Z"/></g>');
+      var mx=(a2[0]+b2[0])/2+nx*9*Math.sign(off||1), my=(a2[1]+b2[1])/2+ny*9*Math.sign(off||1), ang=Math.atan2(dy,dx)*180/Math.PI; if(ang>89.9) ang-=180; if(ang<-90.1) ang+=180;
+      o.push('<text x="'+mx.toFixed(1)+'" y="'+(my+4).toFixed(1)+'" font-size="12" font-weight="700" fill="#b91c1c" text-anchor="middle" transform="rotate('+ang.toFixed(1)+' '+mx.toFixed(1)+' '+(my).toFixed(1)+')" paint-order="stroke" stroke="#fff" stroke-width="3">'+escx(p.label)+'</text>'); }
+  });
+  o.push('</svg>'); return o.join(""); }
+function escx(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function drawItem(it,w,h){ var t=ftype(it.type); if(!t||!t.draw) return ""; try{ return renderSVG(t.draw(it.d),w,h); }catch(e){ return ""; } }
+/* SVG → JPEG data URL (for the emailed / printed ticket) */
+function svgToJpeg(svg,w,h){ return new Promise(function(res){ if(!svg){ res(""); return; } var img=new Image(); img.onload=function(){ var c=document.createElement("canvas"); c.width=w*1.5; c.height=h*1.5; var g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height); res(c.toDataURL("image/jpeg",0.8)); }; img.onerror=function(){ res(""); }; img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }); }
+
+
+/* ===================== Fitting Ticket (field) =====================
+   Saves to the "Fitting Tickets" list. ReportHTML carries the drawings (as JPEGs) for the shop queue, print and email. */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var L_FT="Fitting Tickets";
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var CREATED=null, account=null, loginEmail="", MY_NAME="", LIST_ID=null, LIST_COLS=null, ITEMS=[], ED=null, EDI=-1, PRIO="Normal", SENT=false;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function nice(s){ s=String(s||"").slice(0,10); if(!s) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0]; }
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,160)); } return r.status===204?null:r.json(); }
+async function pullAll(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+function showMsg(id,cls,t){ var m=E(id); m.className="msg "+cls; m.textContent=t; }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("bar").style.display="block"; E("who").textContent=a.name||a.username;
+  E("need").value=iso(addDays(new Date(),3));
+  E("eGa").innerHTML=GAUGES.map(function(g){return '<option value="'+g+'">'+g+' ga</option>';}).join("");
+  E("eLiner").innerHTML=LINERS.map(function(l){return '<option>'+esc(l)+'</option>';}).join("");
+  buildTypeGrid();
+  try{
+    var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Active");
+    emps.forEach(function(f){ var e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e===loginEmail) MY_NAME=String(f.EmployeeName||"").trim(); });
+    if(!MY_NAME) MY_NAME=a.name||a.username;
+    var tasks=await pullAll(JOBTASKS,"JobNo,JobName,Active"), seen={}, jobs=[];
+    tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var no=String(t.JobNo||"").trim(); if(!no||seen[no]) return; seen[no]=1; jobs.push({no:no,name:String(t.JobName||"").trim()}); });
+    try{ var jl=await pullAll(JOBS,"Title,Archive"), arch={}; jl.forEach(function(j){ if(j.Archive===true||j.Archive==="Yes") arch[String(j.Title).trim()]=1; }); jobs=jobs.filter(function(j){return !arch[j.no];}); }catch(e){}
+    jobs.sort(function(x,y){ return (x.name||x.no).toLowerCase().localeCompare((y.name||y.no).toLowerCase()); });
+    E("job").innerHTML='<option value="">— Pick the job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
+    var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999");
+    var l=(lists.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()===L_FT.toLowerCase();})[0];
+    if(l){ LIST_ID=l.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; }); }
+    else showMsg("topMsg","err","The “Fitting Tickets” list isn't set up in SharePoint yet — you can draw fittings, but sending will wait until it is.");
+  }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); }
+  ["job","need","deliver","notes"].forEach(function(id){ E(id).addEventListener("input",saveDraft); E(id).addEventListener("change",saveDraft); });
+  restoreDraft(); renderItems();
+}
+E("prio").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ PRIO=b.getAttribute("data-v"); E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); saveDraft(); }; });
+
+/* ===== type picker ===== */
+function defaults(t){ var d={}; t.fields.forEach(function(f){ d[f[0]]=f[3]?f[2]:+f[2]; }); return d; }
+function buildTypeGrid(){ var groups={}; FT.forEach(function(t){ (groups[t.grp]=groups[t.grp]||[]).push(t); });
+  E("typeGrid").innerHTML=Object.keys(groups).map(function(g){ return '<div class="gh">'+esc(g)+'</div><div class="tg">'+groups[g].map(function(t){
+    var pic=t.draw?renderSVG(t.draw(defaults(t)),240,150):'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150"><rect width="240" height="150" fill="#fff"/><path d="M40 110 C70 40,110 130,150 60 S200 50,205 95" fill="none" stroke="#1f2937" stroke-width="3"/><text x="120" y="140" font-size="14" text-anchor="middle" fill="#64748b">✎</text></svg>';
+    return '<button data-k="'+t.k+'">'+pic+esc(t.name)+'</button>'; }).join("")+'</div>'; }).join("");
+  E("typeGrid").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ pickType(b.getAttribute("data-k")); }; }); }
+E("addBtn").onclick=function(){ EDI=-1; ED=null; E("typeModal").style.display="block"; };
+E("tmClose").onclick=function(){ E("typeModal").style.display="none"; };
+E("edType").onclick=function(){ E("typeModal").style.display="block"; };
+function nextMark(){ var n=0; ITEMS.forEach(function(it){ var m=/^F-(\d+)$/i.exec(it.mark||""); if(m) n=Math.max(n,+m[1]); }); return "F-"+(n+1); }
+function pickType(k){ var t=ftype(k); E("typeModal").style.display="none";
+  if(ED&&EDI>-1&&ED.type!==k){ ED.type=k; ED.d=Object.assign(defaults(t),{}); }
+  else if(!ED){ ED={type:k,d:defaults(t),qty:1,mark:nextMark(),gauge:"",gaugeSet:false,conn:t.round?"Crimp":"TDF",liner:"None",dimsAre:"Sheet metal (outside)",notes:"",sketch:"",photo:"",desc:""}; }
+  else { ED.type=k; ED.d=defaults(t); }
+  openEditor(); }
+/* ===== editor ===== */
+function openEditor(){ var it=ED, t=ftype(it.type);
+  E("edTitle").textContent=t.name; E("edMsg").className="msg";
+  E("eMark").value=it.mark; E("eQty").value=it.qty;
+  E("eConn").innerHTML=(t.round?CONN_O:CONN_R).map(function(c){return '<option'+(c===it.conn?" selected":"")+'>'+esc(c)+'</option>';}).join("");
+  if((t.round?CONN_O:CONN_R).indexOf(it.conn)<0) it.conn=E("eConn").value;
+  E("eLiner").value=it.liner; E("eDimsAre").value=it.dimsAre; E("eNotes").value=it.notes;
+  var isSk=t.k==="sketch"; E("eSketch").style.display=isSk?"block":"none";
+  E("eDims").innerHTML=(isSk?'':'<div class="g3">')+t.fields.map(function(f){ var v=it.d[f[0]];
+      if(f[3]&&f[3].indexOf("s:")===0) return '<div><label>'+esc(f[1])+'</label><select data-k="'+f[0]+'">'+f[3].slice(2).split(",").map(function(o){return '<option'+(o===v?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
+      return '<div><label>'+esc(f[1])+(isSk?'':' (in)')+'</label><input type="number" step="any" inputmode="decimal" data-k="'+f[0]+'" value="'+esc(v)+'"></div>'; }).join("")+(isSk?'':'</div>');
+  if(isSk){ E("skDesc").value=it.desc||""; skLoad(it.sketch); E("skImg").src=it.photo||""; E("skImg").style.display=it.photo?"block":"none"; }
+  if(!it.gaugeSet) it.gauge=t.draw?suggestGauge(t,it.d):"24"; E("eGa").value=it.gauge;
+  E("edModal").style.display="block"; preview(); }
+function readEditor(){ var it=ED, t=ftype(it.type);
+  it.mark=E("eMark").value.trim(); it.qty=Math.max(1,parseInt(E("eQty").value,10)||1); it.conn=E("eConn").value; it.liner=E("eLiner").value; it.dimsAre=E("eDimsAre").value; it.notes=E("eNotes").value.trim();
+  E("eDims").querySelectorAll("[data-k]").forEach(function(el){ var k=el.getAttribute("data-k"); it.d[k]=el.tagName==="SELECT"?el.value:(parseFloat(el.value)||0); });
+  if(t.k==="sketch"){ it.desc=E("skDesc").value.trim(); it.sketch=skData(); }
+  if(!it.gaugeSet&&t.draw) it.gauge=suggestGauge(t,it.d); E("eGa").value=it.gauge; }
+function preview(){ readEditor(); var it=ED, t=ftype(it.type);
+  E("ePrev").innerHTML=t.draw?drawItem(it,360,250):'<div class="hint" style="padding:30px 14px;text-align:center">Your sketch and photo go to the shop as drawn.</div>';
+  var lb=estLbs(it); E("eEst").innerHTML=(t.draw?esc(t.desc(it.d))+" · ":"")+it.qty+" pc · "+it.gauge+" ga · ≈ "+(Math.round(lb*10)/10)+" lb"+(it.liner!=="None"?" · liner "+esc(it.liner):"")+(t.draw?'<div class="hint">'+(it.gaugeSet?"Gauge set by you":"Gauge suggested from size (SMACNA-style) — change it if the job calls for different")+'</div>':''); }
+["eMark","eQty","eConn","eLiner","eDimsAre","eNotes","skDesc"].forEach(function(id){ E(id).addEventListener("input",preview); E(id).addEventListener("change",preview); });
+E("eDims").addEventListener("input",preview); E("eDims").addEventListener("change",preview);
+E("eGa").onchange=function(){ ED.gauge=E("eGa").value; ED.gaugeSet=true; preview(); };
+E("edCancel").onclick=function(){ E("edModal").style.display="none"; ED=null; };
+E("edSave").onclick=function(){ readEditor(); var it=ED, t=ftype(it.type);
+  if(t.draw){ var bad=t.fields.filter(function(f){ return !f[3]&&!(+it.d[f[0]]>0); }); if(bad.length){ showMsg("edMsg","err","Fill in: "+bad.map(function(f){return f[1];}).join(", ")+"."); return; } }
+  else if(!it.sketch&&!it.photo&&!it.desc){ showMsg("edMsg","err","Sketch it, add a photo, or describe it."); return; }
+  if(!it.mark) it.mark=nextMark();
+  if(EDI>-1) ITEMS[EDI]=it; else ITEMS.push(it);
+  E("edModal").style.display="none"; ED=null; renderItems(); saveDraft(); };
+/* ===== sketch pad ===== */
+var SK=[], skCur=null, skBg=null;
+var cv=E("skc"), cx=cv.getContext("2d");
+function skDraw(){ cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.strokeStyle="#e5e7eb"; cx.lineWidth=1; for(var x=0;x<cv.width;x+=35){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,cv.height);cx.stroke();} for(var y=0;y<cv.height;y+=35){cx.beginPath();cx.moveTo(0,y);cx.lineTo(cv.width,y);cx.stroke();}
+  if(skBg) cx.drawImage(skBg,0,0,cv.width,cv.height);
+  cx.strokeStyle="#111"; cx.lineWidth=3.5; cx.lineCap="round"; cx.lineJoin="round";
+  SK.forEach(function(s){ cx.beginPath(); s.forEach(function(p,i){ if(i) cx.lineTo(p[0],p[1]); else cx.moveTo(p[0],p[1]); }); if(s.length===1) cx.lineTo(s[0][0]+0.1,s[0][1]); cx.stroke(); }); }
+function skPos(e){ var r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]; }
+cv.addEventListener("pointerdown",function(e){ e.preventDefault(); cv.setPointerCapture(e.pointerId); skCur=[skPos(e)]; SK.push(skCur); skDraw(); });
+cv.addEventListener("pointermove",function(e){ if(!skCur) return; e.preventDefault(); skCur.push(skPos(e)); skDraw(); });
+cv.addEventListener("pointerup",function(){ skCur=null; preview(); });
+E("skUndo").onclick=function(){ SK.pop(); skDraw(); preview(); };
+E("skClear").onclick=function(){ SK=[]; skBg=null; skDraw(); preview(); };
+function skData(){ if(!SK.length&&!skBg) return ""; var c=document.createElement("canvas"); c.width=700; c.height=480; var g=c.getContext("2d"); g.drawImage(cv,0,0); return c.toDataURL("image/jpeg",0.7); }
+function skLoad(data){ SK=[]; skBg=null; if(data){ var im=new Image(); im.onload=function(){ skBg=im; skDraw(); }; im.src=data; } skDraw(); }
+E("skPhoto").onchange=function(){ var f=E("skPhoto").files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(e){ var im=new Image(); im.onload=function(){ var m=1100,w=im.width,h=im.height; if(Math.max(w,h)>m){ var s=m/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); } var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(im,0,0,w,h); ED.photo=c.toDataURL("image/jpeg",0.72); E("skImg").src=ED.photo; E("skImg").style.display="block"; preview(); }; im.src=e.target.result; }; rd.readAsDataURL(f); E("skPhoto").value=""; };
+
+/* ===== list ===== */
+function itemLine(it){ var t=ftype(it.type); return [t.draw?t.desc(it.d):(it.desc||"Custom"),it.conn,it.liner!=="None"?"liner "+it.liner+(it.dimsAre.indexOf("Inside")===0?" (dims clear inside)":""):"",it.gauge+" ga"].filter(Boolean).join(" · "); }
+function renderItems(){
+  var n=ITEMS.length, pcs=0, lb=0; ITEMS.forEach(function(it){ pcs+=it.qty; lb+=estLbs(it); });
+  E("cnt").textContent=n?"("+n+")":""; E("barCnt").textContent=n+" fitting"+(n===1?"":"s")+" · "+pcs+" pc · ≈ "+Math.round(lb)+" lb";
+  if(!n){ E("items").innerHTML='<div class="empty">Tap <b>+ Add fitting</b>. Pick the type, type the dimensions — it draws it for you.</div>'; return; }
+  E("items").innerHTML=ITEMS.map(function(it,i){ var t=ftype(it.type);
+    var pic=t.draw?drawItem(it,360,250):(it.sketch?'<img src="'+it.sketch+'">':(it.photo?'<img src="'+it.photo+'">':''));
+    return '<div class="item"><div class="th">'+pic+'</div><div class="m"><div class="t"><span class="mark">'+esc(it.mark)+'</span>'+esc(t.name)+' <span style="color:#6b7280;font-weight:700">× '+it.qty+'</span></div><div class="s">'+esc(itemLine(it))+'</div>'+(it.notes?'<div class="s">'+esc(it.notes)+'</div>':'')+'<div class="s">≈ '+(Math.round(estLbs(it)*10)/10)+' lb</div></div>'+
+      '<div class="acts"><button class="btn btn-g btn-s" data-ed="'+i+'">Edit</button><button class="btn btn-g btn-s" data-dup="'+i+'">Copy</button><button class="btn btn-g btn-s" data-del="'+i+'" style="color:#b91c1c;border-color:#b91c1c">✕</button></div></div>'; }).join("");
+}
+E("items").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return;
+  if(b.hasAttribute("data-ed")){ EDI=+b.getAttribute("data-ed"); ED=JSON.parse(JSON.stringify(ITEMS[EDI])); openEditor(); }
+  else if(b.hasAttribute("data-dup")){ var c=JSON.parse(JSON.stringify(ITEMS[+b.getAttribute("data-dup")])); c.mark=nextMark(); ITEMS.splice(+b.getAttribute("data-dup")+1,0,c); renderItems(); saveDraft(); }
+  else if(b.hasAttribute("data-del")){ if(confirm("Remove "+ITEMS[+b.getAttribute("data-del")].mark+"?")){ ITEMS.splice(+b.getAttribute("data-del"),1); renderItems(); saveDraft(); } } });
+
+/* ===== draft ===== */
+function dkey(){ return "vm_ft_draft_"+loginEmail; }
+function saveDraft(){ if(SENT) return; try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS})); }catch(e){ try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS.map(function(it){ var c=Object.assign({},it); c.photo=""; return c; })})); }catch(e2){} } }
+function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d||!d.items) return;
+  if(d.job) E("job").value=d.job; if(d.need) E("need").value=d.need; E("deliver").value=d.deliver||""; E("notes").value=d.notes||""; PRIO=d.prio||"Normal";
+  E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")===PRIO);}); ITEMS=d.items||[];
+  if(ITEMS.length) showMsg("topMsg","info","Picked up your unsent ticket."); }
+
+/* ===== send ===== */
+function groupsOf(){ var g={}; ITEMS.forEach(function(it){ var t=ftype(it.type), k=t.phase+"|"+it.gauge; g[k]=g[k]||{phase:t.phase,gauge:it.gauge,lbs:0,pcs:0,liner:{}}; g[k].lbs+=estLbs(it); g[k].pcs+=it.qty; if(it.liner!=="None") g[k].liner[it.liner]=(g[k].liner[it.liner]||0)+it.qty; }); return Object.keys(g).map(function(k){return g[k];}); }
+async function buildReport(ticketNo){ var jn=E("job").value, jname=(E("job").selectedOptions[0]||{}).getAttribute?E("job").selectedOptions[0].getAttribute("data-name"):"";
+  var rows=[]; for(var i=0;i<ITEMS.length;i++){ var it=ITEMS[i], t=ftype(it.type), img="";
+    if(t.draw) img=await svgToJpeg(drawItem(it,360,250),360,250); var extra=[];
+    if(!t.draw){ if(it.sketch) extra.push('<img src="'+it.sketch+'" style="width:300px;border:1px solid #ddd;border-radius:6px">'); if(it.photo) extra.push('<img src="'+it.photo+'" style="width:300px;border:1px solid #ddd;border-radius:6px;margin-left:4px">'); }
+    rows.push('<tr style="page-break-inside:avoid"><td style="padding:6px;border:1px solid #ddd;font-weight:800;font-size:15px;vertical-align:top">'+esc(it.mark)+'</td><td style="padding:4px;border:1px solid #ddd;vertical-align:top">'+(img?'<img src="'+img+'" style="width:300px">':extra.join(""))+'</td>'+
+      '<td style="padding:6px;border:1px solid #ddd;vertical-align:top"><b>'+esc(t.name)+'</b><br>'+esc(itemLine(it))+(it.notes?'<br><i>'+esc(it.notes)+'</i>':'')+'</td><td style="padding:6px;border:1px solid #ddd;text-align:center;font-weight:800;font-size:15px;vertical-align:top">'+it.qty+'</td><td style="padding:6px;border:1px solid #ddd;text-align:right;vertical-align:top">'+(Math.round(estLbs(it)*10)/10)+'</td></tr>'); }
+  var gs=groupsOf(), tot=0, pcs=0; gs.forEach(function(g){ tot+=g.lbs; pcs+=g.pcs; });
+  var row=function(a,b){ return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+esc(a)+'</td><td style="padding:3px 0;font-weight:700">'+b+'</td></tr>'; };
+  return '<h2 style="color:#7f1d1d;margin:0 0 6px">Fitting Ticket '+esc(ticketNo)+(PRIO==="Rush"?' <span style="background:#b91c1c;color:#fff;border-radius:6px;padding:2px 8px;font-size:14px">RUSH</span>':'')+'</h2>'+
+    '<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(jn+" "+(jname||"")))+row("Requested by",esc(MY_NAME)+" · "+esc(new Date().toLocaleDateString()))+row("Needed by",esc(nice(E("need").value)))+(E("deliver").value.trim()?row("Deliver to",esc(E("deliver").value.trim())):"")+row("Totals",ITEMS.length+" fittings · "+pcs+" pc · ≈ "+Math.round(tot)+" lb")+'</table>'+
+    (E("notes").value.trim()?'<div style="margin:8px 0;padding:8px;background:#fef3c7;border-radius:6px;white-space:pre-wrap">'+esc(E("notes").value.trim())+'</div>':'')+
+    '<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:10px"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd">Mark</th><th style="padding:6px;border:1px solid #ddd">Drawing</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Fitting</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd">Est lb</th></tr>'+rows.join("")+'</table>'+
+    '<p style="font-size:12px;color:#6b7280">By gauge: '+gs.map(function(g){return g.phase+" "+(g.phase==="1230"?"duct":"fittings")+" "+g.gauge+" ga ≈ "+Math.round(g.lbs)+" lb ("+g.pcs+" pc)";}).join(" · ")+'. Weights are estimates (+15% seams/waste).</p>'; }
+E("submitBtn").onclick=async function(){
+  var miss=[]; if(!E("job").value) miss.push("Job"); if(!E("need").value) miss.push("Needed by"); if(!ITEMS.length) miss.push("At least one fitting");
+  if(miss.length){ showMsg("msg","err","Still needed: "+miss.join(", ")+"."); E("msg").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(!LIST_ID){ showMsg("msg","err","The Fitting Tickets list isn't set up yet — your ticket is saved on this device."); return; }
+  if(navigator.onLine===false){ showMsg("msg","err","You're offline — the ticket is saved on this device. Tap Send again with signal."); return; }
+  var btn=E("submitBtn"); btn.disabled=true; showMsg("msg","info","Sending…"); E("msg").scrollIntoView({behavior:"smooth",block:"center"});
+  try{
+    var gs=groupsOf(), tot=0, pcs=0; gs.forEach(function(g){ tot+=g.lbs; pcs+=g.pcs; });
+    var jn=E("job").value, jname=E("job").selectedOptions[0].getAttribute("data-name")||"";
+    var f={Title:"New ticket | "+jn+" | "+MY_NAME, JobNo:jn, JobName:jname, RequestedBy:MY_NAME, LoginEmail:loginEmail, SubmittedDate:iso(new Date())+"T12:00:00Z", NeededBy:E("need").value+"T12:00:00Z",
+      Priority:PRIO, Status:"New", DeliverTo:E("deliver").value.trim(), Notes:E("notes").value.trim(), ItemCount:String(ITEMS.length), PieceCount:String(pcs), EstLbs:String(Math.round(tot)),
+      GaugeSummary:gs.map(function(g){return g.phase+" "+g.gauge+"ga "+Math.round(g.lbs)+"lb";}).join(", "),
+      Items:JSON.stringify(ITEMS.map(function(it){ var t=ftype(it.type); return {mark:it.mark,type:it.type,name:t.name,d:it.d,qty:it.qty,gauge:it.gauge,conn:it.conn,liner:it.liner,dimsAre:it.dimsAre,notes:it.notes,desc:it.desc||"",phase:t.phase,lbs:Math.round(estLbs(it)*10)/10,line:itemLine(it)}; })),
+      StatusLog:new Date().toLocaleString()+" · New · sent by "+MY_NAME };
+    Object.keys(f).forEach(function(k){ if(k!=="Title"&&LIST_COLS&&!LIST_COLS[k]) delete f[k]; if(f[k]==="") delete f[k]; });
+    var r=CREATED||await gfetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); CREATED=r;
+    var no="FT-"+String(r.id).padStart(4,"0");
+    showMsg("msg","info","Attaching drawings…");
+    var html=await buildReport(no), p={Title:no+" | "+jn+" "+jname+" | "+MY_NAME, TicketNo:no, ReportHTML:html};
+    Object.keys(p).forEach(function(k){ if(k!=="Title"&&LIST_COLS&&!LIST_COLS[k]) delete p[k]; });
+    await gfetch(GRAPH+LIST_ID+"/items/"+r.id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+    SENT=true; try{ localStorage.removeItem(dkey()); }catch(e){}
+    showMsg("msg","ok","Sent to the shop as "+no+". Track it in My Submissions → Fittings.");
+    btn.textContent="Sent ✓"; E("barCnt").innerHTML='<a href="" style="color:#c0392b;font-weight:800">Start a new ticket</a>';
+  }catch(e){ btn.disabled=false; showMsg("msg","err","Couldn't send ("+(e.message||e)+"). The ticket is saved on this device — try again."); }
+};
+
+</script>
+<script>
+/* ===== Job lists show NAME first, A–Z (e.g. "Epic Phase II · A26103") =====
+   Works on any <select> or <datalist> whose options are jobs. Values the page saves are unchanged:
+   a picked datalist entry is turned back into "A26103 Epic Phase II" before the page reads it. */
+(function(){
+  var NO="[A-Z]?\\d{2}[A-Z]?-?\\d{3,}";
+  var FWD=new RegExp("^("+NO+")(?:\\s*·\\s*|\\s+)(.+)$"), REV=new RegExp("^(.+?)\\s+·\\s+("+NO+")$");
+  function fl(t){ var m=FWD.exec(String(t||"").trim()); return m?{no:m[1],name:m[2].trim()}:null; }
+  function cmp(a,b){ return a.k.localeCompare(b.k,undefined,{sensitivity:"base",numeric:true}); }
+  function doSelect(sel){
+    var opts=Array.prototype.slice.call(sel.options), real=opts.filter(function(o){return o.value!=="";});
+    var jobs=real.filter(function(o){ return o.getAttribute("data-vmflip")||fl(o.textContent); });
+    if(jobs.length<2||jobs.length<real.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmflip");})) return;
+    var v=sel.value;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; if(!o.hasAttribute("value")) o.setAttribute("value",o.textContent); var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
+    var items=jobs.map(function(o){return {o:o,k:o.textContent.toLowerCase()};}).sort(cmp);
+    items.forEach(function(it){ sel.appendChild(it.o); });
+    opts.filter(function(o){return jobs.indexOf(o)<0&&o.value!=="";}).forEach(function(o){ sel.appendChild(o); });
+    sel.value=v;
+  }
+  function doList(dl){
+    var opts=Array.prototype.slice.call(dl.options), jobs=opts.filter(function(o){ return o.getAttribute("data-vmorig")||fl(o.value); });
+    if(jobs.length<2||jobs.length<opts.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmorig");})) return;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmorig")) return; var f=fl(o.value); o.setAttribute("data-vmorig",o.value); o.value=f.name+" · "+f.no; });
+    jobs.map(function(o){return {o:o,k:o.value.toLowerCase()};}).sort(cmp).forEach(function(it){ dl.appendChild(it.o); });
+  }
+  var busy=false;
+  function scan(){ if(busy) return; busy=true; try{ document.querySelectorAll("select").forEach(doSelect); document.querySelectorAll("datalist").forEach(doList); }catch(e){} busy=false; }
+  function back(e){ var t=e.target; if(!t||t.tagName!=="INPUT"||!t.getAttribute("list")) return; var m=REV.exec(String(t.value||"").trim()); if(m) t.value=m[2]+" "+m[1]; }
+  document.addEventListener("input",back,true); document.addEventListener("change",back,true); document.addEventListener("focusout",back,true);
+  var tmr=null; new MutationObserver(function(){ if(busy) return; clearTimeout(tmr); tmr=setTimeout(scan,30); }).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState!=="loading") scan(); else document.addEventListener("DOMContentLoaded",scan);
+  window.vmJobScan=scan;
+})();
+</script>
+</body>
+</html>
