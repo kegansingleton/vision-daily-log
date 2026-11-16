@@ -97,7 +97,9 @@ table.pl{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}table
   <div class="card" id="unitsCard" style="display:none">
     <h2><span>3. Equipment <span id="uCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-g btn-s" id="addUnitBtn">+ Add unit</button></h2>
     <div class="hint">Tap a unit to open it. Unit info is already filled in from last time — fix anything that's wrong and it's saved for next time. <span style="color:#1d4ed8">Blue boxes</span> were filled in from the model library (other units of the same make &amp; model) — check them.</div>
-    <div class="tools"><button class="btn btn-g btn-s" id="partsBtn">&#129534; Parts list for this site</button><button class="btn btn-g btn-s" id="lookupBtn">&#128269; Model lookup</button></div>
+    <div class="tools"><button class="btn btn-g btn-s" id="partsBtn">&#129534; Parts list for this site</button><button class="btn btn-g btn-s" id="lookupBtn">&#128269; Model lookup</button>
+      <span id="adminTools" style="display:none"><button class="btn btn-g btn-s" id="bulkBtn">&#128203; Bulk add units</button> <button class="btn btn-p btn-s" id="saveEqBtn">&#128190; Save equipment only (no visit)</button></span></div>
+    <div class="msg" id="eqMsg"></div>
     <datalist id="mfrlist"></datalist><datalist id="modellist"></datalist>
     <div id="units"></div>
   </div>
@@ -141,6 +143,14 @@ table.pl{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}table
   <div class="hint">From the unit info on file (active units). Use it to order filters &amp; belts before the visit. Blue = filled from the model library.</div>
   <div id="plBody"></div>
   <div class="row-b"><button class="btn btn-g" id="plClose">Close</button><button class="btn btn-g" id="plCopy">Copy</button><button class="btn btn-p" id="plPrint">Print</button></div>
+</div></div>
+<div class="modal" id="bulkModal"><div class="box" style="max-width:1000px">
+  <h2>Bulk add units — <span id="bkSite"></span></h2>
+  <div class="hint">Type one unit per row, or copy rows from Excel (same column order) and paste into the first box — it fills the grid. Blank rows are skipped. Anything left blank gets filled from the model library when a make &amp; model match.</div>
+  <div style="overflow-x:auto;margin-top:8px"><table class="pl" id="bkGrid"></table></div>
+  <div class="row-b" style="justify-content:flex-start"><button class="btn btn-g btn-s" id="bkMore" style="flex:0">+ 5 rows</button></div>
+  <div class="msg" id="bkMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="bkCancel">Cancel</button><button class="btn btn-p" id="bkAdd">Add to site</button></div>
 </div></div>
 <div class="modal" id="lookModal"><div class="box">
   <h2>Model lookup</h2>
@@ -292,7 +302,7 @@ E("sitePick").onchange=function(){ pickSite(E("sitePick").value); };
 async function pickSite(id,fromDraft){
   if(!fromDraft && UNITS.some(function(u){return u.status||u.dirty;}) && !confirm("Switch sites? What you've entered for this site will be cleared.")){ E("sitePick").value=CUR_SITE?CUR_SITE._id:""; return; }
   CUR_SITE=siteById(id); UNITS=[]; RETIRED=[];
-  E("editSiteBtn").style.display=(CUR_SITE&&IS_ADMIN)?"":"none";
+  E("editSiteBtn").style.display=(CUR_SITE&&IS_ADMIN)?"":"none"; E("adminTools").style.display=(CUR_SITE&&IS_ADMIN)?"":"none"; E("eqMsg").className="msg";
   if(!CUR_SITE){ E("siteInfo").innerHTML=""; E("unitsCard").style.display="none"; E("wrapCard").style.display="none"; E("bar").style.display="none"; saveDraft(); return; }
   showSiteInfo();
   if(!E("vCust").value && CUR_SITE.ContactEmail) E("vCust").value=CUR_SITE.ContactEmail;
@@ -494,6 +504,41 @@ function doLookup(){ var m=libMatch(E("lkMfr").value,E("lkModel").value,null);
   var lab={}; UF.forEach(function(x){lab[x[0]]=x[1];});
   E("lkOut").innerHTML='<div class="hint">'+m.n+' unit'+(m.n===1?"":"s")+' on file ('+esc(m.kind)+')'+(m.sites.length?' at '+esc(m.sites.join(", ")):"")+'</div><table class="pl">'+MODEL_FIELDS.filter(function(k){return m.vals[k];}).map(function(k){ var v=m.vals[k]; return '<tr><td style="color:#6b7280">'+esc(lab[k])+'</td><td><b>'+esc(v.v)+'</b>'+(v.alt?' <span class="hint">('+v.n+' of '+m.n+' agree)</span>':'')+'</td></tr>'; }).join("")+'</table>'; }
 ["lkMfr","lkModel"].forEach(function(id){ E(id).addEventListener("input",function(){ clearTimeout(window._lk); window._lk=setTimeout(doLookup,300); }); });
+
+/* ===== Admin setup: bulk add + save equipment without a visit (pre-load a PM site from old hard copies) ===== */
+var BK_COLS=[["Title","Tag #",90],["EquipType","Type",150],["Area","Location",120],["Manufacturer","Mfr",100],["Model","Model",150],["SerialNumber","Serial",130],["FilterSize","Filters (size)",120],["FilterQty","Filter qty",60],["BeltSize","Belt",80],["Refrigerant","Refrig.",70],["InstallDate","Installed (yyyy-mm-dd)",110]];
+function bkRow(){ return '<tr>'+BK_COLS.map(function(c){ if(c[0]==="EquipType") return '<td><select data-b="EquipType" style="min-width:'+c[2]+'px;padding:6px;font-size:13px"><option value=""></option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'">'+esc(t[0])+'</option>';}).join("")+'</select></td>';
+  return '<td><input data-b="'+c[0]+'" style="min-width:'+c[2]+'px;padding:6px;font-size:13px"'+(c[0]==="Manufacturer"?' list="mfrlist"':(c[0]==="Model"?' list="modellist"':''))+'></td>'; }).join("")+'</tr>'; }
+E("bulkBtn").onclick=function(){ E("bkSite").textContent=CUR_SITE.Title||""; E("bkMsg").className="msg";
+  var h='<tr>'+BK_COLS.map(function(c){return '<th>'+esc(c[1])+'</th>';}).join("")+'</tr>'; for(var i=0;i<8;i++) h+=bkRow(); E("bkGrid").innerHTML=h; E("bulkModal").style.display="block"; };
+E("bkMore").onclick=function(){ for(var i=0;i<5;i++) E("bkGrid").insertAdjacentHTML("beforeend",bkRow()); };
+E("bkCancel").onclick=function(){ E("bulkModal").style.display="none"; };
+function matchType(v){ v=String(v||"").trim().toLowerCase(); if(!v) return ""; var t=TYPES.filter(function(x){ return x[0].toLowerCase()===v||x[1].toLowerCase()===v; })[0]||TYPES.filter(function(x){ return x[1].toLowerCase().indexOf(v)>-1||v.indexOf(x[0].toLowerCase())>-1; })[0]; return t?t[1]:""; }
+E("bkGrid").addEventListener("paste",function(e){ var t=e.target; if(!t.getAttribute||!t.getAttribute("data-b")) return; var txt=(e.clipboardData||window.clipboardData).getData("text"); if(txt.indexOf("\t")<0&&txt.indexOf("\n")<0) return;
+  e.preventDefault(); var lines=txt.replace(/\r/g,"").split("\n").filter(function(l){return l.trim();});
+  var tr=t.closest("tr"), rows=Array.prototype.slice.call(E("bkGrid").querySelectorAll("tr")).slice(1), start=rows.indexOf(tr), col0=BK_COLS.map(function(c){return c[0];}).indexOf(t.getAttribute("data-b"));
+  while(rows.length<start+lines.length){ E("bkGrid").insertAdjacentHTML("beforeend",bkRow()); rows=Array.prototype.slice.call(E("bkGrid").querySelectorAll("tr")).slice(1); }
+  lines.forEach(function(l,i){ var cells=l.split("\t"); cells.forEach(function(v,j){ var c=BK_COLS[col0+j]; if(!c) return; var el=rows[start+i].querySelector('[data-b="'+c[0]+'"]'); if(!el) return; el.value=c[0]==="EquipType"?matchType(v):v.trim(); }); }); });
+E("bkAdd").onclick=function(){ var rows=Array.prototype.slice.call(E("bkGrid").querySelectorAll("tr")).slice(1), n=0, lib=0;
+  rows.forEach(function(tr){ var v={}; BK_COLS.forEach(function(c){ var el=tr.querySelector('[data-b="'+c[0]+'"]'); v[c[0]]=el?String(el.value||"").trim():""; });
+    if(!BK_COLS.some(function(c){return v[c[0]];})) return;
+    var u=mkUnit(null); Object.keys(v).forEach(function(k){ if(v[k]) u.cur[k]=k==="InstallDate"?(/^\d{4}-\d\d-\d\d$/.test(v[k])?v[k]:""):v[k]; }); if(!u.cur.Title) u.cur.Title="(no tag)";
+    u.dirty=true; if(applyLib(u).length) lib++; UNITS.push(u); n++; });
+  if(!n){ showMsg("bkMsg","err","Nothing to add — fill in at least one row."); return; }
+  E("bulkModal").style.display="none"; renderUnits(); saveDraft();
+  showMsg("eqMsg","info",n+" unit"+(n===1?"":"s")+" added"+(lib?" ("+lib+" filled in from the model library — blue boxes)":"")+". Check them, then tap Save equipment only."); };
+E("saveEqBtn").onclick=async function(){ if(!IS_ADMIN||!CUR_SITE) return;
+  var todo=UNITS.filter(function(u){return !u.id||u.dirty;}); if(!todo.length){ showMsg("eqMsg","info","Nothing new or changed to save."); return; }
+  if(todo.some(function(u){return u.status;})&&!confirm("Some units are marked for a visit. This saves the equipment info only — no visit report is filed. Continue?")) return;
+  var b=E("saveEqBtn"); b.disabled=true; showMsg("eqMsg","info","Saving "+todo.length+" unit"+(todo.length===1?"":"s")+"…");
+  try{ await uploadAll(function(i,n){ E("eqMsg").textContent="Uploading photo "+i+" of "+n+"…"; });
+    for(var i=0;i<todo.length;i++){ var u=todo[i], keep=u.status; u.status=""; var f=eqFields(u,false); u.status=keep;
+      if(!u.id){ var r=await gfetch(GRAPH+LID[L_EQ]+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); u.id=r.id; u.key="id"+r.id; u.f=Object.assign({_id:r.id},f); }
+      else if(Object.keys(f).length){ await patchEq(u.id,f); Object.assign(u.f,f); }
+      u.dirty=false; E("eqMsg").textContent="Saved "+(i+1)+" of "+todo.length+"…"; }
+    renderUnits(); saveDraft(); loadLib(); showMsg("eqMsg","ok","Saved "+todo.length+" unit"+(todo.length===1?"":"s")+" to "+CUR_SITE.Title+". No visit report was filed.");
+  }catch(e){ showMsg("eqMsg","err","Couldn't finish ("+e.message+"). What's saved stays saved — tap Save again."); }
+  b.disabled=false; };
 
 /* ===== submit ===== */
 function dataUrlBlob(u){ var p=u.split(","), b=atob(p[1]), a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return new Blob([a],{type:"image/jpeg"}); }
