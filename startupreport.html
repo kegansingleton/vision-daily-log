@@ -107,6 +107,11 @@ textarea{min-height:80px;resize:vertical}
       <div><label>Model number <span class="req">*</span></label><input type="text" id="model" autocapitalize="characters"></div>
       <div><label>Serial number <span class="req">*</span></label><input type="text" id="serial" autocapitalize="characters"></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr .6fr;gap:8px">
+      <div><label>Belt size</label><input type="text" id="beltSize" autocapitalize="characters" placeholder="e.g. A42, BX55"></div>
+      <div><label>Belt type</label><input type="text" id="beltType" list="belttypes" placeholder="Pick or type"></div>
+      <div><label>Qty</label><input type="text" id="beltQty" inputmode="numeric" placeholder="1"></div>
+    </div><datalist id="belttypes"><option value="A / 4L (V-belt)"><option value="B / 5L (V-belt)"><option value="AX (cogged)"><option value="BX (cogged)"><option value="3L (V-belt)"><option value="3V (wedge)"><option value="5V (wedge)"><option value="3VX (cogged wedge)"><option value="5VX (cogged wedge)"><option value="Poly-V / serpentine"><option value="Banded"><option value="Link belt"><option value="Direct drive (no belt)"></datalist>
   </div>
 
   <div class="card" id="ckCard">
@@ -205,7 +210,7 @@ function afterLogin(a){
   loadDraft();
   if(!E("tech").value) E("tech").value=a.name||"";
   E("etype").onchange=function(){ E("etype").classList.remove("bad"); renderChecklist(); saveDraft(); };
-  ["rtype","date","job","area","tag","mfr","model","serial","comments","recs","tech"].forEach(function(id){ E(id).addEventListener("input",function(){ E(id).classList.remove("bad"); saveDraft(); }); E(id).addEventListener("change",saveDraft); });
+  ["rtype","date","job","area","tag","mfr","model","serial","beltSize","beltType","beltQty","comments","recs","tech"].forEach(function(id){ E(id).addEventListener("input",function(){ E(id).classList.remove("bad"); saveDraft(); }); E(id).addEventListener("change",saveDraft); });
   E("dpCam").onchange=function(){ if(this.files[0]) addPhoto(this.files[0],true); this.value=""; };
   E("phCam").onchange=function(){ Array.prototype.forEach.call(this.files,function(f){addPhoto(f,false);}); this.value=""; };
   E("phFile").onchange=E("phCam").onchange;
@@ -296,7 +301,7 @@ function buildReport(){
   var row=function(a,b){ return '<tr><td style="padding:4px 10px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top">'+esc(a)+'</td><td style="padding:4px 0;font-weight:600">'+b+'</td></tr>'; };
   H.push('<h2 style="color:#7f1d1d;margin:0 0 6px">'+esc(E("rtype").value)+' Report — '+esc(t[1])+'</h2>');
   H.push('<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(E("job").value))+row("Date",esc(E("date").value))+row("Bldg / Room / Area",esc(E("area").value))+row("Tag ID",esc(E("tag").value))+
-    row("Manufacturer",esc(E("mfr").value))+row("Model",esc(E("model").value))+row("Serial",esc(E("serial").value))+row("Service technician",esc(E("tech").value))+'</table>');
+    row("Manufacturer",esc(E("mfr").value))+row("Model",esc(E("model").value))+row("Serial",esc(E("serial").value))+((E("beltSize").value||E("beltType").value)?row("Belt",esc([E("beltQty").value?E("beltQty").value+" ×":"",E("beltSize").value,E("beltType").value?"("+E("beltType").value+")":""].filter(Boolean).join(" "))):"")+row("Service technician",esc(E("tech").value))+'</table>');
   if(DP) H.push('<p style="margin:10px 0 4px;font-weight:700">Data plate</p>'+(DP.url?'<a href="'+DP.url+'">':'')+'<img src="'+DP.thumb+'" style="max-width:420px;width:100%;border:1px solid #ccc;border-radius:6px">'+(DP.url?'</a>':''));
   H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">'+esc(L.t)+'</h3><table style="border-collapse:collapse;font-size:13.5px;width:100%">');
   L.items.forEach(function(it){ if(typeof it==="string"){ H.push('<tr><td colspan="2" style="padding:8px 0 2px;font-weight:800;color:#7f1d1d;font-size:12px;text-transform:uppercase">'+esc(it)+'</td></tr>'); return; }
@@ -317,6 +322,7 @@ function buildFields(){
   var f={ Title:E("date").value+" | "+(sp<0?jv:jv.slice(0,sp))+" | "+(E("tag").value||t[1])+" | "+E("tech").value,
     ReportType:E("rtype").value, ServiceDate:E("date").value+"T12:00:00Z", JobNo:sp<0?jv:jv.slice(0,sp), JobName:sp<0?"":jv.slice(sp+1),
     EquipmentType:t[1], TagID:E("tag").value, Area:E("area").value, Manufacturer:E("mfr").value, Model:E("model").value.trim(), SerialNumber:E("serial").value.trim(),
+    BeltSize:E("beltSize").value.trim(), BeltType:E("beltType").value.trim(), BeltQty:E("beltQty").value.trim(),
     Technician:E("tech").value.trim(), Comments:E("comments").value, Recommendations:E("recs").value, DataPlatePhoto:(DP&&DP.url)||"", PhotoFolder:PHOTO_FOLDER_URL||"",
     PhotoCount:String((DP?1:0)+PHOTOS.length), Checklist:JSON.stringify(ANS), LoginEmail:loginEmail, SubmittedAt:new Date().toLocaleString(), ReportHTML:buildReport() };
   /* only send columns that exist on the list, so a missing optional column never blocks a report */
@@ -345,7 +351,7 @@ async function submit(){
 }
 
 /* ===== drafts (text only — photos stay in memory) ===== */
-var FIELDS=["rtype","date","job","etype","area","tag","mfr","model","serial","comments","recs","tech"];
+var FIELDS=["rtype","date","job","etype","area","tag","mfr","model","serial","beltSize","beltType","beltQty","comments","recs","tech"];
 function saveDraft(){ try{ var d={ans:ANS,ts:Date.now()}; FIELDS.forEach(function(id){ d[id]=E(id).value; }); localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch(e){} }
 function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); if(!d) return; if(Date.now()-(d.ts||0)>14*864e5){ clearDraft(); return; } FIELDS.forEach(function(id){ if(d[id]!=null&&d[id]!=="") E(id).value=d[id]; }); ANS=d.ans||{}; }catch(e){} }
 function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }

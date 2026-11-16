@@ -127,6 +127,11 @@ textarea{min-height:90px;resize:vertical}
       <div><label>Model number</label><input type="text" id="model" autocapitalize="characters" placeholder="From data plate"></div>
       <div><label>Serial number</label><input type="text" id="serial" autocapitalize="characters" placeholder="From data plate"></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr .6fr;gap:8px">
+      <div><label>Belt size</label><input type="text" id="beltSize" autocapitalize="characters" placeholder="e.g. A42, BX55"></div>
+      <div><label>Belt type</label><input type="text" id="beltType" list="belttypes" placeholder="Pick or type"></div>
+      <div><label>Qty</label><input type="text" id="beltQty" inputmode="numeric" placeholder="1"></div>
+    </div><datalist id="belttypes"><option value="A / 4L (V-belt)"><option value="B / 5L (V-belt)"><option value="AX (cogged)"><option value="BX (cogged)"><option value="3L (V-belt)"><option value="3V (wedge)"><option value="5V (wedge)"><option value="3VX (cogged wedge)"><option value="5VX (cogged wedge)"><option value="Poly-V / serpentine"><option value="Banded"><option value="Link belt"><option value="Direct drive (no belt)"></datalist>
     <div class="pbtns"><label class="pbtn" for="dpCam" id="dpBtn">&#128247; Photo of data plate</label><label class="pbtn" for="phCam">&#128247; Other photos</label><label class="pbtn" for="phFile">&#128193; From camera roll</label></div>
     <input id="dpCam" type="file" accept="image/*" capture="environment" style="display:none">
     <input id="phCam" type="file" accept="image/*" capture="environment" multiple style="display:none">
@@ -236,7 +241,7 @@ function collect(){
     materials:MAT.filter(function(r){return r.item||r.qty;}).map(function(r){return {item:r.item,qty:r.qty,source:r.src||"",po:r.po||""};}),
     refrigerant:REF.filter(function(r){return r.type||r.lbs;}).map(function(r){return {type:r.type,lbs:num(r.lbs)};}),
     filters:FLT.filter(function(r){return r.size||r.qty;}).map(function(r){return {size:r.size,qty:r.qty};}),
-    mfr:E("mfr").value.trim(),model:E("model").value.trim(),serial:E("serial").value.trim(),
+    mfr:E("mfr").value.trim(),model:E("model").value.trim(),serial:E("serial").value.trim(),beltSize:E("beltSize").value.trim(),beltType:E("beltType").value.trim(),beltQty:E("beltQty").value.trim(),
     totLabor:t.reg,totOt:t.ot,sig:E("sig").value.trim(),loginEmail:loginEmail,submittedAt:new Date().toLocaleString()};
 }
 function buildText(a){
@@ -252,7 +257,7 @@ function buildText(a){
   if(a.refrigerant.length||a.filters.length){L.push("");L.push("-- REFRIGERANT & FILTERS --");
     a.refrigerant.forEach(function(r){L.push("Refrigerant: "+(r.type||"?")+" — "+r.lbs+" lbs");});
     a.filters.forEach(function(r){L.push("Filters: "+(r.size||"?")+" — qty "+(r.qty||"?"));});}
-  if(a.mfr||a.model||a.serial||DP){L.push("");L.push("-- EQUIPMENT --");if(a.mfr)L.push("Manufacturer: "+a.mfr);if(a.model)L.push("Model: "+a.model);if(a.serial)L.push("Serial: "+a.serial);if(DP&&DP.url)L.push("Data plate photo: "+DP.url);}
+  if(a.mfr||a.model||a.serial||a.beltSize||a.beltType||DP){L.push("");L.push("-- EQUIPMENT --");if(a.mfr)L.push("Manufacturer: "+a.mfr);if(a.model)L.push("Model: "+a.model);if(a.serial)L.push("Serial: "+a.serial);if(a.beltSize||a.beltType)L.push("Belt: "+[a.beltQty?a.beltQty+" x":"",a.beltSize,a.beltType?"("+a.beltType+")":""].filter(Boolean).join(" "));if(DP&&DP.url)L.push("Data plate photo: "+DP.url);}
   if(PHOTO_FOLDER_URL){L.push("");L.push("Photos ("+((DP?1:0)+PHOTOS.length)+"): "+PHOTO_FOLDER_URL);}
   L.push("");L.push("Signed: "+a.sig);L.push("Submitted: "+a.submittedAt+" by "+a.loginEmail);
   L.push("========================================");return L.join("\n");
@@ -263,10 +268,10 @@ function buildFields(a){
     LineItems:JSON.stringify({labor:a.labor,materials:a.materials,refrigerant:a.refrigerant,filters:a.filters}),
     ForemanSignature:a.sig,SubmittedBy:a.loginEmail,SubmittedAt:a.submittedAt,ReportText:buildText(a),
     /* new, optional columns — only sent if they exist on the list */
-    Manufacturer:a.mfr,Model:a.model,SerialNumber:a.serial,DataPlatePhoto:(DP&&DP.url)||"",PhotoFolder:PHOTO_FOLDER_URL||"",
+    Manufacturer:a.mfr,Model:a.model,SerialNumber:a.serial,BeltSize:a.beltSize,BeltType:a.beltType,BeltQty:a.beltQty,DataPlatePhoto:(DP&&DP.url)||"",PhotoFolder:PHOTO_FOLDER_URL||"",
     Refrigerant:a.refrigerant.map(function(r){return (r.type||"?")+" "+r.lbs+" lbs";}).join("; "),
     Filters:a.filters.map(function(r){return (r.size||"?")+" x"+(r.qty||"?");}).join("; ")};
-  ["Manufacturer","Model","SerialNumber","DataPlatePhoto","PhotoFolder","Refrigerant","Filters"].forEach(function(k){ if(!LIST_COLS||!LIST_COLS[k]) delete f[k]; });
+  ["Manufacturer","Model","SerialNumber","BeltSize","BeltType","BeltQty","DataPlatePhoto","PhotoFolder","Refrigerant","Filters"].forEach(function(k){ if(!LIST_COLS||!LIST_COLS[k]) delete f[k]; });
   return f;
 }
 async function submitReport(){
@@ -287,7 +292,7 @@ async function submitReport(){
 }
 
 /* ===== drafts ===== */
-var FIELDS=["workDate","jobNo","phase","jobName","status","tech","reason","work","mfr","model","serial","sig"];
+var FIELDS=["workDate","jobNo","phase","jobName","status","tech","reason","work","mfr","model","serial","beltSize","beltType","beltQty","sig"];
 function saveDraft(){try{var d={LAB:LAB,MAT:MAT,REF:REF,FLT:FLT,ts:Date.now()};FIELDS.forEach(function(id){d[id]=E(id).value;});localStorage.setItem(DRAFT_KEY,JSON.stringify(d));}catch(e){}}
 function loadDraft(){try{var d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null");if(!d)return;if(Date.now()-(d.ts||0)>14*864e5){clearDraft();return;}FIELDS.forEach(function(id){if(d[id])E(id).value=d[id];});LAB=d.LAB||[];MAT=d.MAT||[];REF=d.REF||[];FLT=d.FLT||[];}catch(e){}}
 function clearDraft(){try{localStorage.removeItem(DRAFT_KEY);}catch(e){}}

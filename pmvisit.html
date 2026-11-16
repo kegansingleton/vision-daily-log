@@ -100,7 +100,7 @@ table.pl{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}table
     <div class="tools"><button class="btn btn-g btn-s" id="partsBtn">&#129534; Parts list for this site</button><button class="btn btn-g btn-s" id="lookupBtn">&#128269; Model lookup</button>
       <span id="adminTools" style="display:none"><button class="btn btn-g btn-s" id="bulkBtn">&#128203; Bulk add units</button> <button class="btn btn-p btn-s" id="saveEqBtn">&#128190; Save equipment only (no visit)</button></span></div>
     <div class="msg" id="eqMsg"></div>
-    <datalist id="mfrlist"></datalist><datalist id="modellist"></datalist>
+    <datalist id="mfrlist"></datalist><datalist id="belttypes"><option value="A / 4L (V-belt)"><option value="B / 5L (V-belt)"><option value="AX (cogged)"><option value="BX (cogged)"><option value="3L (V-belt)"><option value="3V (wedge)"><option value="5V (wedge)"><option value="3VX (cogged wedge)"><option value="5VX (cogged wedge)"><option value="Poly-V / serpentine"><option value="Banded"><option value="Link belt"><option value="Direct drive (no belt)"></datalist><datalist id="modellist"></datalist>
     <div id="units"></div>
   </div>
 
@@ -217,12 +217,12 @@ var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, LID={}, COLS={}, SI
 
 /* unit fields shown on every unit — [column, label, kind] kind: t text, d date, type = equipment type select, n note */
 var UF=[["Title","Tag #","t"],["EquipType","Type","type"],["Area","Location / area","t"],["Manufacturer","Manufacturer","t"],["Model","Model","t"],["SerialNumber","Serial","t"],
- ["BeltSize","Belt size","t"],["BeltQty","Belt qty","t"],["FilterSize","Filter size(s)","t"],["FilterQty","Filter qty","t"],["FilterMERV","MERV","t"],
+ ["BeltSize","Belt size","t"],["BeltType","Belt type","bt"],["BeltQty","Belt qty","t"],["FilterSize","Filter size(s)","t"],["FilterQty","Filter qty","t"],["FilterMERV","MERV","t"],
  ["Refrigerant","Refrigerant","t"],["Charge","Charge (lbs)","t"],["Voltage","Voltage","t"],["Phase","Phase","t"],["MCA","MCA","t"],["MOCP","MOCP","t"],["Capacity","Tons / MBH","t"],
  ["InstallDate","Install date","d"],["WarrantyEnd","Warranty ends","d"],["Notes","Unit notes (stays with the unit)","n"]];
 var STATUS={done:"Serviced",na:"Not accessible",skip:"Skipped"};
 /* ===== Model library: every unit ever entered (all sites) teaches what a make & model takes ===== */
-var LIB=[], MODEL_FIELDS=["EquipType","BeltSize","BeltQty","FilterSize","FilterQty","FilterMERV","Refrigerant","Charge","Voltage","Phase","MCA","MOCP","Capacity"];
+var LIB=[], MODEL_FIELDS=["EquipType","BeltSize","BeltType","BeltQty","FilterSize","FilterQty","FilterMERV","Refrigerant","Charge","Voltage","Phase","MCA","MOCP","Capacity"];
 function nm(s){ return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
 function junk(v){ return !v||/^(na|n\/a|none|-+|\?|unknown|tbd)$/i.test(String(v).trim()); }
 function libMatch(mfr,model,excludeId){ var M=nm(model), F=nm(mfr); if(M.length<4) return null;
@@ -366,7 +366,7 @@ function fieldInput(u,x){ var v=u.cur[x[0]]||"";
   if(x[2]==="type") return '<select data-f="'+x[0]+'"'+((u.auto&&u.auto[x[0]])?' class="auto"':'')+'><option value="">— pick —</option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'"'+(t[1]===v||t[0]===v?" selected":"")+'>'+esc(t[1])+'</option>';}).join("")+'</select>';
   if(x[2]==="d") return '<input type="date" data-f="'+x[0]+'" value="'+esc(v)+'">';
   if(x[2]==="n") return '<textarea data-f="'+x[0]+'" rows="2">'+esc(v)+'</textarea>';
-  var au=(u.auto&&u.auto[x[0]])?' class="auto"':'', dl=x[0]==="Manufacturer"?' list="mfrlist"':(x[0]==="Model"?' list="modellist"':'');
+  var au=(u.auto&&u.auto[x[0]])?' class="auto"':'', dl=x[0]==="Manufacturer"?' list="mfrlist"':(x[0]==="Model"?' list="modellist"':(x[2]==="bt"?' list="belttypes"':''));
   return '<input type="text" data-f="'+x[0]+'" value="'+esc(v)+'"'+au+dl+(/Model|Serial/.test(x[0])?' autocapitalize="characters"':'')+'>'; }
 function fieldBlock(u,keys,cls){ return '<div class="'+cls+'">'+keys.map(function(k){ var x=UF.filter(function(y){return y[0]===k;})[0]; return '<div><label>'+esc(x[1])+'</label>'+fieldInput(u,x)+'</div>'; }).join("")+'</div>'; }
 function checklistHtml(u){ var t=typeOf(u.cur.EquipType); if(!t) return '<div class="hint">Pick the unit type above to get its checklist.</div>';
@@ -393,7 +393,7 @@ function unitBody(u){ var f=u.f;
     '<input type="file" accept="image/*" capture="environment" class="fdp" style="display:none"><input type="file" accept="image/*" multiple class="fph" style="display:none"><div class="thumbs">'+photosHtml(u)+'</div>'+
     '<div class="sec">Unit info (saved for next time)</div>'+
     fieldBlock(u,["Title","EquipType"],"g2")+fieldBlock(u,["Area"],"")+fieldBlock(u,["Manufacturer","Model","SerialNumber"],"g3")+'<div class="libhint"'+(u.lib?' style="display:block"':'')+'>'+libHint(u)+'</div>'+
-    fieldBlock(u,["BeltSize","BeltQty"],"g2")+fieldBlock(u,["FilterSize","FilterQty","FilterMERV"],"g3")+
+    fieldBlock(u,["BeltSize","BeltType","BeltQty"],"g3")+fieldBlock(u,["FilterSize","FilterQty","FilterMERV"],"g3")+
     fieldBlock(u,["Refrigerant","Charge","Capacity"],"g3")+fieldBlock(u,["Voltage","Phase","MCA","MOCP"],"g4")+fieldBlock(u,["InstallDate","WarrantyEnd"],"g2")+fieldBlock(u,["Notes"],"")+
     ((IS_ADMIN&&u.id)?'<div class="adm"><span class="hint" style="margin:0">Admin:</span><button type="button" class="btn btn-g btn-s" data-adm="move">Move to another site</button><button type="button" class="btn btn-d btn-s" data-adm="retire">Retire unit (removed / replaced)</button></div>':'')+
     ((!u.id)?'<div class="adm"><button type="button" class="btn btn-d btn-s" data-adm="drop">Remove this new unit</button></div>':''); }
@@ -477,7 +477,7 @@ function parseFilters(u){ var s=String(u.cur.FilterSize||""), out=[], re=/(\d+)\
 function partsData(){ var F={}, B={}, R={}, miss=[];
   UNITS.forEach(function(u){ var tag=u.cur.Title||"(no tag)", auto=u.auto||{};
     var fl=parseFilters(u); fl.forEach(function(f){ var k=f.size+(u.cur.FilterMERV?" MERV "+u.cur.FilterMERV:""); F[k]=F[k]||{q:0,u:[],a:false}; F[k].q+=f.qty; F[k].u.push(tag); if(auto.FilterSize) F[k].a=true; });
-    var b=String(u.cur.BeltSize||"").trim(); if(b&&!junk(b)&&!/direct/i.test(b)){ B[b]=B[b]||{q:0,u:[],a:false}; B[b].q+=parseFloat(u.cur.BeltQty)||1; B[b].u.push(tag); if(auto.BeltSize) B[b].a=true; }
+    var b=String(u.cur.BeltSize||"").trim(), bt=String(u.cur.BeltType||"").trim(); if(/direct/i.test(bt)) b=""; if(b&&!junk(b)&&!/direct/i.test(b)){ if(bt) b=b+" — "+bt; B[b]=B[b]||{q:0,u:[],a:false}; B[b].q+=parseFloat(u.cur.BeltQty)||1; B[b].u.push(tag); if(auto.BeltSize) B[b].a=true; }
     var r=String(u.cur.Refrigerant||"").trim(); if(r&&!junk(r)){ R[r]=R[r]||[]; R[r].push(tag); }
     if(!fl.length&&!/direct/i.test(b)&&!b) miss.push(tag); else if(!fl.length) miss.push(tag+" (filters)"); });
   return {F:F,B:B,R:R,miss:miss}; }
@@ -506,9 +506,9 @@ function doLookup(){ var m=libMatch(E("lkMfr").value,E("lkModel").value,null);
 ["lkMfr","lkModel"].forEach(function(id){ E(id).addEventListener("input",function(){ clearTimeout(window._lk); window._lk=setTimeout(doLookup,300); }); });
 
 /* ===== Admin setup: bulk add + save equipment without a visit (pre-load a PM site from old hard copies) ===== */
-var BK_COLS=[["Title","Tag #",90],["EquipType","Type",150],["Area","Location",120],["Manufacturer","Mfr",100],["Model","Model",150],["SerialNumber","Serial",130],["FilterSize","Filters (size)",120],["FilterQty","Filter qty",60],["BeltSize","Belt",80],["Refrigerant","Refrig.",70],["InstallDate","Installed (yyyy-mm-dd)",110]];
+var BK_COLS=[["Title","Tag #",90],["EquipType","Type",150],["Area","Location",120],["Manufacturer","Mfr",100],["Model","Model",150],["SerialNumber","Serial",130],["FilterSize","Filters (size)",120],["FilterQty","Filter qty",60],["BeltSize","Belt size",80],["BeltType","Belt type",110],["BeltQty","Belt qty",55],["Refrigerant","Refrig.",70],["InstallDate","Installed (yyyy-mm-dd)",110]];
 function bkRow(){ return '<tr>'+BK_COLS.map(function(c){ if(c[0]==="EquipType") return '<td><select data-b="EquipType" style="min-width:'+c[2]+'px;padding:6px;font-size:13px"><option value=""></option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'">'+esc(t[0])+'</option>';}).join("")+'</select></td>';
-  return '<td><input data-b="'+c[0]+'" style="min-width:'+c[2]+'px;padding:6px;font-size:13px"'+(c[0]==="Manufacturer"?' list="mfrlist"':(c[0]==="Model"?' list="modellist"':''))+'></td>'; }).join("")+'</tr>'; }
+  return '<td><input data-b="'+c[0]+'" style="min-width:'+c[2]+'px;padding:6px;font-size:13px"'+(c[0]==="Manufacturer"?' list="mfrlist"':(c[0]==="Model"?' list="modellist"':(c[0]==="BeltType"?' list="belttypes"':'')))+'></td>'; }).join("")+'</tr>'; }
 E("bulkBtn").onclick=function(){ E("bkSite").textContent=CUR_SITE.Title||""; E("bkMsg").className="msg";
   var h='<tr>'+BK_COLS.map(function(c){return '<th>'+esc(c[1])+'</th>';}).join("")+'</tr>'; for(var i=0;i<8;i++) h+=bkRow(); E("bkGrid").innerHTML=h; E("bulkModal").style.display="block"; };
 E("bkMore").onclick=function(){ for(var i=0;i<5;i++) E("bkGrid").insertAdjacentHTML("beforeend",bkRow()); };
@@ -560,7 +560,7 @@ function buildReport(){ var s=CUR_SITE, H=[], done=UNITS.filter(function(u){retu
   H.push('<table style="border-collapse:collapse;font-size:14px">'+row("Customer",esc(s.Customer||""))+row("Address",esc([s.Address,s.City].filter(Boolean).join(", ")))+(s.JobNo?row("Job",esc(s.JobNo)):"")+row("Date",esc(nice(E("vDate").value)))+row("Technician",esc(E("vTech").value))+row("Units",UNITS.filter(function(u){return u.status==="done";}).length+" serviced of "+UNITS.length)+'</table>');
   H.push('<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:12px"><tr style="background:#f3f4f6"><th style="text-align:left;padding:5px">Unit</th><th style="text-align:left;padding:5px">Equipment</th><th style="text-align:left;padding:5px">Status</th><th style="text-align:left;padding:5px">Notes</th></tr>'+
     UNITS.map(function(u){ var c=u.cur, col=u.status==="done"?"#15803d":(u.status?"#b45309":"#9ca3af");
-      return '<tr><td style="padding:5px;border-top:1px solid #eee;font-weight:700">'+esc(c.Title||"")+'<div style="font-weight:400;color:#6b7280;font-size:12px">'+esc(c.Area||"")+'</div></td><td style="padding:5px;border-top:1px solid #eee">'+esc([c.Manufacturer,c.Model].filter(Boolean).join(" "))+(c.SerialNumber?'<div style="color:#6b7280;font-size:12px">S/N '+esc(c.SerialNumber)+'</div>':'')+(c.FilterSize?'<div style="color:#6b7280;font-size:12px">Filters '+esc(c.FilterSize)+(c.FilterQty?" × "+esc(c.FilterQty):"")+'</div>':'')+'</td><td style="padding:5px;border-top:1px solid #eee;font-weight:700;color:'+col+'">'+esc(STATUS[u.status]||"Not done")+'</td><td style="padding:5px;border-top:1px solid #eee;white-space:pre-wrap">'+esc(u.vnotes)+'</td></tr>'; }).join("")+'</table>');
+      return '<tr><td style="padding:5px;border-top:1px solid #eee;font-weight:700">'+esc(c.Title||"")+'<div style="font-weight:400;color:#6b7280;font-size:12px">'+esc(c.Area||"")+'</div></td><td style="padding:5px;border-top:1px solid #eee">'+esc([c.Manufacturer,c.Model].filter(Boolean).join(" "))+(c.SerialNumber?'<div style="color:#6b7280;font-size:12px">S/N '+esc(c.SerialNumber)+'</div>':'')+(c.FilterSize?'<div style="color:#6b7280;font-size:12px">Filters '+esc(c.FilterSize)+(c.FilterQty?" × "+esc(c.FilterQty):"")+'</div>':'')+(c.BeltSize?'<div style="color:#6b7280;font-size:12px">Belt '+esc((c.BeltQty?c.BeltQty+" × ":"")+c.BeltSize+(c.BeltType?" ("+c.BeltType+")":""))+'</div>':'')+'</td><td style="padding:5px;border-top:1px solid #eee;font-weight:700;color:'+col+'">'+esc(STATUS[u.status]||"Not done")+'</td><td style="padding:5px;border-top:1px solid #eee;white-space:pre-wrap">'+esc(u.vnotes)+'</td></tr>'; }).join("")+'</table>');
   done.filter(function(u){return u.status==="done";}).forEach(function(u){ var t=typeOf(u.cur.EquipType), L=t&&LISTS[t[2]]; if(!L) return; var lines=[];
     L.items.forEach(function(it){ if(typeof it==="string") return; var a=ansText(it,u.ans[it[0]]); if(!a) return; var col=a==="No"?"#b91c1c":(a==="Done"?"#15803d":"#1f2937"); lines.push('<tr><td style="padding:2px 10px 2px 0;border-bottom:1px solid #f3f4f6">'+esc(it[1])+'</td><td style="padding:2px 0;border-bottom:1px solid #f3f4f6;font-weight:600;color:'+col+'">'+esc(a)+'</td></tr>'); });
     if(lines.length) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px;font-size:15px">'+esc(u.cur.Title||"Unit")+' — '+esc(L.t)+'</h3><table style="border-collapse:collapse;font-size:13px;width:100%">'+lines.join("")+'</table>'); });
