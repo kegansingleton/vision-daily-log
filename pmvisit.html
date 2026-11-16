@@ -60,6 +60,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .empty{color:var(--mut);font-size:14px;padding:10px 2px}
 .ret{opacity:.5}
+input.auto,select.auto{background:#e8f1fd;border-color:#7aa7e0}
+.libhint{font-size:12px;color:#1d4ed8;background:#eef4fe;border-radius:8px;padding:6px 9px;margin-top:6px;display:none}
+table.pl{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}table.pl td,table.pl th{padding:6px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}table.pl th{background:#f3f4f6;font-size:12px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -92,7 +96,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
 
   <div class="card" id="unitsCard" style="display:none">
     <h2><span>3. Equipment <span id="uCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-g btn-s" id="addUnitBtn">+ Add unit</button></h2>
-    <div class="hint">Tap a unit to open it. Unit info is already filled in from last time — fix anything that's wrong and it's saved for next time.</div>
+    <div class="hint">Tap a unit to open it. Unit info is already filled in from last time — fix anything that's wrong and it's saved for next time. <span style="color:#1d4ed8">Blue boxes</span> were filled in from the model library (other units of the same make &amp; model) — check them.</div>
+    <div class="tools"><button class="btn btn-g btn-s" id="partsBtn">&#129534; Parts list for this site</button><button class="btn btn-g btn-s" id="lookupBtn">&#128269; Model lookup</button></div>
+    <datalist id="mfrlist"></datalist><datalist id="modellist"></datalist>
     <div id="units"></div>
   </div>
 
@@ -130,6 +136,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
   <div class="row-b" id="smDelRow" style="display:none"><button class="btn btn-d" id="smRetire">Mark site inactive</button></div>
 </div></div>
 
+<div class="modal" id="partsModal"><div class="box">
+  <h2>Parts list — <span id="plSite"></span></h2>
+  <div class="hint">From the unit info on file (active units). Use it to order filters &amp; belts before the visit. Blue = filled from the model library.</div>
+  <div id="plBody"></div>
+  <div class="row-b"><button class="btn btn-g" id="plClose">Close</button><button class="btn btn-g" id="plCopy">Copy</button><button class="btn btn-p" id="plPrint">Print</button></div>
+</div></div>
+<div class="modal" id="lookModal"><div class="box">
+  <h2>Model lookup</h2>
+  <div class="hint">What we know about a make &amp; model from every unit entered so far, at any site.</div>
+  <div class="g2"><div><label>Manufacturer</label><input type="text" id="lkMfr" list="mfrlist"></div><div><label>Model</label><input type="text" id="lkModel" list="modellist" autocapitalize="characters"></div></div>
+  <div id="lkOut" style="margin-top:10px"></div>
+  <div class="row-b"><button class="btn btn-g" id="lkClose">Close</button></div>
+</div></div>
 <div class="modal" id="moveModal"><div class="box">
   <h2>Move unit to another site</h2>
   <select id="moveTo"></select>
@@ -192,6 +211,29 @@ var UF=[["Title","Tag #","t"],["EquipType","Type","type"],["Area","Location / ar
  ["Refrigerant","Refrigerant","t"],["Charge","Charge (lbs)","t"],["Voltage","Voltage","t"],["Phase","Phase","t"],["MCA","MCA","t"],["MOCP","MOCP","t"],["Capacity","Tons / MBH","t"],
  ["InstallDate","Install date","d"],["WarrantyEnd","Warranty ends","d"],["Notes","Unit notes (stays with the unit)","n"]];
 var STATUS={done:"Serviced",na:"Not accessible",skip:"Skipped"};
+/* ===== Model library: every unit ever entered (all sites) teaches what a make & model takes ===== */
+var LIB=[], MODEL_FIELDS=["EquipType","BeltSize","BeltQty","FilterSize","FilterQty","FilterMERV","Refrigerant","Charge","Voltage","Phase","MCA","MOCP","Capacity"];
+function nm(s){ return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function junk(v){ return !v||/^(na|n\/a|none|-+|\?|unknown|tbd)$/i.test(String(v).trim()); }
+function libMatch(mfr,model,excludeId){ var M=nm(model), F=nm(mfr); if(M.length<4) return null;
+  var mf=function(r){ return !F||!nm(r.Manufacturer)||nm(r.Manufacturer)===F||nm(r.Manufacturer).indexOf(F)===0||F.indexOf(nm(r.Manufacturer))===0; };
+  var rows=LIB.filter(function(r){ return String(r._id)!==String(excludeId)&&nm(r.Model)===M&&mf(r); }), kind="same model";
+  if(!rows.length&&M.length>=10){ rows=LIB.filter(function(r){ return String(r._id)!==String(excludeId)&&nm(r.Model).slice(0,10)===M.slice(0,10)&&nm(r.Manufacturer)&&mf(r); }); kind="similar model ("+M.slice(0,10)+"…)"; }
+  if(!rows.length) return null;
+  var vals={}; MODEL_FIELDS.forEach(function(k){ var cnt={}; rows.forEach(function(r){ var v=String(r[k]==null?"":r[k]).trim(); if(junk(v)) return; cnt[v]=(cnt[v]||0)+1; });
+    var best=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0]; if(best) vals[k]={v:best,n:cnt[best],alt:Object.keys(cnt).length-1}; });
+  var sites={}; rows.forEach(function(r){ if(r.SiteName) sites[r.SiteName]=1; });
+  return {n:rows.length,kind:kind,vals:vals,sites:Object.keys(sites)}; }
+/* fill only blank model-level fields; returns the list of fields filled */
+function applyLib(u){ var m=libMatch(u.cur.Manufacturer,u.cur.Model,u.id); u.lib=m; if(!m) return []; var filled=[]; u.auto=u.auto||{};
+  MODEL_FIELDS.forEach(function(k){ if(m.vals[k]&&(!String(u.cur[k]||"").trim()||u.auto[k])){ if(u.cur[k]!==m.vals[k].v){ u.cur[k]=m.vals[k].v; } if(!u.auto[k]) filled.push(k); u.auto[k]=true; } });
+  if(filled.length) u.dirty=true; return filled; }
+function libHint(u){ var m=u.lib; if(!m) return ""; var f=Object.keys(u.auto||{}).filter(function(k){return u.auto[k];});
+  return "&#128218; Model library: "+m.n+" other unit"+(m.n===1?"":"s")+" of this "+esc(m.kind)+(m.sites.length?" ("+esc(m.sites.slice(0,3).join(", "))+(m.sites.length>3?"…":"")+")":"")+(f.length?" — filled "+f.length+" field"+(f.length===1?"":"s")+" in blue.":" — nothing blank to fill."); }
+async function loadLib(){ try{ LIB=await pullAll(LID[L_EQ]); }catch(e){ LIB=[]; }
+  var mf={}, md={}; LIB.forEach(function(r){ var a=String(r.Manufacturer||"").trim(), b=String(r.Model||"").trim(); if(a) mf[a.toLowerCase()]=a; if(b&&!md[b.toUpperCase()]) md[b.toUpperCase()]={m:b,f:a}; });
+  E("mfrlist").innerHTML=Object.keys(mf).sort().map(function(k){return '<option value="'+esc(mf[k])+'">';}).join("");
+  E("modellist").innerHTML=Object.keys(md).sort().map(function(k){return '<option value="'+esc(md[k].m)+'" label="'+esc(md[k].f)+'">';}).join(""); }
 
 function E(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -232,7 +274,7 @@ async function start(a){
     if(miss.length){ showMsg("topMsg","err","These SharePoint lists aren't set up yet: "+miss.join(", ")+"."); return; }
     await Promise.all([L_SITES,L_EQ,L_VIS].map(async function(n){ var c=await gfetch(GRAPH+LID[n]+"/columns?$select=name,readOnly"); COLS[n]={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) COLS[n][x.name]=1; }); }));
     pullAll(JOBTASKS,"JobNo,JobName").then(function(t){ var seen={}, h=""; t.forEach(function(x){ var no=String(x.JobNo||"").trim(); if(!no||seen[no]) return; seen[no]=1; h+='<option value="'+esc(no)+'" label="'+esc(x.JobName||"")+'">'; }); E("joblist").innerHTML=h; }).catch(function(){});
-    await loadSites();
+    await Promise.all([loadSites(),loadLib()]);
   }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); return; }
   ["vDate","vTech","vSummary","vRecs","vCust"].forEach(function(id){ E(id).addEventListener("input",saveDraft); });
   restoreDraft();
@@ -270,6 +312,7 @@ async function loadUnits(id,fromDraft){
     rows.forEach(function(r){ var u=mkUnit(r); if((r.Active||"Yes")==="No") RETIRED.push(u); else UNITS.push(u); });
   }catch(e){ E("units").innerHTML='<div class="empty">Couldn\'t load equipment ('+esc(e.message)+').</div>'; return; }
   if(fromDraft) applyDraftUnits(fromDraft);
+  UNITS.forEach(function(u){ applyLib(u); });
   renderUnits(); saveDraft();
 }
 function mkUnit(r){ var cur={}, src=r||{}; UF.forEach(function(x){ cur[x[0]]=x[2]==="d"?d10(src[x[0]]):String(src[x[0]]==null?"":src[x[0]]); });
@@ -310,10 +353,11 @@ function unitHead(u){ var c=u.cur, t=typeOf(c.EquipType);
   var chip=u.status?'<span class="chip '+(u.status==="done"?"done":"skip")+'">'+STATUS[u.status]+'</span>':(u.id?'<span class="chip">Not done</span>':'<span class="chip new">New unit</span>');
   return '<div class="m"><div class="t">'+esc(c.Title||"(no tag)")+(t?' <span style="font-weight:600;color:#6b7280;font-size:13px">· '+esc(t[0])+'</span>':'')+'</div><div class="s">'+esc([c.Area,[c.Manufacturer,c.Model].filter(Boolean).join(" "),c.FilterSize?("Filters "+c.FilterSize):""].filter(Boolean).join(" · ")||"Tap to fill in")+'</div></div>'+chip; }
 function fieldInput(u,x){ var v=u.cur[x[0]]||"";
-  if(x[2]==="type") return '<select data-f="'+x[0]+'"><option value="">— pick —</option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'"'+(t[1]===v||t[0]===v?" selected":"")+'>'+esc(t[1])+'</option>';}).join("")+'</select>';
+  if(x[2]==="type") return '<select data-f="'+x[0]+'"'+((u.auto&&u.auto[x[0]])?' class="auto"':'')+'><option value="">— pick —</option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'"'+(t[1]===v||t[0]===v?" selected":"")+'>'+esc(t[1])+'</option>';}).join("")+'</select>';
   if(x[2]==="d") return '<input type="date" data-f="'+x[0]+'" value="'+esc(v)+'">';
   if(x[2]==="n") return '<textarea data-f="'+x[0]+'" rows="2">'+esc(v)+'</textarea>';
-  return '<input type="text" data-f="'+x[0]+'" value="'+esc(v)+'"'+(/Model|Serial/.test(x[0])?' autocapitalize="characters"':'')+'>'; }
+  var au=(u.auto&&u.auto[x[0]])?' class="auto"':'', dl=x[0]==="Manufacturer"?' list="mfrlist"':(x[0]==="Model"?' list="modellist"':'');
+  return '<input type="text" data-f="'+x[0]+'" value="'+esc(v)+'"'+au+dl+(/Model|Serial/.test(x[0])?' autocapitalize="characters"':'')+'>'; }
 function fieldBlock(u,keys,cls){ return '<div class="'+cls+'">'+keys.map(function(k){ var x=UF.filter(function(y){return y[0]===k;})[0]; return '<div><label>'+esc(x[1])+'</label>'+fieldInput(u,x)+'</div>'; }).join("")+'</div>'; }
 function checklistHtml(u){ var t=typeOf(u.cur.EquipType); if(!t) return '<div class="hint">Pick the unit type above to get its checklist.</div>';
   var L=LISTS[t[2]]; if(!L) return ""; var h='<div class="hint" style="margin-top:6px">'+esc(L.t)+'</div>';
@@ -338,7 +382,7 @@ function unitBody(u){ var f=u.f;
     (f.DataPlatePhoto?'<a class="btn btn-g btn-s" style="text-decoration:none" href="'+esc(f.DataPlatePhoto)+'" target="_blank">View data plate on file</a>':'')+'</div>'+
     '<input type="file" accept="image/*" capture="environment" class="fdp" style="display:none"><input type="file" accept="image/*" multiple class="fph" style="display:none"><div class="thumbs">'+photosHtml(u)+'</div>'+
     '<div class="sec">Unit info (saved for next time)</div>'+
-    fieldBlock(u,["Title","EquipType"],"g2")+fieldBlock(u,["Area"],"")+fieldBlock(u,["Manufacturer","Model","SerialNumber"],"g3")+
+    fieldBlock(u,["Title","EquipType"],"g2")+fieldBlock(u,["Area"],"")+fieldBlock(u,["Manufacturer","Model","SerialNumber"],"g3")+'<div class="libhint"'+(u.lib?' style="display:block"':'')+'>'+libHint(u)+'</div>'+
     fieldBlock(u,["BeltSize","BeltQty"],"g2")+fieldBlock(u,["FilterSize","FilterQty","FilterMERV"],"g3")+
     fieldBlock(u,["Refrigerant","Charge","Capacity"],"g3")+fieldBlock(u,["Voltage","Phase","MCA","MOCP"],"g4")+fieldBlock(u,["InstallDate","WarrantyEnd"],"g2")+fieldBlock(u,["Notes"],"")+
     ((IS_ADMIN&&u.id)?'<div class="adm"><span class="hint" style="margin:0">Admin:</span><button type="button" class="btn btn-g btn-s" data-adm="move">Move to another site</button><button type="button" class="btn btn-d btn-s" data-adm="retire">Retire unit (removed / replaced)</button></div>':'')+
@@ -351,6 +395,11 @@ function renderUnits(){
   E("units").innerHTML=h;
   E("barCnt").textContent=d+" of "+n+" serviced";
 }
+function runLib(u){ var filled=applyLib(u), box=document.querySelector('[data-k="'+u.key+'"]'); if(!box) return;
+  MODEL_FIELDS.forEach(function(k){ var el=box.querySelector('[data-f="'+k+'"]'); if(!el) return; if(el.value!==u.cur[k]) el.value=u.cur[k]||""; el.classList.toggle("auto",!!(u.auto&&u.auto[k])); });
+  var h=box.querySelector(".libhint"); if(h){ h.innerHTML=libHint(u); h.style.display=u.lib?"block":"none"; }
+  if(filled.indexOf("EquipType")>-1){ var cw=box.querySelector(".ckwrap"); if(cw) cw.innerHTML=checklistHtml(u); }
+  refreshHead(u); saveDraft(); }
 function unitOf(el){ var k=el.closest(".unit").getAttribute("data-k"); return UNITS.filter(function(u){return u.key===k;})[0]; }
 function refreshHead(u){ var el=document.querySelector('[data-k="'+u.key+'"] .uh'); if(el) el.innerHTML=unitHead(u); var d=UNITS.filter(function(x){return x.status==="done";}).length; E("barCnt").textContent=d+" of "+UNITS.length+" serviced"; }
 E("units").addEventListener("click",function(e){
@@ -371,7 +420,9 @@ E("units").addEventListener("click",function(e){
 });
 E("units").addEventListener("input",function(e){ var t=e.target, un=t.closest(".unit"); if(!un||!un.getAttribute("data-k")) return; var u=unitOf(t); if(!u) return;
   var fk=t.getAttribute("data-f");
-  if(fk){ u.cur[fk]=t.value; u.dirty=true; if(fk==="EquipType"){ var cw=t.closest(".ub").querySelector(".ckwrap"); cw.innerHTML=checklistHtml(u); } refreshHead(u); }
+  if(fk){ u.cur[fk]=t.value; u.dirty=true; if(u.auto&&u.auto[fk]){ u.auto[fk]=false; t.classList.remove("auto"); }
+    if(fk==="Manufacturer"||fk==="Model"){ clearTimeout(u._lt); u._lt=setTimeout(function(){ runLib(u); },450); }
+    if(fk==="EquipType"){ var cw=t.closest(".ub").querySelector(".ckwrap"); cw.innerHTML=checklistHtml(u); } refreshHead(u); }
   else if(t.classList.contains("vn")) u.vnotes=t.value;
   else { var row=t.closest(".ci"); if(row){ var k=row.getAttribute("data-q"), kind=row.getAttribute("data-kind");
     if(kind==="l"){ u.ans[k]=u.ans[k]||{}; u.ans[k][t.getAttribute("data-p")]=t.value; } else u.ans[k]=t.value; } }
@@ -396,14 +447,53 @@ E("mvGo").onclick=async function(){ var s=siteById(E("moveTo").value); if(!s||!M
 /* ===== draft (survives a dropped signal or a closed tab; photos are not kept) ===== */
 function dkey(){ return "vm_pm_draft_"+loginEmail; }
 function saveDraft(){ if(SUBMITTED) return; try{ var d={date:E("vDate").value,tech:E("vTech").value,site:CUR_SITE?CUR_SITE._id:"",sum:E("vSummary").value,recs:E("vRecs").value,cust:E("vCust").value,
-    units:UNITS.map(function(u){ return {key:u.key,id:u.id,cur:u.cur,status:u.status,ans:u.ans,vnotes:u.vnotes,dirty:u.dirty}; })}; localStorage.setItem(dkey(),JSON.stringify(d)); }catch(e){} }
+    units:UNITS.map(function(u){ return {key:u.key,id:u.id,cur:u.cur,status:u.status,ans:u.ans,vnotes:u.vnotes,dirty:u.dirty,auto:u.auto||{}}; })}; localStorage.setItem(dkey(),JSON.stringify(d)); }catch(e){} }
 function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d) return;
   if(d.date) E("vDate").value=d.date; if(d.tech) E("vTech").value=d.tech; E("vSummary").value=d.sum||""; E("vRecs").value=d.recs||""; E("vCust").value=d.cust||"";
   if(d.site&&siteById(d.site)){ E("sitePick").value=d.site; pickSite(d.site,d); showMsg("topMsg","info","Picked up where you left off. (Photos aren't kept in a draft — re-add any you took.)"); } }
 function applyDraftUnits(d){ if(!d||!d.units) return; d.units.forEach(function(x){ var u=UNITS.filter(function(y){return y.key===x.key;})[0];
     if(!u&&!x.id){ u=mkUnit(null); u.key=x.key; NEWN=Math.max(NEWN,+String(x.key).replace(/\D/g,"")||0); UNITS.push(u); }
-    if(!u) return; u.cur=Object.assign(u.cur,x.cur||{}); u.status=x.status||""; u.ans=x.ans||{}; u.vnotes=x.vnotes||""; u.dirty=!!x.dirty; }); }
+    if(!u) return; u.cur=Object.assign(u.cur,x.cur||{}); u.status=x.status||""; u.ans=x.ans||{}; u.vnotes=x.vnotes||""; u.dirty=!!x.dirty; u.auto=x.auto||{}; }); }
 function clearDraft(){ try{ localStorage.removeItem(dkey()); }catch(e){} }
+
+/* ===== Parts list (pre-order filters & belts for a site) ===== */
+function parseFilters(u){ var s=String(u.cur.FilterSize||""), out=[], re=/(\d+)\s*[)x×*]?\s*\)?\s*([\d.]+\s*[x×]\s*[\d.]+\s*[x×]\s*[\d.]+)/gi, m, any=false;
+  var norm=function(z){ return z.toLowerCase().replace(/\s+/g,"").replace(/×/g,"x"); };
+  var re2=/(?:(\d+)\s*\)\s*)?([\d.]+\s*[x×]\s*[\d.]+\s*[x×]\s*[\d.]+)/gi;
+  while((m=re2.exec(s))){ any=true; out.push({size:norm(m[2]),qty:m[1]?+m[1]:(parseFloat(u.cur.FilterQty)||1)}); }
+  if(!any&&s.trim()&&!junk(s)&&!/washable/i.test(s)) out.push({size:s.trim(),qty:parseFloat(u.cur.FilterQty)||1});
+  if(/washable/i.test(s)) out.push({size:"Washable (clean only)",qty:0});
+  return out; }
+function partsData(){ var F={}, B={}, R={}, miss=[];
+  UNITS.forEach(function(u){ var tag=u.cur.Title||"(no tag)", auto=u.auto||{};
+    var fl=parseFilters(u); fl.forEach(function(f){ var k=f.size+(u.cur.FilterMERV?" MERV "+u.cur.FilterMERV:""); F[k]=F[k]||{q:0,u:[],a:false}; F[k].q+=f.qty; F[k].u.push(tag); if(auto.FilterSize) F[k].a=true; });
+    var b=String(u.cur.BeltSize||"").trim(); if(b&&!junk(b)&&!/direct/i.test(b)){ B[b]=B[b]||{q:0,u:[],a:false}; B[b].q+=parseFloat(u.cur.BeltQty)||1; B[b].u.push(tag); if(auto.BeltSize) B[b].a=true; }
+    var r=String(u.cur.Refrigerant||"").trim(); if(r&&!junk(r)){ R[r]=R[r]||[]; R[r].push(tag); }
+    if(!fl.length&&!/direct/i.test(b)&&!b) miss.push(tag); else if(!fl.length) miss.push(tag+" (filters)"); });
+  return {F:F,B:B,R:R,miss:miss}; }
+function partsHtml(){ var d=partsData(), h="";
+  var tbl=function(title,obj,unitCol){ var ks=Object.keys(obj).sort(); if(!ks.length) return '<div class="sec">'+title+'</div><div class="empty">None on file.</div>';
+    return '<div class="sec">'+title+'</div><table class="pl"><tr><th>Size</th><th>Qty</th><th>Units</th></tr>'+ks.map(function(k){ var o=obj[k]; return '<tr'+(o.a?' style="background:#eef4fe"':'')+'><td><b>'+esc(k)+'</b></td><td>'+(o.q||"—")+'</td><td style="color:#6b7280">'+esc(o.u.join(", "))+'</td></tr>'; }).join("")+'</table>'; };
+  h+=tbl("Filters",d.F)+tbl("Belts",d.B);
+  var rk=Object.keys(d.R); if(rk.length) h+='<div class="sec">Refrigerant on site</div><table class="pl">'+rk.map(function(k){return '<tr><td><b>'+esc(k)+'</b></td><td style="color:#6b7280">'+esc(d.R[k].join(", "))+'</td></tr>';}).join("")+'</table>';
+  if(d.miss.length) h+='<div class="msg err" style="display:block;margin-top:10px">No filter / belt info yet: '+esc(d.miss.join(", "))+'. Fill these in on the visit and it\'ll be here next time.</div>';
+  return h; }
+function partsText(){ var d=partsData(), L=["PARTS — "+(CUR_SITE.Title||"")+(CUR_SITE.Customer?" ("+CUR_SITE.Customer+")":""),""];
+  L.push("FILTERS"); Object.keys(d.F).sort().forEach(function(k){ L.push("  "+(d.F[k].q||"-")+" x "+k+"   ["+d.F[k].u.join(", ")+"]"); });
+  L.push("","BELTS"); Object.keys(d.B).sort().forEach(function(k){ L.push("  "+d.B[k].q+" x "+k+"   ["+d.B[k].u.join(", ")+"]"); });
+  return L.join("\n"); }
+E("partsBtn").onclick=function(){ if(!CUR_SITE) return; E("plSite").textContent=CUR_SITE.Title||""; E("plBody").innerHTML=partsHtml(); E("partsModal").style.display="block"; };
+E("plClose").onclick=function(){ E("partsModal").style.display="none"; };
+E("plCopy").onclick=function(){ var t=partsText(); try{ navigator.clipboard.writeText(t).then(function(){ E("plCopy").textContent="Copied ✓"; setTimeout(function(){E("plCopy").textContent="Copy";},1500); }); }catch(e){ prompt("Copy this:",t); } };
+E("plPrint").onclick=function(){ var w=window.open("","_blank"); if(!w) return; w.document.write('<html><head><title>Parts — '+esc(CUR_SITE.Title)+'</title><style>body{font-family:Arial;padding:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;text-align:left}.sec{font-weight:bold;margin:16px 0 4px;color:#7f1d1d}.empty,.hint{color:#666}</style></head><body><h2>Parts list — '+esc(CUR_SITE.Title)+'</h2><div>'+esc([CUR_SITE.Customer,CUR_SITE.Address,CUR_SITE.City].filter(Boolean).join(" · "))+'</div>'+partsHtml()+'</body></html>'); w.document.close(); w.print(); };
+/* ===== Model lookup ===== */
+E("lookupBtn").onclick=function(){ E("lookModal").style.display="block"; E("lkOut").innerHTML=""; E("lkMfr").focus(); };
+E("lkClose").onclick=function(){ E("lookModal").style.display="none"; };
+function doLookup(){ var m=libMatch(E("lkMfr").value,E("lkModel").value,null);
+  if(!m){ E("lkOut").innerHTML='<div class="empty">'+(nm(E("lkModel").value).length<4?"Type a model number.":"Nothing on file for that model yet.")+'</div>'; return; }
+  var lab={}; UF.forEach(function(x){lab[x[0]]=x[1];});
+  E("lkOut").innerHTML='<div class="hint">'+m.n+' unit'+(m.n===1?"":"s")+' on file ('+esc(m.kind)+')'+(m.sites.length?' at '+esc(m.sites.join(", ")):"")+'</div><table class="pl">'+MODEL_FIELDS.filter(function(k){return m.vals[k];}).map(function(k){ var v=m.vals[k]; return '<tr><td style="color:#6b7280">'+esc(lab[k])+'</td><td><b>'+esc(v.v)+'</b>'+(v.alt?' <span class="hint">('+v.n+' of '+m.n+' agree)</span>':'')+'</td></tr>'; }).join("")+'</table>'; }
+["lkMfr","lkModel"].forEach(function(id){ E(id).addEventListener("input",function(){ clearTimeout(window._lk); window._lk=setTimeout(doLookup,300); }); });
 
 /* ===== submit ===== */
 function dataUrlBlob(u){ var p=u.split(","), b=atob(p[1]), a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return new Blob([a],{type:"image/jpeg"}); }
@@ -474,7 +564,7 @@ E("submitBtn").onclick=async function(){
       UnitCount:UNITS.filter(function(u){return u.status==="done";}).length+" of "+UNITS.length, Units:JSON.stringify(units), Summary:E("vSummary").value, Recommendations:E("vRecs").value,
       CustomerEmail:E("vCust").value.trim(), PhotoFolder:PHOTO_FOLDER_URL||"", ReportHTML:buildReport(), SubmittedAt:new Date().toLocaleString() });
     await gfetch(GRAPH+LID[L_VIS]+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:v})});
-    SUBMITTED=true; clearDraft();
+    SUBMITTED=true; clearDraft(); loadLib();
     showMsg("msg","ok","Submitted. The PM report for "+CUR_SITE.Title+" is filed and the equipment list is updated for next time.");
     btn.textContent="Submitted"; E("barCnt").innerHTML='<a href="" style="color:#c0392b;font-weight:800">Start a new visit</a>';
   }catch(e){ btn.disabled=false; showMsg("msg","err","Couldn't finish ("+(e.message||e)+"). Everything is saved on this device — move to better signal and tap Submit again (photos and units already saved won't repeat)."); }

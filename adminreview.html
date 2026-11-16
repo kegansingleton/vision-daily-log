@@ -112,6 +112,9 @@ var TABS=[
  {k:"shop",t:"Shop Daily Logs",name:"Shop Daily Logs",date:"LogDate",body:"ReportHTML",html:true,
   cols:["LogDate","Foreman","JobCount","ShopHours","ActionItemsCreated"],
   row:function(f){return [d10(f.LogDate),f.Foreman||"",(f.JobCount||0)+" jobs",(f.ShopHours||0)+" h",f.ActionItemsCreated?(f.ActionItemsCreated+" action items"):""];},hd:["Date","Shop foreman","Jobs","Shop hrs","Action items"]},
+ {k:"pm",t:"PM Visits",name:"PM Visits",date:"VisitDate",body:"ReportHTML",html:true,
+  cols:["VisitDate","SiteName","Customer","Technician","UnitCount","JobNo"],
+  row:function(f){return [d10(f.VisitDate),f.SiteName||"",f.Customer||"",f.Technician||"",f.UnitCount||""];},hd:["Date","Site","Customer","Technician","Units serviced"]},
  {k:"bo",t:"Shop Bill-Outs",name:"Shop Bill-Outs",date:"RunDate",body:"ReportHTML",html:true,
   cols:["RunDate","JobNo","JobName","PhaseCode","SMGroup","Total","LoggedBy"],
   row:function(f){return [d10(f.RunDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),(f.PhaseCode||"")+(f.SMGroup?(" "+f.SMGroup):""),"$"+(Math.round((parseFloat(f.Total)||0)*100)/100).toFixed(2),f.LoggedBy||""];},hd:["Run date","Job","Phase / group","Total","Logged by"]}
@@ -119,7 +122,7 @@ var TABS=[
 var SKIP={ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
-var account=null, loginEmail="", TAB=TABS[0], ROWS=[], OPEN=null, LOADSEQ=0;
+var account=null, loginEmail="", TAB=TABS[0], ROWS=[], OPEN=null, LOADSEQ=0, CURREC=null;
 
 function E(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -202,7 +205,7 @@ async function openDetail(id){
   try{
     var j=await gget(GRAPH+tab.id+"/items/"+id+"?$expand=fields");
     if(OPEN!==id||!E("detail")) return;
-    var f=j.fields||{}, cols=editable(tab);
+    var f=j.fields||{}, cols=editable(tab); CURREC={id:id,f:f,j:j,cols:cols};
     var form=cols.map(function(c){ var v=f[c.name], val=(v==null?"":v), inp;
       if(c.choice){ var opts=(c.choice.choices||[]).slice(); if(val&&opts.indexOf(val)<0) opts.unshift(val); inp='<select data-c="'+c.name+'"><option value=""></option>'+opts.map(function(o){return '<option'+(o===val?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>'; }
       else if(c.boolean){ inp='<select data-c="'+c.name+'" data-b="1"><option value="false"'+(!val?" selected":"")+'>No</option><option value="true"'+(val?" selected":"")+'>Yes</option></select>'; }
@@ -216,23 +219,48 @@ async function openDetail(id){
     var bodyEdit=(!tab.html && tab.names[tab.body])?'<div class="fld" style="margin-top:10px"><label>Edit report text</label><textarea data-c="'+tab.body+'" style="min-height:200px">'+esc(body)+'</textarea></div>':'';
     box.innerHTML='<div class="dgrid"><div><h4>Fields</h4>'+form+'</div><div><h4>Submitted report</h4><div class="preview">'+prev+'</div>'+bodyEdit+
       '<div class="note">Last changed '+esc(new Date(j.lastModifiedDateTime).toLocaleString())+(j.lastModifiedBy&&j.lastModifiedBy.user?' by '+esc(j.lastModifiedBy.user.displayName||""):'')+'</div></div></div>'+
-      '<div class="acts"><button class="save" id="saveBtn" disabled>Save changes</button><button class="cancel" id="closeBtn">Close</button><span class="m" id="saveMsg"></span></div>';
+      '<div class="acts"><button class="save" id="saveBtn" disabled>Save changes</button><button class="cancel" id="printBtn">&#128424; Print</button><button class="cancel" id="closeBtn">Close</button><span class="m" id="saveMsg"></span></div>';
     var orig={}; Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ orig[el.getAttribute("data-c")]=el.value; var on=function(){ var ch=el.value!==orig[el.getAttribute("data-c")]; el.parentNode.classList.toggle("chg",ch); E("saveBtn").disabled=!box.querySelector(".fld.chg"); }; el.oninput=on; el.onchange=on; });
     E("closeBtn").onclick=function(){ OPEN=null; renderList(); };
+    E("printBtn").onclick=function(){ if(!E("saveBtn").disabled&&!confirm("You have unsaved changes — they won't be on the printout. Print anyway?")) return; printRecord(); };
     E("saveBtn").onclick=function(){ save(id,box,orig); };
   }catch(e){ box.textContent="Could not open: "+(e.message||e); }
 }
+/* ===== Print: the report as it stands now (with corrections), plus the record's fields ===== */
+function printRecord(){ var rec=CURREC, tab=TAB; if(!rec) return; var f=rec.f, body=f[tab.body]||"";
+  var rep=body?(tab.html?body:'<pre style="white-space:pre-wrap;font-family:inherit">'+esc(body)+'</pre>'):'';
+  var rows=rec.cols.filter(function(c){ var v=f[c.name]; return v!=null&&v!==""&&c.name!==tab.body; }).map(function(c){ var v=f[c.name];
+    if(c.dateTime) v=d10(v); else if(c.boolean||typeof v==="boolean") v=v?"Yes":"No"; return '<tr><td>'+esc(c.displayName||c.name)+'</td><td>'+esc(v)+'</td></tr>'; }).join("");
+  var edited=rec.j&&rec.j.createdDateTime&&rec.j.lastModifiedDateTime&&(new Date(rec.j.lastModifiedDateTime)-new Date(rec.j.createdDateTime)>120000);
+  var w=window.open("","_blank"); if(!w){ alert("Allow pop-ups for this site to print."); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(tab.t+" — "+(f.Title||""))+'</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:24px;font-size:13px}'+
+    '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #7f1d1d;padding-bottom:8px;margin-bottom:14px}.hd h1{margin:0;font-size:18px;color:#7f1d1d}.hd .s{color:#555;font-size:12px;text-align:right}'+
+    'table{border-collapse:collapse}img{max-width:100%}.rec{margin-top:18px;page-break-inside:avoid}.rec h3{font-size:13px;color:#7f1d1d;margin:0 0 4px}.rec table{width:100%}.rec td{border:1px solid #ddd;padding:4px 6px;vertical-align:top}.rec td:first-child{color:#555;width:32%}'+
+    '@media print{body{margin:10mm}.np{display:none}}</style></head><body>'+
+    '<div class="hd"><div><h1>Vision Mechanical — '+esc(tab.t.replace(/s$/,""))+'</h1><div style="color:#555">'+esc(f.Title||"")+'</div></div><div class="s">'+(edited?'Corrected record · last changed '+esc(new Date(rec.j.lastModifiedDateTime).toLocaleString())+(rec.j.lastModifiedBy&&rec.j.lastModifiedBy.user?' by '+esc(rec.j.lastModifiedBy.user.displayName||""):'')+'<br>':'')+'Printed '+esc(new Date().toLocaleString())+'</div></div>'+
+    rep+(rows?'<div class="rec"><h3>Record details (as corrected)</h3><table>'+rows+'</table></div>':'')+
+    '<div class="np" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 18px;font-size:14px">Print</button></div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+  w.document.close(); }
 async function save(id,box,orig){
   var tab=TAB, patch={}, btn=E("saveBtn"), m=E("saveMsg");
   Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ var k=el.getAttribute("data-c"); if(el.value===orig[k]) return;
     var v=el.value; if(el.getAttribute("data-n")) v=(v===""?null:parseFloat(v)); else if(el.getAttribute("data-b")) v=(v==="true"); else if(el.getAttribute("data-d")) v=(v?v+"T12:00:00Z":null); patch[k]=v; });
   if(!Object.keys(patch).length) return;
+  /* keep the stored report in step: where an old value shows up as a whole cell/line in the HTML report, swap in the corrected one */
+  var rec=CURREC&&CURREC.id===id?CURREC:null, bodyCol=tab.body, fixed=0;
+  if(rec&&tab.html&&bodyCol&&rec.f[bodyCol]&&patch[bodyCol]===undefined){ var html=String(rec.f[bodyCol]);
+    Object.keys(patch).forEach(function(k){ var ov=rec.f[k], nv=patch[k]; if(ov==null||nv==null||typeof ov==="boolean"||/T\d\d:/.test(String(ov))) return; ov=String(ov).trim(); nv=String(nv).trim(); if(ov.length<2||ov===nv) return;
+      var a=">"+esc(ov)+"<", b=">"+esc(nv)+"<"; if(html.indexOf(a)>-1){ html=html.split(a).join(b); fixed++; } });
+    if(fixed){ html=html.replace(/(<p[^>]*>Corrected [^<]*<\/p>)?\s*$/,'')+'<p style="color:#b45309;font-size:12px;margin-top:6px">Corrected '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'</p>'; patch[bodyCol]=html; } }
   btn.disabled=true; m.style.color=""; m.textContent="Saving…";
   try{ var t=await getToken();
     var r=await fetch(GRAPH+tab.id+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(patch)});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
     var row=ROWS.filter(function(x){return x.id===id;})[0]; if(row) Object.keys(patch).forEach(function(k){ row.f[k]=patch[k]; });
-    m.style.color="#15803d"; m.textContent="Saved "+Object.keys(patch).length+" change"+(Object.keys(patch).length>1?"s":"")+".";
+    if(rec){ Object.keys(patch).forEach(function(k){ rec.f[k]=patch[k]; }); if(patch[bodyCol]!==undefined&&tab.html){ var pv=box.querySelector(".preview"); if(pv) pv.innerHTML=patch[bodyCol]; } }
+    var nf=Object.keys(patch).filter(function(k){return k!==bodyCol||!tab.html;}).length;
+    m.style.color="#15803d"; m.textContent="Saved "+nf+" change"+(nf>1?"s":"")+"."+(fixed?" Report updated to match.":"");
     Object.keys(patch).forEach(function(k){ var el=box.querySelector('[data-c="'+k+'"]'); if(el){ orig[k]=el.value; el.parentNode.classList.remove("chg"); } });
     
   }catch(e){ btn.disabled=false; m.style.color="#b91c1c"; m.textContent="Didn't save: "+(e.message||e); }
