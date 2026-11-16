@@ -51,6 +51,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
 .prev svg{width:100%;height:auto;display:block}
 .est{font-size:13px;font-weight:800;color:var(--gry);padding:8px 10px;border-top:1px solid var(--line);background:#fafbfc}
 .row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.conn{border:1px solid var(--line);border-radius:10px;padding:4px 10px;background:#fafbfc}.conn .cr{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eef0f3}.conn .cr:last-child{border-bottom:none}.conn .cr span{flex:1;font-size:13.5px;font-weight:700}.conn .cr select{width:58%;padding:7px 8px;font-size:14px}.conn .cr.all span{color:var(--vm2)}
+.autoreset{font-size:11.5px;color:var(--vm);cursor:pointer;margin-left:4px;font-weight:700}
 canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;touch-action:none;background:#fff;display:block}
 .gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
 .gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
@@ -117,10 +119,8 @@ canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;
         <img id="skImg" style="max-width:100%;margin-top:6px;border-radius:8px;display:none">
         <label>Describe it (sizes, what it connects to)</label><textarea id="skDesc" rows="3"></textarea>
       </div>
-      <div class="g2">
-        <div><label>Connections</label><select id="eConn"></select></div>
-        <div><label>Liner</label><select id="eLiner"></select></div>
-      </div>
+      <label>Connections</label><div id="eConn" class="conn"></div>
+      <label>Liner</label><select id="eLiner"></select>
       <label>Dimensions are</label><select id="eDimsAre"><option>Sheet metal (outside)</option><option>Inside clear — add liner</option></select>
       <label>Notes for this fitting</label><textarea id="eNotes" rows="2" placeholder="e.g. 2&quot; standing seam, insulate, access door"></textarea>
     </div>
@@ -138,7 +138,14 @@ canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;
    draw(d) -> primitives in inch coords (y down), area(d) -> sq in of sheet (before seam allowance). */
 var GA_LB={"26":0.906,"24":1.156,"22":1.406,"20":1.656,"18":2.156,"16":2.656};
 var GAUGES=["26","24","22","20","18","16"];
-var CONN_R=["TDF","S&D","Raw","Angle flange","Bar slip"], CONN_O=["Crimp","Bead","Raw","Spiral coupling"];
+var CONN_R=["TDF","TDC","S&D","Raw",'1" in','1" out','2" in','2" out',"Inside tap","Outside tap","Ductmate / angle flange","Bar slip","Cap / closed"],
+    CONN_O=["Crimp","Bead","Crimp & bead","Raw","Spin-in","Spiral coupling",'1" in','1" out','2" in','2" out',"Inside tap","Outside tap","Cap / closed"];
+/* flat-side options for transitions: [label, vertical(top|bottom|c), horizontal(left|right|c)] */
+var FLAT=[["Concentric (no flat side)","c","c"],["Flat top","top","c"],["Flat bottom","bottom","c"],["Flat left","c","left"],["Flat right","c","right"],["Flat top & left","top","left"],["Flat top & right","top","right"],["Flat bottom & left","bottom","left"],["Flat bottom & right","bottom","right"]];
+function flatOf(v){ return FLAT.filter(function(f){return f[0]===v;})[0]||FLAT[0]; }
+function shiftV(fl,a,b){ return fl[1]==="top"?0:(fl[1]==="bottom"?(a-b):(a-b)/2); }
+function shiftH(fl,a,b){ return fl[2]==="left"?0:(fl[2]==="right"?(a-b):(a-b)/2); }
+function q4(n){ return Math.round(n*4)/4; }
 var LINERS=["None",'1/2"','1"','1-1/2"','2"'];
 var SEAM=1.15; /* +15% for seams, connections, waste */
 function rad(a){return a*Math.PI/180;}
@@ -150,93 +157,99 @@ function T(p,s,o){ return Object.assign({t:"text",p:p,s:s},o||{}); }
 function f1(n){ n=+n||0; return (Math.round(n*100)/100)+'"'; }
 
 var FT=[
- {k:"straight",name:"Straight duct",grp:"Rectangular",phase:"1230",
+ {k:"straight",name:"Straight duct",grp:"Rectangular",phase:"1230",ends:[["End 1","r"],["End 2","r"]],
   fields:[["W","Width",24],["H","Height",12],["L","Length",60]],
   draw:function(d){ var g=Math.max(d.W,d.H)*0.5+6; var x2=d.L+g;
     return [P([[0,0],[d.L,0],[d.L,d.H],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,0],[d.L,0],-18,f1(d.L)),D([0,d.H],[0,0],-18,f1(d.H)),
       P([[x2,0],[x2+d.W,0],[x2+d.W,d.H],[x2,d.H]]),T([x2+d.W/2,d.H/2],"FACE",{c:1,muted:1}),D([x2,d.H],[x2+d.W,d.H],18,f1(d.W))]; },
   area:function(d){return 2*(d.W+d.H)*d.L;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" × "+d.L+'" long';}},
- {k:"elbow",name:"Radius elbow",grp:"Rectangular",phase:"1250",
-  fields:[["W","Width (in the turn)",24],["H","Depth",12],["A","Angle °",90],["R","Throat radius",6]],
-  draw:function(d){ var R=d.R, O=d.R+d.W, A=Math.min(Math.max(d.A,5),180);
-    var pts=arcPts(0,0,O,0,A,30).concat(arcPts(0,0,R,A,0,30));
-    return [P(pts),Ln([0,0],[R,0],{dash:1}),Ln([0,0],[R*Math.cos(rad(A)),-R*Math.sin(rad(A))],{dash:1}),D([R,0],[O,0],22,f1(d.W)),Object.assign(D([0,0],[R,0],22,"R "+f1(R)),{keep:1}),
-      T([O*0.55*Math.cos(rad(A/2)),-O*0.55*Math.sin(rad(A/2))],A+"°",{c:1}),T([O*0.5,-O*1.02],"Depth "+f1(d.H),{c:1,muted:1})]; },
-  area:function(d){ var th=rad(d.A); return 2*(d.A/360*Math.PI*(Math.pow(d.R+d.W,2)-d.R*d.R))+d.H*th*(d.R+d.W)+d.H*th*d.R; },
-  max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" "+d.A+"° elbow, "+d.R+'" throat';}},
- {k:"sqelbow",name:"Square elbow (vanes)",grp:"Rectangular",phase:"1250",
-  fields:[["W1","Inlet width",24],["W2","Outlet width",24],["H","Depth",12],["V","Turning vanes","Yes","s:Yes,No"]],
-  draw:function(d){ var E=Math.max(d.W1,d.W2)*0.35, a=d.W1, b=d.W2;
-    var pr=[P([[0,0],[a+E,0],[a+E,b],[a,b],[a,b+E],[0,b+E]]),D([0,b+E],[a,b+E],18,f1(a)),D([a+E,0],[a+E,b],18,f1(b)),T([a+E+4,b+E*0.7],"Depth "+f1(d.H),{muted:1}),
-      T([a/2,b+E-3],"IN",{c:1,muted:1}),T([a+E-5,b/2],"OUT",{c:1,muted:1})];
+ {k:"elbow",name:"Radius elbow",grp:"Rectangular",phase:"1250",ends:[["Inlet","r"],["Outlet","r"]],
+  fields:[["W","Width (in the turn)",24],["H","Depth",12],["A","Angle °",90],["CLR","Centerline radius",36,null,function(d){return q4(1.5*d.W);},"auto 1.5 × width"],["T1","Throat — inlet side",2],["T2","Throat — outlet side",2]],
+  draw:function(d){ var R=Math.max(0,d.CLR-d.W/2), O=R+d.W, A=Math.min(Math.max(d.A,5),180), a=rad(A), tx=-Math.sin(a), ty=-Math.cos(a);
+    var Ra=[R*Math.cos(a),-R*Math.sin(a)], Oa=[O*Math.cos(a),-O*Math.sin(a)], t1=d.T1||0, t2=d.T2||0;
+    var pts=[[R,t1],[O,t1]].concat(arcPts(0,0,O,0,A,30)).concat([[Oa[0]+tx*t2,Oa[1]+ty*t2],[Ra[0]+tx*t2,Ra[1]+ty*t2]]).concat(arcPts(0,0,R,A,0,30));
+    var pr=[P(pts),Ln([0,0],[R,0],{dash:1}),Ln([0,0],Ra,{dash:1}),D([R,t1],[O,t1],18,f1(d.W)),Object.assign(D([0,0],[R,0],22,"throat R "+f1(R)),{keep:1}),
+      T([O*0.55*Math.cos(a/2),-O*0.55*Math.sin(a/2)],A+"° · CLR "+f1(d.CLR),{c:1}),T([O*0.5,-O*1.05],"Depth "+f1(d.H),{c:1,muted:1})];
+    if(t1>0) pr.push(D([O,0],[O,t1],18,f1(t1)));
+    if(t2>0) pr.push(D(Oa,[Oa[0]+tx*t2,Oa[1]+ty*t2],18,f1(t2)));
+    if(t1>0) pr.push(Ln([R,0],[O,0],{thin:1,dash:1})); if(t2>0) pr.push(Ln(Ra,Oa,{thin:1,dash:1}));
+    return pr; },
+  area:function(d){ var th=rad(d.A), R=Math.max(0,d.CLR-d.W/2); return 2*(d.A/360*Math.PI*(Math.pow(R+d.W,2)-R*R))+d.H*th*(R+d.W)+d.H*th*R+2*(d.W+d.H)*((d.T1||0)+(d.T2||0)); },
+  max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" "+d.A+"° elbow, CLR "+d.CLR+'", throats '+(d.T1||0)+'"/'+(d.T2||0)+'"';}},
+ {k:"sqelbow",name:"Square elbow (vanes)",grp:"Rectangular",phase:"1250",ends:[["Inlet","r"],["Outlet","r"]],
+  fields:[["W1","Inlet width",24],["W2","Outlet width",24],["H","Depth",12],["T1","Throat — inlet side",2],["T2","Throat — outlet side",2],["V","Turning vanes","Yes","s:Yes,No"]],
+  draw:function(d){ var a=d.W1, b=d.W2, e1=d.T1||0, e2=d.T2||0;
+    var pr=[P([[0,0],[a+e2,0],[a+e2,b],[a,b],[a,b+e1],[0,b+e1]]),D([0,b+e1],[a,b+e1],18,f1(a)),D([a+e2,0],[a+e2,b],18,f1(b)),T([a/2+4,b/2],"Depth "+f1(d.H),{c:1,muted:1}),
+      T([a/2,b+e1-3],"IN",{c:1,muted:1}),T([a+e2-5,b/2-10],"OUT",{c:1,muted:1})];
+    if(e1>0) pr.push(D([a,b],[a,b+e1],18,f1(e1)),Ln([0,b],[a,b],{thin:1,dash:1})); if(e2>0) pr.push(D([a,b],[a+e2,b],18,f1(e2)),Ln([a,0],[a,b],{thin:1,dash:1}));
     if(d.V==="Yes"){ var n=Math.max(3,Math.round(Math.max(a,b)/4)); for(var i=1;i<n;i++){ var t=i/n, cx=a*t, cy=b*t, r=Math.min(a,b)*0.12; pr.push({t:"poly",pts:arcPts(cx+r,cy+r,r,90,180,8),closed:false,thin:1}); } }
     return pr; },
-  area:function(d){return 2*d.W1*d.W2+d.H*(d.W1+d.W2)*1.4;}, max:function(d){return Math.max(d.W1,d.W2,d.H);}, desc:function(d){return d.W1+"→"+d.W2+" x"+d.H+" square elbow"+(d.V==="Yes"?" w/ vanes":"");}},
- {k:"offset",name:"Offset",grp:"Rectangular",phase:"1250",
+  area:function(d){return 2*d.W1*d.W2+d.H*(d.W1+d.W2)*1.4+2*((d.W1+d.H)*(d.T1||0)+(d.W2+d.H)*(d.T2||0));}, max:function(d){return Math.max(d.W1,d.W2,d.H);}, desc:function(d){return d.W1+"→"+d.W2+" x"+d.H+" square elbow"+(d.V==="Yes"?" w/ vanes":"")+', throats '+(d.T1||0)+'"/'+(d.T2||0)+'"';}},
+ {k:"offset",name:"Offset",grp:"Rectangular",phase:"1250",ends:[["Inlet","r"],["Outlet","r"]],
   fields:[["W","Width (offset side)",24],["H","Depth",12],["L","Length",36],["O","Offset",12]],
   draw:function(d){ var L=d.L, O=d.O, W=d.W, s=L*0.18;
     return [P([[0,0],[s,0],[L-s,O],[L,O],[L,O+W],[L-s,O+W],[s,W],[0,W]]),D([0,W],[0,0],-18,f1(W)),D([0,O+W],[L,O+W],18,f1(L)),D([L,0],[L,O],18,"Off "+f1(O)),Ln([s,0],[L,0],{dash:1}),T([L/2,-6],"Depth "+f1(d.H),{c:1,muted:1})]; },
   area:function(d){return 2*(d.W+d.H)*Math.sqrt(d.L*d.L+d.O*d.O);}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+", "+d.O+'" offset in '+d.L+'"';}},
- {k:"trans",name:"Transition",grp:"Rectangular",phase:"1250",
-  fields:[["W1","Inlet width",24],["H1","Inlet height",12],["W2","Outlet width",18],["H2","Outlet height",12],["L","Length",24],["AL","Alignment","Concentric","s:Concentric,Flat top,Flat bottom,Flat top & side"]],
-  draw:function(d){ var L=d.L, top=function(a,b){ return d.AL==="Flat top"||d.AL==="Flat top & side"?0:(d.AL==="Flat bottom"?(a-b):(a-b)/2); };
-    var y2=top(d.H1,d.H2), gy=d.H1+Math.max(10,d.H1*0.6), sx=(d.AL==="Flat top & side")?0:(d.W1-d.W2)/2;
-    return [P([[0,0],[L,y2],[L,y2+d.H2],[0,d.H1]]),T([L/2,(d.H1)/2],"SIDE",{c:1,muted:1}),D([0,d.H1],[0,0],-18,f1(d.H1)),D([L,y2],[L,y2+d.H2],18,f1(d.H2)),D([0,0],[L,0],-14-Math.max(0,-y2),f1(L)),
-      P([[0,gy],[L,gy+sx],[L,gy+sx+d.W2],[0,gy+d.W1]]),T([L/2,gy+d.W1/2],"TOP",{c:1,muted:1}),D([0,gy+d.W1],[0,gy],-18,f1(d.W1)),D([L,gy+sx],[L,gy+sx+d.W2],18,f1(d.W2))]; },
+ {k:"trans",name:"Transition",grp:"Rectangular",phase:"1250",ends:[["Inlet","r"],["Outlet","r"]],
+  fields:[["W1","Inlet width",24],["H1","Inlet height",12],["W2","Outlet width",18],["H2","Outlet height",12],["L","Length",24],["AL","Flat side(s)","Concentric (no flat side)","s:Concentric (no flat side),Flat top,Flat bottom,Flat left,Flat right,Flat top & left,Flat top & right,Flat bottom & left,Flat bottom & right"]],
+  draw:function(d){ var L=d.L, fl=flatOf(d.AL), y2=shiftV(fl,d.H1,d.H2), gy=d.H1+Math.max(14,d.H1*0.7), sx=shiftH(fl,d.W1,d.W2);
+    return [P([[0,0],[L,y2],[L,y2+d.H2],[0,d.H1]]),T([L/2,d.H1/2],"SIDE · flow →",{c:1,muted:1}),D([0,d.H1],[0,0],-18,f1(d.H1)),D([L,y2],[L,y2+d.H2],18,f1(d.H2)),Object.assign(D([0,Math.min(0,y2)],[L,Math.min(0,y2)],-14,f1(L)),{keep:1}),
+      P([[0,gy],[L,gy+sx],[L,gy+sx+d.W2],[0,gy+d.W1]]),T([L/2,gy+d.W1/2],"TOP VIEW",{c:1,muted:1}),T([L/2,gy+Math.min(0,sx)-4],"left",{c:1,muted:1}),T([L/2,gy+Math.max(d.W1,sx+d.W2)+8],"right",{c:1,muted:1}),
+      D([0,gy+d.W1],[0,gy],-18,f1(d.W1)),D([L,gy+sx],[L,gy+sx+d.W2],18,f1(d.W2))]; },
   area:function(d){return (2*(d.W1+d.H1)+2*(d.W2+d.H2))/2*Math.sqrt(d.L*d.L+Math.pow(Math.max(Math.abs(d.W1-d.W2),Math.abs(d.H1-d.H2))/2,2));},
-  max:function(d){return Math.max(d.W1,d.H1,d.W2,d.H2);}, desc:function(d){return d.W1+"x"+d.H1+" → "+d.W2+"x"+d.H2+" × "+d.L+'" ('+d.AL.toLowerCase()+")";}},
- {k:"endcap",name:"End cap",grp:"Rectangular",phase:"1250",
+  max:function(d){return Math.max(d.W1,d.H1,d.W2,d.H2);}, desc:function(d){return d.W1+"x"+d.H1+" → "+d.W2+"x"+d.H2+" × "+d.L+'" ('+String(d.AL).toLowerCase()+")";}},
+ {k:"endcap",name:"End cap",grp:"Rectangular",phase:"1250",ends:[["Open end","r"]],
   fields:[["W","Width",24],["H","Height",12],["DP","Cap depth",2]],
   draw:function(d){ return [P([[0,0],[d.W,0],[d.W,d.H],[0,d.H]]),Ln([0,0],[d.W,d.H],{thin:1}),Ln([d.W,0],[0,d.H],{thin:1}),D([0,d.H],[d.W,d.H],18,f1(d.W)),D([0,d.H],[0,0],-18,f1(d.H)),T([d.W/2,d.H*0.3],"Cap depth "+f1(d.DP),{c:1})]; },
   area:function(d){return d.W*d.H+2*(d.W+d.H)*d.DP;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" end cap";}},
- {k:"tee",name:"Tee",grp:"Rect branches",phase:"1250",
+ {k:"tee",name:"Tee",grp:"Rect branches",phase:"1250",ends:[["Main in","r"],["Main out","r"],["Branch","r"]],
   fields:[["W","Main width",24],["H","Main depth",12],["L","Main length",36],["WB","Branch width",12],["HB","Branch depth",12],["LB","Branch length",8]],
   draw:function(d){ var x0=(d.L-d.WB)/2;
     return [P([[0,0],[x0,0],[x0,-d.LB],[x0+d.WB,-d.LB],[x0+d.WB,0],[d.L,0],[d.L,d.W],[0,d.W]]),D([0,d.W],[d.L,d.W],18,f1(d.L)),D([0,d.W],[0,0],-18,f1(d.W)),D([x0,-d.LB],[x0+d.WB,-d.LB],-16,f1(d.WB)),D([x0+d.WB,-d.LB],[x0+d.WB,0],18,f1(d.LB)),
       T([d.L/2,d.W/2],"Depth "+f1(d.H)+" / branch "+f1(d.HB),{c:1,muted:1})]; },
   area:function(d){return 2*(d.W+d.H)*d.L+2*(d.WB+d.HB)*d.LB;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" main × "+d.L+'", '+d.WB+"x"+d.HB+" branch";}},
- {k:"wye",name:"Wye (45°)",grp:"Rect branches",phase:"1250",
+ {k:"wye",name:"Wye (45°)",grp:"Rect branches",phase:"1250",ends:[["Inlet","r"],["Run","r"],["Branch","r"]],
   fields:[["W","Inlet width",24],["H","Depth",12],["W1","Run outlet width",16],["W2","Branch width",12],["L","Run length",30],["LB","Branch length",18]],
   draw:function(d){ var c=Math.SQRT1_2, P0=[0,d.W], P1=[P0[0]+d.LB*c,P0[1]+d.LB*c], n=[c,-c], P2=[P1[0]+n[0]*d.W2,P1[1]+n[1]*d.W2], t=(P2[1]-d.W1)/c, P3=[P2[0]-t*c,d.W1];
     var Y=function(p){return [p[0],-p[1]];};
     return [P([[0,0],[d.L,0],[d.L,d.W1],P3,P2,P1,P0].map(Y)),D(Y([0,0]),Y([d.L,0]),18,f1(d.L)),D(Y([0,0]),Y([0,d.W]),18,f1(d.W)),D(Y([d.L,0]),Y([d.L,d.W1]),-18,f1(d.W1)),D(Y(P1),Y(P2),16,f1(d.W2)),T([d.L*0.45,-d.W1*0.4],"Depth "+f1(d.H),{c:1,muted:1})]; },
   area:function(d){return 2*(d.W+d.H)*d.L+2*(d.W2+d.H)*d.LB;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" wye, run "+d.W1+", branch "+d.W2;}},
- {k:"shoe",name:"Shoe tap / takeoff",grp:"Rect branches",phase:"1250",
+ {k:"shoe",name:"Shoe tap / takeoff",grp:"Rect branches",phase:"1250",ends:[["Tap to main","r","Inside tap"],["Outlet","r"]],
   fields:[["W","Outlet width",12],["H","Outlet depth",10],["L","Height (length)",6],["S","Shoe (45° lead)",4]],
   draw:function(d){ return [Ln([-6,0],[d.W+d.S+6,0],{dash:1}),T([d.W+d.S+4,8],"main duct",{muted:1}),P([[0,0],[d.S+d.W,0],[d.S+d.W,-d.L],[d.S,-d.L]]),D([d.S,-d.L],[d.S+d.W,-d.L],-16,f1(d.W)),D([d.S+d.W,-d.L],[d.S+d.W,0],18,f1(d.L)),D([0,0],[d.S,0],16,"shoe "+f1(d.S)),T([d.S+d.W/2,-d.L/2],"Depth "+f1(d.H),{c:1,muted:1})]; },
   area:function(d){return 2*((2*d.W+d.S)/2*d.L)+d.H*(d.L+Math.sqrt(d.L*d.L+d.S*d.S));}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+' shoe tap, '+d.L+'" high';}},
- {k:"boot",name:"Register boot",grp:"Rect branches",phase:"1250",
+ {k:"boot",name:"Register boot",grp:"Rect branches",phase:"1250",ends:[["Inlet","o"],["Register","r"]],
   fields:[["D","Round inlet dia.",8],["W","Register width",12],["H","Register height",6],["L","Boot height",10]],
   draw:function(d){ var x0=(d.W-d.D)/2; return [P([[x0,0],[x0+d.D,0],[d.W,d.L],[0,d.L]]),D([x0,0],[x0+d.D,0],-16,"Ø"+f1(d.D)),D([0,d.L],[d.W,d.L],18,f1(d.W)),D([d.W,0],[d.W,d.L],18,f1(d.L)),T([d.W/2,d.L/2],"Reg. "+d.W+"x"+d.H,{c:1,muted:1})]; },
   area:function(d){return (Math.PI*d.D+2*(d.W+d.H))/2*d.L;}, max:function(d){return Math.max(d.W,d.H,d.D);}, desc:function(d){return "Ø"+d.D+" to "+d.W+"x"+d.H+" boot, "+d.L+'" high';}},
- {k:"rpipe",name:"Round pipe",grp:"Round",phase:"1230",
+ {k:"rpipe",name:"Round pipe",grp:"Round",phase:"1230",ends:[["End 1","o"],["End 2","o"]],
   fields:[["D","Diameter",10],["L","Length",60]],
   draw:function(d){ return [P([[0,0],[d.L,0],[d.L,d.D],[0,d.D]]),Ln([0,d.D/2],[d.L,d.D/2],{dash:1}),D([0,0],[d.L,0],-16,f1(d.L)),D([0,d.D],[0,0],-18,"Ø"+f1(d.D))]; },
   area:function(d){return Math.PI*d.D*d.L;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" × "+d.L+'" pipe';}},
- {k:"relbow",name:"Round elbow (gored)",grp:"Round",phase:"1250",
-  fields:[["D","Diameter",10],["A","Angle °",90],["G","Gores (pieces)",5],["CLR","Centerline radius",15]],
+ {k:"relbow",name:"Round elbow (gored)",grp:"Round",phase:"1250",ends:[["Inlet","o"],["Outlet","o"]],
+  fields:[["D","Diameter",10],["A","Angle °",90],["G","Gores (pieces)",5],["CLR","Centerline radius",15,null,function(d){return q4(1.5*d.D);},"auto 1.5 × dia."]],
   draw:function(d){ var R=d.CLR, ri=R-d.D/2, ro=R+d.D/2, A=Math.min(Math.max(d.A,5),180), n=Math.max(2,Math.round(d.G));
     var pr=[P(arcPts(0,0,ro,0,A,30).concat(arcPts(0,0,ri,A,0,30))),{t:"poly",pts:arcPts(0,0,R,0,A,30),closed:false,dash:1}];
     var seg=A/(n-1); for(var k=1;k<n;k++){ var a=rad(seg*(k-0.5)); pr.push(Ln([ri*Math.cos(a),-ri*Math.sin(a)],[ro*Math.cos(a),-ro*Math.sin(a)],{thin:1})); }
     pr.push(D([ri,0],[ro,0],16,"Ø"+f1(d.D))); pr.push(Object.assign(D([0,0],[R,0],36,"CLR "+f1(R)),{keep:1})); pr.push(T([ri*0.5*Math.cos(rad(A/2)),-ri*0.5*Math.sin(rad(A/2))],A+"° · "+n+" pc",{c:1}));
     return pr; },
   area:function(d){return Math.PI*d.D*rad(d.A)*d.CLR;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" "+d.A+"° "+d.G+"-pc elbow";}},
- {k:"reducer",name:"Round reducer",grp:"Round",phase:"1250",
+ {k:"reducer",name:"Round reducer",grp:"Round",phase:"1250",ends:[["Large end","o"],["Small end","o"]],
   fields:[["D1","Large dia.",12],["D2","Small dia.",8],["L","Length",12],["AL","Type","Concentric","s:Concentric,Eccentric"]],
   draw:function(d){ var y=d.AL==="Eccentric"?0:(d.D1-d.D2)/2; return [P([[0,0],[d.L,y],[d.L,y+d.D2],[0,d.D1]]),D([0,d.D1],[0,0],-18,"Ø"+f1(d.D1)),D([d.L,y],[d.L,y+d.D2],18,"Ø"+f1(d.D2)),D([0,d.D1],[d.L,d.D1],18,f1(d.L))]; },
   area:function(d){return Math.PI*(d.D1+d.D2)/2*d.L;}, max:function(d){return d.D1;}, round:1, desc:function(d){return "Ø"+d.D1+"→Ø"+d.D2+" × "+d.L+'" '+d.AL.toLowerCase()+" reducer";}},
- {k:"sq2r",name:"Square-to-round",grp:"Round",phase:"1250",
-  fields:[["W","Rect width",24],["H","Rect height",12],["D","Round dia.",12],["L","Length",16]],
-  draw:function(d){ var gy=d.H+Math.max(10,d.H*0.6), yh=(d.H-d.D)/2, yw=(d.W-d.D)/2;
-    return [P([[0,0],[d.L,yh],[d.L,yh+d.D],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,d.H],[0,0],-18,f1(d.H)),D([d.L,yh],[d.L,yh+d.D],18,"Ø"+f1(d.D)),D([0,0],[d.L,0],-14-Math.max(0,-yh),f1(d.L)),
-      P([[0,gy],[d.L,gy+yw],[d.L,gy+yw+d.D],[0,gy+d.W]]),T([d.L/2,gy+d.W/2],"TOP",{c:1,muted:1}),D([0,gy+d.W],[0,gy],-18,f1(d.W))]; },
-  area:function(d){return (2*(d.W+d.H)+Math.PI*d.D)/2*d.L;}, max:function(d){return Math.max(d.W,d.H,d.D);}, desc:function(d){return d.W+"x"+d.H+" to Ø"+d.D+" × "+d.L+'"';}},
- {k:"spin",name:"Spin-in / collar",grp:"Round",phase:"1250",
+ {k:"sq2r",name:"Square-to-round",grp:"Round",phase:"1250",ends:[["Rect end","r"],["Round end","o"]],
+  fields:[["W","Rect width",24],["H","Rect height",12],["D","Round dia.",12],["L","Length",16],["AL","Flat side(s)","Concentric (no flat side)","s:Concentric (no flat side),Flat top,Flat bottom,Flat left,Flat right,Flat top & left,Flat top & right,Flat bottom & left,Flat bottom & right"]],
+  draw:function(d){ var fl=flatOf(d.AL), gy=d.H+Math.max(14,d.H*0.7), yh=shiftV(fl,d.H,d.D), yw=shiftH(fl,d.W,d.D);
+    return [P([[0,0],[d.L,yh],[d.L,yh+d.D],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,d.H],[0,0],-18,f1(d.H)),D([d.L,yh],[d.L,yh+d.D],18,"Ø"+f1(d.D)),Object.assign(D([0,Math.min(0,yh)],[d.L,Math.min(0,yh)],-14,f1(d.L)),{keep:1}),
+      P([[0,gy],[d.L,gy+yw],[d.L,gy+yw+d.D],[0,gy+d.W]]),T([d.L/2,gy+d.W/2],"TOP VIEW",{c:1,muted:1}),T([d.L/2,gy+Math.min(0,yw)-4],"left",{c:1,muted:1}),D([0,gy+d.W],[0,gy],-18,f1(d.W))]; },
+  area:function(d){return (2*(d.W+d.H)+Math.PI*d.D)/2*d.L;}, max:function(d){return Math.max(d.W,d.H,d.D);}, desc:function(d){return d.W+"x"+d.H+" to Ø"+d.D+" × "+d.L+'" ('+String(d.AL).toLowerCase()+")";}},
+ {k:"spin",name:"Spin-in / collar",grp:"Round",phase:"1250",ends:[["Tap","o","Spin-in"],["Outlet","o"]],
   fields:[["D","Diameter",8],["L","Length",6],["DM","Damper","Yes","s:Yes,No"]],
   draw:function(d){ var pr=[P([[0,0],[d.D,0],[d.D,d.L],[0,d.L]]),P([[-1.5,d.L],[d.D+1.5,d.L],[d.D+1.5,d.L+1],[-1.5,d.L+1]]),D([0,0],[d.D,0],-16,"Ø"+f1(d.D)),D([d.D,0],[d.D,d.L],22,f1(d.L))];
     if(d.DM==="Yes") pr.push(Ln([0,d.L*0.65],[d.D,d.L*0.35],{thin:1}),T([d.D/2,d.L*0.3],"damper",{c:1,muted:1})); return pr; },
   area:function(d){return Math.PI*d.D*d.L;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" spin-in"+(d.DM==="Yes"?" w/ damper":"");}},
- {k:"sketch",name:"Freehand sketch / other",grp:"Other",phase:"1250",fields:[["EL","Est. lbs (optional)",0]],
+ {k:"sketch",name:"Freehand sketch / other",grp:"Other",phase:"1250",ends:[],fields:[["EL","Est. lbs (optional)",0]],
   draw:null, area:function(d){return 0;}, max:function(){return 0;}, desc:function(d){return "Custom — see sketch";}}
 ];
 function ftype(k){ return FT.filter(function(t){return t.k===k;})[0]; }
@@ -328,7 +341,11 @@ async function start(a){
 E("prio").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ PRIO=b.getAttribute("data-v"); E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); saveDraft(); }; });
 
 /* ===== type picker ===== */
-function defaults(t){ var d={}; t.fields.forEach(function(f){ d[f[0]]=f[3]?f[2]:+f[2]; }); return d; }
+function defaults(t){ var d={}; t.fields.forEach(function(f){ d[f[0]]=f[3]?f[2]:+f[2]; }); t.fields.forEach(function(f){ if(f[4]) d[f[0]]=f[4](d); }); return d; }
+function connDefaults(t){ var c={}; (t.ends||[]).forEach(function(e){ c[e[0]]=e[2]||(e[1]==="o"?"Crimp":"TDF"); }); return c; }
+function connText(it){ var t=ftype(it.type), c=it.conn||{}; if(typeof c==="string") return c; var ends=(t.ends||[]).map(function(e){return e[0];}); if(!ends.length) return "";
+  var vals=ends.map(function(e){return c[e]||"";}); if(vals.every(function(v){return v===vals[0];})) return vals[0]+(ends.length>1?" all ends":"");
+  return ends.map(function(e,i){return e+" "+vals[i];}).join(" / "); }
 function buildTypeGrid(){ var groups={}; FT.forEach(function(t){ (groups[t.grp]=groups[t.grp]||[]).push(t); });
   E("typeGrid").innerHTML=Object.keys(groups).map(function(g){ return '<div class="gh">'+esc(g)+'</div><div class="tg">'+groups[g].map(function(t){
     var pic=t.draw?renderSVG(t.draw(defaults(t)),240,150):'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150"><rect width="240" height="150" fill="#fff"/><path d="M40 110 C70 40,110 130,150 60 S200 50,205 95" fill="none" stroke="#1f2937" stroke-width="3"/><text x="120" y="140" font-size="14" text-anchor="middle" fill="#64748b">✎</text></svg>';
@@ -339,34 +356,44 @@ E("tmClose").onclick=function(){ E("typeModal").style.display="none"; };
 E("edType").onclick=function(){ E("typeModal").style.display="block"; };
 function nextMark(){ var n=0; ITEMS.forEach(function(it){ var m=/^F-(\d+)$/i.exec(it.mark||""); if(m) n=Math.max(n,+m[1]); }); return "F-"+(n+1); }
 function pickType(k){ var t=ftype(k); E("typeModal").style.display="none";
-  if(ED&&EDI>-1&&ED.type!==k){ ED.type=k; ED.d=Object.assign(defaults(t),{}); }
-  else if(!ED){ ED={type:k,d:defaults(t),qty:1,mark:nextMark(),gauge:"",gaugeSet:false,conn:t.round?"Crimp":"TDF",liner:"None",dimsAre:"Sheet metal (outside)",notes:"",sketch:"",photo:"",desc:""}; }
-  else { ED.type=k; ED.d=defaults(t); }
+  if(ED&&EDI>-1&&ED.type!==k){ ED.type=k; ED.d=Object.assign(defaults(t),{}); ED.conn=connDefaults(t); ED.over={}; }
+  else if(!ED){ ED={type:k,d:defaults(t),qty:1,mark:nextMark(),gauge:"",gaugeSet:false,conn:connDefaults(t),over:{},liner:"None",dimsAre:"Sheet metal (outside)",notes:"",sketch:"",photo:"",desc:""}; }
+  else { ED.type=k; ED.d=defaults(t); ED.conn=connDefaults(t); ED.over={}; }
   openEditor(); }
 /* ===== editor ===== */
 function openEditor(){ var it=ED, t=ftype(it.type);
   E("edTitle").textContent=t.name; E("edMsg").className="msg";
   E("eMark").value=it.mark; E("eQty").value=it.qty;
-  E("eConn").innerHTML=(t.round?CONN_O:CONN_R).map(function(c){return '<option'+(c===it.conn?" selected":"")+'>'+esc(c)+'</option>';}).join("");
-  if((t.round?CONN_O:CONN_R).indexOf(it.conn)<0) it.conn=E("eConn").value;
+  it.over=it.over||{}; if(typeof it.conn!=="object"||!it.conn){ var old=it.conn; it.conn=connDefaults(t); if(old) Object.keys(it.conn).forEach(function(k){ it.conn[k]=old; }); }
+  var ends=t.ends||[], opt=function(list,v){ return list.map(function(c){return '<option'+(c===v?" selected":"")+'>'+esc(c)+'</option>';}).join(""); };
+  var sameKind=ends.every(function(e){return e[1]===(ends[0]||[])[1];});
+  E("eConn").innerHTML=!ends.length?'<div class="hint" style="padding:6px 0">Put connections in the description.</div>':
+    ((ends.length>1&&sameKind)?'<div class="cr all"><span>All ends</span><select data-all="1"><option value="">— set all —</option>'+opt(ends[0][1]==="o"?CONN_O:CONN_R,"")+'</select></div>':'')+
+    ends.map(function(e){ var list=e[1]==="o"?CONN_O:CONN_R, v=it.conn[e[0]]||list[0]; if(list.indexOf(v)<0) list=list.concat([v]); return '<div class="cr"><span>'+esc(e[0])+'</span><select data-end="'+esc(e[0])+'">'+opt(list,v)+'</select></div>'; }).join("");
   E("eLiner").value=it.liner; E("eDimsAre").value=it.dimsAre; E("eNotes").value=it.notes;
   var isSk=t.k==="sketch"; E("eSketch").style.display=isSk?"block":"none";
   E("eDims").innerHTML=(isSk?'':'<div class="g3">')+t.fields.map(function(f){ var v=it.d[f[0]];
       if(f[3]&&f[3].indexOf("s:")===0) return '<div><label>'+esc(f[1])+'</label><select data-k="'+f[0]+'">'+f[3].slice(2).split(",").map(function(o){return '<option'+(o===v?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
-      return '<div><label>'+esc(f[1])+(isSk?'':' (in)')+'</label><input type="number" step="any" inputmode="decimal" data-k="'+f[0]+'" value="'+esc(v)+'"></div>'; }).join("")+(isSk?'':'</div>');
+      var au=f[4]?(' data-auto="1"'):'', lab=esc(f[1])+((isSk||/°|pieces|lbs/i.test(f[1]))?'':' (in)')+(f[4]?(it.over[f[0]]?' <span class="autoreset" data-reset="'+f[0]+'">↺ '+esc(f[5]||"auto")+'</span>':' <span style="font-weight:600;color:#1d4ed8">· '+esc(f[5]||"auto")+'</span>'):'');
+      return '<div><label>'+lab+'</label><input type="number" step="any" inputmode="decimal" data-k="'+f[0]+'"'+au+' value="'+esc(v)+'"'+(f[4]&&!it.over[f[0]]?' style="background:#e8f1fd;border-color:#7aa7e0"':'')+'></div>'; }).join("")+(isSk?'':'</div>');
   if(isSk){ E("skDesc").value=it.desc||""; skLoad(it.sketch); E("skImg").src=it.photo||""; E("skImg").style.display=it.photo?"block":"none"; }
   if(!it.gaugeSet) it.gauge=t.draw?suggestGauge(t,it.d):"24"; E("eGa").value=it.gauge;
   E("edModal").style.display="block"; preview(); }
 function readEditor(){ var it=ED, t=ftype(it.type);
-  it.mark=E("eMark").value.trim(); it.qty=Math.max(1,parseInt(E("eQty").value,10)||1); it.conn=E("eConn").value; it.liner=E("eLiner").value; it.dimsAre=E("eDimsAre").value; it.notes=E("eNotes").value.trim();
+  it.mark=E("eMark").value.trim(); it.qty=Math.max(1,parseInt(E("eQty").value,10)||1); it.liner=E("eLiner").value;
+  E("eConn").querySelectorAll("[data-end]").forEach(function(el){ it.conn[el.getAttribute("data-end")]=el.value; }); it.dimsAre=E("eDimsAre").value; it.notes=E("eNotes").value.trim();
   E("eDims").querySelectorAll("[data-k]").forEach(function(el){ var k=el.getAttribute("data-k"); it.d[k]=el.tagName==="SELECT"?el.value:(parseFloat(el.value)||0); });
+  t.fields.forEach(function(f){ if(f[4]&&!it.over[f[0]]){ var v=f[4](it.d); it.d[f[0]]=v; var el=E("eDims").querySelector('[data-k="'+f[0]+'"]'); if(el&&document.activeElement!==el) el.value=v; } });
   if(t.k==="sketch"){ it.desc=E("skDesc").value.trim(); it.sketch=skData(); }
   if(!it.gaugeSet&&t.draw) it.gauge=suggestGauge(t,it.d); E("eGa").value=it.gauge; }
 function preview(){ readEditor(); var it=ED, t=ftype(it.type);
   E("ePrev").innerHTML=t.draw?drawItem(it,360,250):'<div class="hint" style="padding:30px 14px;text-align:center">Your sketch and photo go to the shop as drawn.</div>';
   var lb=estLbs(it); E("eEst").innerHTML=(t.draw?esc(t.desc(it.d))+" · ":"")+it.qty+" pc · "+it.gauge+" ga · ≈ "+(Math.round(lb*10)/10)+" lb"+(it.liner!=="None"?" · liner "+esc(it.liner):"")+(t.draw?'<div class="hint">'+(it.gaugeSet?"Gauge set by you":"Gauge suggested from size (SMACNA-style) — change it if the job calls for different")+'</div>':''); }
-["eMark","eQty","eConn","eLiner","eDimsAre","eNotes","skDesc"].forEach(function(id){ E(id).addEventListener("input",preview); E(id).addEventListener("change",preview); });
-E("eDims").addEventListener("input",preview); E("eDims").addEventListener("change",preview);
+["eMark","eQty","eLiner","eDimsAre","eNotes","skDesc"].forEach(function(id){ E(id).addEventListener("input",preview); E(id).addEventListener("change",preview); });
+E("eDims").addEventListener("input",function(e){ var el=e.target; if(el.getAttribute&&el.getAttribute("data-auto")&&ED&&!ED.over[el.getAttribute("data-k")]){ ED.over[el.getAttribute("data-k")]=true; el.style.background=""; el.style.borderColor=""; var lab=el.parentNode.querySelector("label span"); if(lab){ lab.outerHTML='<span class="autoreset" data-reset="'+el.getAttribute("data-k")+'">↺ back to auto</span>'; } } preview(); });
+E("eDims").addEventListener("change",preview);
+E("eDims").addEventListener("click",function(e){ var r=e.target.closest("[data-reset]"); if(!r||!ED) return; readEditor(); delete ED.over[r.getAttribute("data-reset")]; openEditor(); });
+E("eConn").addEventListener("change",function(e){ var el=e.target; if(el.getAttribute("data-all")&&el.value){ E("eConn").querySelectorAll("[data-end]").forEach(function(s){ s.value=el.value; }); el.value=""; } preview(); });
 E("eGa").onchange=function(){ ED.gauge=E("eGa").value; ED.gaugeSet=true; preview(); };
 E("edCancel").onclick=function(){ E("edModal").style.display="none"; ED=null; };
 E("edSave").onclick=function(){ readEditor(); var it=ED, t=ftype(it.type);
@@ -393,7 +420,7 @@ function skLoad(data){ SK=[]; skBg=null; if(data){ var im=new Image(); im.onload
 E("skPhoto").onchange=function(){ var f=E("skPhoto").files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(e){ var im=new Image(); im.onload=function(){ var m=1100,w=im.width,h=im.height; if(Math.max(w,h)>m){ var s=m/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); } var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(im,0,0,w,h); ED.photo=c.toDataURL("image/jpeg",0.72); E("skImg").src=ED.photo; E("skImg").style.display="block"; preview(); }; im.src=e.target.result; }; rd.readAsDataURL(f); E("skPhoto").value=""; };
 
 /* ===== list ===== */
-function itemLine(it){ var t=ftype(it.type); return [t.draw?t.desc(it.d):(it.desc||"Custom"),it.conn,it.liner!=="None"?"liner "+it.liner+(it.dimsAre.indexOf("Inside")===0?" (dims clear inside)":""):"",it.gauge+" ga"].filter(Boolean).join(" · "); }
+function itemLine(it){ var t=ftype(it.type); return [t.draw?t.desc(it.d):(it.desc||"Custom"),connText(it),it.liner!=="None"?"liner "+it.liner+(it.dimsAre.indexOf("Inside")===0?" (dims clear inside)":""):"",it.gauge+" ga"].filter(Boolean).join(" · "); }
 function renderItems(){
   var n=ITEMS.length, pcs=0, lb=0; ITEMS.forEach(function(it){ pcs+=it.qty; lb+=estLbs(it); });
   E("cnt").textContent=n?"("+n+")":""; E("barCnt").textContent=n+" fitting"+(n===1?"":"s")+" · "+pcs+" pc · ≈ "+Math.round(lb)+" lb";
