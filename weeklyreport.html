@@ -75,7 +75,6 @@ input:focus{outline:none;border-color:var(--vm);background:#fff}
   <div class="acts noprint" id="acts" style="display:none">
     <button class="btn btn-p" id="printBtn">Print / Save PDF</button>
     <button class="btn btn-g" id="copyBtn">Copy for email</button>
-    <button class="btn btn-g" id="saveBtn">Save to SharePoint</button>
     <span class="tip" style="align-self:center">Click anywhere in the report to edit before sending.</span>
   </div>
   <div id="doc" contenteditable="true" style="display:none"></div>
@@ -136,7 +135,7 @@ async function start(a){
   E("prevWk").onclick=function(){ E("week").value=iso(addDays(parseISO(E("week").value),-7)); };
   E("buildBtn").onclick=build;
   E("printBtn").onclick=function(){ window.print(); };
-  E("copyBtn").onclick=copyDoc; E("saveBtn").onclick=saveDoc;
+  E("copyBtn").onclick=copyDoc;
   E("secs").querySelectorAll("input").forEach(function(c){ c.onchange=function(){ if(LAST) render(); }; });
   pullAll(itemsUrl(JOBTASKS,"JobNo,JobName,Active")).then(function(rows){ var seen={},arr=[]; rows.forEach(function(f){ if((f.Active||"Yes")==="No") return; var jn=(f.JobNo||"").trim(); if(!jn||seen[jn]) return; seen[jn]=1; arr.push(jn+" "+(f.JobName||"").trim()); });
     arr.sort(function(x,y){return x.slice(x.indexOf(" ")+1).toLowerCase().localeCompare(y.slice(y.indexOf(" ")+1).toLowerCase());}); E("joblist").innerHTML=arr.map(function(s){return '<option value="'+esc(s)+'">';}).join(""); }).catch(function(){});
