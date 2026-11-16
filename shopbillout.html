@@ -109,6 +109,12 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
     </div>
     <div id="phaseWrap" class="hide"><label class="f">Phase code</label><select id="phase"></select></div>
     <div id="smTop">
+      <div class="ftbox" style="background:#eef4fe;border:1px solid #bfd4f6;border-radius:10px;padding:10px;margin:10px 0">
+        <label class="f" style="margin-top:0">&#128208; Bill out a fitting ticket</label>
+        <div class="row" style="align-items:flex-end"><div style="flex:3"><input type="text" id="ftPick" list="ftList" placeholder="Type or pick FT-0012" autocomplete="off"><datalist id="ftList"></datalist></div>
+          <div style="flex:1"><button type="button" id="ftLoad" style="width:100%;padding:11px;border:none;border-radius:9px;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer">Load</button></div></div>
+        <div id="ftMsg" style="font-size:12.5px;color:#1e3a8a;margin-top:6px">Fills in the job, steel by gauge &amp; liner, duct pieces, fitting counts, average size and vanes from the ticket.</div>
+      </div>
       <div class="row">
         <div><label class="f">Scrap / drop % on steel</label><input type="number" id="scrap" inputmode="decimal" step="any" min="0" placeholder="0"></div>
         <div style="flex:2;align-self:flex-end"><div class="cap">Duct bills to 1230 and fittings to 1250 automatically. Stainless, plate and odd items: use <b>Other item</b> at the bottom.</div></div>
@@ -196,7 +202,7 @@ var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE_ID, GRAPH=SITEURL+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973";
-var BILLOUT_LIST="Shop Bill-Outs";
+var BILLOUT_LIST="Shop Bill-Outs", FT_LIST_NAME="Fitting Tickets", FT_LIST=null, FT_COLS={}, FT_ROWS=[], CUR_FT=null;
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 
 /* galvanized gauges: pounds per sq ft (turns pounds into liner area) */
@@ -250,7 +256,48 @@ async function afterLogin(acct){
     if(L){ BO_LIST=L.id; var c=await gjson(GRAPH+BO_LIST+"/columns?$select=name,readOnly"); BO_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) BO_COLS[x.name]=1; }); } }catch(e){}
   if(!BO_LIST){ E("msg").className="msg err"; E("msg").textContent="The \u201c"+BILLOUT_LIST+"\u201d list isn't set up in SharePoint yet — bill-outs can't be saved until it is."; }
   loadPrices();
+  loadTickets();
 }
+/* ===== Fitting tickets → bill-out ===== */
+async function loadTickets(){
+  try{ var j=await gjson(SITEURL+"/lists?$select=id,displayName&$top=999"); var L=(j.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===FT_LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("ftMsg").textContent="The Fitting Tickets list isn't set up yet."; return; } FT_LIST=L.id;
+    var c=await gjson(GRAPH+FT_LIST+"/columns?$select=name,readOnly"); (c.value||[]).forEach(function(x){ if(!x.readOnly) FT_COLS[x.name]=1; });
+    FT_ROWS=[]; var url=GRAPH+FT_LIST+"/items?$expand=fields($select=TicketNo,JobNo,JobName,Status,Items,EstLbs,ItemCount"+(FT_COLS.BilledOut?",BilledOut":"")+")&$top=999";
+    while(url){ var r=await gjson(url); (r.value||[]).forEach(function(it){ if(it.fields&&it.fields.TicketNo){ it.fields._id=it.id; FT_ROWS.push(it.fields); } }); url=r["@odata.nextLink"]||null; }
+    FT_ROWS.sort(function(a,b){ return String(b.TicketNo).localeCompare(String(a.TicketNo)); });
+    E("ftList").innerHTML=FT_ROWS.map(function(t){ return '<option value="'+esc(t.TicketNo)+'" label="'+esc((t.JobName||t.JobNo||"")+" · "+(t.Status||"New")+(t.BilledOut?" · billed":"")+" · ≈"+(t.EstLbs||0)+" lb")+'">'; }).join("");
+    var q=new URLSearchParams(location.search).get("ft"); if(q){ E("ftPick").value=q; var wait=0; (function go(){ if(E("job").options.length>1||wait>20) loadTicket(q); else { wait++; setTimeout(go,250); } })(); }
+  }catch(e){ E("ftMsg").textContent="Couldn't load fitting tickets ("+e.message+")."; }
+}
+function ftConn(c,which){ if(!c) return ""; if(typeof c==="string") return c; if(which) return c[which]||""; return Object.keys(c).map(function(k){return c[k];}).join(" "); }
+function loadTicket(no){ no=String(no||"").trim().toUpperCase(); var t=FT_ROWS.filter(function(r){return String(r.TicketNo).toUpperCase()===no;})[0];
+  if(!t){ E("ftMsg").innerHTML='<b style="color:#b91c1c">No ticket '+esc(no)+' found.</b>'; return; }
+  if(t.BilledOut&&!confirm(t.TicketNo+" was already billed out ("+t.BilledOut+"). Load it again?")) return;
+  var items=[]; try{ items=JSON.parse(t.Items||"[]"); }catch(e){}
+  if(!items.length){ E("ftMsg").innerHTML='<b style="color:#b91c1c">'+esc(no)+' has no fittings on it.</b>'; return; }
+  var dirty=STEEL.duct.concat(STEEL.fit).some(function(r){return num(r.lbs)>0;})||DUCT.length||["fTdf","fSd","fVn"].some(function(id){return num(E(id).value)>0;});
+  if(dirty&&!confirm("Replace what's already entered with "+no+"?")) return;
+  setType("Sheet Metal"); resetSheet();
+  if(t.JobNo){ E("job").value=t.JobNo; if(E("job").value!==t.JobNo){ var o=document.createElement("option"); o.value=t.JobNo; o.setAttribute("data-name",t.JobName||""); o.textContent=t.JobNo+" "+(t.JobName||""); E("job").appendChild(o); E("job").value=t.JobNo; } }
+  var st={duct:{},fit:{}}, tdf=0, sd=0, sw=0, sh=0, sn=0, vn=0, vw=0, vh=0, dLbs=0, fLbs=0;
+  items.forEach(function(it){ var q=+it.qty||1, g=(it.gauge||"24")+" ga galv", ln=it.liner&&LINERS.indexOf(it.liner)>-1?it.liner:"None", d=it.d||{}, sec=(it.phase==="1230")?"duct":"fit", lbs=+it.lbs||0;
+    if(!GALV[g]) g="24 ga galv";
+    var k=g+"|"+ln; st[sec][k]=(st[sec][k]||0)+lbs; if(sec==="duct") dLbs+=lbs; else fLbs+=lbs;
+    if(it.type==="straight"){ var c=ftConn(it.conn,"End 1")||ftConn(it.conn); DUCT.push({w:String(d.W||""),h:String(d.H||""),q:String(q),len:String(Math.round((+d.L||0)/12*100)/100),conn:/TDF|TDC/.test(c)?"TDC / TDF":(/S&D/.test(c)?"Slip & drive":"Other / none")}); return; }
+    if(sec==="fit"){ var all=ftConn(it.conn); if(/TDF|TDC/.test(all)) tdf+=q; else if(/S&D/.test(all)) sd+=q;
+      var w=+(d.W||d.W1||0), h=+(d.H||d.H1||0); if(w>0&&h>0){ sw+=w*q; sh+=h*q; sn+=q; }
+      if(it.type==="sqelbow"&&d.V==="Yes"){ vn+=q; vw+=((+d.W1||0)+(+d.W2||0))/2*q; vh+=(+d.H||0)*q; } } });
+  ["duct","fit"].forEach(function(sec){ var keys=Object.keys(st[sec]); if(keys.length) STEEL[sec]=keys.map(function(k){ var p=k.split("|"); return {g:p[0],lbs:String(Math.round(st[sec][k]*10)/10),liner:p[1]}; }); });
+  E("fTdf").value=tdf||""; E("fSd").value=sd||""; if(sn){ E("fW").value=Math.round(sw/sn); E("fH").value=Math.round(sh/sn); }
+  if(vn){ E("fVn").value=vn; E("fVw").value=Math.round(vw/vn); E("fVh").value=Math.round(vh/vn); }
+  var nt=E("notes").value.replace(/^From fitting ticket FT-\d+\.?\s*/,""); E("notes").value=("From fitting ticket "+t.TicketNo+". "+nt).trim();
+  CUR_FT={id:t._id,no:t.TicketNo};
+  renderSteel(); renderDuct(); renderBO();
+  E("ftMsg").innerHTML='<b>Loaded '+esc(t.TicketNo)+'</b> · '+esc(t.JobName||t.JobNo||"")+' · duct ≈'+Math.round(dLbs)+' lb, fittings ≈'+Math.round(fLbs)+' lb, '+(tdf+sd)+' fittings counted'+(vn?', '+vn+' w/ vanes':'')+'. <b>Pounds are estimates — weigh it and fix the numbers before you submit.</b>';
+}
+E("ftLoad").onclick=function(){ loadTicket(E("ftPick").value); };
+E("ftPick").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); loadTicket(E("ftPick").value); } });
 async function loadJobs(){
   try{ var tasks=await pull(JOBTASKS,"JobNo,JobName,Active"), seen={}, arch={};
     try{ (await pull(JOBS,"Title,Archive")).forEach(function(j){ if(j.Archive===true||j.Archive==="Yes"||j.Archive==="true") arch[(j.Title||"").trim()]=1; }); }catch(e){}
@@ -423,10 +470,11 @@ E("saveBtn").onclick=async function(){
   E("saveBtn").disabled=true; msg.className="msg"; msg.textContent="Saving…";
   try{ var t=await getToken(), r=await fetch(GRAPH+BO_LIST+"/items",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,140));
-    E("form").classList.add("hide"); E("done").classList.remove("hide"); E("doneDetail").textContent=jn+" · "+phases.join(", ")+" · "+lines.length+" items · "+money(total)+" — sent to accounts payable";
+    E("form").classList.add("hide"); E("done").classList.remove("hide"); E("doneDetail").textContent=jn+" · "+phases.join(", ")+" · "+lines.length+" items · "+money(total)+" — sent to accounts payable"+(CUR_FT?" · "+CUR_FT.no+" marked billed":"");
+    if(CUR_FT&&FT_LIST&&FT_COLS.BilledOut){ try{ var t2=await getToken(); var bo=d+" · "+money(total)+" · "+loginName; await fetch(GRAPH+FT_LIST+"/items/"+CUR_FT.id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+t2,"Content-Type":"application/json"},body:JSON.stringify({BilledOut:bo})}); var row=FT_ROWS.filter(function(x){return x._id===CUR_FT.id;})[0]; if(row) row.BilledOut=bo; }catch(e2){} }
   }catch(e){ E("saveBtn").disabled=false; msg.className="msg err"; msg.textContent="Couldn't save ("+e.message+"). Tap Submit again."; }
 };
-E("newBtn").onclick=function(){ BO={}; EXTRA=[]; PIPE=[]; resetSheet(); E("notes").value=""; E("bdate").value=todayISO(); E("msg").textContent=""; E("saveBtn").disabled=false;
+E("newBtn").onclick=function(){ BO={}; EXTRA=[]; PIPE=[]; CUR_FT=null; E("ftPick").value=""; resetSheet(); E("notes").value=""; E("bdate").value=todayISO(); E("msg").textContent=""; E("saveBtn").disabled=false;
   E("done").classList.add("hide"); E("form").classList.remove("hide"); setType(fabType); window.scrollTo(0,0); };
 
 /* ===== history: totals by job and group (from each bill-out's lines) ===== */

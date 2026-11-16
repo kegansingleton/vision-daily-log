@@ -98,7 +98,7 @@ async function start(a){
   E("q").oninput=render; await load(); setInterval(function(){ if(!OPEN) load(); },120000);
 }
 async function load(){
-  var sel="TicketNo,JobNo,JobName,RequestedBy,LoginEmail,SubmittedDate,NeededBy,Priority,Status,DeliverTo,Notes,ItemCount,PieceCount,EstLbs,GaugeSummary,Items,ShopNotes,StatusLog,CompletedDate,DeliveredDate,FabRunLogged";
+  var sel="TicketNo,JobNo,JobName,RequestedBy,LoginEmail,SubmittedDate,NeededBy,Priority,Status,DeliverTo,Notes,ItemCount,PieceCount,EstLbs,GaugeSummary,Items,ShopNotes,StatusLog,CompletedDate,DeliveredDate,FabRunLogged,BilledOut";
   sel=sel.split(",").filter(function(k){return COLS[k]||k==="Title";}).join(",");
   var url=GRAPH+LIST_ID+"/items?$expand=fields($select=Title,"+sel+")&$top=999", out=[];
   try{ while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; it.fields._mod=it.lastModifiedDateTime; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } }
@@ -117,7 +117,7 @@ function render(){
     .sort(function(a,b){ if(TAB==="Delivered"||TAB==="all") return String(b._id).localeCompare(String(a._id),undefined,{numeric:true}); return rank(a).localeCompare(rank(b)); });
   if(!rows.length){ E("list").innerHTML='<div class="empty">'+(ROWS.length?"Nothing here.":"No fitting tickets yet.")+'</div>'; return; }
   E("list").innerHTML=rows.map(function(r){ var s=r.Status||"New", nd=d10(r.NeededBy), late=nd&&nd<td&&(s==="New"||s==="Cutting");
-    var card='<div class="tk" data-id="'+r._id+'"><div class="m"><div class="t">'+esc(r.TicketNo||("#"+r._id))+' · '+esc(r.JobName||r.JobNo||"")+'</div><div class="s">'+esc(r.RequestedBy||"")+' · '+esc(r.ItemCount||0)+' fittings, '+esc(r.PieceCount||0)+' pc · ≈ '+esc(r.EstLbs||0)+' lb'+(r.DeliverTo?' · → '+esc(r.DeliverTo):'')+'</div><div class="s">'+esc(r.GaugeSummary||"")+'</div></div>'+
+    var card='<div class="tk" data-id="'+r._id+'"><div class="m"><div class="t">'+esc(r.TicketNo||("#"+r._id))+' · '+esc(r.JobName||r.JobNo||"")+'</div><div class="s">'+esc(r.RequestedBy||"")+' · '+esc(r.ItemCount||0)+' fittings, '+esc(r.PieceCount||0)+' pc · ≈ '+esc(r.EstLbs||0)+' lb'+(r.DeliverTo?' · → '+esc(r.DeliverTo):'')+'</div><div class="s">'+esc(r.GaugeSummary||"")+(r.BilledOut?' · <b style="color:#15803d">billed</b>':'')+'</div></div>'+
       '<div style="text-align:right">'+(r.Priority==="Rush"?'<span class="pill rush">RUSH</span><br>':'')+'<span class="pill st-'+esc(s)+'">'+esc(s)+'</span><div class="s'+(late?' late':'')+'" style="margin-top:4px">'+(nd?(late?"LATE · ":"")+"need "+nice(nd):"")+'</div></div></div>';
     return card+(OPEN===r._id?'<div class="det" id="det"><div class="empty">Opening…</div></div>':''); }).join("");
   E("list").querySelectorAll(".tk").forEach(function(el){ el.onclick=function(){ var id=el.getAttribute("data-id"); OPEN=(OPEN===id)?null:id; render(); if(OPEN) openDet(OPEN); }; });
@@ -133,7 +133,7 @@ async function openDet(id){ var r=rowById(id), box=E("det"); if(!r||!box) return
     var q="ft="+encodeURIComponent(r.TicketNo||"")+"&job="+encodeURIComponent(r.JobNo||"")+"&phase="+g.phase+"&lbs="+Math.round(g.lbs)+"&mat="+encodeURIComponent(g.gauge+" ga galv")+"&liner="+encodeURIComponent(ln)+"&notes="+encodeURIComponent((r.TicketNo||"")+" "+g.marks.join(", "));
     return '<a class="btn btn-g btn-s" target="_blank" href="/shopproduction.html?'+q+'">'+g.phase+' '+(g.phase==="1230"?"duct":"fittings")+' · '+esc(g.gauge)+' ga · ≈'+Math.round(g.lbs)+' lb</a>'; }).join("");
   box.innerHTML='<div class="sb">'+STATUSES.map(function(x){return '<button data-s="'+x+'"'+(x===s?' class="on"':'')+'>'+x+'</button>';}).join("")+'</div>'+
-    '<div class="acts"><button class="btn btn-g btn-s" id="prBtn">&#128424; Print ticket</button><span class="msg" id="dMsg"></span></div>'+
+    '<div class="acts"><button class="btn btn-g btn-s" id="prBtn">&#128424; Print ticket</button><a class="btn btn-p btn-s" target="_blank" href="/shopbillout.html?ft='+encodeURIComponent(r.TicketNo||"")+'">&#129534; Bill it out</a>'+(r.BilledOut?'<span style="font-size:12.5px;color:#15803d;font-weight:800;align-self:center">Billed: '+esc(r.BilledOut)+'</span>':'')+'<span class="msg" id="dMsg"></span></div>'+
     (r.Notes?'<div style="padding:8px;background:#fef3c7;border-radius:8px;font-size:14px;white-space:pre-wrap">'+esc(r.Notes)+'</div>':'')+
     '<div class="fab"><h4>Log it as a Fab Run</h4><div class="s" style="font-size:12.5px;color:#6b7280;margin-bottom:4px">Opens Fab Run pre-filled with the job, phase, gauge and estimated pounds — weigh it and fix the pounds before you log.'+(r.FabRunLogged?' <b style="color:#15803d">Logged: '+esc(r.FabRunLogged)+'</b>':'')+'</div>'+(fab||'<span class="s">Nothing to log.</span>')+'</div>'+
     '<label>Shop notes (the field sees these in My Submissions)</label><textarea id="sNotes" rows="2">'+esc(r.ShopNotes||"")+'</textarea><button class="btn btn-g btn-s" id="snSave" style="margin-top:6px">Save note</button>'+
