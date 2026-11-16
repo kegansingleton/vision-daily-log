@@ -316,7 +316,7 @@ function drawCrew(labels,data){
     if(jobs.length<2||jobs.length<real.length*0.6) return;
     if(jobs.every(function(o){return o.getAttribute("data-vmflip");})) return;
     var v=sel.value;
-    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; if(!o.hasAttribute("value")) o.setAttribute("value",o.textContent); var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
     var items=jobs.map(function(o){return {o:o,k:o.textContent.toLowerCase()};}).sort(cmp);
     items.forEach(function(it){ sel.appendChild(it.o); });
     opts.filter(function(o){return jobs.indexOf(o)<0&&o.value!=="";}).forEach(function(o){ sel.appendChild(o); });
