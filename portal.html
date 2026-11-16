@@ -165,20 +165,24 @@ function tidySections(){ /* hide a section header when every button under it is 
   document.querySelectorAll(".grid").forEach(function(g){ var any=Array.prototype.some.call(g.querySelectorAll(".tile"),function(t){ return !t.hasAttribute("data-role")||t.classList.contains("show"); });
     g.classList.toggle("empty-sec",!any); var h=g.previousElementSibling; if(h&&h.classList.contains("sec")) h.classList.toggle("empty-sec",!any); });
 }
-function roleNote(t){ var n=E("roleNote"); if(!n){ n=document.createElement("div"); n.id="roleNote"; n.style.cssText="background:#fef3c7;color:#92400e;border-radius:9px;padding:9px 12px;font-size:13px;margin:8px 0"; var a=E("app"); a.insertBefore(n,a.firstChild); } n.textContent=t; }
+function roleNote(t,fix){ var n=E("roleNote"); if(!n){ n=document.createElement("div"); n.id="roleNote"; n.style.cssText="background:#fef3c7;color:#92400e;border-radius:9px;padding:9px 12px;font-size:13px;margin:8px 0"; var a=E("app"); a.insertBefore(n,a.firstChild); }
+  n.textContent=t;
+  if(fix){ var b=document.createElement("button"); b.textContent="Fix my access"; b.style.cssText="margin-left:10px;background:#7f1d1d;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-weight:700;cursor:pointer";
+    b.onclick=function(){ try{ sessionStorage.removeItem("vm_roles_try"); }catch(e){} msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:fix,prompt:"consent"}); }; n.appendChild(b); } }
+var REDIR_TOKEN=null;   /* token handed back by a sign-in redirect — used directly so we don't depend on the silent call */
 function applyRoles(acct){
   var em=String(acct&&acct.username||"").toLowerCase().trim();
   var r={admin:SUPERADMIN.indexOf(em)>-1, pm:NAMED_PM.indexOf(em)>-1, foreman:false, shop:false};
   try{ var c=JSON.parse(localStorage.getItem("vm_roles_v1")||"null"); if(c&&c.em===em) showRoles(c.r); }catch(e){}   /* instant from last visit */
   showRoles(r);
-  msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).then(function(tok){
+  (REDIR_TOKEN?Promise.resolve({accessToken:REDIR_TOKEN}):msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct})).then(function(tok){
     var url=EMP_URL, me=null;
     function page(u){ return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(x){return x.json();}).then(function(j){
       if(j.error) throw new Error(j.error.message||"no access");
       (j.value||[]).forEach(function(it){ var f=it.fields||{}; if((f.Active||"Yes")==="No") return; var e2=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e2===em) me=f; });
       if(j["@odata.nextLink"]) return page(j["@odata.nextLink"]); }); }
     return page(url).then(function(){
-      if(!me) roleNote("Signed in as "+em+" — not found in Employee Setup, so office buttons are hidden. Check the login email on your employee record.");
+      if(!me && SUPERADMIN.indexOf(em)<0) roleNote("Signed in as "+em+" — not found in Employee Setup, so office buttons are hidden. Check the login email on your employee record.");
       if(me){ r.admin=r.admin||truthy(me.Admin); r.foreman=truthy(me.Foreman); r.shop=truthy(me.ShopAccess); }
       r.pm=r.pm||r.admin;
       showRoles(r);
@@ -186,12 +190,13 @@ function applyRoles(acct){
     }).catch(function(e){ roleNote("Couldn't check your access ("+e.message+"). Office buttons may be hidden — tell the office."); });
   }).catch(function(e){
     /* first visit on this device: get the data permission once, then come back */
-    roleNote("Couldn't confirm your access on this device ("+(e&&(e.errorCode||e.message)||"sign-in")+"). Sign out and back in; if office buttons are still missing, tell the office.");
+    roleNote("Microsoft needs you to confirm access on this device ("+(e&&(e.errorCode||e.message)||"sign-in")+"). Tap the button and approve, then you'll land back here.",acct);
     try{ if(!sessionStorage.getItem("vm_roles_try")){ sessionStorage.setItem("vm_roles_try","1"); msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:acct}); } }catch(e){}
   });
 }
 function start(){
-  msalInstance.handleRedirectPromise().then(function(){
+  msalInstance.handleRedirectPromise().then(function(resp){
+    if(resp&&resp.accessToken&&resp.scopes&&resp.scopes.join(" ").toLowerCase().indexOf("sites.readwrite.all")>-1) REDIR_TOKEN=resp.accessToken;
     var all=msalInstance.getAllAccounts(), acct=msalInstance.getActiveAccount()||all.filter(function(a){return /@visionmech\.net$/i.test(a.username||"");})[0]||all[0];
     if(acct){ msalInstance.setActiveAccount(acct); showApp(acct); }
   }).catch(function(e){
@@ -199,7 +204,7 @@ function start(){
   });
 }
 E("signin").onclick=function(){
-  msalInstance.loginRedirect({scopes:["openid","profile","email"]});
+  msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});
 };
 start();
 </script>
