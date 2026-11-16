@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — PM Visit</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:860px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:860px;margin:0 auto;padding:12px 12px 90px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+input,select,textarea{width:100%;padding:10px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:600px){.g3,.g4{grid-template-columns:1fr 1fr}}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.siteinfo{font-size:13.5px;color:var(--gry);line-height:1.5;margin-top:8px}
+.siteinfo b{color:var(--ink)}
+.unit{border:1px solid var(--line);border-radius:11px;margin:8px 0;overflow:hidden;background:#fff}
+.uh{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;background:#fafbfc}
+.uh .m{flex:1;min-width:0}.uh .t{font-weight:800;font-size:15px}.uh .s{font-size:12.5px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap;background:var(--grybg);color:var(--gry)}
+.chip.done{background:var(--okbg);color:var(--ok)}.chip.skip{background:var(--ambbg);color:var(--amb)}.chip.new{background:#e0e7ff;color:#3730a3}
+.ub{display:none;padding:4px 12px 14px;border-top:1px solid var(--line)}.unit.open .ub{display:block}
+.sec{font-size:11.5px;font-weight:800;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px;border-bottom:1px solid #f1d5d2;padding-bottom:3px}
+.stbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.stbtns button{flex:1;padding:10px 6px;border-radius:9px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:13px;cursor:pointer;color:var(--gry)}
+.stbtns button.on.done{background:var(--ok);border-color:var(--ok);color:#fff}.stbtns button.on.na{background:var(--amb);border-color:var(--amb);color:#fff}.stbtns button.on.skip{background:var(--gry);border-color:var(--gry);color:#fff}
+.ci{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+.ci .lbl{flex:1}.ci input,.ci select{width:auto;max-width:52%;padding:7px 8px;font-size:14px}
+.ci .l3{display:flex;gap:4px;max-width:60%}.ci .l3 input{width:33%;max-width:none}
+.tri{display:flex;gap:3px}.tri button{border:1.5px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:800;cursor:pointer;color:var(--gry)}
+.tri button.on{color:#fff}.tri button.on[data-v="Done"]{background:var(--ok);border-color:var(--ok)}.tri button.on[data-v="No"]{background:var(--red);border-color:var(--red)}.tri button.on[data-v="N/A"]{background:var(--gry);border-color:var(--gry)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.thumbs .th{position:relative}.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.thumbs .x{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:20px;text-align:center;cursor:pointer}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.adm{margin-top:12px;padding-top:10px;border-top:1px dashed #e5e7eb;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.bar .in{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}.bar .in .btn{flex:1;padding:13px}
+.bar .cnt{font-size:12.5px;color:var(--mut);font-weight:700;min-width:120px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:540px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.empty{color:var(--mut);font-size:14px;padding:10px 2px}
+.ret{opacity:.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>PM Visit</h1><p>Pick the site — every unit there loads with its model, serial, belts and filters. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>PM Visit</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg" id="topMsg"></div>
+  <div class="card">
+    <h2>1. Visit</h2>
+    <div class="g2">
+      <div><label>Date</label><input type="date" id="vDate"></div>
+      <div><label>Technician</label><input type="text" id="vTech" list="techlist" placeholder="Your name"><datalist id="techlist"></datalist></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Site <span><button class="btn btn-g btn-s" id="newSiteBtn">+ New site</button> <button class="btn btn-g btn-s" id="editSiteBtn" style="display:none">&#9998; Edit site</button></span></h2>
+    <select id="sitePick"><option value="">Loading sites…</option></select>
+    <div class="siteinfo" id="siteInfo"></div>
+  </div>
+
+  <div class="card" id="unitsCard" style="display:none">
+    <h2><span>3. Equipment <span id="uCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-g btn-s" id="addUnitBtn">+ Add unit</button></h2>
+    <div class="hint">Tap a unit to open it. Unit info is already filled in from last time — fix anything that's wrong and it's saved for next time.</div>
+    <div id="units"></div>
+  </div>
+
+  <div class="card" id="wrapCard" style="display:none">
+    <h2>4. Wrap-up</h2>
+    <label>Visit summary / deficiencies found</label><textarea id="vSummary" rows="3" placeholder="Overall notes for the customer"></textarea>
+    <label>Recommendations / quote opportunities</label><textarea id="vRecs" rows="2" placeholder="e.g. RTU 7 compressor amps high — recommend replacement quote"></textarea>
+    <label>Customer email for a copy (optional)</label><input type="email" id="vCust" placeholder="name@customer.com">
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<div class="bar" id="bar" style="display:none"><div class="in">
+  <div class="cnt" id="barCnt"></div>
+  <button class="btn btn-p" id="submitBtn">Submit visit</button>
+</div></div>
+
+<div class="modal" id="siteModal"><div class="box">
+  <h2 id="smTitle">New site</h2>
+  <label>Site name</label><input type="text" id="sName" placeholder="e.g. Rocky Ford High School">
+  <label>Customer</label><input type="text" id="sCust" placeholder="e.g. Rocky Ford School District">
+  <label>Street address</label><input type="text" id="sAddr" placeholder="e.g. 100 W Washington Ave">
+  <div class="g2">
+    <div><label>City</label><input type="text" id="sCity" placeholder="e.g. Rocky Ford"></div>
+    <div><label>Service job #</label><input type="text" id="sJob" list="joblist" placeholder="e.g. 26S-611"><datalist id="joblist"></datalist></div>
+  </div>
+  <div class="g3">
+    <div><label>Site contact</label><input type="text" id="sCName"></div>
+    <div><label>Phone</label><input type="tel" id="sCPhone"></div>
+    <div><label>Email</label><input type="email" id="sCEmail"></div>
+  </div>
+  <label>Access notes</label><textarea id="sAccess" rows="2" placeholder="Roof ladder by gym, key at front office, gate code…"></textarea>
+  <div class="msg" id="smMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="smCancel">Cancel</button><button class="btn btn-p" id="smSave">Save site</button></div>
+  <div class="row-b" id="smDelRow" style="display:none"><button class="btn btn-d" id="smRetire">Mark site inactive</button></div>
+</div></div>
+
+<div class="modal" id="moveModal"><div class="box">
+  <h2>Move unit to another site</h2>
+  <select id="moveTo"></select>
+  <div class="row-b"><button class="btn btn-g" id="mvCancel">Cancel</button><button class="btn btn-p" id="mvGo">Move</button></div>
+</div></div>
+
+<script>
+var C={
+ volt:["volt","Verified voltage","t"], xfmr:["xfmr","Verified transformer voltage","t"], tight:["tight","Tightened electrical connections","c"],
+ lube:["lube","Lubricated motors / bearings","c"], wipe:["wipe","Cleaned & wiped down surfaces","c"], wx:["wx","Weather","t"], oat:["oat","Approx. outdoor temperature (°F)","t"],
+ filt:["filt","Filter condition & quantity","t"], fanA:["fanA","Fan motor amps","t"], pulley:["pulley","Verified pulley alignment","c"], btens:["btens","Belt tension","c"],
+ bcond:["bcond","Belt condition","t"], brepl:["brepl","Belt replaced","c"], suct:["suct","Suction pressure / temp","t"], disch:["disch","Discharge pressure / temp","t"],
+ refr:["refr","Refrigerant type","s",["R-410A","R-454B","R-32","R-22","R-407C","R-134a","Other"]], ctype:["ctype","Compressor type","s",["Scroll","Recip","Rotary","Screw","Centrifugal","Other"]],
+ llt:["llt","Liquid line temp (°F)","t"], sh:["sh","Superheat (°F)","t"], sc:["sc","Subcooling (°F)","t"], gasM:["gasM","Manifold gas pressure (in. w.c.)","t"],
+ dt:["dt","Heat / cool exchanger ΔT (°F)","t"], stat:["stat","Stat / control point","t"], econ:["econ","Verified economizer operation","c"], fuses:["fuses","Fuses","t"],
+ ctrl:["ctrl","Controller method","s",["VFD","Switch","Timer","BAS / DDC","Other"]], hc:["hc","Heat / cool type","s",["Gas / DX","Electric / DX","Heat pump","Hydronic","Cooling only","Heating only","Other"]]
+};
+function I(k,label){ var x=C[k].slice(); if(label) x[1]=label; return x; }
+var LISTS={
+ PKG:{t:"Packaged unit checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),"Refrigeration",["compA","Compressor amps","l"],I("ctype"),I("refr"),I("suct"),I("disch"),I("llt"),I("sh"),I("sc"),"Heating & airflow",I("gasM"),I("dt"),I("fanA"),["indA","Inducer fan motor amps","t"],I("stat"),I("econ"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ PTAC:{t:"PTAC / wall-mount checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["amps","Amperage","l"],"Refrigeration & airflow",I("refr"),I("suct"),I("disch"),I("dt"),I("fanA"),["compA1","Compressor amps","t"],I("stat"),I("econ"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ COND:{t:"Condensing / chiller checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),["ccrel","Inspected contactors / relays","c"],["braze","Inspected brazed joints","c"],["inlet","Cleaned air inlets","c"],["condA","Condenser amps","l"],["cfanA","Condenser fan motor amps","t"],"Refrigeration",I("ctype"),I("refr"),I("suct"),I("disch"),I("llt"),I("sh"),I("sc"),"Conditions & cleaning",I("oat"),["iat","Approx. indoor temperature (°F)","t"],I("lube","Motors & bearings lubricated"),["coil","Cleaned coil","c"],I("wipe"),I("filt")]},
+ AHU:{t:"Air handler checklist",items:[I("hc"),"Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),"Coil & drive",["coil","Coil clean","c"],["braze","Visually inspected braze joints","c"],I("fanA"),I("pulley"),["bsize","Belt size","t"],I("btens"),I("bcond"),I("brepl"),"Condensate & cleaning",["pan","Cleaned condensate pan","c"],["drain","Condensate drain line free / clear","c"],I("wx"),I("oat"),I("wipe"),I("filt")]},
+ FAN:{t:"Fan checklist",items:["Electrical",I("volt"),I("fanA"),I("fuses"),I("ctrl"),I("tight"),"Drive",["bqty","Replacement belts — qty & size","t"],I("pulley"),I("btens"),I("bcond"),I("brepl"),I("lube"),"Cleaning",I("wipe"),["vac","Vacuumed inlet screen / motor / fan blades","c"],I("filt")]},
+ UH:{t:"Heater / ventilator checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["fmv","Fan motor voltage","l"],I("fanA"),"Cleaning",I("wipe"),I("filt")]},
+ TUBE:{t:"Tube heater checklist",items:["Electrical & gas",I("volt"),I("xfmr"),I("tight"),I("lube"),["gasP","Gas pressure (in. w.c.)","t"],["fmv","Fan motor voltage","l"],I("fanA"),"Cleaning",I("wipe"),I("filt")]},
+ ERV:{t:"ERV checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["fmv","Fan motor voltage","l"],I("fanA"),["rot","Motor rotation verified","c"],"Cleaning",I("wipe"),I("filt")]},
+ EDH:{t:"Electric duct heater checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),I("lube"),["hlegs","Heater voltage","l"],["heatA","Heater amps","t"],"Cleaning",I("wipe"),I("filt")]},
+ MAU:{t:"Makeup air unit checklist",items:["Electrical",I("volt"),I("xfmr"),I("tight"),"Heating",I("gasM"),["stages","Stages of heat","t"],["burn","Cleaned burners","c"],["pilot","Cleaned ignition / pilot assembly","c"],["hxdt","Heat exchanger ΔT (°F)","t"],["screen","Inlet air screen cleaned","c"],"Drive",I("pulley"),I("btens"),I("bcond"),I("brepl"),I("fanA"),["cfan","Cleaned fan","c"],I("lube"),"Conditions & cleaning",I("wx"),I("oat"),I("wipe"),I("filt")]},
+ PUMP:{t:"Pump / compressor checklist",items:["Electrical",I("volt"),["motA","Motor amps","t"],I("fuses"),I("ctrl"),["elec","Checked electrical connections","c"],"Mechanical",["align","Verified pump alignment","c"],["lubeP","Lubricated motor / pump bearings","c"],["coup","Coupling condition","t"],I("wipe")]},
+ BOILER:{t:"Boiler checklist",items:["Gas",["gasS","Gas pressure — static","t"],["gasO","Gas pressure — operating","t"],["leakG","Checked for gas leaks","c"],"Combustion & safeties",["burn","Inspected burners","c"],["hx","Inspected heat exchanger","c"],["lwco","Tested low water safety","c"],["limits","Tested safeties & limits","c"],["flame","Tested flame safety","c"],["fsig","Flame signal","t"],["comb","Combustion analysis (annual)","t"],["co","Checked air stream for carbon monoxide","t"],"Water & venting",["prv","Tested pressure relief valve","c"],["leakW","Checked for water leaks","c"],["flue","Inspected flue","c"],I("tight")]},
+ SWAMP:{t:"Evaporative cooler checklist",items:["Electrical",I("volt"),I("fanA"),I("stat","Control point"),I("tight"),I("lube"),"Water",["basin","Basin cleaned","c"],["wline","Water line on / off","s",["On","Off"]],["wshut","Water shut-off location","t"],["float","Float level","t"],["mwv","Make-up water valve","t"],"Drive & pads",I("pulley"),I("btens"),I("bcond"),I("brepl"),["pad","Pad condition","t"],["padR","Pads replaced","c"],["padS","Pad size & quantity","t"],"Conditions",I("oat"),I("wx")]},
+ FILTER:{t:"Filter service",items:[["unit","Unit type","s",["RTU","AHU","MAU","EF","Chiller","VAV","Furnace","Other"]],["exist","Existing filter condition","t"],["qsize","Quantity & size of filters replaced","t"],["vis","Visual problems seen during filter change","s",["No","Yes — see comments"]]]},
+ VAV:{t:"VAV / fan-powered box checklist (draft)",items:[["box","Box type","s",["VAV (cooling only)","VAV w/ reheat","Fan-powered — series","Fan-powered — parallel"]],["inlet","Inlet size","t"],"Electrical & controls",I("volt"),I("xfmr","Control transformer voltage"),I("tight"),["ctlr","Controller / BAS point verified","c"],["sens","Space sensor verified","c"],["dat","Discharge air temp (°F)","t"],"Airflow",["damp","Damper / actuator full stroke verified","c"],["minC","Min CFM — setpoint / measured","t"],["maxC","Max CFM — setpoint / measured","t"],"Fan (fan-powered only)",["fpbA","Fan motor amps","t"],["fpbR","Fan rotation verified","c"],"Reheat",["rh","Reheat type","s",["None","Hot water","Electric"]],["rhOp","Reheat operation verified","c"],["rhA","Electric heat amps / HW valve stroke","t"],"Cleaning",I("filt")]}
+};
+var TYPES=[["RTU","Rooftop unit (RTU)","PKG"],["DOAS","DOAS","PKG"],["BARD","BARD wall-mount unit","PTAC"],["PTAC","PTAC unit","PTAC"],["Chiller","Chiller","COND"],["Condenser","Condensing unit","COND"],["Mini-Split","Mini-split","COND"],
+ ["AHU","Air handling unit (AHU)","AHU"],["Fan Coil","Fan coil unit","AHU"],["Furnace","Furnace","AHU"],["VAV","ATU / FPB / VAV box","VAV"],["MAU","Makeup air unit (MAU)","MAU"],["ERV","ERV","ERV"],
+ ["Exhaust Fan","Exhaust fan","FAN"],["Transfer Fan","Transfer fan","FAN"],["Dust Collector","Dust collector","FAN"],["Cabinet Unit Heater","Cabinet unit heater","UH"],["Electric Unit Heater","Electric unit heater","UH"],
+ ["Gas Unit Heater","Gas unit heater","UH"],["Tube Heater","Tube heater","TUBE"],["Electric Duct Heater","Electric duct heater","EDH"],["Boiler","Boiler","BOILER"],["Pump","Pump","PUMP"],["Air Compressor","Air compressor","PUMP"],
+ ["Swamper","Swamp cooler (evaporative)","SWAMP"],["Filter Service","Filter service","FILTER"]];
+
+
+
+/* ===================== PM Visit =====================
+   Lists: "Service Sites" (one row per site), "Site Equipment" (one row per unit, SiteId = site item id),
+          "PM Visits" (one row per visit; ReportHTML feeds the Power Automate email).
+   The equipment database learns: anything a tech fixes or adds on a unit is written back on submit. */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var L_SITES="Service Sites", L_EQ="Site Equipment", L_VIS="PM Visits", PHOTO_ROOT="PM Visit Photos";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, LID={}, COLS={}, SITES=[], UNITS=[], RETIRED=[], CUR_SITE=null, NEWN=0, SUBMITTED=false;
+
+/* unit fields shown on every unit — [column, label, kind] kind: t text, d date, type = equipment type select, n note */
+var UF=[["Title","Tag #","t"],["EquipType","Type","type"],["Area","Location / area","t"],["Manufacturer","Manufacturer","t"],["Model","Model","t"],["SerialNumber","Serial","t"],
+ ["BeltSize","Belt size","t"],["BeltQty","Belt qty","t"],["FilterSize","Filter size(s)","t"],["FilterQty","Filter qty","t"],["FilterMERV","MERV","t"],
+ ["Refrigerant","Refrigerant","t"],["Charge","Charge (lbs)","t"],["Voltage","Voltage","t"],["Phase","Phase","t"],["MCA","MCA","t"],["MOCP","MOCP","t"],["Capacity","Tons / MBH","t"],
+ ["InstallDate","Install date","d"],["WarrantyEnd","Warranty ends","d"],["Notes","Unit notes (stays with the unit)","n"]];
+var STATUS={done:"Serviced",na:"Not accessible",skip:"Skipped"};
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=d10(s); if(!s) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0]; }
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function typeOf(v){ v=String(v||""); return TYPES.filter(function(t){return t[1]===v||t[0]===v;})[0]||null; }
+function cleanName(s){return String(s||"").replace(/[\\\/:*?"<>|#%]/g,"-").replace(/\s+/g," ").trim().slice(0,90);}
+function encPath(p){return p.split("/").map(encodeURIComponent).join("/");}
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ saveDraft(); msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,160)); } return r.status===204?null:r.json(); }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields"+(select?"($select="+select+")":"")+"&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await gfetch(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+function onlyCols(name,f){ var c=COLS[name]; if(!c) return f; Object.keys(f).forEach(function(k){ if(k!=="Title"&&!c[k]) delete f[k]; }); return f; }
+function showMsg(id,cls,t){ var m=E(id); m.className="msg "+cls; m.textContent=t; }
+
+/* ===== sign-in ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  E("vDate").value=today();
+  try{
+    var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active"), names=[];
+    emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      names.push(n); if(e===loginEmail){ MY_NAME=n; if(yes(f.Admin)) IS_ADMIN=true; } });
+    if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+    names.sort(); E("techlist").innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+    if(!E("vTech").value) E("vTech").value=MY_NAME||a.name||"";
+    var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999");
+    [L_SITES,L_EQ,L_VIS].forEach(function(n){ var l=(lists.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()===n.toLowerCase();})[0]; if(l) LID[n]=l.id; });
+    var miss=[L_SITES,L_EQ,L_VIS].filter(function(n){return !LID[n];});
+    if(miss.length){ showMsg("topMsg","err","These SharePoint lists aren't set up yet: "+miss.join(", ")+"."); return; }
+    await Promise.all([L_SITES,L_EQ,L_VIS].map(async function(n){ var c=await gfetch(GRAPH+LID[n]+"/columns?$select=name,readOnly"); COLS[n]={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) COLS[n][x.name]=1; }); }));
+    pullAll(JOBTASKS,"JobNo,JobName").then(function(t){ var seen={}, h=""; t.forEach(function(x){ var no=String(x.JobNo||"").trim(); if(!no||seen[no]) return; seen[no]=1; h+='<option value="'+esc(no)+'" label="'+esc(x.JobName||"")+'">'; }); E("joblist").innerHTML=h; }).catch(function(){});
+    await loadSites();
+  }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); return; }
+  ["vDate","vTech","vSummary","vRecs","vCust"].forEach(function(id){ E(id).addEventListener("input",saveDraft); });
+  restoreDraft();
+}
+
+/* ===== sites ===== */
+async function loadSites(keep){
+  var all=await pullAll(LID[L_SITES]);
+  SITES=all.filter(function(s){return (s.Active||"Yes")!=="No";}).sort(function(a,b){ return String(a.Title||"").localeCompare(String(b.Title||""),undefined,{numeric:true,sensitivity:"base"}); });
+  E("sitePick").innerHTML='<option value="">— Pick the site —</option>'+SITES.map(function(s){ return '<option value="'+esc(s._id)+'">'+esc(s.Title||"(no name)")+(s.Customer?" — "+esc(s.Customer):"")+(s.City?", "+esc(s.City):"")+'</option>'; }).join("");
+  if(keep) E("sitePick").value=keep;
+}
+function siteById(id){ return SITES.filter(function(s){return s._id===id;})[0]||null; }
+E("sitePick").onchange=function(){ pickSite(E("sitePick").value); };
+async function pickSite(id,fromDraft){
+  if(!fromDraft && UNITS.some(function(u){return u.status||u.dirty;}) && !confirm("Switch sites? What you've entered for this site will be cleared.")){ E("sitePick").value=CUR_SITE?CUR_SITE._id:""; return; }
+  CUR_SITE=siteById(id); UNITS=[]; RETIRED=[];
+  E("editSiteBtn").style.display=(CUR_SITE&&IS_ADMIN)?"":"none";
+  if(!CUR_SITE){ E("siteInfo").innerHTML=""; E("unitsCard").style.display="none"; E("wrapCard").style.display="none"; E("bar").style.display="none"; saveDraft(); return; }
+  showSiteInfo();
+  if(!E("vCust").value && CUR_SITE.ContactEmail) E("vCust").value=CUR_SITE.ContactEmail;
+  E("units").innerHTML='<div class="empty">Loading equipment…</div>'; E("unitsCard").style.display="block"; E("wrapCard").style.display="block"; E("bar").style.display="block";
+  await loadUnits(id,fromDraft);
+}
+function showSiteInfo(){ var s=CUR_SITE; if(!s){ E("siteInfo").innerHTML=""; return; }
+  E("siteInfo").innerHTML=[s.Customer?'<b>'+esc(s.Customer)+'</b>':"", [s.Address,s.City].filter(Boolean).map(esc).join(", "), s.JobNo?"Job "+esc(s.JobNo):"",
+    (s.ContactName||s.ContactPhone)?"Contact: "+esc([s.ContactName,s.ContactPhone,s.ContactEmail].filter(Boolean).join(" · ")):"", s.AccessNotes?"&#128273; "+esc(s.AccessNotes):""].filter(Boolean).join("<br>"); }
+async function loadUnits(id,fromDraft){
+  try{
+    var rows;
+    try{ rows=await pullAll(LID[L_EQ],null,"fields/SiteId eq '"+String(id).replace(/'/g,"''")+"'"); }
+    catch(e){ rows=(await pullAll(LID[L_EQ])).filter(function(r){return String(r.SiteId)===String(id);}); }
+    rows=rows.filter(function(r){return String(r.SiteId)===String(id);});
+    rows.sort(function(a,b){ return String(a.Title||"").localeCompare(String(b.Title||""),undefined,{numeric:true,sensitivity:"base"}); });
+    rows.forEach(function(r){ var u=mkUnit(r); if((r.Active||"Yes")==="No") RETIRED.push(u); else UNITS.push(u); });
+  }catch(e){ E("units").innerHTML='<div class="empty">Couldn\'t load equipment ('+esc(e.message)+').</div>'; return; }
+  if(fromDraft) applyDraftUnits(fromDraft);
+  renderUnits(); saveDraft();
+}
+function mkUnit(r){ var cur={}, src=r||{}; UF.forEach(function(x){ cur[x[0]]=x[2]==="d"?d10(src[x[0]]):String(src[x[0]]==null?"":src[x[0]]); });
+  return {id:r?r._id:null, key:r?("id"+r._id):("new"+(++NEWN)), f:r||{}, cur:cur, status:"", ans:{}, vnotes:"", photos:[], dp:null, open:false, dirty:false}; }
+
+/* site add / edit */
+var SITE_EDIT=null;
+function openSite(s){ SITE_EDIT=s||null; E("smTitle").textContent=s?"Edit site":"New site"; E("smMsg").className="msg";
+  E("sName").value=s?(s.Title||""):""; E("sCust").value=s?(s.Customer||""):""; E("sAddr").value=s?(s.Address||""):""; E("sCity").value=s?(s.City||""):""; E("sJob").value=s?(s.JobNo||""):"";
+  E("sCName").value=s?(s.ContactName||""):""; E("sCPhone").value=s?(s.ContactPhone||""):""; E("sCEmail").value=s?(s.ContactEmail||""):""; E("sAccess").value=s?(s.AccessNotes||""):"";
+  E("smDelRow").style.display=(s&&IS_ADMIN)?"flex":"none"; E("siteModal").style.display="block"; E("sName").focus(); }
+E("newSiteBtn").onclick=function(){ openSite(null); };
+E("editSiteBtn").onclick=function(){ if(CUR_SITE&&IS_ADMIN) openSite(CUR_SITE); };
+E("smCancel").onclick=function(){ E("siteModal").style.display="none"; };
+E("smSave").onclick=async function(){
+  var name=E("sName").value.trim(); if(!name){ showMsg("smMsg","err","Site name is required."); return; }
+  if(!SITE_EDIT && SITES.some(function(s){return String(s.Title||"").toLowerCase()===name.toLowerCase()&&String(s.Address||"").toLowerCase()===E("sAddr").value.trim().toLowerCase();})){ showMsg("smMsg","err","That site is already on the list — pick it from the dropdown."); return; }
+  var f=onlyCols(L_SITES,{Title:name,Customer:E("sCust").value.trim(),Address:E("sAddr").value.trim(),City:E("sCity").value.trim(),JobNo:E("sJob").value.trim(),
+    ContactName:E("sCName").value.trim(),ContactPhone:E("sCPhone").value.trim(),ContactEmail:E("sCEmail").value.trim(),AccessNotes:E("sAccess").value.trim(),Active:"Yes"});
+  E("smSave").disabled=true; showMsg("smMsg","info","Saving…");
+  try{ var id;
+    if(SITE_EDIT){ await gfetch(GRAPH+LID[L_SITES]+"/items/"+SITE_EDIT._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)}); id=SITE_EDIT._id;
+      if(f.Title!==SITE_EDIT.Title){ /* keep the site name on its units in step */ var rows=UNITS.concat(RETIRED).filter(function(u){return u.id;});
+        for(var i=0;i<rows.length;i++){ try{ await gfetch(GRAPH+LID[L_EQ]+"/items/"+rows[i].id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({SiteName:f.Title})}); }catch(e){} } } }
+    else { Object.keys(f).forEach(function(k){ if(f[k]==="") delete f[k]; }); var r=await gfetch(GRAPH+LID[L_SITES]+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); id=r.id; }
+    E("siteModal").style.display="none"; await loadSites(id);
+    if(SITE_EDIT){ CUR_SITE=siteById(id); showSiteInfo(); UNITS.concat(RETIRED).forEach(function(u){ u.f.SiteName=CUR_SITE.Title; }); } else await pickSite(id,true);
+  }catch(e){ showMsg("smMsg","err","Couldn't save ("+e.message+")."); }
+  E("smSave").disabled=false;
+};
+E("smRetire").onclick=async function(){ if(!SITE_EDIT||!confirm("Mark "+SITE_EDIT.Title+" inactive? It drops off the site list; its equipment and visit history stay in SharePoint.")) return;
+  try{ await gfetch(GRAPH+LID[L_SITES]+"/items/"+SITE_EDIT._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({Active:"No"})}); E("siteModal").style.display="none"; CUR_SITE=null; UNITS=[]; await loadSites(""); pickSite("",true); }
+  catch(e){ showMsg("smMsg","err","Couldn't update ("+e.message+")."); } };
+
+/* ===== units ===== */
+E("addUnitBtn").onclick=function(){ var u=mkUnit(null); u.open=true; u.dirty=true; UNITS.push(u); renderUnits(); saveDraft(); var el=document.querySelector('[data-k="'+u.key+'"]'); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); var t=el.querySelector('[data-f="Title"]'); if(t) t.focus(); } };
+function unitHead(u){ var c=u.cur, t=typeOf(c.EquipType);
+  var chip=u.status?'<span class="chip '+(u.status==="done"?"done":"skip")+'">'+STATUS[u.status]+'</span>':(u.id?'<span class="chip">Not done</span>':'<span class="chip new">New unit</span>');
+  return '<div class="m"><div class="t">'+esc(c.Title||"(no tag)")+(t?' <span style="font-weight:600;color:#6b7280;font-size:13px">· '+esc(t[0])+'</span>':'')+'</div><div class="s">'+esc([c.Area,[c.Manufacturer,c.Model].filter(Boolean).join(" "),c.FilterSize?("Filters "+c.FilterSize):""].filter(Boolean).join(" · ")||"Tap to fill in")+'</div></div>'+chip; }
+function fieldInput(u,x){ var v=u.cur[x[0]]||"";
+  if(x[2]==="type") return '<select data-f="'+x[0]+'"><option value="">— pick —</option>'+TYPES.map(function(t){return '<option value="'+esc(t[1])+'"'+(t[1]===v||t[0]===v?" selected":"")+'>'+esc(t[1])+'</option>';}).join("")+'</select>';
+  if(x[2]==="d") return '<input type="date" data-f="'+x[0]+'" value="'+esc(v)+'">';
+  if(x[2]==="n") return '<textarea data-f="'+x[0]+'" rows="2">'+esc(v)+'</textarea>';
+  return '<input type="text" data-f="'+x[0]+'" value="'+esc(v)+'"'+(/Model|Serial/.test(x[0])?' autocapitalize="characters"':'')+'>'; }
+function fieldBlock(u,keys,cls){ return '<div class="'+cls+'">'+keys.map(function(k){ var x=UF.filter(function(y){return y[0]===k;})[0]; return '<div><label>'+esc(x[1])+'</label>'+fieldInput(u,x)+'</div>'; }).join("")+'</div>'; }
+function checklistHtml(u){ var t=typeOf(u.cur.EquipType); if(!t) return '<div class="hint">Pick the unit type above to get its checklist.</div>';
+  var L=LISTS[t[2]]; if(!L) return ""; var h='<div class="hint" style="margin-top:6px">'+esc(L.t)+'</div>';
+  L.items.forEach(function(it){ if(typeof it==="string"){ h+='<div class="sec" style="font-size:10.5px;margin-top:10px">'+esc(it)+'</div>'; return; }
+    var k=it[0], kind=it[2], v=u.ans[k];
+    h+='<div class="ci" data-q="'+esc(k)+'" data-kind="'+kind+'"><span class="lbl">'+esc(it[1])+'</span>';
+    if(kind==="c") h+='<span class="tri">'+["Done","No","N/A"].map(function(o){return '<button type="button" data-v="'+o+'"'+(v===o?' class="on"':'')+'>'+o+'</button>';}).join("")+'</span>';
+    else if(kind==="l"){ v=v||{}; h+='<span class="l3">'+["L1","L2","L3"].map(function(p){return '<input type="text" inputmode="decimal" data-p="'+p+'" placeholder="'+p+'" value="'+esc(v[p]||"")+'">';}).join("")+'</span>'; }
+    else if(kind==="s") h+='<select><option value=""></option>'+it[3].map(function(o){return '<option'+(v===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>';
+    else h+='<input type="text" value="'+esc(v||"")+'">';
+    h+='</div>'; });
+  return h; }
+function photosHtml(u){ return (u.dp?'<div class="th"><img src="'+u.dp.thumb+'" title="Data plate"><div class="x" data-x="dp">&times;</div></div>':'')+u.photos.map(function(p,i){return '<div class="th"><img src="'+p.thumb+'"><div class="x" data-x="'+i+'">&times;</div></div>';}).join(""); }
+function unitBody(u){ var f=u.f;
+  var hist=String(f.ServiceHistory||"").trim().split("\n").filter(Boolean).slice(-3).reverse();
+  return '<div class="sec">This visit</div><div class="stbtns">'+["done","na","skip"].map(function(s){return '<button type="button" class="'+s+(u.status===s?" on":"")+'" data-st="'+s+'">'+STATUS[s]+'</button>';}).join("")+'</div>'+
+    (f.LastServiced?'<div class="hint">Last serviced '+nice(f.LastServiced)+(f.LastServicedBy?" by "+esc(f.LastServicedBy):"")+'</div>':'')+
+    (hist.length?'<div class="hint">'+hist.map(esc).join("<br>")+'</div>':'')+
+    '<div class="ckwrap" style="display:'+(u.status==="done"?"block":"none")+'">'+checklistHtml(u)+'</div>'+
+    '<label>Notes / deficiencies on this unit (this visit)</label><textarea class="vn" rows="2">'+esc(u.vnotes)+'</textarea>'+
+    '<label>Photos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn btn-g btn-s" data-ph="dp">&#128247; Data plate</button><button type="button" class="btn btn-g btn-s" data-ph="ph">&#128247; Add photos</button>'+
+    (f.DataPlatePhoto?'<a class="btn btn-g btn-s" style="text-decoration:none" href="'+esc(f.DataPlatePhoto)+'" target="_blank">View data plate on file</a>':'')+'</div>'+
+    '<input type="file" accept="image/*" capture="environment" class="fdp" style="display:none"><input type="file" accept="image/*" multiple class="fph" style="display:none"><div class="thumbs">'+photosHtml(u)+'</div>'+
+    '<div class="sec">Unit info (saved for next time)</div>'+
+    fieldBlock(u,["Title","EquipType"],"g2")+fieldBlock(u,["Area"],"")+fieldBlock(u,["Manufacturer","Model","SerialNumber"],"g3")+
+    fieldBlock(u,["BeltSize","BeltQty"],"g2")+fieldBlock(u,["FilterSize","FilterQty","FilterMERV"],"g3")+
+    fieldBlock(u,["Refrigerant","Charge","Capacity"],"g3")+fieldBlock(u,["Voltage","Phase","MCA","MOCP"],"g4")+fieldBlock(u,["InstallDate","WarrantyEnd"],"g2")+fieldBlock(u,["Notes"],"")+
+    ((IS_ADMIN&&u.id)?'<div class="adm"><span class="hint" style="margin:0">Admin:</span><button type="button" class="btn btn-g btn-s" data-adm="move">Move to another site</button><button type="button" class="btn btn-d btn-s" data-adm="retire">Retire unit (removed / replaced)</button></div>':'')+
+    ((!u.id)?'<div class="adm"><button type="button" class="btn btn-d btn-s" data-adm="drop">Remove this new unit</button></div>':''); }
+function renderUnits(){
+  var n=UNITS.length, d=UNITS.filter(function(u){return u.status==="done";}).length;
+  E("uCount").textContent="("+n+" unit"+(n===1?"":"s")+")";
+  var h=UNITS.length?UNITS.map(function(u){ return '<div class="unit'+(u.open?" open":"")+'" data-k="'+u.key+'"><div class="uh">'+unitHead(u)+'</div><div class="ub">'+(u.open?unitBody(u):"")+'</div></div>'; }).join(""):'<div class="empty">No equipment on file for this site yet. Tap <b>+ Add unit</b> for each piece of equipment — next visit it will all be here.</div>';
+  if(IS_ADMIN&&RETIRED.length) h+='<details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Retired units ('+RETIRED.length+')</summary>'+RETIRED.map(function(u){return '<div class="unit ret"><div class="uh" style="cursor:default"><div class="m"><div class="t">'+esc(u.cur.Title||"(no tag)")+'</div><div class="s">'+esc([u.cur.Manufacturer,u.cur.Model,u.cur.SerialNumber].filter(Boolean).join(" · "))+'</div></div><button class="btn btn-g btn-s" data-restore="'+u.id+'">Restore</button></div></div>';}).join("")+'</details>';
+  E("units").innerHTML=h;
+  E("barCnt").textContent=d+" of "+n+" serviced";
+}
+function unitOf(el){ var k=el.closest(".unit").getAttribute("data-k"); return UNITS.filter(function(u){return u.key===k;})[0]; }
+function refreshHead(u){ var el=document.querySelector('[data-k="'+u.key+'"] .uh'); if(el) el.innerHTML=unitHead(u); var d=UNITS.filter(function(x){return x.status==="done";}).length; E("barCnt").textContent=d+" of "+UNITS.length+" serviced"; }
+E("units").addEventListener("click",function(e){
+  var t=e.target, rs=t.closest("[data-restore]");
+  if(rs){ restoreUnit(rs.getAttribute("data-restore")); return; }
+  var uh=t.closest(".uh"); if(uh&&uh.parentNode.getAttribute("data-k")){ var u=unitOf(uh); if(!u) return; u.open=!u.open; var box=uh.parentNode; box.classList.toggle("open",u.open); box.querySelector(".ub").innerHTML=u.open?unitBody(u):""; return; }
+  var u2=t.closest(".unit")?unitOf(t):null; if(!u2) return;
+  var st=t.closest("[data-st]"); if(st){ var s=st.getAttribute("data-st"); u2.status=(u2.status===s)?"":s;
+    if(u2.status==="done"){ if(!u2.ans.refr&&u2.cur.Refrigerant) u2.ans.refr=u2.cur.Refrigerant; if(!u2.ans.bsize&&u2.cur.BeltSize) u2.ans.bsize=u2.cur.BeltSize; }
+    var body=t.closest(".ub"); body.querySelectorAll("[data-st]").forEach(function(b){ b.classList.toggle("on",b.getAttribute("data-st")===u2.status); });
+    var cw=body.querySelector(".ckwrap"); cw.innerHTML=checklistHtml(u2); cw.style.display=u2.status==="done"?"block":"none"; refreshHead(u2); saveDraft(); return; }
+  var tri=t.closest(".tri button"); if(tri){ var row=tri.closest(".ci"), k=row.getAttribute("data-q"), v=tri.getAttribute("data-v"); u2.ans[k]=(u2.ans[k]===v)?"":v; row.querySelectorAll(".tri button").forEach(function(b){ b.classList.toggle("on",b.getAttribute("data-v")===u2.ans[k]); }); saveDraft(); return; }
+  var ph=t.closest("[data-ph]"); if(ph){ t.closest(".ub").querySelector(ph.getAttribute("data-ph")==="dp"?".fdp":".fph").click(); return; }
+  var x=t.closest("[data-x]"); if(x){ var i=x.getAttribute("data-x"); if(i==="dp") u2.dp=null; else u2.photos.splice(+i,1); t.closest(".ub").querySelector(".thumbs").innerHTML=photosHtml(u2); return; }
+  var adm=t.closest("[data-adm]"); if(adm){ var a=adm.getAttribute("data-adm");
+    if(a==="drop"){ if(confirm("Remove this new unit from the visit?")){ UNITS=UNITS.filter(function(y){return y!==u2;}); renderUnits(); saveDraft(); } }
+    else if(a==="retire") retireUnit(u2); else if(a==="move") openMove(u2); }
+});
+E("units").addEventListener("input",function(e){ var t=e.target, un=t.closest(".unit"); if(!un||!un.getAttribute("data-k")) return; var u=unitOf(t); if(!u) return;
+  var fk=t.getAttribute("data-f");
+  if(fk){ u.cur[fk]=t.value; u.dirty=true; if(fk==="EquipType"){ var cw=t.closest(".ub").querySelector(".ckwrap"); cw.innerHTML=checklistHtml(u); } refreshHead(u); }
+  else if(t.classList.contains("vn")) u.vnotes=t.value;
+  else { var row=t.closest(".ci"); if(row){ var k=row.getAttribute("data-q"), kind=row.getAttribute("data-kind");
+    if(kind==="l"){ u.ans[k]=u.ans[k]||{}; u.ans[k][t.getAttribute("data-p")]=t.value; } else u.ans[k]=t.value; } }
+  saveDraft(); });
+E("units").addEventListener("change",function(e){ var t=e.target; if(!t.classList.contains("fdp")&&!t.classList.contains("fph")) return; var u=unitOf(t), files=Array.prototype.slice.call(t.files||[]), isDP=t.classList.contains("fdp");
+  files.forEach(function(file){ addPhoto(file,isDP,function(p){ if(isDP) u.dp=p; else u.photos.push(p); var th=document.querySelector('[data-k="'+u.key+'"] .thumbs'); if(th) th.innerHTML=photosHtml(u); }); }); t.value=""; });
+function scale(img,max,q){var w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);return c.toDataURL("image/jpeg",q);}
+function addPhoto(file,isDP,cb){ if(!/^image\//.test(file.type)) return; var rd=new FileReader(); rd.onload=function(e){ var img=new Image(); img.onload=function(){ cb({full:scale(img,1800,0.82),thumb:scale(img,isDP?420:220,0.55),url:null}); }; img.src=e.target.result; }; rd.readAsDataURL(file); }
+
+/* admin: retire / restore / move (applied right away) */
+async function patchEq(id,f){ return gfetch(GRAPH+LID[L_EQ]+"/items/"+id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(onlyCols(L_EQ,f))}); }
+async function retireUnit(u){ if(!confirm("Retire "+(u.cur.Title||"this unit")+"? It drops off this site's list (removed / replaced). History stays, and you can restore it.")) return;
+  try{ await patchEq(u.id,{Active:"No"}); UNITS=UNITS.filter(function(y){return y!==u;}); u.status=""; RETIRED.push(u); renderUnits(); saveDraft(); }catch(e){ alert("Couldn't retire ("+e.message+")."); } }
+async function restoreUnit(id){ var u=RETIRED.filter(function(y){return String(y.id)===String(id);})[0]; if(!u) return;
+  try{ await patchEq(u.id,{Active:"Yes"}); RETIRED=RETIRED.filter(function(y){return y!==u;}); UNITS.push(u); renderUnits(); }catch(e){ alert("Couldn't restore ("+e.message+")."); } }
+var MOVE_U=null;
+function openMove(u){ MOVE_U=u; E("moveTo").innerHTML=SITES.filter(function(s){return s._id!==CUR_SITE._id;}).map(function(s){return '<option value="'+esc(s._id)+'">'+esc(s.Title)+(s.Customer?" — "+esc(s.Customer):"")+'</option>';}).join(""); E("moveModal").style.display="block"; }
+E("mvCancel").onclick=function(){ E("moveModal").style.display="none"; };
+E("mvGo").onclick=async function(){ var s=siteById(E("moveTo").value); if(!s||!MOVE_U) return;
+  try{ await patchEq(MOVE_U.id,{SiteId:String(s._id),SiteName:s.Title||""}); UNITS=UNITS.filter(function(y){return y!==MOVE_U;}); E("moveModal").style.display="none"; renderUnits(); saveDraft(); }catch(e){ alert("Couldn't move ("+e.message+")."); } };
+
+/* ===== draft (survives a dropped signal or a closed tab; photos are not kept) ===== */
+function dkey(){ return "vm_pm_draft_"+loginEmail; }
+function saveDraft(){ if(SUBMITTED) return; try{ var d={date:E("vDate").value,tech:E("vTech").value,site:CUR_SITE?CUR_SITE._id:"",sum:E("vSummary").value,recs:E("vRecs").value,cust:E("vCust").value,
+    units:UNITS.map(function(u){ return {key:u.key,id:u.id,cur:u.cur,status:u.status,ans:u.ans,vnotes:u.vnotes,dirty:u.dirty}; })}; localStorage.setItem(dkey(),JSON.stringify(d)); }catch(e){} }
+function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d) return;
+  if(d.date) E("vDate").value=d.date; if(d.tech) E("vTech").value=d.tech; E("vSummary").value=d.sum||""; E("vRecs").value=d.recs||""; E("vCust").value=d.cust||"";
+  if(d.site&&siteById(d.site)){ E("sitePick").value=d.site; pickSite(d.site,d); showMsg("topMsg","info","Picked up where you left off. (Photos aren't kept in a draft — re-add any you took.)"); } }
+function applyDraftUnits(d){ if(!d||!d.units) return; d.units.forEach(function(x){ var u=UNITS.filter(function(y){return y.key===x.key;})[0];
+    if(!u&&!x.id){ u=mkUnit(null); u.key=x.key; NEWN=Math.max(NEWN,+String(x.key).replace(/\D/g,"")||0); UNITS.push(u); }
+    if(!u) return; u.cur=Object.assign(u.cur,x.cur||{}); u.status=x.status||""; u.ans=x.ans||{}; u.vnotes=x.vnotes||""; u.dirty=!!x.dirty; }); }
+function clearDraft(){ try{ localStorage.removeItem(dkey()); }catch(e){} }
+
+/* ===== submit ===== */
+function dataUrlBlob(u){ var p=u.split(","), b=atob(p[1]), a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return new Blob([a],{type:"image/jpeg"}); }
+var PHOTO_FOLDER=null, PHOTO_FOLDER_URL=null;
+async function uploadAll(progress){
+  var jobs=[]; UNITS.forEach(function(u){ var tag=cleanName(u.cur.Title||"unit");
+    if(u.dp&&!u.dp.url) jobs.push({p:u.dp,name:tag+" data-plate.jpg"});
+    u.photos.forEach(function(p,i){ if(!p.url) jobs.push({p:p,name:tag+" "+(i+1)+".jpg"}); }); });
+  if(!jobs.length) return;
+  if(!PHOTO_FOLDER){ var d=new Date(); PHOTO_FOLDER=PHOTO_ROOT+"/"+cleanName(E("vDate").value+" "+(CUR_SITE.Title||"site")+" "+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())); }
+  for(var i=0;i<jobs.length;i++){ progress(i+1,jobs.length);
+    var r=await gfetch(SITEURL+"/drive/root:/"+encPath(PHOTO_FOLDER+"/"+jobs[i].name)+":/content",{method:"PUT",headers:{"Content-Type":"image/jpeg"},body:dataUrlBlob(jobs[i].p.full)}); jobs[i].p.url=r.webUrl||""; }
+  try{ var fr=await gfetch(SITEURL+"/drive/root:/"+encPath(PHOTO_FOLDER)); PHOTO_FOLDER_URL=fr.webUrl||null; }catch(e){}
+}
+function ansText(it,v){ if(v==null||v==="") return ""; if(it[2]==="l"){ var a=["L1","L2","L3"].map(function(p){return v[p]||"";}); return a.some(Boolean)?a.join(" / "):""; } return String(v); }
+function buildReport(){ var s=CUR_SITE, H=[], done=UNITS.filter(function(u){return u.status;});
+  var row=function(a,b){ return '<tr><td style="padding:3px 10px 3px 0;color:#6b7280;white-space:nowrap;vertical-align:top">'+esc(a)+'</td><td style="padding:3px 0;font-weight:600">'+b+'</td></tr>'; };
+  H.push('<h2 style="color:#7f1d1d;margin:0 0 6px">Preventive Maintenance Report — '+esc(s.Title)+'</h2>');
+  H.push('<table style="border-collapse:collapse;font-size:14px">'+row("Customer",esc(s.Customer||""))+row("Address",esc([s.Address,s.City].filter(Boolean).join(", ")))+(s.JobNo?row("Job",esc(s.JobNo)):"")+row("Date",esc(nice(E("vDate").value)))+row("Technician",esc(E("vTech").value))+row("Units",UNITS.filter(function(u){return u.status==="done";}).length+" serviced of "+UNITS.length)+'</table>');
+  H.push('<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:12px"><tr style="background:#f3f4f6"><th style="text-align:left;padding:5px">Unit</th><th style="text-align:left;padding:5px">Equipment</th><th style="text-align:left;padding:5px">Status</th><th style="text-align:left;padding:5px">Notes</th></tr>'+
+    UNITS.map(function(u){ var c=u.cur, col=u.status==="done"?"#15803d":(u.status?"#b45309":"#9ca3af");
+      return '<tr><td style="padding:5px;border-top:1px solid #eee;font-weight:700">'+esc(c.Title||"")+'<div style="font-weight:400;color:#6b7280;font-size:12px">'+esc(c.Area||"")+'</div></td><td style="padding:5px;border-top:1px solid #eee">'+esc([c.Manufacturer,c.Model].filter(Boolean).join(" "))+(c.SerialNumber?'<div style="color:#6b7280;font-size:12px">S/N '+esc(c.SerialNumber)+'</div>':'')+(c.FilterSize?'<div style="color:#6b7280;font-size:12px">Filters '+esc(c.FilterSize)+(c.FilterQty?" × "+esc(c.FilterQty):"")+'</div>':'')+'</td><td style="padding:5px;border-top:1px solid #eee;font-weight:700;color:'+col+'">'+esc(STATUS[u.status]||"Not done")+'</td><td style="padding:5px;border-top:1px solid #eee;white-space:pre-wrap">'+esc(u.vnotes)+'</td></tr>'; }).join("")+'</table>');
+  done.filter(function(u){return u.status==="done";}).forEach(function(u){ var t=typeOf(u.cur.EquipType), L=t&&LISTS[t[2]]; if(!L) return; var lines=[];
+    L.items.forEach(function(it){ if(typeof it==="string") return; var a=ansText(it,u.ans[it[0]]); if(!a) return; var col=a==="No"?"#b91c1c":(a==="Done"?"#15803d":"#1f2937"); lines.push('<tr><td style="padding:2px 10px 2px 0;border-bottom:1px solid #f3f4f6">'+esc(it[1])+'</td><td style="padding:2px 0;border-bottom:1px solid #f3f4f6;font-weight:600;color:'+col+'">'+esc(a)+'</td></tr>'); });
+    if(lines.length) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px;font-size:15px">'+esc(u.cur.Title||"Unit")+' — '+esc(L.t)+'</h3><table style="border-collapse:collapse;font-size:13px;width:100%">'+lines.join("")+'</table>'); });
+  if(E("vSummary").value.trim()) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Summary / deficiencies</h3><div style="white-space:pre-wrap">'+esc(E("vSummary").value)+'</div>');
+  if(E("vRecs").value.trim()) H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Recommendations</h3><div style="white-space:pre-wrap">'+esc(E("vRecs").value)+'</div>');
+  var thumbs=[]; UNITS.forEach(function(u){ u.photos.forEach(function(p){ thumbs.push({p:p,tag:u.cur.Title}); }); });
+  if(thumbs.length||PHOTO_FOLDER_URL){ H.push('<h3 style="color:#7f1d1d;margin:14px 0 4px">Photos</h3>'+(PHOTO_FOLDER_URL?'<p><a href="'+PHOTO_FOLDER_URL+'">Open all photos in SharePoint</a></p>':''));
+    thumbs.slice(0,12).forEach(function(x){ var im='<img src="'+x.p.thumb+'" title="'+esc(x.tag||"")+'" style="width:150px;margin:3px;border:1px solid #ccc;border-radius:6px">'; H.push(x.p.url?'<a href="'+x.p.url+'">'+im+'</a>':im); });
+    if(thumbs.length>12) H.push('<p>(+'+(thumbs.length-12)+' more in the photo folder)</p>'); }
+  H.push('<p style="color:#6b7280;font-size:12px;margin-top:14px">Submitted '+esc(new Date().toLocaleString())+' by '+esc(loginEmail)+'</p>');
+  return H.join("\n"); }
+function eqFields(u,serviced){ var f={};
+  UF.forEach(function(x){ var k=x[0], v=String(u.cur[k]||"").trim(), was=x[2]==="d"?d10(u.f[k]):String(u.f[k]==null?"":u.f[k]).trim();
+    if(!u.id||v!==was){ f[k]=x[2]==="d"?(v?v+"T12:00:00Z":null):v; } });
+  /* learn from the checklist when the unit field is still blank */
+  if(!String(u.cur.Refrigerant||"").trim()&&u.ans.refr){ f.Refrigerant=u.ans.refr; u.cur.Refrigerant=u.ans.refr; }
+  if(!String(u.cur.BeltSize||"").trim()&&u.ans.bsize){ f.BeltSize=u.ans.bsize; u.cur.BeltSize=u.ans.bsize; }
+  if(u.dp&&u.dp.url) f.DataPlatePhoto=u.dp.url;
+  if(u.status){ var line=E("vDate").value+" · "+E("vTech").value.trim()+" · "+STATUS[u.status]+(u.vnotes.trim()?" — "+u.vnotes.trim().replace(/\s+/g," ").slice(0,160):"");
+    f.ServiceHistory=String(u.f.ServiceHistory||"").split("\n").filter(Boolean).concat([line]).slice(-40).join("\n");
+    if(serviced){ f.LastServiced=E("vDate").value+"T12:00:00Z"; f.LastServicedBy=E("vTech").value.trim(); } }
+  if(!u.id){ f.SiteId=String(CUR_SITE._id); f.SiteName=CUR_SITE.Title||""; f.Active="Yes"; Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]==="") delete f[k]; }); }
+  if(!f.Title&&!u.id) f.Title="(no tag)";
+  return onlyCols(L_EQ,f); }
+E("submitBtn").onclick=async function(){
+  var btn=E("submitBtn"); saveDraft();
+  var miss=[]; if(!E("vDate").value) miss.push("Date"); if(!E("vTech").value.trim()) miss.push("Technician"); if(!CUR_SITE) miss.push("Site");
+  if(CUR_SITE&&!UNITS.some(function(u){return u.status;})) miss.push("Mark at least one unit Serviced / Not accessible / Skipped");
+  UNITS.forEach(function(u){ if(u.status&&!String(u.cur.Title||"").trim()) miss.push("Tag # on every unit you marked"); });
+  miss=miss.filter(function(x,i){return miss.indexOf(x)===i;});
+  if(miss.length){ showMsg("msg","err","Still needed: "+miss.join(", ")+"."); E("msg").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  if(navigator.onLine===false){ showMsg("msg","err","You're offline — everything is saved on this device. Move to better signal and tap Submit again."); return; }
+  btn.disabled=true; showMsg("msg","info","Uploading photos…"); E("msg").scrollIntoView({behavior:"smooth",block:"center"});
+  try{
+    await uploadAll(function(i,n){ E("msg").textContent="Uploading photo "+i+" of "+n+"…"; });
+    E("msg").textContent="Updating the equipment list…";
+    for(var i=0;i<UNITS.length;i++){ var u=UNITS[i]; if(!u.status&&!u.dirty&&!(u.dp&&u.dp.url)) continue;
+      var f=eqFields(u,u.status==="done");
+      if(!u.id){ var r=await gfetch(GRAPH+LID[L_EQ]+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); u.id=r.id; u.f=Object.assign({},f); u.key="id"+r.id; }
+      else if(Object.keys(f).length){ await patchEq(u.id,f); Object.assign(u.f,f); }
+      u.dirty=false; saveDraft(); }
+    E("msg").textContent="Saving the visit report…";
+    var units=UNITS.map(function(u){ return {id:u.id,tag:u.cur.Title,type:u.cur.EquipType,status:u.status||"",notes:u.vnotes,ans:u.ans}; });
+    var v=onlyCols(L_VIS,{ Title:E("vDate").value+" | "+(CUR_SITE.Title||"")+" | "+E("vTech").value.trim(), SiteId:String(CUR_SITE._id), SiteName:CUR_SITE.Title||"", Customer:CUR_SITE.Customer||"",
+      Address:[CUR_SITE.Address,CUR_SITE.City].filter(Boolean).join(", "), JobNo:CUR_SITE.JobNo||"", VisitDate:E("vDate").value+"T12:00:00Z", Technician:E("vTech").value.trim(), LoginEmail:loginEmail,
+      UnitCount:UNITS.filter(function(u){return u.status==="done";}).length+" of "+UNITS.length, Units:JSON.stringify(units), Summary:E("vSummary").value, Recommendations:E("vRecs").value,
+      CustomerEmail:E("vCust").value.trim(), PhotoFolder:PHOTO_FOLDER_URL||"", ReportHTML:buildReport(), SubmittedAt:new Date().toLocaleString() });
+    await gfetch(GRAPH+LID[L_VIS]+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:v})});
+    SUBMITTED=true; clearDraft();
+    showMsg("msg","ok","Submitted. The PM report for "+CUR_SITE.Title+" is filed and the equipment list is updated for next time.");
+    btn.textContent="Submitted"; E("barCnt").innerHTML='<a href="" style="color:#c0392b;font-weight:800">Start a new visit</a>';
+  }catch(e){ btn.disabled=false; showMsg("msg","err","Couldn't finish ("+(e.message||e)+"). Everything is saved on this device — move to better signal and tap Submit again (photos and units already saved won't repeat)."); }
+};
+
+</script>
+</body>
+</html>
