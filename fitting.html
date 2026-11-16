@@ -146,6 +146,9 @@ function flatOf(v){ return FLAT.filter(function(f){return f[0]===v;})[0]||FLAT[0
 function shiftV(fl,a,b){ return fl[1]==="top"?0:(fl[1]==="bottom"?(a-b):(a-b)/2); }
 function shiftH(fl,a,b){ return fl[2]==="left"?0:(fl[2]==="right"?(a-b):(a-b)/2); }
 function q4(n){ return Math.round(n*4)/4; }
+/* straight duct: full joint off a 60" sheet, less what each end's connection uses (TDF 56-1/4", S&D 59", raw 60") */
+var JOINT_TAKE={"TDF":1.875,"TDC":1.875,"S&D":0.5};
+function jointLen(c){ c=c||{}; var take=0; ["End 1","End 2"].forEach(function(e){ take+=JOINT_TAKE[c[e]||"TDF"]||0; }); return 60-take; }
 var LINERS=["None",'1/2"','1"','1-1/2"','2"'];
 var SEAM=1.15; /* +15% for seams, connections, waste */
 function rad(a){return a*Math.PI/180;}
@@ -158,11 +161,11 @@ function f1(n){ n=+n||0; return (Math.round(n*100)/100)+'"'; }
 
 var FT=[
  {k:"straight",name:"Straight duct",grp:"Rectangular",phase:"1230",ends:[["End 1","r"],["End 2","r"]],
-  fields:[["W","Width",24],["H","Height",12],["L","Length",60]],
+  fields:[["W","Width",24],["H","Height",12],["L","Length",56.25,null,function(d,c){ return jointLen(c); },"full joint from connections"]],
   draw:function(d){ var g=Math.max(d.W,d.H)*0.5+6; var x2=d.L+g;
     return [P([[0,0],[d.L,0],[d.L,d.H],[0,d.H]]),T([d.L/2,d.H/2],"SIDE",{c:1,muted:1}),D([0,0],[d.L,0],-18,f1(d.L)),D([0,d.H],[0,0],-18,f1(d.H)),
       P([[x2,0],[x2+d.W,0],[x2+d.W,d.H],[x2,d.H]]),T([x2+d.W/2,d.H/2],"FACE",{c:1,muted:1}),D([x2,d.H],[x2+d.W,d.H],18,f1(d.W))]; },
-  area:function(d){return 2*(d.W+d.H)*d.L;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" × "+d.L+'" long';}},
+  area:function(d){return 2*(d.W+d.H)*d.L;}, max:function(d){return Math.max(d.W,d.H);}, desc:function(d){return d.W+"x"+d.H+" × "+d.L+'" long'+(d.CUT?" (cut joint)":"");}},
  {k:"elbow",name:"Radius elbow",grp:"Rectangular",phase:"1250",ends:[["Inlet","r"],["Outlet","r"]],
   fields:[["W","Width (in the turn)",24],["H","Depth",12],["A","Angle °",90],["CLR","Centerline radius",36,null,function(d){return q4(1.5*d.W);},"auto 1.5 × width"],["T1","Throat — inlet side",2],["T2","Throat — outlet side",2]],
   draw:function(d){ var R=Math.max(0,d.CLR-d.W/2), O=R+d.W, A=Math.min(Math.max(d.A,5),180), a=rad(A), tx=-Math.sin(a), ty=-Math.cos(a);
@@ -341,7 +344,7 @@ async function start(a){
 E("prio").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ PRIO=b.getAttribute("data-v"); E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); saveDraft(); }; });
 
 /* ===== type picker ===== */
-function defaults(t){ var d={}; t.fields.forEach(function(f){ d[f[0]]=f[3]?f[2]:+f[2]; }); t.fields.forEach(function(f){ if(f[4]) d[f[0]]=f[4](d); }); return d; }
+function defaults(t){ var d={}; t.fields.forEach(function(f){ d[f[0]]=f[3]?f[2]:+f[2]; }); var c0=connDefaults(t); t.fields.forEach(function(f){ if(f[4]) d[f[0]]=f[4](d,c0); }); return d; }
 function connDefaults(t){ var c={}; (t.ends||[]).forEach(function(e){ c[e[0]]=e[2]||(e[1]==="o"?"Crimp":"TDF"); }); return c; }
 function connText(it){ var t=ftype(it.type), c=it.conn||{}; if(typeof c==="string") return c; var ends=(t.ends||[]).map(function(e){return e[0];}); if(!ends.length) return "";
   var vals=ends.map(function(e){return c[e]||"";}); if(vals.every(function(v){return v===vals[0];})) return vals[0]+(ends.length>1?" all ends":"");
@@ -374,7 +377,7 @@ function openEditor(){ var it=ED, t=ftype(it.type);
   var isSk=t.k==="sketch"; E("eSketch").style.display=isSk?"block":"none";
   E("eDims").innerHTML=(isSk?'':'<div class="g3">')+t.fields.map(function(f){ var v=it.d[f[0]];
       if(f[3]&&f[3].indexOf("s:")===0) return '<div><label>'+esc(f[1])+'</label><select data-k="'+f[0]+'">'+f[3].slice(2).split(",").map(function(o){return '<option'+(o===v?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
-      var au=f[4]?(' data-auto="1"'):'', lab=esc(f[1])+((isSk||/°|pieces|lbs/i.test(f[1]))?'':' (in)')+(f[4]?(it.over[f[0]]?' <span class="autoreset" data-reset="'+f[0]+'">↺ '+esc(f[5]||"auto")+'</span>':' <span style="font-weight:600;color:#1d4ed8">· '+esc(f[5]||"auto")+'</span>'):'');
+      var au=f[4]?(' data-auto="1"'):'', lab=esc(f[1])+((isSk||/°|pieces|lbs/i.test(f[1]))?'':' (in)')+(f[4]?(it.over[f[0]]?' <span class="autoreset" data-reset="'+f[0]+'">'+(t.k==="straight"?"cut joint · ↺ full joint":"↺ "+esc(f[5]||"auto"))+'</span>':' <span style="font-weight:600;color:#1d4ed8">· '+esc(f[5]||"auto")+'</span>'):'');
       return '<div><label>'+lab+'</label><input type="number" step="any" inputmode="decimal" data-k="'+f[0]+'"'+au+' value="'+esc(v)+'"'+(f[4]&&!it.over[f[0]]?' style="background:#e8f1fd;border-color:#7aa7e0"':'')+'></div>'; }).join("")+(isSk?'':'</div>');
   if(isSk){ E("skDesc").value=it.desc||""; skLoad(it.sketch); E("skImg").src=it.photo||""; E("skImg").style.display=it.photo?"block":"none"; }
   if(!it.gaugeSet) it.gauge=t.draw?suggestGauge(t,it.d):"24"; E("eGa").value=it.gauge;
@@ -383,14 +386,15 @@ function readEditor(){ var it=ED, t=ftype(it.type);
   it.mark=E("eMark").value.trim(); it.qty=Math.max(1,parseInt(E("eQty").value,10)||1); it.liner=E("eLiner").value;
   E("eConn").querySelectorAll("[data-end]").forEach(function(el){ it.conn[el.getAttribute("data-end")]=el.value; }); it.dimsAre=E("eDimsAre").value; it.notes=E("eNotes").value.trim();
   E("eDims").querySelectorAll("[data-k]").forEach(function(el){ var k=el.getAttribute("data-k"); it.d[k]=el.tagName==="SELECT"?el.value:(parseFloat(el.value)||0); });
-  t.fields.forEach(function(f){ if(f[4]&&!it.over[f[0]]){ var v=f[4](it.d); it.d[f[0]]=v; var el=E("eDims").querySelector('[data-k="'+f[0]+'"]'); if(el&&document.activeElement!==el) el.value=v; } });
+  t.fields.forEach(function(f){ if(f[4]&&!it.over[f[0]]){ var v=f[4](it.d,it.conn); it.d[f[0]]=v; var el=E("eDims").querySelector('[data-k="'+f[0]+'"]'); if(el&&document.activeElement!==el) el.value=v; } });
   if(t.k==="sketch"){ it.desc=E("skDesc").value.trim(); it.sketch=skData(); }
+  if(t.k==="straight") it.d.CUT=!!it.over.L;
   if(!it.gaugeSet&&t.draw) it.gauge=suggestGauge(t,it.d); E("eGa").value=it.gauge; }
 function preview(){ readEditor(); var it=ED, t=ftype(it.type);
   E("ePrev").innerHTML=t.draw?drawItem(it,360,250):'<div class="hint" style="padding:30px 14px;text-align:center">Your sketch and photo go to the shop as drawn.</div>';
   var lb=estLbs(it); E("eEst").innerHTML=(t.draw?esc(t.desc(it.d))+" · ":"")+it.qty+" pc · "+it.gauge+" ga · ≈ "+(Math.round(lb*10)/10)+" lb"+(it.liner!=="None"?" · liner "+esc(it.liner):"")+(t.draw?'<div class="hint">'+(it.gaugeSet?"Gauge set by you":"Gauge suggested from size (SMACNA-style) — change it if the job calls for different")+'</div>':''); }
 ["eMark","eQty","eLiner","eDimsAre","eNotes","skDesc"].forEach(function(id){ E(id).addEventListener("input",preview); E(id).addEventListener("change",preview); });
-E("eDims").addEventListener("input",function(e){ var el=e.target; if(el.getAttribute&&el.getAttribute("data-auto")&&ED&&!ED.over[el.getAttribute("data-k")]){ ED.over[el.getAttribute("data-k")]=true; el.style.background=""; el.style.borderColor=""; var lab=el.parentNode.querySelector("label span"); if(lab){ lab.outerHTML='<span class="autoreset" data-reset="'+el.getAttribute("data-k")+'">↺ back to auto</span>'; } } preview(); });
+E("eDims").addEventListener("input",function(e){ var el=e.target; if(el.getAttribute&&el.getAttribute("data-auto")&&ED&&!ED.over[el.getAttribute("data-k")]){ ED.over[el.getAttribute("data-k")]=true; el.style.background=""; el.style.borderColor=""; var lab=el.parentNode.querySelector("label span"); if(lab){ lab.outerHTML='<span class="autoreset" data-reset="'+el.getAttribute("data-k")+'">'+(ED.type==="straight"?"cut joint · ↺ full joint":"↺ back to auto")+'</span>'; } } preview(); });
 E("eDims").addEventListener("change",preview);
 E("eDims").addEventListener("click",function(e){ var r=e.target.closest("[data-reset]"); if(!r||!ED) return; readEditor(); delete ED.over[r.getAttribute("data-reset")]; openEditor(); });
 E("eConn").addEventListener("change",function(e){ var el=e.target; if(el.getAttribute("data-all")&&el.value){ E("eConn").querySelectorAll("[data-end]").forEach(function(s){ s.value=el.value; }); el.value=""; } preview(); });
