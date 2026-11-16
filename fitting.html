@@ -88,6 +88,11 @@ canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;
   <div class="card">
     <h2><span>2. Fittings <span id="cnt" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-p btn-s" id="addBtn">+ Add fitting</button></h2>
     <div id="items"><div class="empty">Tap <b>+ Add fitting</b>. Pick the type, type the dimensions — it draws it for you.</div></div>
+  </div>
+
+  <div class="card">
+    <h2><span>3. Hardware &amp; supplies <span id="supCnt" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-g btn-s" id="supAdd">+ Add item</button></h2>
+    <div id="sups"><div class="empty">Screws, sealer, Sikaflex, tacky tape, gasket, sammys, knock-ins, shot pins, rod, bolts, nuts, washers, Unistrut…</div></div>
     <div class="msg" id="msg"></div>
   </div>
 </div>
@@ -97,6 +102,22 @@ canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;
   <button class="btn btn-p" id="submitBtn">Send to shop</button>
 </div></div>
 
+<div class="modal" id="supModal"><div class="box" style="max-width:560px">
+  <h2>Hardware &amp; supplies <button class="btn btn-g btn-s" id="spClose">Close</button></h2>
+  <div class="seg" id="spCats" style="flex-wrap:wrap"></div>
+  <label>Item</label><select id="spItem"></select>
+  <div id="spOther" style="display:none"><label>What is it?</label><input type="text" id="spName" placeholder="Describe the item"></div>
+  <div id="spSizeW"><label>Size</label><select id="spSize"></select></div>
+  <div id="spModeW"><label>How</label><div class="seg" id="spMode"></div></div>
+  <div id="spLenW"><label id="spLenL">Length</label><input type="text" id="spLen" placeholder='e.g. 3/4", 24"'></div>
+  <div class="g2">
+    <div><label id="spQtyL">Qty</label><input type="number" id="spQty" inputmode="numeric" min="1" value="1"></div>
+    <div><label>Unit</label><select id="spUnit"></select></div>
+  </div>
+  <label>Note (optional)</label><input type="text" id="spNote" placeholder="e.g. HDG, for 3/8 rod, color">
+  <div class="msg" id="spMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="spCancel">Cancel</button><button class="btn btn-p" id="spSave">Add to ticket</button></div>
+</div></div>
 <div class="modal" id="typeModal"><div class="box">
   <h2>Pick a fitting <button class="btn btn-g btn-s" id="tmClose">Close</button></h2>
   <div class="types" id="typeGrid"></div>
@@ -252,11 +273,22 @@ var FT=[
   draw:function(d){ var pr=[P([[0,0],[d.D,0],[d.D,d.L],[0,d.L]]),P([[-1.5,d.L],[d.D+1.5,d.L],[d.D+1.5,d.L+1],[-1.5,d.L+1]]),D([0,0],[d.D,0],-16,"Ø"+f1(d.D)),D([d.D,0],[d.D,d.L],22,f1(d.L))];
     if(d.DM==="Yes") pr.push(Ln([0,d.L*0.65],[d.D,d.L*0.35],{thin:1}),T([d.D/2,d.L*0.3],"damper",{c:1,muted:1})); return pr; },
   area:function(d){return Math.PI*d.D*d.L;}, max:function(d){return d.D;}, round:1, desc:function(d){return "Ø"+d.D+" spin-in"+(d.DM==="Yes"?" w/ damper":"");}},
+ {k:"curb",name:"RTU curb adapter",grp:"RTU",phase:"1250",ends:[["Supply opening","r"],["Return opening","r"]],
+  fields:[["OL","Old curb length (outside)",92],["OW","Old curb width (outside)",58],["NL","New unit curb length",88],["NW","New unit curb width",50],["HT","Adapter height",14],
+    ["SW","Supply opening W",28],["SH","Supply opening H",14],["RW","Return opening W",28],["RH","Return opening H",18],["IN","Insulated","Yes","s:Yes,No"],["GSK","Gasket top & bottom","Yes","s:Yes,No"]],
+  draw:function(d){ var ox=(d.OL-d.NL)/2, oy=(d.OW-d.NW)/2, pr=[P([[0,0],[d.OL,0],[d.OL,d.OW],[0,d.OW]],{dash:1}),P([[ox,oy],[ox+d.NL,oy],[ox+d.NL,oy+d.NW],[ox,oy+d.NW]])];
+    var sx=ox+d.NL*0.12, sy=oy+(d.NW-d.SH)/2, rx=ox+d.NL*0.88-d.RW, ry=oy+(d.NW-d.RH)/2;
+    pr.push(P([[sx,sy],[sx+d.SW,sy],[sx+d.SW,sy+d.SH],[sx,sy+d.SH]],{thin:1}),T([sx+d.SW/2,sy+d.SH/2],"S "+d.SW+"x"+d.SH,{c:1}),P([[rx,ry],[rx+d.RW,ry],[rx+d.RW,ry+d.RH],[rx,ry+d.RH]],{thin:1}),T([rx+d.RW/2,ry+d.RH/2],"R "+d.RW+"x"+d.RH,{c:1}));
+    pr.push(Object.assign(D([0,0],[d.OL,0],-16,"old "+f1(d.OL)),{keep:1}),Object.assign(D([0,d.OW],[0,0],-18,"old "+f1(d.OW)),{keep:1}),Object.assign(D([ox,oy+d.NW],[ox+d.NL,oy+d.NW],-14,"new "+f1(d.NL)),{keep:1}),Object.assign(D([ox+d.NL,oy],[ox+d.NL,oy+d.NW],-14,"new "+f1(d.NW)),{keep:1}),
+      T([d.OL/2,d.OW+10],"PLAN · height "+f1(d.HT)+(d.IN==="Yes"?" · insulated":""),{c:1,muted:1}));
+    return pr; },
+  area:function(d){ return (d.OL+d.OW+d.NL+d.NW)*d.HT + d.NL*d.NW + 2*(d.SW+d.SH+d.RW+d.RH)*d.HT; },
+  max:function(d){return 100;}, desc:function(d){ return "Curb adapter "+d.OL+"x"+d.OW+" old → "+d.NL+"x"+d.NW+" new, "+d.HT+'" tall, S '+d.SW+"x"+d.SH+" / R "+d.RW+"x"+d.RH+(d.IN==="Yes"?", insulated":"")+(d.GSK==="Yes"?", gasket":""); }},
  {k:"sketch",name:"Freehand sketch / other",grp:"Other",phase:"1250",ends:[],fields:[["EL","Est. lbs (optional)",0]],
   draw:null, area:function(d){return 0;}, max:function(){return 0;}, desc:function(d){return "Custom — see sketch";}}
 ];
 function ftype(k){ return FT.filter(function(t){return t.k===k;})[0]; }
-function suggestGauge(t,d){ var m=t.max(d); if(t.round) return m<=12?"26":m<=24?"24":m<=36?"22":"20"; return m<=12?"26":m<=30?"24":m<=54?"22":m<=84?"20":"18"; }
+function suggestGauge(t,d){ if(t.k==="curb") return "18"; var m=t.max(d); if(t.round) return m<=12?"26":m<=24?"24":m<=36?"22":"20"; return m<=12?"26":m<=30?"24":m<=54?"22":m<=84?"20":"18"; }
 function estLbs(it){ var t=ftype(it.type); if(!t) return 0; if(t.k==="sketch") return (+it.d.EL||0)*(+it.qty||1); var a=t.area(it.d)/144*SEAM; return a*(GA_LB[it.gauge]||1.156)*(+it.qty||1); }
 
 /* ===== SVG renderer: fits primitives into a w×h box with dimension lines ===== */
@@ -427,7 +459,7 @@ E("skPhoto").onchange=function(){ var f=E("skPhoto").files[0]; if(!f) return; va
 function itemLine(it){ var t=ftype(it.type); return [t.draw?t.desc(it.d):(it.desc||"Custom"),connText(it),it.liner!=="None"?"liner "+it.liner+(it.dimsAre.indexOf("Inside")===0?" (dims clear inside)":""):"",it.gauge+" ga"].filter(Boolean).join(" · "); }
 function renderItems(){
   var n=ITEMS.length, pcs=0, lb=0; ITEMS.forEach(function(it){ pcs+=it.qty; lb+=estLbs(it); });
-  E("cnt").textContent=n?"("+n+")":""; E("barCnt").textContent=n+" fitting"+(n===1?"":"s")+" · "+pcs+" pc · ≈ "+Math.round(lb)+" lb";
+  E("cnt").textContent=n?"("+n+")":""; E("barCnt").textContent=n+" fitting"+(n===1?"":"s")+" · "+pcs+" pc · ≈ "+Math.round(lb)+" lb"+(SUPS.length?" · "+SUPS.length+" supply line"+(SUPS.length===1?"":"s"):"");
   if(!n){ E("items").innerHTML='<div class="empty">Tap <b>+ Add fitting</b>. Pick the type, type the dimensions — it draws it for you.</div>'; return; }
   E("items").innerHTML=ITEMS.map(function(it,i){ var t=ftype(it.type);
     var pic=t.draw?drawItem(it,360,250):(it.sketch?'<img src="'+it.sketch+'">':(it.photo?'<img src="'+it.photo+'">':''));
@@ -439,10 +471,60 @@ E("items").addEventListener("click",function(e){ var b=e.target.closest("button"
   else if(b.hasAttribute("data-dup")){ var c=JSON.parse(JSON.stringify(ITEMS[+b.getAttribute("data-dup")])); c.mark=nextMark(); ITEMS.splice(+b.getAttribute("data-dup")+1,0,c); renderItems(); saveDraft(); }
   else if(b.hasAttribute("data-del")){ if(confirm("Remove "+ITEMS[+b.getAttribute("data-del")].mark+"?")){ ITEMS.splice(+b.getAttribute("data-del"),1); renderItems(); saveDraft(); } } });
 
+/* ===== Hardware & supplies ===== */
+var ROD=['1/4"','3/8"','1/2"','5/8"','3/4"','1"'];
+var SUPCAT=[
+ {c:"Screws",items:[{n:'1/4" zip screws',len:"Length (optional)",u:["box","ea"]},{n:'1/4" tek screws',len:"Length (optional)",u:["box","ea"]},{n:'5/16" zip screws',len:"Length (optional)",u:["box","ea"]},{n:'5/16" tek screws',len:"Length (optional)",u:["box","ea"]},{n:"Super tek screws",len:"Length (optional)",u:["box","ea"]}]},
+ {c:"Sealant & tape",items:[{n:"Duct sealer",u:["gal","5-gal pail","tube"]},{n:"Sikaflex",u:["tube","case"]},{n:"Tacky tape",u:["roll","box"]},{n:"RTU curb gasket",len:"Width / thickness (optional)",u:["roll","ft"]},{n:"Pookie brushes",u:["ea","box"]}]},
+ {c:"Hangers & anchors",items:[{n:"Sammy — metal deck",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — wood",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — side winder",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — purlin",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — concrete",s:ROD.slice(0,3),u:["ea","box"]},{n:"Knock-in anchors",s:ROD.slice(0,4),u:["ea","box"]},{n:"Shot pins",len:"Length (optional)",u:["box","ea"]},{n:"Beam clamps",s:ROD.slice(0,4),u:["ea","box"]}]},
+ {c:"Rod & hardware",items:[{n:"All thread",s:ROD,m:{full:"Full 10' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:"Bolts",s:ROD,len:"Bolt length",u:["ea","box"]},{n:"Nuts",s:ROD,u:["ea","box"]},{n:"Washers",s:ROD,u:["ea","box"]},{n:"Fender washers",s:ROD,u:["ea","box"]},{n:"Strut nuts (spring)",s:ROD.slice(0,4),u:["ea","box"]}]},
+ {c:"Unistrut",items:[{n:'Unistrut 1-5/8" (P1000)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:'Unistrut 1-5/8" deep (P1001)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:'Unistrut 13/16" half (P4000)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]}]},
+ {c:"Other",items:[{n:"Other",other:1,len:"Size / length (optional)",u:["ea","box","ft","roll","gal"]}]}
+];
+var SUPS=[], SPI=-1, SPC=0, SPMODE="full";
+function supDef(cat,name){ var c=SUPCAT.filter(function(x){return x.c===cat;})[0]; return c?(c.items.filter(function(i){return i.n===name;})[0]||c.items[0]):null; }
+function supText(x){ var d=supDef(x.cat,x.item)||{}; var nm=d.other?(x.name||"Other"):x.item;
+  var bits=[x.size,nm]; if(d.m) bits.push(x.mode==="cut"?("cut to "+(x.len||"?")):d.m.full.toLowerCase()); else if(x.len) bits.push(x.len);
+  return (x.qty+" "+x.unit+" · ")+bits.filter(Boolean).join(" ")+(x.note?" — "+x.note:""); }
+function renderSups(){ E("supCnt").textContent=SUPS.length?"("+SUPS.length+")":"";
+  if(!SUPS.length){ E("sups").innerHTML='<div class="empty">Screws, sealer, Sikaflex, tacky tape, gasket, sammys, knock-ins, shot pins, rod, bolts, nuts, washers, Unistrut…</div>'; return; }
+  E("sups").innerHTML=SUPS.map(function(x,i){ return '<div class="item" style="padding:8px 10px"><div class="m"><div class="t" style="font-size:14.5px">'+esc(supText(x))+'</div><div class="s">'+esc(x.cat)+'</div></div><div class="acts" style="flex-direction:row"><button class="btn btn-g btn-s" data-sed="'+i+'">Edit</button><button class="btn btn-g btn-s" data-sdel="'+i+'" style="color:#b91c1c;border-color:#b91c1c">✕</button></div></div>'; }).join(""); }
+E("sups").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return;
+  if(b.hasAttribute("data-sed")){ SPI=+b.getAttribute("data-sed"); openSup(SUPS[SPI]); }
+  else if(b.hasAttribute("data-sdel")){ SUPS.splice(+b.getAttribute("data-sdel"),1); renderSups(); saveDraft(); renderItems(); } });
+function spCatBtns(){ E("spCats").innerHTML=SUPCAT.map(function(c,i){ return '<button data-c="'+i+'"'+(i===SPC?' class="on"':'')+' style="flex:0 0 auto;padding:8px 10px;font-size:13px">'+esc(c.c)+'</button>'; }).join("");
+  E("spCats").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ SPC=+b.getAttribute("data-c"); spCatBtns(); spFillItems(); spItemChanged(); }; }); }
+function spFillItems(sel){ E("spItem").innerHTML=SUPCAT[SPC].items.map(function(i){ return '<option'+(i.n===sel?" selected":"")+'>'+esc(i.n)+'</option>'; }).join(""); }
+function spItemChanged(keep){ var d=supDef(SUPCAT[SPC].c,E("spItem").value);
+  E("spOther").style.display=d.other?"block":"none";
+  E("spSizeW").style.display=d.s?"block":"none"; if(d.s) E("spSize").innerHTML=d.s.map(function(z){return '<option'+(keep&&keep.size===z?" selected":"")+'>'+esc(z)+'</option>';}).join("");
+  E("spModeW").style.display=d.m?"block":"none";
+  if(d.m){ if(!keep) SPMODE="full"; E("spMode").innerHTML=["full","cut"].map(function(k){return '<button data-m="'+k+'"'+(SPMODE===k?' class="on"':'')+'>'+esc(d.m[k])+'</button>';}).join("");
+    E("spMode").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ SPMODE=b.getAttribute("data-m"); spItemChanged({size:E("spSize").value,unit:E("spUnit").value,keepMode:1}); }; }); }
+  var showLen=d.m?(SPMODE==="cut"):!!d.len; E("spLenW").style.display=showLen?"block":"none"; E("spLenL").textContent=d.m?"Cut length (each piece)":(d.len||"Length");
+  E("spQtyL").textContent=d.m?(SPMODE==="cut"?"Pieces":"Sticks"):"Qty";
+  var units=d.m?[SPMODE==="cut"?"pcs":"sticks"]:d.u; E("spUnit").innerHTML=units.map(function(u){return '<option'+(keep&&keep.unit===u?" selected":"")+'>'+esc(u)+'</option>';}).join(""); }
+function openSup(x){ E("spMsg").className="msg";
+  if(x){ SPC=Math.max(0,SUPCAT.map(function(c){return c.c;}).indexOf(x.cat)); SPMODE=x.mode||"full"; } else { SPMODE="full"; }
+  spCatBtns(); spFillItems(x?x.item:null); spItemChanged(x||null);
+  E("spName").value=x?(x.name||""):""; E("spLen").value=x?(x.len||""):""; E("spQty").value=x?x.qty:1; E("spNote").value=x?(x.note||""):"";
+  E("spSave").textContent=x?"Save":"Add to ticket"; E("supModal").style.display="block"; }
+E("supAdd").onclick=function(){ SPI=-1; openSup(null); };
+E("spClose").onclick=E("spCancel").onclick=function(){ E("supModal").style.display="none"; };
+E("spItem").onchange=function(){ spItemChanged(); };
+E("spSave").onclick=function(){ var cat=SUPCAT[SPC].c, d=supDef(cat,E("spItem").value), q=parseFloat(E("spQty").value)||0;
+  var x={cat:cat,item:d.n,name:d.other?E("spName").value.trim():"",size:d.s?E("spSize").value:"",mode:d.m?SPMODE:"",len:E("spLen").value.trim(),qty:q,unit:E("spUnit").value,note:E("spNote").value.trim()};
+  if(d.other&&!x.name){ showMsg("spMsg","err","Describe the item."); return; }
+  if(!(q>0)){ showMsg("spMsg","err","Enter a quantity."); return; }
+  if(d.m&&SPMODE==="cut"&&!x.len){ showMsg("spMsg","err","Enter the cut length."); return; }
+  if(!(d.m&&SPMODE==="cut")&&!(d.len)) x.len="";
+  if(SPI>-1) SUPS[SPI]=x; else SUPS.push(x);
+  E("supModal").style.display="none"; renderSups(); saveDraft(); renderItems(); if(SPI<0){ E("supAdd").textContent="+ Add another"; } };
+
 /* ===== draft ===== */
 function dkey(){ return "vm_ft_draft_"+loginEmail; }
-function saveDraft(){ if(SENT) return; try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS})); }catch(e){ try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS.map(function(it){ var c=Object.assign({},it); c.photo=""; return c; })})); }catch(e2){} } }
-function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d||!d.items) return;
+function saveDraft(){ if(SENT) return; try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS,sups:SUPS})); }catch(e){ try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,sups:SUPS,items:ITEMS.map(function(it){ var c=Object.assign({},it); c.photo=""; return c; })})); }catch(e2){} } }
+function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d||!d.items) return; SUPS=d.sups||[]; renderSups();
   if(d.job) E("job").value=d.job; if(d.need) E("need").value=d.need; E("deliver").value=d.deliver||""; E("notes").value=d.notes||""; PRIO=d.prio||"Normal";
   E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")===PRIO);}); ITEMS=d.items||[];
   if(ITEMS.length) showMsg("topMsg","info","Picked up your unsent ticket."); }
@@ -458,12 +540,13 @@ async function buildReport(ticketNo){ var jn=E("job").value, jname=(E("job").sel
   var gs=groupsOf(), tot=0, pcs=0; gs.forEach(function(g){ tot+=g.lbs; pcs+=g.pcs; });
   var row=function(a,b){ return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+esc(a)+'</td><td style="padding:3px 0;font-weight:700">'+b+'</td></tr>'; };
   return '<h2 style="color:#7f1d1d;margin:0 0 6px">Fitting Ticket '+esc(ticketNo)+(PRIO==="Rush"?' <span style="background:#b91c1c;color:#fff;border-radius:6px;padding:2px 8px;font-size:14px">RUSH</span>':'')+'</h2>'+
-    '<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(jn+" "+(jname||"")))+row("Requested by",esc(MY_NAME)+" · "+esc(new Date().toLocaleDateString()))+row("Needed by",esc(nice(E("need").value)))+(E("deliver").value.trim()?row("Deliver to",esc(E("deliver").value.trim())):"")+row("Totals",ITEMS.length+" fittings · "+pcs+" pc · ≈ "+Math.round(tot)+" lb")+'</table>'+
+    '<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(jn+" "+(jname||"")))+row("Requested by",esc(MY_NAME)+" · "+esc(new Date().toLocaleDateString()))+row("Needed by",esc(nice(E("need").value)))+(E("deliver").value.trim()?row("Deliver to",esc(E("deliver").value.trim())):"")+row("Totals",ITEMS.length+" fittings · "+pcs+" pc · ≈ "+Math.round(tot)+" lb"+(SUPS.length?" · "+SUPS.length+" supply lines":""))+'</table>'+
     (E("notes").value.trim()?'<div style="margin:8px 0;padding:8px;background:#fef3c7;border-radius:6px;white-space:pre-wrap">'+esc(E("notes").value.trim())+'</div>':'')+
-    '<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:10px"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd">Mark</th><th style="padding:6px;border:1px solid #ddd">Drawing</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Fitting</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd">Est lb</th></tr>'+rows.join("")+'</table>'+
-    '<p style="font-size:12px;color:#6b7280">By gauge: '+gs.map(function(g){return g.phase+" "+(g.phase==="1230"?"duct":"fittings")+" "+g.gauge+" ga ≈ "+Math.round(g.lbs)+" lb ("+g.pcs+" pc)";}).join(" · ")+'. Weights are estimates (+15% seams/waste).</p>'; }
+    (ITEMS.length?'<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:10px"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd">Mark</th><th style="padding:6px;border:1px solid #ddd">Drawing</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Fitting</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd">Est lb</th></tr>'+rows.join("")+'</table>':'')+
+    (SUPS.length?'<h3 style="color:#7f1d1d;margin:14px 0 4px">Hardware &amp; supplies</h3><table style="border-collapse:collapse;font-size:13px;width:100%"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd;text-align:left">Item</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Category</th><th style="padding:6px;border:1px solid #ddd">✓</th></tr>'+SUPS.map(function(x){ var t=supText(x).split(" · "); return '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:700">'+esc(t.slice(1).join(" · "))+'</td><td style="padding:6px;border:1px solid #ddd;text-align:center;font-weight:800">'+esc(t[0])+'</td><td style="padding:6px;border:1px solid #ddd;color:#6b7280">'+esc(x.cat)+'</td><td style="padding:6px;border:1px solid #ddd;width:30px"></td></tr>'; }).join("")+'</table>':'')+
+    (ITEMS.length?'<p style="font-size:12px;color:#6b7280">By gauge: '+gs.map(function(g){return g.phase+" "+(g.phase==="1230"?"duct":"fittings")+" "+g.gauge+" ga ≈ "+Math.round(g.lbs)+" lb ("+g.pcs+" pc)";}).join(" · ")+'. Weights are estimates (+15% seams/waste).</p>':''); }
 E("submitBtn").onclick=async function(){
-  var miss=[]; if(!E("job").value) miss.push("Job"); if(!E("need").value) miss.push("Needed by"); if(!ITEMS.length) miss.push("At least one fitting");
+  var miss=[]; if(!E("job").value) miss.push("Job"); if(!E("need").value) miss.push("Needed by"); if(!ITEMS.length&&!SUPS.length) miss.push("At least one fitting or supply item");
   if(miss.length){ showMsg("msg","err","Still needed: "+miss.join(", ")+"."); E("msg").scrollIntoView({behavior:"smooth",block:"center"}); return; }
   if(!LIST_ID){ showMsg("msg","err","The Fitting Tickets list isn't set up yet — your ticket is saved on this device."); return; }
   if(navigator.onLine===false){ showMsg("msg","err","You're offline — the ticket is saved on this device. Tap Send again with signal."); return; }
@@ -475,6 +558,7 @@ E("submitBtn").onclick=async function(){
       Priority:PRIO, Status:"New", DeliverTo:E("deliver").value.trim(), Notes:E("notes").value.trim(), ItemCount:String(ITEMS.length), PieceCount:String(pcs), EstLbs:String(Math.round(tot)),
       GaugeSummary:gs.map(function(g){return g.phase+" "+g.gauge+"ga "+Math.round(g.lbs)+"lb";}).join(", "),
       Items:JSON.stringify(ITEMS.map(function(it){ var t=ftype(it.type); return {mark:it.mark,type:it.type,name:t.name,d:it.d,qty:it.qty,gauge:it.gauge,conn:it.conn,liner:it.liner,dimsAre:it.dimsAre,notes:it.notes,desc:it.desc||"",phase:t.phase,lbs:Math.round(estLbs(it)*10)/10,line:itemLine(it)}; })),
+      Supplies:JSON.stringify(SUPS), SupplyCount:String(SUPS.length),
       StatusLog:new Date().toLocaleString()+" · New · sent by "+MY_NAME };
     Object.keys(f).forEach(function(k){ if(k!=="Title"&&LIST_COLS&&!LIST_COLS[k]) delete f[k]; if(f[k]==="") delete f[k]; });
     var r=CREATED||await gfetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); CREATED=r;
