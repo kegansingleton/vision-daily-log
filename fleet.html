@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Fleet & DOT</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1000px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:1000px;margin:0 auto;padding:12px 12px 60px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;border-top:4px solid var(--gry)}
+.tile .n{font-size:26px;font-weight:800}.tile .l{font-size:12px;color:var(--mut);font-weight:700}
+.tile.red{border-top-color:var(--red)}.tile.red .n{color:var(--red)}
+.tile.amb{border-top-color:var(--amb)}.tile.amb .n{color:var(--amb)}
+.tile.ok{border-top-color:var(--ok)}.tile.ok .n{color:var(--ok)}
+.tile.sel{outline:3px solid rgba(192,57,43,.35)}
+.bar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;align-items:center}
+input,select,textarea{width:100%;padding:11px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.btn{padding:11px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.emp{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+.emp h3{margin:0;padding:10px 14px;font-size:15px;background:#fafbfc;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.cert{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #f1f2f4}
+.cert:first-of-type{border-top:none}
+.cert .m{flex:1;min-width:0}.cert .t{font-weight:800;font-size:14.5px}.cert .s{font-size:12.5px;color:var(--mut);margin-top:2px}
+.pill{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap}
+.p-exp{background:var(--redbg);color:var(--red)}.p-soon{background:var(--ambbg);color:var(--amb)}.p-ok{background:var(--okbg);color:var(--ok)}.p-none{background:var(--grybg);color:var(--gry)}
+.unv{font-size:11px;font-weight:800;color:var(--amb);margin-left:6px}
+.cert a{color:var(--vm);font-weight:700;font-size:13px;text-decoration:none}
+.cert .ed{border:none;background:none;color:var(--mut);font-size:18px;cursor:pointer;padding:4px 6px}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:520px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;color:var(--ink);margin-top:10px}.chk input{width:20px;height:20px}
+.prev{max-width:100%;max-height:160px;border-radius:8px;margin-top:6px;display:none}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+@media(max-width:700px){.tiles{grid-template-columns:1fr 1fr}.bar{grid-template-columns:1fr 1fr}.bar #q{grid-column:1/-1}}
+.cert .pills{display:flex;flex-direction:column;gap:4px;align-items:flex-end}.cert .pl{font-size:10.5px;color:var(--mut);font-weight:800;text-transform:uppercase;margin-right:4px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
+.vtabs{display:none;gap:6px;margin:0 0 10px}.vtabs.on{display:flex}.vtabs a{flex:1;text-align:center;padding:10px;border-radius:10px;background:#fff;border:1.5px solid var(--line);color:var(--ink);font-weight:800;font-size:14px;text-decoration:none}.vtabs a.cur{background:var(--vm);border-color:var(--vm);color:#fff}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Fleet &amp; DOT</h1><p>Trucks, trailers and equipment — annual DOT inspections and registrations, with due-date warnings. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Certifications — Fleet &amp; DOT</h1><div class="who" id="who"></div></div>
+</div></header>
+<div class="wrap" id="app" style="display:none">
+  <div class="vtabs" id="vtabs"><a href="/certifications.html">&#129706; People</a><a href="/fleet.html" class="cur">&#128666; Fleet &amp; DOT</a></div>
+  <div class="msg info" id="topMsg"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="bar" id="bar">
+    <input type="text" id="q" placeholder="Search unit, vehicle, plate, VIN, driver…">
+    <select id="ftype"><option value="">All types</option></select>
+    <button class="btn btn-g" id="csvBtn">CSV</button>
+    <button class="btn btn-p" id="addBtn">+ Add unit</button>
+  </div>
+  <div id="list"></div>
+</div>
+
+<div class="modal" id="modal"><div class="box">
+  <h2 id="mTitle">Add unit</h2>
+  <div class="grid2">
+    <div><label>Unit # / name</label><input type="text" id="fUnit" placeholder="e.g. T-12"></div>
+    <div><label>Type</label><select id="fType"></select></div>
+  </div>
+  <label>Year / make / model</label><input type="text" id="fYmm" placeholder="e.g. 2019 Ford F-550">
+  <div class="grid3">
+    <div><label>Plate</label><input type="text" id="fPlate"></div>
+    <div><label>GVWR (lbs)</label><input type="text" id="fGvwr" inputmode="numeric" placeholder="e.g. 19500"></div>
+    <div><label>Assigned to</label><input type="text" id="fWho" list="emplist" placeholder="Driver"><datalist id="emplist"></datalist></div>
+  </div>
+  <label>VIN</label><input type="text" id="fVin" style="text-transform:uppercase">
+  <div class="grid2">
+    <div><label>Last DOT inspection</label><input type="date" id="fLast"></div>
+    <div><label>DOT inspection due</label><input type="date" id="fDue"><div class="hint">Fills in 12 months after the last one</div></div>
+  </div>
+  <label>Registration expires</label><input type="date" id="fReg">
+  <label>Inspection report / sticker (photo or PDF)</label><input type="file" id="fPhoto" accept="image/*,application/pdf"><img class="prev" id="fPrev" alt="">
+  <div class="hint" id="photoHint"></div>
+  <label>Notes</label><textarea id="fNotes" rows="2" placeholder="Optional — e.g. needs tires before next inspection"></textarea>
+  <label class="chk"><input type="checkbox" id="fOut"> Out of service / sold (stops reminders)</label>
+  <div class="msg" id="mMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="mCancel">Cancel</button><button class="btn btn-p" id="mSave">Save</button></div>
+  <div class="row-b" id="delRow" style="display:none"><button class="btn btn-d" id="mDel">Delete this unit</button></div>
+</div></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var LIST_NAME="Fleet", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", PHOTO_ROOT="Fleet Records", SOON=30;
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var TYPES=["Pickup","Service truck","Box / flatbed truck","Trailer","Forklift / lift","Other equipment"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", IS_ADMIN=false, LIST_ID=null, LIST_COLS=null, ROWS=[], EDIT=null, PHOTO=null, TILE="";
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function parse(s){ s=String(s||"").slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(s)) return null; var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function daysLeft(s){ var d=parse(s); if(!d) return null; var t=new Date(); t.setHours(0,0,0,0); return Math.round((d-t)/864e5); }
+function nice(s){ var d=parse(s); return d?d.toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"}):""; }
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function yes(v){ return v===true||v==="Yes"||v==="true"; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,140)); } return r.status===204?null:r.json(); }
+async function pullAll(listId,select){ var url=GRAPH+listId+"/items?$expand=fields($select="+select+")&$top=999", out=[]; while(url){ var j=await gfetch(url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var a=r&&r.account?r.account:(msalApp.getAllAccounts()[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("who").textContent=a.name||a.username;
+  E("fType").innerHTML=TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join("");
+  E("ftype").innerHTML='<option value="">All types</option>'+TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join("");
+  try{
+    var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active"), names=[];
+    emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      names.push(n); if(e===loginEmail&&yes(f.Admin)) IS_ADMIN=true; });
+    if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+    if(!IS_ADMIN){ document.body.innerHTML='<div style="max-width:420px;margin:80px auto;text-align:center;font-family:sans-serif"><h2>Admins only</h2><p>Fleet &amp; DOT is limited to admins (set in Employee Setup). You are signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
+    E("app").style.display="block"; E("vtabs").classList.add("on");
+    names.sort(); E("emplist").innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+    var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999");
+    var L=(lists.value||[]).filter(function(l){return (l.displayName||"").toLowerCase()===LIST_NAME.toLowerCase();})[0];
+    if(!L){ E("topMsg").textContent="The “"+LIST_NAME+"” list isn't set up in SharePoint yet."; E("bar").style.display="none"; return; }
+    LIST_ID=L.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
+  }catch(e){ E("app").style.display="block"; E("topMsg").textContent="Couldn't load ("+e.message+")."; return; }
+  E("topMsg").style.display="none";
+  ["q","ftype"].forEach(function(id){ E(id).addEventListener("input",render); });
+  await load();
+}
+async function load(){
+  try{ ROWS=await pullAll(LIST_ID,"Title,UnitType,YearMakeModel,VIN,Plate,GVWR,AssignedTo,LastInspection,InspectionDue,RegistrationDue,InspectionDoc,Notes,OutOfService"); }
+  catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load the fleet ('+esc(e.message)+').</div>'; return; }
+  render();
+}
+/* status of one date: exp (past) / soon (<= 30 days) / ok / none */
+function st(s){ var d=daysLeft(s); if(d===null) return "none"; if(d<0) return "exp"; if(d<=SOON) return "soon"; return "ok"; }
+function worst(r){ if(yes(r.OutOfService)) return "oos"; var a=[st(r.InspectionDue),st(r.RegistrationDue)]; return a.indexOf("exp")>-1?"exp":a.indexOf("soon")>-1?"soon":a.indexOf("ok")>-1?"ok":"none"; }
+function pill(label,s){ var k=st(s), d=daysLeft(s), t;
+  if(k==="exp") t='<span class="pill p-exp">Overdue since '+nice(s)+'</span>';
+  else if(k==="soon") t='<span class="pill p-soon">'+(d===0?"Due today":"Due in "+d+" day"+(d===1?"":"s"))+'</span>';
+  else if(k==="ok") t='<span class="pill p-ok">Good to '+nice(s)+'</span>';
+  else t='<span class="pill p-none">No date</span>';
+  return '<div><span class="pl">'+label+'</span>'+t+'</div>'; }
+function render(){
+  var counts={exp:0,soon:0,ok:0,none:0,oos:0}; ROWS.forEach(function(r){ counts[worst(r)]++; });
+  var T=[["exp","red","Overdue",counts.exp],["soon","amb","Due ≤ 30 days",counts.soon],["ok","ok","Current",counts.ok],["none","","Missing dates",counts.none]];
+  E("tiles").innerHTML=T.map(function(t){ return '<div class="tile '+t[1]+(TILE===t[0]?" sel":"")+'" data-t="'+t[0]+'"><div class="n">'+t[3]+'</div><div class="l">'+t[2]+'</div></div>'; }).join("");
+  E("tiles").querySelectorAll(".tile").forEach(function(el){ el.onclick=function(){ var t=el.getAttribute("data-t"); TILE=(TILE===t)?"":t; render(); }; });
+  var q=E("q").value.toLowerCase().trim(), ft=E("ftype").value, rank={exp:0,soon:1,none:2,ok:3,oos:4};
+  var rows=ROWS.filter(function(r){ if(ft&&r.UnitType!==ft) return false; if(TILE&&worst(r)!==TILE) return false;
+    if(q&&[r.Title,r.YearMakeModel,r.Plate,r.VIN,r.AssignedTo,r.Notes].join(" ").toLowerCase().indexOf(q)<0) return false; return true; })
+    .sort(function(a,b){ return rank[worst(a)]-rank[worst(b)]||String(a.Title||"").localeCompare(String(b.Title||""),undefined,{numeric:true}); });
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(ROWS.length?"Nothing matches.":"No units yet. Tap + Add unit to enter your first truck or trailer.")+'</div>'; return; }
+  E("list").innerHTML='<div class="emp">'+rows.map(function(r){ var oos=yes(r.OutOfService);
+    return '<div class="cert"'+(oos?' style="opacity:.55"':'')+'><div class="m"><div class="t">'+esc(r.Title||"(no unit #)")+(r.YearMakeModel?' <span style="font-weight:600;color:#6b7280">· '+esc(r.YearMakeModel)+'</span>':'')+(oos?'<span class="unv" style="color:#475569">OUT OF SERVICE</span>':'')+'</div><div class="s">'+
+      [r.UnitType?esc(r.UnitType):"",r.Plate?("Plate "+esc(r.Plate)):"",r.GVWR?(esc(r.GVWR)+" lbs GVWR"):"",r.AssignedTo?esc(r.AssignedTo):"",r.LastInspection?("Last inspected "+nice(r.LastInspection)):"",r.Notes?esc(r.Notes):""].filter(Boolean).join(" · ")+
+      (r.InspectionDoc?' · <a href="'+esc(r.InspectionDoc)+'" target="_blank">Report</a>':'')+'</div></div>'+
+      (oos?'':'<div class="pills">'+pill("DOT",r.InspectionDue)+pill("Reg",r.RegistrationDue)+'</div>')+'<button class="ed" data-id="'+r._id+'" title="Edit">&#9998;</button></div>'; }).join("")+'</div>';
+  E("list").querySelectorAll(".ed").forEach(function(b){ b.onclick=function(){ openForm(ROWS.filter(function(r){return r._id===b.getAttribute("data-id");})[0]); }; });
+}
+
+/* ===== add / edit ===== */
+E("fLast").onchange=function(){ var d=parse(E("fLast").value); if(!d||E("fDue").dataset.touched) return; d.setFullYear(d.getFullYear()+1); E("fDue").value=iso(d); };
+E("fDue").oninput=function(){ E("fDue").dataset.touched="1"; };
+E("fPhoto").onchange=function(){ var f=E("fPhoto").files[0]; PHOTO=null; E("fPrev").style.display="none"; E("photoHint").textContent=""; if(!f) return;
+  if(f.type==="application/pdf"){ if(f.size>3.8e6){ E("photoHint").textContent="That PDF is too big (max 3.8 MB)."; E("fPhoto").value=""; return; } PHOTO={blob:f,ext:"pdf"}; E("photoHint").textContent="PDF attached: "+f.name; return; }
+  var img=new Image(); img.onload=function(){ var w=img.width,h=img.height,m=1800; if(Math.max(w,h)>m){ var s=m/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+    var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(img,0,0,w,h); c.toBlob(function(b){ PHOTO={blob:b,ext:"jpg"}; E("fPrev").src=URL.createObjectURL(b); E("fPrev").style.display="block"; },"image/jpeg",0.85); };
+  img.onerror=function(){ E("photoHint").textContent="Couldn't read that image."; }; img.src=URL.createObjectURL(f); };
+function d10(v){ return String(v||"").slice(0,10); }
+function openForm(r){
+  EDIT=r||null; PHOTO=null; E("fPhoto").value=""; E("fPrev").style.display="none"; E("photoHint").textContent=""; E("mMsg").className="msg"; delete E("fDue").dataset.touched;
+  E("mTitle").textContent=r?"Edit "+(r.Title||"unit"):"Add unit";
+  E("fUnit").value=r?(r.Title||""):""; E("fType").value=(r&&TYPES.indexOf(r.UnitType)>-1)?r.UnitType:TYPES[0];
+  E("fYmm").value=r?(r.YearMakeModel||""):""; E("fPlate").value=r?(r.Plate||""):""; E("fGvwr").value=r?(r.GVWR||""):""; E("fWho").value=r?(r.AssignedTo||""):"";
+  E("fVin").value=r?(r.VIN||""):""; E("fLast").value=r?d10(r.LastInspection):""; E("fDue").value=r?d10(r.InspectionDue):""; E("fReg").value=r?d10(r.RegistrationDue):"";
+  if(r&&r.InspectionDue) E("fDue").dataset.touched="1";
+  E("fNotes").value=r?(r.Notes||""):""; E("fOut").checked=r?yes(r.OutOfService):false;
+  if(r&&r.InspectionDoc) E("photoHint").innerHTML='Report on file: <a href="'+esc(r.InspectionDoc)+'" target="_blank">view</a>. Pick a new file when you do the next inspection.';
+  E("delRow").style.display=r?"flex":"none"; E("modal").style.display="block";
+}
+E("addBtn").onclick=function(){ openForm(null); };
+E("mCancel").onclick=function(){ E("modal").style.display="none"; };
+function encPath(p){ return p.split("/").map(encodeURIComponent).join("/"); }
+function safe(s){ return String(s||"").replace(/[\\\/:*?"<>|#%]/g,"-").trim(); }
+E("mSave").onclick=async function(){
+  var m=E("mMsg"), unit=E("fUnit").value.trim(), miss=[];
+  if(!unit) miss.push("Unit # / name");
+  var last=E("fLast").value, due=E("fDue").value, reg=E("fReg").value; if(last&&due&&due<last) miss.push("Inspection due is before the last inspection");
+  if(miss.length){ m.className="msg err"; m.textContent="Still needed: "+miss.join(", ")+"."; return; }
+  E("mSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+  try{
+    var doc=EDIT?(EDIT.InspectionDoc||""):"";
+    if(PHOTO){ var stamp=new Date(), path=PHOTO_ROOT+"/"+safe(unit)+"/DOT inspection "+(last||iso(stamp))+"-"+pad(stamp.getHours())+pad(stamp.getMinutes())+pad(stamp.getSeconds())+"."+PHOTO.ext;
+      var up=await gfetch(SITEURL+"/drive/root:/"+encPath(path)+":/content",{method:"PUT",headers:{"Content-Type":PHOTO.blob.type||"application/octet-stream"},body:PHOTO.blob}); doc=up.webUrl||doc; }
+    var f={ Title:unit, UnitType:E("fType").value, YearMakeModel:E("fYmm").value.trim(), VIN:E("fVin").value.trim().toUpperCase(), Plate:E("fPlate").value.trim().toUpperCase(),
+      GVWR:E("fGvwr").value.trim(), AssignedTo:E("fWho").value.trim(),
+      LastInspection:last?last+"T12:00:00Z":null, InspectionDue:due?due+"T12:00:00Z":null, RegistrationDue:reg?reg+"T12:00:00Z":null,
+      InspectionDoc:doc, Notes:E("fNotes").value.trim(), OutOfService:E("fOut").checked?"Yes":"No" };
+    Object.keys(f).forEach(function(k){ if(k!=="Title"&&!LIST_COLS[k]) delete f[k]; });
+    if(!EDIT){ Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]==="") delete f[k]; }); await gfetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); }
+    else await gfetch(GRAPH+LIST_ID+"/items/"+EDIT._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)});
+    E("modal").style.display="none"; await load();
+  }catch(e){ m.className="msg err"; m.textContent="Couldn't save ("+e.message+")."; }
+  E("mSave").disabled=false;
+};
+E("mDel").onclick=async function(){ if(!EDIT||!confirm("Delete unit "+(EDIT.Title||"")+"? Its inspection files stay in SharePoint.\n\nIf it was sold or parked, tick “Out of service” instead to keep the history.")) return;
+  try{ await gfetch(GRAPH+LIST_ID+"/items/"+EDIT._id,{method:"DELETE"}); E("modal").style.display="none"; await load(); }catch(e){ E("mMsg").className="msg err"; E("mMsg").textContent="Couldn't delete ("+e.message+")."; } };
+E("csvBtn").onclick=function(){
+  var head=["Unit","Type","Year/Make/Model","Plate","VIN","GVWR","Assigned to","Last DOT inspection","DOT due","Registration due","Out of service","Report"];
+  var lines=[head].concat(ROWS.map(function(r){ return [r.Title,r.UnitType,r.YearMakeModel,r.Plate,r.VIN,r.GVWR,r.AssignedTo,d10(r.LastInspection),d10(r.InspectionDue),d10(r.RegistrationDue),yes(r.OutOfService)?"Yes":"No",r.InspectionDoc]; }))
+    .map(function(a){ return a.map(function(v){ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(","); }).join("\r\n");
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines],{type:"text/csv"})); a.download="fleet-"+iso(new Date())+".csv"; a.click(); };
+</script>
+</body>
+</html>

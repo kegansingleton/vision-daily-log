@@ -54,6 +54,7 @@ label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 
 .gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 @media(max-width:700px){.tiles{grid-template-columns:1fr 1fr}.bar{grid-template-columns:1fr 1fr}.bar #q{grid-column:1/-1}}
+.vtabs{display:none;gap:6px;margin:0 0 10px}.vtabs.on{display:flex}.vtabs a{flex:1;text-align:center;padding:10px;border-radius:10px;background:#fff;border:1.5px solid var(--line);color:var(--ink);font-weight:800;font-size:14px;text-decoration:none}.vtabs a.cur{background:var(--vm);border-color:var(--vm);color:#fff}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 </head>
@@ -68,6 +69,7 @@ label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 
   <div><h1 id="htitle">Certifications</h1><div class="who" id="who"></div></div>
 </div></header>
 <div class="wrap" id="app" style="display:none">
+  <div class="vtabs" id="vtabs"><a href="/certifications.html" class="cur">&#129706; People</a><a href="/fleet.html">&#128666; Fleet &amp; DOT</a></div>
   <div class="msg info" id="topMsg"></div>
   <div class="tiles" id="tiles"></div>
   <div class="bar" id="bar">
@@ -109,7 +111,7 @@ var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 var TYPES=[["OSHA 10",0],["OSHA 30",0],["EPA 608 — Universal",0],["EPA 608 — Type I",0],["EPA 608 — Type II",0],["EPA 608 — Type III",0],
  ["Brazing qualification",0.5],["Med gas installer (ASSE 6010)",3],["Med gas verifier / inspector (ASSE 6020/6030)",3],["Aerial / scissor lift (MEWP)",3],["Forklift / telehandler",3],
  ["First aid / CPR / AED",2],["Fall protection — competent person",0],["Confined space",1],["Rigger / signal person",5],["Backflow tester",1],["Welding certification",0.5],
- ["Journeyman license",1],["Master / contractor license",1],["NFPA 70E / electrical safety",3],["Other",0]];
+ ["Journeyman license",1],["Master / contractor license",1],["NFPA 70E / electrical safety",3],["DOT medical card",2],["CDL",4],["Other",0]];
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, loginEmail="", IS_ADMIN=false, MY_NAME="", LIST_ID=null, LIST_COLS=null, ROWS=[], EMPS=[], EDIT=null, PHOTO=null, TILE="";
 
@@ -148,7 +150,7 @@ async function start(a){
     LIST_ID=L.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; });
   }catch(e){ E("topMsg").textContent="Couldn't load ("+e.message+")."; return; }
   if(!IS_ADMIN){ E("htitle").textContent="My Certifications"; E("topMsg").textContent="Your cards on file. Add a new card with + Add — the office will verify it."; E("csvBtn").style.display="none"; E("ftype").style.display="none"; E("verWrap").style.display="none"; }
-  else E("topMsg").style.display="none";
+  else { E("topMsg").style.display="none"; E("vtabs").classList.add("on"); }
   ["q","ftype","fstat"].forEach(function(id){ E(id).addEventListener("input",function(){ if(id==="fstat") TILE=""; render(); }); });
   await load();
 }
