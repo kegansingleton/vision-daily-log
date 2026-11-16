@@ -103,7 +103,7 @@ td.num,th.num{text-align:right}
 Vision Mechanical &bull; Add Phase Codes &bull; Writes to the Job Tasks list the timecards read from. For a brand-new job's full schedule, use Job Setup.
 </div>
 
-<script>
+<script>var currentTasks=[];
 /* ===== Admin access (same list as the other admin pages) ===== */
 var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
 
@@ -192,6 +192,7 @@ E("jobPick").onblur=function(){ pickJob(); };
 function pickJob(){
   var j=resolveJob(E("jobPick").value);
   if(!j){ E("existingCard").style.display="none"; E("addCard").style.display="none"; currentJob=null; return; }
+  if(currentJob&&currentJob.JobNo===j.JobNo) return;   /* same job (e.g. blur after change) — don't redraw under a click */
   currentJob=j;
   E("jobHead").textContent=j.JobNo+" — "+(j.JobName||"");
   E("addCard").style.display="block";
@@ -202,22 +203,58 @@ async function loadExisting(jobNo){
   E("existingCard").style.display="block";
   E("existing").querySelector("tbody").innerHTML='<tr><td>Loading…</td></tr>';
   try{
-    var items=await getAll(LIST.jobTasks,"JobNo,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,Active","fields/JobNo eq '"+jobNo.replace(/'/g,"''")+"'");
+    var token=await getToken(), url=GRAPH+LIST.jobTasks+"/items?$expand=fields($select=JobNo,PhaseCode,PhaseDesc,LineNum,LineDesc,BudgetHours,Active)&$top=999&$filter=fields/JobNo eq '"+jobNo.replace(/'/g,"''")+"'", items=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token, Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(function(r){return r.json();});
+      if(j.error) throw new Error(j.error.message);
+      (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; items.push(it.fields); } }); url=j["@odata.nextLink"]||null; }
     items=items.filter(function(t){return t.JobNo===jobNo;});
-    items.sort(function(a,b){return String(a.PhaseCode).localeCompare(String(b.PhaseCode))||String(a.LineNum).localeCompare(String(b.LineNum));});
-    currentTasks=items;
-    var h='<thead><tr><th>Phase</th><th>Phase Desc</th><th>Line#</th><th>Line Desc</th><th class="num">Budget</th></tr></thead><tbody>';
-    if(!items.length){ h+='<tr><td colspan="5" style="color:#9aa6b3">No phase codes on this job yet.</td></tr>'; }
+    items.sort(function(a,b){ var ia=(a.Active||"Yes")==="No", ib=(b.Active||"Yes")==="No"; if(ia!==ib) return ia?1:-1; return String(a.PhaseCode).localeCompare(String(b.PhaseCode),undefined,{numeric:true})||String(a.LineNum||"").localeCompare(String(b.LineNum||""),undefined,{numeric:true});});
+    currentTasks=items.filter(function(t){return (t.Active||"Yes")!=="No";});
+    var h='<thead><tr><th>Phase</th><th>Phase Desc</th><th>Line#</th><th>Line Desc</th><th class="num">Budget</th><th></th></tr></thead><tbody>';
+    if(!items.length){ h+='<tr><td colspan="6" style="color:#9aa6b3">No phase codes on this job yet.</td></tr>'; }
     items.forEach(function(t){
-      h+='<tr><td>'+esc(t.PhaseCode)+'</td><td>'+esc(t.PhaseDesc||"")+'</td><td>'+esc(t.LineNum||"")+'</td><td>'+esc(t.LineDesc||"")+'</td><td class="num">'+esc(t.BudgetHours||"")+'</td></tr>';
+      var off=(t.Active||"Yes")==="No", lbl=t.PhaseCode+(t.LineNum?(" / line "+t.LineNum):"")+(t.LineDesc?(" ("+t.LineDesc+")"):"");
+      h+='<tr'+(off?' style="background:#f6f7f9;color:#8a94a3"':'')+'><td>'+(off?'&#128274; ':'')+esc(t.PhaseCode)+(off?' <span style="font-size:11px;font-weight:700;color:#b8462b">LOCKED</span>':'')+'</td><td>'+esc(t.PhaseDesc||"")+'</td><td>'+esc(t.LineNum||"")+'</td><td>'+esc(t.LineDesc||"")+'</td><td class="num">'+esc(t.BudgetHours||"")+'</td>'+
+        '<td style="text-align:right;white-space:nowrap"><button class="pcbtn" data-id="'+esc(t._id)+'" data-on="'+(off?"Yes":"No")+'" data-lbl="'+esc(lbl)+'" style="border:1px solid '+(off?"#15803d":"#a16207")+';color:'+(off?"#15803d":"#a16207")+';background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer">'+(off?"&#128275; Unlock":"&#128274; Lock")+'</button> '+
+        '<button class="pcdel" data-id="'+esc(t._id)+'" data-lbl="'+esc(lbl)+'" title="Delete this phase code" style="border:1px solid #d1d5db;color:#b8462b;background:#fff;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer">&#128465; Delete</button></td></tr>';
     });
     h+='</tbody>';
     E("existing").innerHTML=h;
+    Array.prototype.forEach.call(E("existing").querySelectorAll(".pcbtn"),function(b){ b.onclick=function(){ setPhaseActive(b); }; });
+    Array.prototype.forEach.call(E("existing").querySelectorAll(".pcdel"),function(b){ b.onclick=function(){ deletePhase(b); }; });
   }catch(e){ E("existing").querySelector("tbody").innerHTML='<tr><td>Could not load: '+esc(e.message||e)+'</td></tr>'; }
 }
 
+/* ===== Lock / unlock a phase code: sets Active = No / Yes on the Job Tasks row.
+   Locked codes drop off the timecard picker so no one can charge time to them; budget and hours already logged stay. ===== */
+async function setPhaseActive(b){
+  var on=b.getAttribute("data-on"), lbl=b.getAttribute("data-lbl");
+  if(on==="No" && !confirm("Lock phase "+lbl+" on "+currentJob.JobNo+"?\n\nThe crew won't be able to pick it on timecards until you unlock it. Budget and hours already logged stay.")) return;
+  b.disabled=true; b.textContent="…";
+  try{
+    var token=await getToken();
+    var resp=await fetch(GRAPH+LIST.jobTasks+"/items/"+b.getAttribute("data-id")+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({Active:on})});
+    if(!resp.ok){ var t=await resp.text(); throw new Error("HTTP "+resp.status+" "+t.slice(0,160)); }
+    E("msg").style.color="#15803d"; E("msg").textContent=(on==="No"?"Locked ":"Unlocked ")+lbl+".";
+  }catch(e){ E("msg").style.color="#b8462b"; E("msg").textContent="Could not update: "+(e.message||e); }
+  loadExisting(currentJob.JobNo);
+}
+
+/* ===== Delete a phase code for good (wrong entry / typo). Use Lock for finished or not-yet-open areas. ===== */
+async function deletePhase(b){
+  var lbl=b.getAttribute("data-lbl");
+  if(!confirm("DELETE phase "+lbl+" from "+currentJob.JobNo+"?\n\nThis removes the row and its budget hours from the Job Tasks list. Hours already on timecards are not changed.\n\nIf the area is just finished or not open yet, use Lock instead.")) return;
+  b.disabled=true; b.textContent="…";
+  try{
+    var token=await getToken();
+    var resp=await fetch(GRAPH+LIST.jobTasks+"/items/"+b.getAttribute("data-id"),{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    if(!resp.ok&&resp.status!==204){ var t=await resp.text(); throw new Error("HTTP "+resp.status+" "+t.slice(0,160)); }
+    E("msg").style.color="#15803d"; E("msg").textContent="Deleted "+lbl+".";
+  }catch(e){ E("msg").style.color="#b8462b"; E("msg").textContent="Could not delete: "+(e.message||e); }
+  loadExisting(currentJob.JobNo);
+}
+
 /* ===== Add a phase code ===== */
-var currentTasks=[];
 E("addBtn").onclick=async function(){
   var btn=this, msg=E("msg");
   if(!currentJob){ msg.style.color="#b8462b"; msg.textContent="Pick a job first."; return; }
