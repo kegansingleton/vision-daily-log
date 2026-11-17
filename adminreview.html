@@ -115,11 +115,14 @@ var TABS=[
  {k:"pm",t:"PM Visits",name:"PM Visits",date:"VisitDate",body:"ReportHTML",html:true,
   cols:["VisitDate","SiteName","Customer","Technician","UnitCount","JobNo"],
   row:function(f){return [d10(f.VisitDate),f.SiteName||"",f.Customer||"",f.Technician||"",f.UnitCount||""];},hd:["Date","Site","Customer","Technician","Units serviced"]},
+ {k:"fb",t:"Problems",name:"Portal Feedback",date:"Created",body:"Details",html:false,
+  cols:["Created","Page","Category","ReportedBy","Status","PageUrl","Device"],
+  row:function(f){return [d10(f.Created),f.Page||"",f.Category||"",f.ReportedBy||"",tags(f.Status)];},hd:["Date","Page","Type","From","Status"]},
  {k:"bo",t:"Shop Bill-Outs",name:"Shop Bill-Outs",date:"RunDate",body:"ReportHTML",html:true,
   cols:["RunDate","JobNo","JobName","PhaseCode","SMGroup","Total","LoggedBy"],
   row:function(f){return [d10(f.RunDate),((f.JobNo||"")+" "+(f.JobName||"")).trim(),(f.PhaseCode||"")+(f.SMGroup?(" "+f.SMGroup):""),"$"+(Math.round((parseFloat(f.Total)||0)*100)/100).toFixed(2),f.LoggedBy||""];},hd:["Run date","Job","Phase / group","Total","Logged by"]}
 ];
-var SKIP={ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
+var SKIP={Screenshot:1,ContentType:1,Attachments:1,_ColorTag:1,ComplianceAssetId:1,LinkTitle:1,LinkTitleNoMenu:1,Edit:1,DocIcon:1,ItemChildCount:1,FolderChildCount:1,_UIVersionString:1,AppAuthor:1,AppEditor:1};
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", TAB=TABS[0], ROWS=[], OPEN=null, LOADSEQ=0, CURREC=null;
@@ -216,6 +219,7 @@ async function openDetail(id){
       return '<div class="fld"><label>'+esc(c.displayName||c.name)+'</label>'+inp+'</div>'; }).join("");
     var body=f[tab.body]||"";
     var prev=body?(tab.html?body:'<pre>'+esc(body)+'</pre>'):'<span style="color:#9ca3af">(no report text saved)</span>';
+    if(tab.k==="fb"){ prev+='<p style="font-size:12px;color:#6b7280">'+(f.PageUrl?'<a href="'+esc(f.PageUrl)+'" target="_blank">'+esc(f.PageUrl)+'</a><br>':'')+esc(f.Device||"")+'</p>'+(f.Screenshot&&/^data:image\//.test(f.Screenshot)?'<img src="'+f.Screenshot+'" style="max-width:100%;border:1px solid #e5e7eb;border-radius:8px">':''); }
     var bodyEdit=(!tab.html && tab.names[tab.body])?'<div class="fld" style="margin-top:10px"><label>Edit report text</label><textarea data-c="'+tab.body+'" style="min-height:200px">'+esc(body)+'</textarea></div>':'';
     box.innerHTML='<div class="dgrid"><div><h4>Fields</h4>'+form+'</div><div><h4>Submitted report</h4><div class="preview">'+prev+'</div>'+bodyEdit+
       '<div class="note">Last changed '+esc(new Date(j.lastModifiedDateTime).toLocaleString())+(j.lastModifiedBy&&j.lastModifiedBy.user?' by '+esc(j.lastModifiedBy.user.displayName||""):'')+'</div></div></div>'+
@@ -303,5 +307,6 @@ async function save(id,box,orig){
   window.vmJobScan=scan;
 })();
 </script>
+<script src="/feedback.js" defer></script>
 </body>
 </html>

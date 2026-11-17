@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Company Dashboard</title>
+<style>
+:root{
+  color-scheme:light;
+  --vm:#c0392b;--vm2:#7f1d1d;
+  --page:#f4f5f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#6f6d68;--axis:#898781;
+  --grid:#e1e0d9;--base:#c3c2b7;--border:rgba(11,11,11,.10);--wash:rgba(11,11,11,.04);
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;
+  --track:#cde2fb;
+  --good:#0ca30c;--warn:#fab219;--serious:#ec835a;--crit:#d03b3b;--goodtxt:#006300;--crittxt:#b42323;
+  --link:#a5281c;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#a3a29b;--axis:#898781;
+    --grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);--wash:rgba(255,255,255,.05);
+    --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#0ca30c;--s7:#9085e9;
+    --track:#184f95;--goodtxt:#0ca30c;--crittxt:#ef7777;--link:#f19a8f;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#a3a29b;--axis:#898781;
+  --grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);--wash:rgba(255,255,255,.05);
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#0ca30c;--s7:#9085e9;
+  --track:#184f95;--goodtxt:#0ca30c;--crittxt:#ef7777;--link:#f19a8f;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--page);color:var(--ink);-webkit-text-size-adjust:100%}
+a{color:inherit;text-decoration:none}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1360px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+header .sp{flex:1}
+header .asof{font-size:12.5px;opacity:.92;text-align:right;white-space:nowrap}
+header button{background:#fff;color:var(--vm2);border:none;border-radius:9px;padding:9px 14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+header button:disabled{opacity:.6;cursor:default}
+.wrap{max-width:1360px;margin:0 auto;padding:14px 16px 60px}
+body.busy .card{opacity:.6;transition:opacity .2s}
+.sec{margin:6px 0 22px}
+.sec>h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:0 0 8px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c12{grid-column:span 12}
+@media(max-width:1100px){.c3{grid-column:span 6}.c4{grid-column:span 6}.c5,.c6,.c7{grid-column:span 12}}
+@media(max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}.c3,.c4,.c5,.c6,.c7,.c12{grid-column:auto}header .who{display:none}header h1{font-size:16px}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+.ch{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.ch h3{margin:0;font-size:14.5px;font-weight:750;flex:1;min-width:0}
+.ch .go{font-size:12.5px;font-weight:700;color:var(--link);white-space:nowrap}
+.ch .go:hover{text-decoration:underline}
+.tbtn{font:inherit;font-size:12px;font-weight:700;background:none;border:1px solid var(--border);color:var(--ink2);border-radius:7px;padding:3px 8px;cursor:pointer}
+.sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.note{font-size:12.5px;color:var(--muted);padding:6px 0}
+.dash{font-size:30px;font-weight:650;color:var(--muted)}
+/* stat tiles */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
+.stat{display:block;border-radius:10px;padding:9px 10px;background:var(--wash);min-width:0}
+a.stat:hover{outline:2px solid var(--border)}
+.stat .l{font-size:12px;color:var(--ink2);font-weight:650}
+.stat .v{font-size:26px;font-weight:650;line-height:1.15;margin-top:2px}
+.stat .v small{font-size:13px;font-weight:600;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--ink2);margin-top:3px}
+.badge i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.b-crit i{background:var(--crit)}.b-warn i{background:var(--warn)}.b-good i{background:var(--good)}.b-none i{background:var(--base)}
+.hero .v{font-size:52px;font-weight:650;line-height:1.05}
+.delta{font-size:13px;font-weight:700;margin-top:6px}
+.up{color:var(--goodtxt)}.down{color:var(--crittxt)}.flat{color:var(--muted)}
+/* lists */
+.rows{margin-top:10px;border-top:1px solid var(--grid)}
+.r{display:flex;gap:8px;align-items:baseline;padding:7px 2px;border-bottom:1px solid var(--grid);font-size:13px}
+a.r:hover{background:var(--wash)}
+.r .m{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r .m b{font-weight:700}
+.r .x{color:var(--muted);white-space:nowrap;font-size:12.5px;font-variant-numeric:tabular-nums}
+.r .x.crit{color:var(--crittxt);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12.5px;font-weight:650;border:1px solid var(--border);border-radius:14px;padding:3px 10px;background:var(--wash)}
+/* meter */
+.meter{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin:8px 0 2px}
+.meter>span{display:block;height:100%;border-radius:4px;background:var(--s1)}
+.meter.thin{height:6px;margin:4px 0 0}
+/* horizontal bars */
+.hb{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);row-gap:4px;column-gap:10px;align-items:center}
+.hb .lb{font-size:12.5px;color:var(--ink2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .tr{display:flex;align-items:center;gap:6px;min-width:0;height:24px;cursor:default;border-radius:4px;outline:none}
+.hb .bar{height:14px;background:var(--s1);border-radius:0 4px 4px 0;min-width:2px;flex:none}
+.hb .tr:hover .bar,.hb .tr:focus .bar{filter:brightness(1.12)}
+.hb .tr:focus{box-shadow:0 0 0 2px var(--border)}
+.hb .val{font-size:12.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hb a.lb:hover{text-decoration:underline}
+@media(max-width:700px){.hb{grid-template-columns:minmax(0,1fr);row-gap:0}.hb .lb{text-align:left;margin-top:6px}.hb .tr{height:18px}header img{max-width:72px;height:30px}header .asof{font-size:11.5px}}
+/* svg charts */
+.svgc{width:100%;position:relative}
+.svgc svg{display:block;width:100%;overflow:visible}
+.svgc text{font-family:inherit;font-size:11px;fill:var(--axis)}
+.svgc text.cap{fill:var(--ink);font-weight:650}
+.svgc .gl{stroke:var(--grid);stroke-width:1}
+.svgc .bl{stroke:var(--base);stroke-width:1}
+.svgc .hit{fill:transparent;cursor:default;outline:none}
+.svgc svg.hov g.col:not(.on){opacity:.45}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink2);margin:0 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+table.tv{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px;font-variant-numeric:tabular-nums}
+table.tv th,table.tv td{padding:4px 6px;border-bottom:1px solid var(--grid);text-align:right}
+table.tv th:first-child,table.tv td:first-child{text-align:left}
+table.tv th{color:var(--ink2);font-weight:700}
+.tvw{display:none;overflow-x:auto}.tvw.on{display:block}
+/* tooltip */
+#tip{position:fixed;z-index:200;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.18);padding:8px 10px;font-size:12.5px;display:none;max-width:260px}
+#tip .tt{color:var(--ink2);font-size:12px;margin-bottom:4px}
+#tip .tr2{display:flex;align-items:center;gap:7px;margin-top:2px}
+#tip .tr2 i{width:12px;height:2px;display:inline-block;border-radius:1px}
+#tip .tr2 b{font-weight:700}
+#tip .tr2 span{color:var(--ink2)}
+/* gate */
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:360px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.denied{max-width:460px;margin:60px auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center}
+.denied h2{margin:0 0 8px;color:var(--crittxt)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Company Dashboard</h1><p>One screen for field, shop, safety and service. Admins only — sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Company Dashboard</h1><div class="who" id="who"></div></div>
+  <div class="sp"></div>
+  <div class="asof" id="asof"></div>
+  <button id="refresh" style="display:none">Refresh</button>
+</div></header>
+<div id="denied" style="display:none"></div>
+<div class="wrap" id="app" style="display:none">
+
+  <section class="sec"><h2>Field — today &amp; this pay week</h2><div class="grid">
+    <div class="card c3" id="cHours"></div>
+    <div class="card c3" id="cLogs"></div>
+    <div class="card c6" id="cJobs"></div>
+  </div></section>
+
+  <section class="sec"><h2>Open work</h2><div class="grid">
+    <div class="card c4" id="cActions"></div>
+    <div class="card c4" id="cFit"></div>
+    <div class="card c4" id="cTM"></div>
+  </div></section>
+
+  <section class="sec"><h2>Shop</h2><div class="grid">
+    <div class="card c7" id="cShopSM"></div>
+    <div class="card c5" id="cShopPipe"></div>
+  </div></section>
+
+  <section class="sec"><h2>Safety &amp; compliance</h2><div class="grid">
+    <div class="card c3" id="cInc"></div>
+    <div class="card c3" id="cCert"></div>
+    <div class="card c3" id="cFleet"></div>
+    <div class="card c3" id="cPTP"></div>
+  </div></section>
+
+  <section class="sec"><h2>Service &amp; equipment</h2><div class="grid">
+    <div class="card c3" id="cPM"></div>
+    <div class="card c3" id="cSU"></div>
+    <div class="card c3" id="cRent"></div>
+    <div class="card c3" id="cClose"></div>
+  </div></section>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+/* ===== Config ===== */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var TC="91c4a3db-97f6-4b52-a855-516d5c414124", LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a", LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";
+var ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8", SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SOON=30, REFRESH_MS=10*60*1000;
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", EMPS=[], LISTS=null, JOBNAMES={}, BUSY=false, TIPS=[], CHARTS={};
+
+/* ===== Helpers ===== */
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function parseISO(s){var p=String(s).slice(0,10).split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function dkey(v){return String(v||"").slice(0,10);}
+function okDate(s){return /^\d{4}-\d\d-\d\d$/.test(dkey(s));}
+function payWeek(d){var x=new Date(d);var diff=(x.getDay()-3+7)%7;var start=addDays(x,-diff);start.setHours(0,0,0,0);return {start:start,end:addDays(start,6)};}
+function isWeekday(s){var g=parseISO(s).getDay();return g>=1&&g<=5;}
+function jobNo(v){return String(v||"").trim().split(/\s+/)[0];}
+function shortD(s){var p=String(s).slice(0,10).split("-");return p.length===3?(+p[1]+"/"+ +p[2]):s;}
+function daysBetween(a,b){return Math.round((parseISO(b)-parseISO(a))/864e5);}
+function yes(v){return v===true||v==="Yes"||v==="yes"||v==="true"||v===1;}
+function val(v){return (v&&typeof v==="object"&&"Value" in v)?v.Value:v;}
+function num(v){var n=parseFloat(v);return isFinite(n)?n:0;}
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtH(n){return n>=100?fmt(n):(Math.round(n*10)/10).toLocaleString();}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function jobLabel(no,name){no=String(no||"").trim();var n=name||JOBNAMES[no]||"";return n?(n+" · "+no):(no||"(no job)");}
+function first(s){return String(s||"").trim().split(/\s+/)[0];}
+
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); throw new Error("HTTP "+r.status+" "+tx.slice(0,140)); } return r.status===204?null:r.json(); }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields"+(select?"($select="+select+")":"")+"&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await gfetch(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+/* date-range pull: server filter first, fall back to everything + client filter (house pattern) */
+async function getRange(listId,field,from,to,select){
+  var rows;
+  try{ rows=await pullAll(listId,select,"fields/"+field+" ge '"+from+"T00:00:00Z' and fields/"+field+" le '"+to+"T23:59:59Z'"); }
+  catch(e){ rows=await pullAll(listId,select); }
+  return rows.filter(function(r){ var k=dkey(r[field]); return k>=from&&k<=to; });
+}
+async function listId(name){
+  if(!LISTS){ var j=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999"); LISTS={}; (j.value||[]).forEach(function(l){ LISTS[String(l.displayName||"").toLowerCase()]=l.id; }); }
+  return LISTS[name.toLowerCase()]||null;
+}
+function Missing(name){ this.name=name; }
+async function named(name){ var id; try{ id=await listId(name); }catch(e){ throw new Error("Couldn't read the site's lists ("+e.message+")"); } if(!id) throw new Missing(name); return id; }
+
+/* ===== Card building ===== */
+function head(title,href,linkText,extra){ return '<div class="ch"><h3>'+esc(title)+'</h3>'+(extra||"")+(href?'<a class="go" href="'+href+'">'+esc(linkText||"Open")+' &rarr;</a>':'')+'</div>'; }
+function stat(label,value,href,badge,unit){ var tag=href?'a':'div'; return '<'+tag+' class="stat"'+(href?' href="'+href+'"':'')+'><div class="l">'+esc(label)+'</div><div class="v">'+value+(unit?' <small>'+esc(unit)+'</small>':'')+'</div>'+(badge||'')+'</'+tag+'>'; }
+function badge(kind,text){ var icon=kind==="crit"?"&#9888; ":kind==="warn"?"&#9888; ":kind==="good"?"&#10003; ":""; return '<div class="badge b-'+kind+'"><i></i>'+icon+esc(text)+'</div>'; }
+function failCard(id,title,href,err){
+  var msg = (err instanceof Missing) ? 'The “'+esc(err.name)+'” list isn\'t set up in SharePoint yet.' : 'Couldn\'t load ('+esc(err&&err.message||err)+').';
+  E(id).innerHTML=head(title,href)+'<div class="dash">—</div><div class="note">'+msg+'</div>';
+}
+async function section(id,title,href,fn){ try{ await fn(); }catch(e){ console.warn(title,e); failCard(id,title,href,e); } }
+
+/* ===== Tooltip ===== */
+function tipReg(title,rows){ TIPS.push({t:title,r:rows}); return TIPS.length-1; }
+function tipShow(i,x,y){ var d=TIPS[i]; if(!d) return; var tip=E("tip"); tip.innerHTML="";
+  var t=document.createElement("div"); t.className="tt"; t.textContent=d.t; tip.appendChild(t);
+  d.r.forEach(function(r){ var row=document.createElement("div"); row.className="tr2"; if(r.c){ var k=document.createElement("i"); k.style.background=r.c; row.appendChild(k); }
+    var b=document.createElement("b"); b.textContent=r.v; row.appendChild(b); if(r.k){ var s=document.createElement("span"); s.textContent=r.k; row.appendChild(s); } tip.appendChild(row); });
+  tip.style.display="block"; var w=tip.offsetWidth,h=tip.offsetHeight, L=x+14, T=y+14;
+  if(L+w>window.innerWidth-8) L=x-w-14; if(L<8) L=8; if(T+h>window.innerHeight-8) T=y-h-14; tip.style.left=L+"px"; tip.style.top=T+"px"; }
+function tipHide(){ E("tip").style.display="none"; }
+function bindTips(root){
+  root.querySelectorAll("[data-tip]").forEach(function(el){
+    var i=+el.getAttribute("data-tip"), svg=el.ownerSVGElement, g=el.closest&&el.closest("g.col");
+    function on(){ if(svg&&g){ svg.classList.add("hov"); g.classList.add("on"); } }
+    function off(){ tipHide(); if(svg&&g){ svg.classList.remove("hov"); g.classList.remove("on"); } }
+    el.addEventListener("pointermove",function(e){ on(); tipShow(i,e.clientX,e.clientY); });
+    el.addEventListener("pointerleave",off);
+    el.addEventListener("focus",function(){ var r=el.getBoundingClientRect(); on(); tipShow(i,r.left+r.width/2,r.top); });
+    el.addEventListener("blur",off);
+  });
+}
+function tableToggle(btnId,boxId){ var b=E(btnId); if(b) b.onclick=function(){ var t=E(boxId); t.classList.toggle("on"); b.textContent=t.classList.contains("on")?"Chart only":"Table"; }; }
+function cssv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+/* ===== Charts ===== */
+function niceStep(max,target){ if(max<=0) return 1; var raw=max/target, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p; }
+function tickLbl(v,maxV){ return maxV>=10000?(v>=1000?(Math.round(v/100)/10)+"K":String(v)):v.toLocaleString(); }
+/* horizontal bars, one series (slot 1), value at the tip */
+function hbars(items,unit,href){
+  var max=Math.max.apply(null,items.map(function(i){return i.v;}).concat([1]));
+  return '<div class="hb">'+items.map(function(it){
+    var ti=tipReg(it.label,[{v:fmtH(it.v)+" "+unit,k:"",c:cssv("--s1")}].concat(it.extra||[]));
+    return '<a class="lb" href="'+href+'" title="'+esc(it.label)+'">'+esc(it.label)+'</a><div class="tr" tabindex="0" data-tip="'+ti+'"><div class="bar" style="width:calc((100% - 56px) * '+(it.v/max).toFixed(4)+')"></div><span class="val">'+fmtH(it.v)+'</span></div>';
+  }).join("")+'</div>';
+}
+/* stacked column chart drawn to the container width; series=[{k,name,color}] data=[{label,full,vals:{k:n}}] */
+function columns(el,series,data,unit){
+  var W=Math.max(260,el.clientWidth||520), H=210, ml=44, mr=8, mt=18, mb=24, pw=W-ml-mr, ph=H-mt-mb;
+  var tot=data.map(function(d){ return series.reduce(function(s,x){return s+(d.vals[x.k]||0);},0); });
+  var maxT=Math.max.apply(null,tot.concat([0])), step=niceStep(maxT||1,4), top=Math.max(step,Math.ceil(maxT/step)*step);
+  var band=pw/data.length, bw=Math.min(24,band*0.6), y=function(v){return mt+ph-(v/top)*ph;};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" height="'+H+'" role="img" aria-label="Weekly '+esc(unit)+' by type">';
+  for(var t=0;t<=top+1e-9;t+=step){ var yy=Math.round(y(t))+.5; s+='<line class="'+(t===0?'bl':'gl')+'" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+yy+'" y2="'+yy+'"/><text x="'+(ml-6)+'" y="'+(yy+3.5)+'" text-anchor="end" style="font-variant-numeric:tabular-nums">'+tickLbl(t,top)+'</text>'; }
+  var every=band<34?2:1;
+  data.forEach(function(d,i){
+    var cx=ml+band*i+band/2, x=cx-bw/2, base=mt+ph, segs=series.filter(function(sr){return (d.vals[sr.k]||0)>0;});
+    var rows=series.map(function(sr){return {v:fmt(d.vals[sr.k]||0)+" "+unit,k:sr.name,c:sr.color};}); if(series.length>1) rows.push({v:fmt(tot[i])+" "+unit,k:"Total"});
+    var ti=tipReg("Pay week of "+d.full,rows);
+    s+='<g class="col">';
+    segs.forEach(function(sr,j){
+      var h=(d.vals[sr.k]/top)*ph, y0=base-h, topSeg=(j===segs.length-1), gap=(j>0?2:0), hh=Math.max(0,h-gap);
+      if(hh<=0){ base=y0; return; }
+      if(topSeg){ var r=Math.min(4,hh,bw/2); s+='<path fill="'+sr.color+'" d="M'+x+','+(y0+hh)+' V'+(y0+r)+' Q'+x+','+y0+' '+(x+r)+','+y0+' H'+(x+bw-r)+' Q'+(x+bw)+','+y0+' '+(x+bw)+','+(y0+r)+' V'+(y0+hh)+' Z""/>'; }
+      else s+='<rect fill="'+sr.color+'" x="'+x+'" y="'+y0+'" width="'+bw+'" height="'+hh+'"/>';
+      base=y0;
+    });
+    if(i===data.length-1&&tot[i]>0) s+='<text class="cap" x="'+cx+'" y="'+(y(tot[i])-5)+'" text-anchor="middle">'+fmt(tot[i])+'</text>';
+    if((data.length-1-i)%every===0) s+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle"'+(i===data.length-1?' class="cap"':'')+'>'+esc(d.label)+'</text>';
+    s+='<rect class="hit" tabindex="0" data-tip="'+ti+'" x="'+(ml+band*i)+'" y="'+mt+'" width="'+band+'" height="'+ph+'"/></g>';
+  });
+  el.innerHTML=s+'</svg>'; bindTips(el);
+}
+
+/* ===== Sign-in & access ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){
+  var all=msalApp.getAllAccounts()||[], a=r&&r.account?r.account:(all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null);
+  if(a) start(a);
+}).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("who").textContent=a.name||a.username;
+  var admin=VM_SUPER.indexOf(loginEmail)>-1;
+  try{ EMPS=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active,Foreman");
+    EMPS.forEach(function(f){ var e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e===loginEmail&&yes(f.Admin)&&(f.Active||"Yes")!=="No") admin=true; });
+  }catch(e){ EMPS=[]; }
+  if(!admin){ E("denied").style.display="block"; E("denied").innerHTML='<div class="denied"><h2>Admins only</h2><p>This dashboard is limited to portal admins. Signed in as <b>'+esc(loginEmail)+'</b>.</p><p><a href="/" style="color:var(--link);font-weight:700">Back to the portal</a></p></div>'; return; }
+  E("app").style.display="block"; E("refresh").style.display="inline-block";
+  E("refresh").onclick=function(){ loadAll(); };
+  setInterval(function(){ loadAll(); },REFRESH_MS);
+  var rt; window.addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(function(){ Object.keys(CHARTS).forEach(function(k){ try{ CHARTS[k](); }catch(e){} }); },150); });
+  loadAll();
+}
+
+/* ===== Load everything (each section independent) ===== */
+async function loadAll(){
+  if(BUSY) return; BUSY=true; document.body.classList.add("busy"); E("refresh").disabled=true; E("refresh").textContent="Loading…";
+  LISTS=null; TIPS=[];
+  if(!E("cHours").innerHTML) ["cHours","cLogs","cJobs","cActions","cFit","cTM","cShopSM","cShopPipe","cInc","cCert","cFleet","cPTP","cPM","cSU","cRent","cClose"].forEach(function(id){ E(id).innerHTML='<div class="note">Loading…</div>'; });
+  if(EMPS.length===0){ try{ EMPS=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active,Foreman"); }catch(e){} }
+  try{ var jt=await pullAll(JOBTASKS,"JobNo,JobName"); JOBNAMES={}; jt.forEach(function(x){ var n=String(x.JobNo||"").trim(); if(n&&!JOBNAMES[n]&&x.JobName) JOBNAMES[n]=String(x.JobName).trim(); }); }catch(e){}
+  await Promise.all([loadField(),loadActions(),loadFittings(),loadTM(),loadShop(),loadIncidents(),loadCerts(),loadFleet(),loadPTP(),loadPM(),loadSU(),loadRentals(),loadCloseout()].map(function(p){ return p.catch(function(e){ console.warn(e); }); }));
+  E("asof").textContent="as of "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+  document.body.classList.remove("busy"); E("refresh").disabled=false; E("refresh").textContent="Refresh"; BUSY=false;
+}
+
+/* ===== 1. Field ===== */
+function roster(){ var R={}; EMPS.forEach(function(e){ if((e.Active||"Yes")==="No"||!yes(e.Foreman)) return; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); if(em) R[em]=e.EmployeeName||em; }); return R; }
+async function loadField(){
+  var now=new Date(), today=iso(now), wk=payWeek(now), ws=iso(wk.start), lws=iso(addDays(wk.start,-7)), lwe=iso(addDays(wk.start,-1));
+  var sameLast=iso(addDays(now,-7)), from=iso(addDays(now,-8))<lws?iso(addDays(now,-8)):lws;
+  var tc;
+  try{ tc=await getRange(TC,"WorkDate",from,today,"WorkDate,JobNo,Hours,EmployeeName,ForemanEmail,Foreman"); }
+  catch(e){ ["cHours","cJobs"].forEach(function(id,i){ failCard(id,i?"Man-hours by job":"Man-hours this week",i?"/manpower.html":"/compliance.html",e); }); failCard("cLogs","Daily logs today","/compliance.html",e); return; }
+  /* hours KPI */
+  var thisH=0,lastH=0,lastSame=0; tc.forEach(function(r){ var d=dkey(r.WorkDate), h=num(r.Hours); if(d>=ws&&d<=today) thisH+=h; if(d>=lws&&d<=lwe){ lastH+=h; if(d<=sameLast) lastSame+=h; } });
+  var dl=thisH-lastSame, pct=lastSame>0?Math.round(dl/lastSame*100):null;
+  E("cHours").innerHTML=head("Man-hours this pay week","/compliance.html","Compliance")+
+    '<div class="stat hero" style="background:none;padding:0"><div class="v">'+fmt(thisH)+' <small>hrs</small></div></div>'+
+    '<div class="delta '+(dl>0?"up":dl<0?"down":"flat")+'">'+(pct===null?"—":(dl>0?"&#9650; ":dl<0?"&#9660; ":"")+(dl>0?"+":"")+fmtH(dl)+" hrs ("+(pct>0?"+":"")+pct+"%)")+' <span style="color:var(--muted);font-weight:600">vs same point last week</span></div>'+
+    '<div class="sub" style="margin-top:8px">Week of '+shortD(ws)+' (Wed–Tue). Last week total: <b style="color:var(--ink)">'+fmt(lastH)+'</b> hrs</div>';
+  /* by job */
+  var by={}, crew={}; tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<ws||d>today) return; var j=jobNo(r.JobNo)||"(none)"; by[j]=(by[j]||0)+num(r.Hours); (crew[j]=crew[j]||{})[r.EmployeeName||"?"]=1; });
+  var jobs=Object.keys(by).map(function(k){return {k:k,v:by[k]};}).filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;});
+  var top=jobs.slice(0,10), rest=jobs.slice(10), restH=rest.reduce(function(s,x){return s+x.v;},0);
+  E("cJobs").innerHTML=head("Man-hours by job — this pay week","/manpower.html","Manpower",'<button class="tbtn" id="tbJobs">Table</button>')+
+    (top.length?hbars(top.map(function(x){ return {label:jobLabel(x.k),v:x.v,extra:[{v:String(Object.keys(crew[x.k]).length),k:"people"}]}; }),"hrs","/manpower.html")+
+      (rest.length?'<div class="note">+ '+rest.length+' more job'+(rest.length>1?"s":"")+' · '+fmtH(restH)+' hrs</div>':'')+
+      '<div class="tvw" id="tvJobs"><table class="tv"><thead><tr><th>Job</th><th>People</th><th>Hours</th></tr></thead><tbody>'+jobs.map(function(x){return '<tr><td>'+esc(jobLabel(x.k))+'</td><td>'+Object.keys(crew[x.k]).length+'</td><td>'+fmtH(x.v)+'</td></tr>';}).join("")+'</tbody></table></div>'
+    :'<div class="dash">—</div><div class="note">No time entered yet this pay week.</div>');
+  bindTips(E("cJobs")); tableToggle("tbJobs","tvJobs");
+  /* daily logs */
+  await section("cLogs","Daily logs today","/compliance.html",async function(){
+    var R=roster(), logs=await getRange(LOGS,"LogDate",ws<iso(addDays(now,-7))?ws:iso(addDays(now,-7)),today,"LogDate,Project,LoginEmail,SubmittedBy");
+    var crewOn=function(day){ var s={}; tc.forEach(function(r){ if(dkey(r.WorkDate)!==day) return; var fe=(r.ForemanEmail||"").toLowerCase(); if(fe&&R[fe]) s[fe]=1; }); return s; };
+    var exp=crewOn(today), basis="foremen with crew time today";
+    if(!Object.keys(exp).length){ for(var i=1;i<=7;i++){ var d=iso(addDays(now,-i)); if(!isWeekday(d)) continue; var s=crewOn(d); if(Object.keys(s).length){ exp=s; basis="no time in yet today — using "+shortD(d)+"'s crews"; break; } } }
+    var inToday={}; logs.forEach(function(r){ if(dkey(r.LogDate)===today) inToday[(r.LoginEmail||"").toLowerCase()]=1; });
+    var ex=Object.keys(exp), done=ex.filter(function(e){return inToday[e];}), miss=ex.filter(function(e){return !inToday[e];}).map(function(e){return R[e]||e;}).sort();
+    /* this week so far (compliance logic: foreman|day|job owed on weekdays, before today) */
+    var sub={}; logs.forEach(function(r){ sub[(r.LoginEmail||"").toLowerCase()+"|"+dkey(r.LogDate)+"|"+jobNo(r.Project)]=1; });
+    var owed={}, behind={}; tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<ws||d>=today||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(), jn=jobNo(r.JobNo); if(!fe||!jn||!R[fe]) return; var k=fe+"|"+d+"|"+jn; if(owed[k]) return; owed[k]=1; if(!sub[k]) behind[fe]=(behind[fe]||0)+1; });
+    var bn=Object.keys(behind).sort(function(a,b){return behind[b]-behind[a];}), missWk=bn.reduce(function(s,k){return s+behind[k];},0);
+    var pctIn=ex.length?done.length/ex.length*100:0;
+    E("cLogs").innerHTML=head("Daily logs today","/compliance.html","Compliance")+
+      (ex.length?'<div class="stat" style="background:none;padding:0"><div class="v">'+done.length+' <small>of '+ex.length+' foremen</small></div>'+(miss.length?badge("warn",miss.length+" not in yet"):badge("good","All in"))+'</div>'+
+        '<div class="meter"><span style="width:'+pctIn.toFixed(1)+'%"></span></div><div class="sub">Expected = '+esc(basis)+'</div>'+
+        (miss.length?'<div class="chips">'+miss.map(function(n){return '<a class="chip" href="/compliance.html">'+esc(n)+'</a>';}).join("")+'</div>':'')
+        :'<div class="dash">—</div><div class="note">No foreman crews on the board this week.</div>')+
+      '<div class="rows"><a class="r" href="/compliance.html"><span class="m">Missing job-day logs earlier this week</span><span class="x'+(missWk?" crit":"")+'">'+missWk+'</span></a>'+
+      bn.slice(0,4).map(function(fe){return '<a class="r" href="/compliance.html"><span class="m">'+esc(R[fe]||fe)+'</span><span class="x">'+behind[fe]+' behind</span></a>';}).join("")+'</div>';
+  });
+}
+
+/* ===== 2. Open work ===== */
+async function loadActions(){ await section("cActions","Action items","/assigntask.html",async function(){
+  var rows=await pullAll(ACTIONS,"Title,JobNo,JobName,AssignedToName,DueDate,Status"), today=iso(new Date()), wkEnd=iso(addDays(new Date(),7));
+  var open=rows.filter(function(r){return (val(r.Status)||"Open")!=="Done";});
+  var over=open.filter(function(r){var d=dkey(r.DueDate);return okDate(d)&&d<today;}).sort(function(a,b){return dkey(a.DueDate).localeCompare(dkey(b.DueDate));});
+  var week=open.filter(function(r){var d=dkey(r.DueDate);return okDate(d)&&d>=today&&d<=wkEnd;});
+  E("cActions").innerHTML=head("Action items","/assigntask.html","Assign tasks")+'<div class="stats">'+
+    stat("Open",fmt(open.length),"/assigntask.html")+stat("Overdue",fmt(over.length),"/assigntask.html",over.length?badge("crit","Past due"):badge("good","None"))+stat("Due ≤ 7 days",fmt(week.length),"/assigntask.html")+'</div>'+
+    (over.length?'<div class="rows">'+over.slice(0,5).map(function(r){ var d=daysBetween(dkey(r.DueDate),today); return '<a class="r" href="/assigntask.html"><span class="m"><b>'+esc(r.AssignedToName||"Unassigned")+'</b> — '+esc(r.Title||"")+(r.JobNo?' <span style="color:var(--muted)">· '+esc(jobLabel(r.JobNo,r.JobName))+'</span>':'')+'</span><span class="x crit">'+d+'d over</span></a>'; }).join("")+(over.length>5?'<a class="r" href="/assigntask.html"><span class="m" style="color:var(--muted)">+ '+(over.length-5)+' more overdue</span></a>':'')+'</div>':'');
+});}
+async function loadFittings(){ await section("cFit","Fitting tickets","/shopqueue.html",async function(){
+  var id=await named("Fitting Tickets"), rows=await pullAll(id,"TicketNo,Status,NeededBy,Priority,JobName,JobNo"), today=iso(new Date());
+  var st=function(r){return val(r.Status)||"New";}, open=rows.filter(function(r){var s=st(r);return s==="New"||s==="Cutting";});
+  var late=open.filter(function(r){var d=dkey(r.NeededBy);return okDate(d)&&d<today;}).sort(function(a,b){return dkey(a.NeededBy).localeCompare(dkey(b.NeededBy));});
+  var nNew=open.filter(function(r){return st(r)==="New";}).length, nCut=open.length-nNew, ready=rows.filter(function(r){return st(r)==="Done";}).length;
+  E("cFit").innerHTML=head("Fitting tickets","/shopqueue.html","Shop queue")+'<div class="stats">'+
+    stat("Open",fmt(open.length),"/shopqueue.html",'<div class="badge b-none"><i></i>'+nNew+' new · '+nCut+' cutting</div>')+stat("Late",fmt(late.length),"/shopqueue.html",late.length?badge("crit","Past needed-by"):badge("good","On time"))+stat("Done, not delivered",fmt(ready),"/shopqueue.html")+'</div>'+
+    (late.length?'<div class="rows">'+late.slice(0,5).map(function(r){ var p=String(val(r.Priority)||""); return '<a class="r" href="/shopqueue.html"><span class="m"><b>#'+esc(r.TicketNo||"")+'</b> '+esc(r.JobName||jobLabel(r.JobNo))+(/rush|high|urgent/i.test(p)?' <span style="color:var(--crittxt);font-weight:700">· '+esc(p)+'</span>':'')+' <span style="color:var(--muted)">· '+esc(st(r))+'</span></span><span class="x crit">'+daysBetween(dkey(r.NeededBy),today)+'d late</span></a>'; }).join("")+'</div>':'');
+});}
+async function loadTM(){ await section("cTM","T&M tickets","/adminreview.html?tab=tm",async function(){
+  var id=await named("T&M Tickets"), rows=await pullAll(id,"WorkDate,TicketNo,JobNo,JobName,SignedStatus"), today=iso(new Date());
+  var uns=rows.filter(function(r){return String(val(r.SignedStatus)||"").toLowerCase()!=="signed";}).sort(function(a,b){return dkey(a.WorkDate).localeCompare(dkey(b.WorkDate));});
+  var old=uns.filter(function(r){return okDate(r.WorkDate)&&daysBetween(dkey(r.WorkDate),today)>7;});
+  var m30=rows.filter(function(r){return okDate(r.WorkDate)&&daysBetween(dkey(r.WorkDate),today)<=30;}).length;
+  E("cTM").innerHTML=head("T&M tickets","/adminreview.html?tab=tm","Review")+'<div class="stats">'+
+    stat("Unsigned",fmt(uns.length),"/adminreview.html?tab=tm",uns.length?badge("warn","Need signature"):badge("good","All signed"))+stat("Unsigned > 7 days",fmt(old.length),"/adminreview.html?tab=tm",old.length?badge("crit","Aging"):"")+stat("Written last 30 days",fmt(m30),"/adminreview.html?tab=tm")+'</div>'+
+    (uns.length?'<div class="rows">'+uns.slice(0,5).map(function(r){ return '<a class="r" href="/adminreview.html?tab=tm"><span class="m"><b>'+esc(r.TicketNo||"—")+'</b> '+esc(jobLabel(r.JobNo,r.JobName))+'</span><span class="x">'+(okDate(r.WorkDate)?shortD(r.WorkDate)+' · '+daysBetween(dkey(r.WorkDate),today)+'d':'')+'</span></a>'; }).join("")+'</div>':'');
+});}
+
+/* ===== 3. Shop ===== */
+function shopGroup(r){ var pc=String(r.PhaseCode||"").trim(); if(pc==="1230") return "duct"; if(pc==="1250") return "fit"; if(/^18\d\d$/.test(pc)&&pc!=="1860") return "pipe"; if(r.FabType==="Pipe"&&!pc) return "pipe"; return null; }
+async function loadShop(){
+  var now=new Date(), wk=payWeek(now), starts=[]; for(var i=8;i>=0;i--) starts.push(addDays(wk.start,-7*i));
+  var from=iso(starts[0]), to=iso(wk.end), rows;
+  try{ rows=await getRange(SHOP,"RunDate",from,to,"RunDate,FabType,PhaseCode,Output"); }
+  catch(e){ failCard("cShopSM","Sheet metal fabbed — lbs per week","/shopdash.html",e); failCard("cShopPipe","Pipe fabbed — feet per week","/shopdash.html",e); return; }
+  var data=starts.map(function(s){ return {s:iso(s),label:shortD(iso(s)),full:shortD(iso(s))+"–"+shortD(iso(addDays(s,6))),vals:{duct:0,fit:0,pipe:0}}; });
+  rows.forEach(function(r){ var d=dkey(r.RunDate), g=shopGroup(r); if(!g) return; for(var i=data.length-1;i>=0;i--){ if(d>=data[i].s){ data[i].vals[g]+=num(r.Output); break; } } });
+  var cur=data[data.length-1].vals, prev=data[data.length-2].vals;
+  var smSeries=[{k:"duct",name:"Duct (1230)",color:cssv("--s1")},{k:"fit",name:"Fittings (1250)",color:cssv("--s2")}], pSeries=[{k:"pipe",name:"Pipe (18xx)",color:cssv("--s3")}];
+  function dtxt(a,b,u){ var d=a-b; return '<span class="'+(d>0?"up":d<0?"down":"flat")+'" style="font-weight:700">'+(d>0?"&#9650; +":d<0?"&#9660; ":"")+fmt(d)+' '+u+'</span> vs last week'; }
+  var smT=cur.duct+cur.fit, smP=prev.duct+prev.fit;
+  E("cShopSM").innerHTML=head("Sheet metal fabbed — lbs per pay week","/shopdash.html","Shop dashboard",'<button class="tbtn" id="tbSM">Table</button>')+
+    '<div class="stats" style="margin-bottom:10px">'+stat("This week",fmt(smT),"/shopdash.html",'<div class="badge">'+dtxt(smT,smP,"lbs")+'</div>',"lbs")+stat("Duct",fmt(cur.duct),"/shopdash.html","","lbs")+stat("Fittings",fmt(cur.fit),"/shopdash.html","","lbs")+'</div>'+
+    '<div class="legend">'+smSeries.map(function(s){return '<span><i style="background:'+s.color+'"></i>'+esc(s.name)+'</span>';}).join("")+'</div><div class="svgc" id="svgSM"></div>'+
+    '<div class="tvw" id="tvSM"><table class="tv"><thead><tr><th>Week of</th><th>Duct lbs</th><th>Fittings lbs</th><th>Total</th></tr></thead><tbody>'+data.map(function(d){return '<tr><td>'+d.full+'</td><td>'+fmt(d.vals.duct)+'</td><td>'+fmt(d.vals.fit)+'</td><td>'+fmt(d.vals.duct+d.vals.fit)+'</td></tr>';}).join("")+'</tbody></table></div>'+
+    '<div class="note">Pay weeks (Wed–Tue), last 8 plus this week. Other sheet-metal phases (pre-assembly, welded) not included.</div>';
+  E("cShopPipe").innerHTML=head("Pipe fabbed — feet per pay week","/shopdash.html","Shop dashboard",'<button class="tbtn" id="tbP">Table</button>')+
+    '<div class="stats" style="margin-bottom:10px">'+stat("This week",fmt(cur.pipe),"/shopdash.html",'<div class="badge">'+dtxt(cur.pipe,prev.pipe,"ft")+'</div>',"ft")+stat("9-week avg",fmt(data.reduce(function(s,d){return s+d.vals.pipe;},0)/data.length),"/shopdash.html","","ft")+'</div>'+
+    '<div class="svgc" id="svgP"></div>'+
+    '<div class="tvw" id="tvP"><table class="tv"><thead><tr><th>Week of</th><th>Pipe ft</th></tr></thead><tbody>'+data.map(function(d){return '<tr><td>'+d.full+'</td><td>'+fmt(d.vals.pipe)+'</td></tr>';}).join("")+'</tbody></table></div>'+
+    '<div class="note">Phases 1810–1850 (steel, copper, PVC, cast iron, Aquatherm).</div>';
+  CHARTS.sm=function(){ columns(E("svgSM"),smSeries,data,"lbs"); }; CHARTS.p=function(){ columns(E("svgP"),pSeries,data,"ft"); };
+  CHARTS.sm(); CHARTS.p(); tableToggle("tbSM","tvSM"); tableToggle("tbP","tvP");
+}
+
+/* ===== 4. Safety & compliance ===== */
+async function loadIncidents(){ await section("cInc","Incidents","/incident.html",async function(){
+  var id=await named("Incident Reports"), rows=await pullAll(id), today=iso(new Date()), d90=iso(addDays(new Date(),-90));
+  var rec=rows.filter(function(r){return yes(val(r.OSHARecordable))&&okDate(r.IncidentDate);}).map(function(r){return dkey(r.IncidentDate);}).sort();
+  var last=rec.length?rec[rec.length-1]:null, since=last?daysBetween(last,today):null;
+  var r90=rows.filter(function(r){var d=dkey(r.IncidentDate);return okDate(d)&&d>=d90&&d<=today;});
+  var openN=rows.filter(function(r){return !/closed|done|complete/i.test(String(val(r.Status)||""));}).length;
+  var types={}; r90.forEach(function(r){ var t=String(val(r.IncidentType)||"Other"); types[t]=(types[t]||0)+1; });
+  E("cInc").innerHTML=head("Incidents","/incident.html","Incidents")+
+    '<div class="stat" style="background:none;padding:0"><div class="l">Days since last recordable</div><div class="v" style="font-size:40px">'+(since===null?'—':fmt(since))+'</div>'+(since===null?'<div class="sub">No recordables on file.</div>':'<div class="sub">Last recordable '+shortD(last)+'</div>')+'</div>'+
+    '<div class="stats" style="margin-top:10px">'+stat("Last 90 days",fmt(r90.length),"/incident.html")+stat("Recordable 90d",fmt(r90.filter(function(r){return yes(val(r.OSHARecordable));}).length),"/incident.html")+stat("Open",fmt(openN),"/incident.html",openN?badge("warn","Follow up"):"")+'</div>'+
+    (Object.keys(types).length?'<div class="rows">'+Object.keys(types).sort(function(a,b){return types[b]-types[a];}).map(function(t){return '<a class="r" href="/incident.html"><span class="m">'+esc(t)+'</span><span class="x">'+types[t]+'</span></a>';}).join("")+'</div>':'');
+});}
+async function loadCerts(){ await section("cCert","Certifications","/certifications.html",async function(){
+  var id=await named("Certifications"), rows=await pullAll(id,"EmployeeName,CertType,ExpiryDate"), today=iso(new Date()), soon=iso(addDays(new Date(),SOON));
+  var act={}; EMPS.forEach(function(e){ if((e.Active||"Yes")==="No") act[String(e.EmployeeName||"").trim().toLowerCase()]=1; });
+  rows=rows.filter(function(r){ return !act[String(r.EmployeeName||"").trim().toLowerCase()]; });
+  var exp=rows.filter(function(r){var d=dkey(r.ExpiryDate);return okDate(d)&&d<today;}), due=rows.filter(function(r){var d=dkey(r.ExpiryDate);return okDate(d)&&d>=today&&d<=soon;});
+  var list=exp.concat(due).sort(function(a,b){return dkey(a.ExpiryDate).localeCompare(dkey(b.ExpiryDate));});
+  E("cCert").innerHTML=head("Certifications","/certifications.html","Certifications")+'<div class="stats">'+
+    stat("Expired",fmt(exp.length),"/certifications.html",exp.length?badge("crit","Renew now"):badge("good","None"))+stat("Expiring ≤ 30 days",fmt(due.length),"/certifications.html",due.length?badge("warn","Schedule"):"")+'</div>'+
+    (list.length?'<div class="rows">'+list.slice(0,6).map(function(r){ var d=daysBetween(today,dkey(r.ExpiryDate)); return '<a class="r" href="/certifications.html"><span class="m"><b>'+esc(r.EmployeeName||"")+'</b> — '+esc(val(r.CertType)||"")+'</span><span class="x'+(d<0?" crit":"")+'">'+(d<0?"expired "+shortD(r.ExpiryDate):d===0?"today":"in "+d+"d")+'</span></a>'; }).join("")+(list.length>6?'<a class="r" href="/certifications.html"><span class="m" style="color:var(--muted)">+ '+(list.length-6)+' more</span></a>':'')+'</div>':'<div class="note">Everyone current for the next 30 days.</div>');
+});}
+async function loadFleet(){ await section("cFleet","Fleet & DOT","/fleet.html",async function(){
+  var id=await named("Fleet"), rows=await pullAll(id,"Title,InspectionDue,RegistrationDue,OutOfService"), today=iso(new Date()), soon=iso(addDays(new Date(),SOON));
+  var items=[]; rows.forEach(function(r){ if(yes(val(r.OutOfService))) return; [["DOT",r.InspectionDue],["Reg",r.RegistrationDue]].forEach(function(p){ var d=dkey(p[1]); if(okDate(d)&&d<=soon) items.push({u:r.Title||"(unit)",k:p[0],d:d,over:d<today}); }); });
+  items.sort(function(a,b){return a.d.localeCompare(b.d);});
+  var over=items.filter(function(x){return x.over;}).length, due=items.length-over;
+  E("cFleet").innerHTML=head("Fleet & DOT","/fleet.html","Fleet")+'<div class="stats">'+
+    stat("Overdue",fmt(over),"/fleet.html",over?badge("crit","DOT / reg"):badge("good","None"))+stat("Due ≤ 30 days",fmt(due),"/fleet.html",due?badge("warn","Book it"):"")+'</div>'+
+    (items.length?'<div class="rows">'+items.slice(0,6).map(function(x){ var d=daysBetween(today,x.d); return '<a class="r" href="/fleet.html"><span class="m"><b>'+esc(x.u)+'</b> — '+(x.k==="DOT"?"DOT inspection":"Registration")+'</span><span class="x'+(x.over?" crit":"")+'">'+(x.over?(-d)+"d overdue":d===0?"today":"in "+d+"d")+'</span></a>'; }).join("")+'</div>':'<div class="note">'+rows.length+' units — nothing due in 30 days.</div>');
+});}
+async function loadPTP(){ await section("cPTP","Pre-task plans","/adminreview.html?tab=pt",async function(){
+  var id=await named("Pre-Task Plans"), wk=payWeek(new Date()), ws=iso(wk.start), today=iso(new Date());
+  var rows=await getRange(id,"PlanDate",iso(addDays(wk.start,-7)),today,"PlanDate,JobNo");
+  var cur=rows.filter(function(r){return dkey(r.PlanDate)>=ws;}), last=rows.length-cur.length, by={};
+  cur.forEach(function(r){ var j=jobNo(r.JobNo)||"(none)"; by[j]=(by[j]||0)+1; });
+  var keys=Object.keys(by).sort(function(a,b){return by[b]-by[a];});
+  E("cPTP").innerHTML=head("Pre-task plans","/adminreview.html?tab=pt","Review")+'<div class="stats">'+
+    stat("This pay week",fmt(cur.length),"/adminreview.html?tab=pt")+stat("Last week",fmt(last),"/adminreview.html?tab=pt")+'</div>'+
+    (keys.length?'<div class="rows">'+keys.slice(0,6).map(function(k){return '<a class="r" href="/adminreview.html?tab=pt"><span class="m">'+esc(jobLabel(k))+'</span><span class="x">'+by[k]+'</span></a>';}).join("")+'</div>':'<div class="note">None turned in yet this pay week.</div>');
+});}
+
+/* ===== 5. Service & equipment ===== */
+function monthStart(){ var d=new Date(); return iso(new Date(d.getFullYear(),d.getMonth(),1)); }
+function monthName(){ return new Date().toLocaleDateString([], {month:"long"}); }
+async function loadPM(){ await section("cPM","PM visits","/pmvisit.html",async function(){
+  var id=await named("PM Visits"), ms=monthStart(), today=iso(new Date()), rows=await getRange(id,"VisitDate",ms,today,"VisitDate,SiteName,Technician,UnitCount");
+  var units=rows.reduce(function(s,r){return s+num(r.UnitCount);},0), sites={}, tech={};
+  rows.forEach(function(r){ sites[String(r.SiteName||"").trim().toLowerCase()]=1; var t=String(r.Technician||"—"); tech[t]=(tech[t]||0)+1; });
+  var tk=Object.keys(tech).sort(function(a,b){return tech[b]-tech[a];});
+  E("cPM").innerHTML=head("PM visits — "+monthName(),"/pmvisit.html","PM visits")+'<div class="stats">'+
+    stat("Visits",fmt(rows.length),"/pmvisit.html")+stat("Units serviced",fmt(units),"/pmvisit.html")+stat("Sites",fmt(Object.keys(sites).filter(Boolean).length),"/pmvisit.html")+'</div>'+
+    (tk.length?'<div class="rows">'+tk.slice(0,5).map(function(t){return '<a class="r" href="/pmvisit.html"><span class="m">'+esc(t)+'</span><span class="x">'+tech[t]+' visit'+(tech[t]>1?"s":"")+'</span></a>';}).join("")+'</div>':'<div class="note">No PM visits logged this month yet.</div>');
+});}
+async function loadSU(){ await section("cSU","Start-up reports","/adminreview.html?tab=su",async function(){
+  var id=await named("Start-Up Reports"), ms=monthStart(), today=iso(new Date()), rows=await getRange(id,"ServiceDate",ms,today,"ServiceDate,JobNo"), by={};
+  rows.forEach(function(r){ var j=jobNo(r.JobNo)||"(none)"; by[j]=(by[j]||0)+1; });
+  var keys=Object.keys(by).sort(function(a,b){return by[b]-by[a];});
+  E("cSU").innerHTML=head("Start-up reports — "+monthName(),"/adminreview.html?tab=su","Review")+'<div class="stats">'+
+    stat("Reports",fmt(rows.length),"/adminreview.html?tab=su")+stat("Jobs",fmt(keys.length),"/adminreview.html?tab=su")+'</div>'+
+    (keys.length?'<div class="rows">'+keys.slice(0,5).map(function(k){return '<a class="r" href="/adminreview.html?tab=su"><span class="m">'+esc(jobLabel(k))+'</span><span class="x">'+by[k]+'</span></a>';}).join("")+'</div>':'<div class="note">No start-ups this month yet.</div>');
+});}
+async function loadRentals(){ await section("cRent","Equipment rentals","/rentals.html",async function(){
+  var id=await named("Equipment Rentals"), rows=await pullAll(id,"Title,JobName,Status,PlannedOffDate,OnRentDate,CallOffNo"), today=iso(new Date());
+  var st=function(r){return String(val(r.Status)||"").trim().toLowerCase();};
+  var on=rows.filter(function(r){return st(r)==="on rent"||st(r)==="call off requested";});
+  var over=on.filter(function(r){ var d=dkey(r.PlannedOffDate); return st(r)==="call off requested"||(okDate(d)&&d<today); });
+  over.sort(function(a,b){return (dkey(a.PlannedOffDate)||"9").localeCompare(dkey(b.PlannedOffDate)||"9");});
+  E("cRent").innerHTML=head("Equipment rentals","/rentals.html","Rentals")+'<div class="stats">'+
+    stat("On rent",fmt(on.length),"/rentals.html")+stat("Overdue / call-off",fmt(over.length),"/rentals.html",over.length?badge("crit","Get it off rent"):badge("good","None"))+'</div>'+
+    (over.length?'<div class="rows">'+over.slice(0,6).map(function(r){ var co=st(r)==="call off requested", d=dkey(r.PlannedOffDate);
+      return '<a class="r" href="/rentals.html"><span class="m"><b>'+esc(r.Title||"")+'</b>'+(r.JobName?' <span style="color:var(--muted)">· '+esc(r.JobName)+'</span>':'')+'</span><span class="x crit">'+(co?"call-off"+(r.CallOffNo?" #"+esc(r.CallOffNo):" requested"):(daysBetween(d,today)+"d past off"))+'</span></a>'; }).join("")+'</div>':'');
+});}
+async function loadCloseout(){ await section("cClose","Job closeout","/closeout.html",async function(){
+  var id=await named("Job Closeout"), rows=await pullAll(id,"JobNo,JobName,PctComplete");
+  var items=rows.map(function(r){ var p=num(r.PctComplete); if(p>0&&p<=1&&String(r.PctComplete).indexOf(".")>-1) p*=100; return {no:r.JobNo,name:r.JobName,p:Math.max(0,Math.min(100,p))}; });
+  var open=items.filter(function(x){return x.p<100;}).sort(function(a,b){return a.p-b.p;}), done=items.length-open.length;
+  var avg=open.length?open.reduce(function(s,x){return s+x.p;},0)/open.length:0;
+  E("cClose").innerHTML=head("Job closeout","/closeout.html","Closeout")+'<div class="stats">'+
+    stat("In closeout",fmt(open.length),"/closeout.html")+stat("Avg complete",open.length?Math.round(avg)+"%":"—","/closeout.html")+stat("Closed out",fmt(done),"/closeout.html")+'</div>'+
+    (open.length?'<div class="rows">'+open.slice(0,6).map(function(x){ var ti=tipReg(jobLabel(x.no,x.name),[{v:Math.round(x.p)+"%",k:"complete",c:cssv("--s1")}]);
+      return '<a class="r" href="/closeout.html" style="display:block" data-tip="'+ti+'"><div style="display:flex;gap:8px"><span class="m">'+esc(jobLabel(x.no,x.name))+'</span><span class="x">'+Math.round(x.p)+'%</span></div><div class="meter thin"><span style="width:'+x.p.toFixed(1)+'%"></span></div></a>'; }).join("")+'</div>':'<div class="note">No jobs in closeout.</div>');
+  bindTips(E("cClose"));
+});}
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>

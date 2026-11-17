@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Job Closeout</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7;--blu:#1d4ed8;--blubg:#eef4fe}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:860px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:860px;margin:0 auto;padding:12px 12px 90px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+input,select,textarea{width:100%;padding:10px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn:disabled{opacity:.55;cursor:default}
+.chip{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap;background:var(--grybg);color:var(--gry)}
+.chip.done{background:var(--okbg);color:var(--ok)}.chip.prog{background:var(--ambbg);color:var(--amb)}
+.sec{font-size:11.5px;font-weight:800;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px;border-bottom:1px solid #f1d5d2;padding-bottom:3px}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.bar .in{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}.bar .in .btn{flex:1;padding:13px}
+.bar .cnt{font-size:12.5px;color:var(--mut);font-weight:700;min-width:110px}
+.bar .cnt.dirty{color:var(--amb)}.bar .cnt.saved{color:var(--ok)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:540px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.empty{color:var(--mut);font-size:14px;padding:10px 2px}
+/* closeout */
+.start{display:flex;gap:8px}.start select{flex:1;min-width:0}
+.job{display:block;border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin:8px 0;background:#fafbfc;cursor:pointer}
+.job:hover{border-color:#d1d5db;background:#fff}
+.job .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.job .t b{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.job .s{font-size:12.5px;color:var(--mut);margin-top:5px}
+.pbar{height:9px;background:#e5e7eb;border-radius:6px;overflow:hidden;margin-top:7px}.pbar i{display:block;height:100%;background:var(--vm);border-radius:6px}
+.pbar.done i{background:var(--ok)}
+.big{font-size:26px;font-weight:800;color:var(--vm2)}
+.jh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.jh .nm{font-size:17px;font-weight:800}.jh .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.tog{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--gry);margin:0}.tog input{width:18px;height:18px}
+.it{border-top:1px solid #f1f2f4;padding:10px 0}.it:first-of-type{border-top:none}
+.it .hd{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.it .hd .lbl{flex:1;font-weight:700;font-size:14.5px;min-width:0}.it .hd .car{color:var(--mut);font-size:12px;padding-top:3px}
+.it .sm{font-size:12.5px;color:var(--mut);margin-top:2px;font-weight:400}
+.it .sm a{color:var(--vm);font-weight:700;text-decoration:none}
+.it.na .lbl{color:var(--mut);text-decoration:line-through}
+.seg{display:flex;gap:4px;margin-top:7px}
+.seg button{flex:1;padding:8px 2px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:12px;cursor:pointer;color:var(--gry);white-space:nowrap}
+.seg button.on[data-v="Not started"]{background:var(--gry);border-color:var(--gry);color:#fff}
+.seg button.on[data-v="In progress"]{background:var(--amb);border-color:var(--amb);color:#fff}
+.seg button.on[data-v="Done"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.seg button.on[data-v="N/A"]{background:#94a3b8;border-color:#94a3b8;color:#fff}
+.det{display:none;margin-top:4px}.it.open .det{display:block}
+.det label{margin-top:6px}
+.det input,.det textarea{font-size:15px;padding:8px}
+.ev{display:inline-block;font-size:12px;border-radius:8px;padding:4px 8px;margin-top:6px;background:var(--blubg);color:var(--blu);font-weight:600}
+.ev.warn{background:var(--ambbg);color:var(--amb)}.ev.good{background:var(--okbg);color:var(--ok)}.ev.mut{background:var(--grybg);color:var(--mut);font-weight:500}
+.evs{display:flex;flex-wrap:wrap;gap:6px}.evs .ev{margin-top:0}
+.cus{font-size:10.5px;font-weight:800;color:#3730a3;background:#e0e7ff;border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+.addit{margin-top:8px}
+.na-note{font-size:12px;color:var(--mut);margin-top:6px}
+.deny{text-align:center;padding:30px 16px}.deny .ic{font-size:40px}.deny h2{justify-content:center}
+@media(max-width:420px){.seg button{font-size:11.5px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Job Closeout</h1><p>O&amp;Ms, warranties, start-ups, TAB, finals and punch — track every job to 100%. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Job Closeout</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg" id="topMsg"></div>
+
+  <div class="card deny" id="deny" style="display:none">
+    <div class="ic">&#128274;</div>
+    <h2>PMs and admins only</h2>
+    <div class="hint" style="font-size:14px">Job closeout is kept by the project managers and the office. If you need something from a closeout package, ask your PM — thanks!</div>
+  </div>
+
+  <div id="ovView" style="display:none">
+    <div class="card">
+      <h2>Start a closeout</h2>
+      <div class="start"><select id="newJob"><option value="">Loading jobs…</option></select><button class="btn btn-p" id="startBtn">Start closeout</button></div>
+      <div class="hint">Active jobs that don't have a closeout yet.</div>
+    </div>
+    <div class="card">
+      <h2><span>Closeouts <span id="ovCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span>
+        <label class="tog"><input type="checkbox" id="showDone"> Show complete</label></h2>
+      <div class="hint">Least complete first. Tap a job to open its checklist.</div>
+      <div id="ovList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div id="jobView" style="display:none">
+    <div class="card">
+      <div class="jh">
+        <div style="min-width:0;flex:1"><div class="nm" id="jName"></div><div class="sub" id="jSub"></div></div>
+        <div style="text-align:right"><div class="big" id="jPct">0%</div><div class="hint" id="jOpen"></div></div>
+      </div>
+      <div class="pbar" id="jBar"><i style="width:0"></i></div>
+      <div class="tools">
+        <button class="btn btn-g btn-s" id="backBtn">&#8592; All closeouts</button>
+        <button class="btn btn-g btn-s" id="printBtn">&#128424; Print report</button>
+        <label class="tog" style="margin-left:auto"><input type="checkbox" id="hideNA"> Hide N/A</label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>On file for this job <span class="hint" style="margin:0;font-weight:600">live from other lists</span></h2>
+      <div class="evs" id="evSum"><span class="ev mut">Checking…</span></div>
+    </div>
+    <div id="groups"></div>
+    <div class="card">
+      <h2>Closeout notes</h2>
+      <textarea id="jNotes" rows="3" placeholder="Anything the next person should know — owner contacts, what's holding up final, etc."></textarea>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<div class="bar" id="bar" style="display:none"><div class="in">
+  <div class="cnt" id="barCnt"></div>
+  <button class="btn btn-p" id="saveBtn">Save</button>
+</div></div>
+
+<div class="modal" id="addModal"><div class="box">
+  <h2>Add a closeout item</h2>
+  <label>Item</label><input type="text" id="aName" placeholder="e.g. Glycol test report to owner">
+  <label>Section</label><select id="aGroup"></select>
+  <div class="msg" id="aMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="aCancel">Cancel</button><button class="btn btn-p" id="aAdd">Add item</button></div>
+</div></div>
+
+<script>
+/* ===================== Job Closeout =====================
+   List "Job Closeout": one row per job. Items = JSON array of
+   {k, g, t, st, date, who, notes, url, custom}. PctComplete / OpenCount / Status are
+   written on every save so other pages can read them without parsing Items.
+   Evidence hints are read-only and live; every lookup fails quietly. No dollar amounts on this page. */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973";
+var ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8", PRESSURE_ID="4a73433e-57e4-4589-addb-c63d9c49e716";
+var L_CO="Job Closeout", L_SU="Start-Up Reports", L_RENT="Equipment Rentals", L_TM="T&M Tickets";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_PMS=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, IS_PM=false, LIST_ID=null, LIST_COLS=null, ALL_LISTS=[];
+var ROWS=[], JOBLIST=[], JOBINFO={}, CUR=null, DIRTY=false, NEWK=0, EV={};
+
+var STATUSES=["Not started","In progress","Done","N/A"];
+var GROUPS=["Documents","Systems","Inspections & punch","Admin"];
+/* [key, group, title, evidence key] */
+var STD=[
+ ["om","Documents","O&M manuals submitted"],
+ ["warr","Documents","Warranty letters / registrations"],
+ ["asb","Documents","As-builts / redlines"],
+ ["bind","Documents","Submittal & closeout binder transmitted"],
+ ["tags","Documents","Valve tags & equipment labels"],
+ ["attic","Documents","Spare parts / attic stock delivered"],
+ ["su","Systems","Equipment start-ups complete","startup"],
+ ["tab","Systems","Test & balance (TAB) report received"],
+ ["bas","Systems","Controls / BAS checkout"],
+ ["cx","Systems","Commissioning / functional tests"],
+ ["pt","Systems","Pressure tests documented","pressure"],
+ ["filt","Systems","Final filters installed"],
+ ["train","Systems","Owner training completed (with sign-in)"],
+ ["mpf","Inspections & punch","Mechanical permit final"],
+ ["ppf","Inspections & punch","Plumbing permit final"],
+ ["fsd","Inspections & punch","Fire/smoke damper inspection"],
+ ["punch","Inspections & punch","Punch list complete","actions"],
+ ["clean","Inspections & punch","Final cleaning"],
+ ["lien","Admin","Lien waivers"],
+ ["payapp","Admin","Final pay app submitted","tm"],
+ ["ret","Admin","Retainage requested"],
+ ["rent","Admin","Rental equipment off rent","rentals"],
+ ["arch","Admin","Job archived in Job Setup"]
+];
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=String(s||""); if(s.length>10){ var dt=new Date(s); if(!isNaN(dt)) s=dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate()); } s=d10(s); if(!/^\d{4}-\d\d-\d\d$/.test(s)) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0]; }
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function njob(s){ return String(s||"").trim().toUpperCase(); }
+function safeUrl(u){ u=String(u||"").trim(); if(!u) return ""; if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u="https://"+u; return /^https?:\/\//i.test(u)?u:""; }
+function showMsg(id,cls,t){ var m=E(id); m.className="msg "+cls; m.textContent=t; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok&&r.status!==204){ var tx=await r.text(); var er=new Error("HTTP "+r.status+" "+tx.slice(0,160)); er.status=r.status; throw er; } return r.status===204?null:r.json(); }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields"+(select?"($select="+select+")":"")+"&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await gfetch(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+async function colsOf(listId){ var c=await gfetch(GRAPH+listId+"/columns?$select=name,readOnly"), o={}; (c.value||[]).forEach(function(x){ o[x.name]=x.readOnly?2:1; }); return o; }
+function listByName(n){ return ALL_LISTS.filter(function(x){return (x.displayName||"").toLowerCase()===n.toLowerCase();})[0]||null; }
+
+/* ===== sign-in ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  try{
+    var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active");
+    emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      if(e===loginEmail){ MY_NAME=n; if(yes(f.Admin)) IS_ADMIN=true; } });
+  }catch(e){ /* admin flag unknown — the hard-coded lists below still work */ }
+  if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+  IS_PM=VM_PMS.indexOf(loginEmail)>-1;
+  if(!MY_NAME) MY_NAME=a.name||a.username;
+  if(!IS_ADMIN&&!IS_PM){ E("deny").style.display="block"; return; }
+  E("ovView").style.display="block";
+  try{
+    var lists=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999"); ALL_LISTS=lists.value||[];
+    var l=listByName(L_CO);
+    if(!l){ showMsg("topMsg","err","The “"+L_CO+"” list isn't set up in SharePoint yet."); E("ovList").innerHTML=""; E("newJob").innerHTML='<option value="">—</option>'; return; }
+    LIST_ID=l.id; var c=await colsOf(LIST_ID); LIST_COLS={}; Object.keys(c).forEach(function(k){ if(c[k]===1) LIST_COLS[k]=1; });
+    await loadJobs();
+    await loadRows();
+  }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); return; }
+}
+
+/* ===== jobs (JobTasks, minus archived in Jobs) ===== */
+async function loadJobs(){
+  var tasks=await pullAll(JOBTASKS,"JobNo,JobName,Active"), seen={}, jobs=[];
+  tasks.forEach(function(t){ if((t.Active||"Yes")==="No") return; var no=String(t.JobNo||"").trim(); if(!no||seen[no]) return; seen[no]=1; jobs.push({no:no,name:String(t.JobName||"").trim()}); });
+  try{ var jl=await pullAll(JOBS,"Title,Archive,PMName"), arch={};
+    jl.forEach(function(j){ var no=String(j.Title||"").trim(); if(!no) return; JOBINFO[njob(no)]={pm:String(j.PMName||"").trim(),arch:(j.Archive===true||j.Archive==="Yes")}; if(JOBINFO[njob(no)].arch) arch[no]=1; });
+    jobs=jobs.filter(function(j){return !arch[j.no];}); }catch(e){}
+  jobs.sort(function(x,y){ return (x.name||x.no).toLowerCase().localeCompare((y.name||y.no).toLowerCase()); });
+  JOBLIST=jobs;
+}
+function fillNewJob(){
+  var have={}; ROWS.forEach(function(r){ have[njob(r.JobNo||r.Title)]=1; });
+  var jobs=JOBLIST.filter(function(j){return !have[njob(j.no)];});
+  E("newJob").innerHTML='<option value="">— Pick the job —</option>'+jobs.map(function(j){return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>';}).join("");
+}
+function pmOf(no){ var i=JOBINFO[njob(no)]; return i?i.pm:""; }
+
+/* ===== overview ===== */
+async function loadRows(){
+  try{ ROWS=await pullAll(LIST_ID); }catch(e){ E("ovList").innerHTML='<div class="empty">Couldn\'t load closeouts ('+esc(e.message)+').</div>'; return; }
+  ROWS.forEach(function(r){ var sv=parseItems(r.Items), s=sv.length?summ(merge(sv)):null; r._pct=s?s.pct:(parseFloat(r.PctComplete)||0); r._open=s?s.open:(parseInt(r.OpenCount,10)||0); });
+  fillNewJob(); renderOverview();
+}
+function renderOverview(){
+  var showDone=E("showDone").checked;
+  var rows=ROWS.slice().sort(function(a,b){ return a._pct-b._pct||b._open-a._open||String(a.JobName||"").localeCompare(String(b.JobName||"")); });
+  var nDone=rows.filter(function(r){return r._open===0&&r._pct>=100;}).length;
+  E("ovCount").textContent=rows.length?"("+rows.length+(nDone?" · "+nDone+" complete":"")+")":"";
+  if(!showDone) rows=rows.filter(function(r){ return !(r._open===0&&r._pct>=100); });
+  if(!rows.length){ E("ovList").innerHTML='<div class="empty">'+(ROWS.length?"Every closeout is complete. Tick “Show complete” to see them.":"No closeouts yet. Pick a job above and tap Start closeout.")+'</div>'; return; }
+  E("ovList").innerHTML=rows.map(function(r){ var no=r.JobNo||r.Title||"", done=r._open===0&&r._pct>=100, pm=pmOf(no);
+    return '<div class="job" data-id="'+esc(r._id)+'"><div class="t"><b>'+esc(r.JobName||"(no name)")+' <span style="color:#6b7280;font-weight:600">· '+esc(no)+'</span></b>'+
+      '<span class="chip '+(done?"done":"prog")+'">'+(done?"Complete":r._pct+"%")+'</span></div>'+
+      '<div class="pbar'+(done?" done":"")+'"><i style="width:'+Math.max(0,Math.min(100,r._pct))+'%"></i></div>'+
+      '<div class="s">'+[r._open+" open item"+(r._open===1?"":"s"), pm?"PM "+esc(pm):"", r.LastUpdated?"Updated "+nice(r.LastUpdated)+(r.UpdatedBy?" by "+esc(r.UpdatedBy):""):""].filter(Boolean).join(" · ")+'</div></div>'; }).join("");
+  E("ovList").querySelectorAll(".job").forEach(function(el){ el.onclick=function(){ var r=ROWS.filter(function(x){return String(x._id)===el.getAttribute("data-id");})[0]; if(r) openJob(r); }; });
+}
+E("showDone").onchange=renderOverview;
+E("startBtn").onclick=function(){ var s=E("newJob"), no=s.value; if(!no){ showMsg("topMsg","err","Pick a job first."); return; }
+  E("topMsg").className="msg"; var o=s.options[s.selectedIndex], name=o?(o.getAttribute("data-name")||""):"";
+  var ex=ROWS.filter(function(r){return njob(r.JobNo||r.Title)===njob(no);})[0]; if(ex){ openJob(ex); return; }
+  openJob({_id:null,Title:no,JobNo:no,JobName:name,Items:"",Notes:""}); DIRTY=true; setBar(); };
+
+/* ===== checklist model ===== */
+function parseItems(s){ if(!s) return []; try{ var j=JSON.parse(s); return Array.isArray(j)?j:(j&&Array.isArray(j.items)?j.items:[]); }catch(e){ return []; } }
+function mkStd(d){ return {k:d[0],g:d[1],t:d[2],st:"Not started",date:"",who:"",notes:"",url:""}; }
+function merge(saved){ var byK={}; saved.forEach(function(it){ if(it&&it.k) byK[it.k]=it; });
+  var out=STD.map(function(d){ var s=byK[d[0]], it=mkStd(d); if(s){ ["st","date","who","notes","url"].forEach(function(f){ if(s[f]!=null) it[f]=String(s[f]); }); } if(STATUSES.indexOf(it.st)<0) it.st="Not started"; return it; });
+  saved.forEach(function(s){ if(s&&s.custom&&s.k&&s.t){ out.push({k:s.k,g:GROUPS.indexOf(s.g)>-1?s.g:"Admin",t:String(s.t),st:STATUSES.indexOf(s.st)>-1?s.st:"Not started",date:s.date||"",who:s.who||"",notes:s.notes||"",url:s.url||"",custom:true}); } });
+  return out; }
+function summ(items){ var live=items.filter(function(i){return i.st!=="N/A";}), done=live.filter(function(i){return i.st==="Done";}).length;
+  return {items:items, total:live.length, done:done, open:live.length-done, pct:live.length?Math.round(done*100/live.length):(items.length?100:0)}; }
+function evKey(k){ var d=STD.filter(function(x){return x[0]===k;})[0]; return d?d[3]:null; }
+
+function openJob(r){
+  if(DIRTY&&CUR&&!confirm("You have unsaved changes on "+(CUR.row.JobName||CUR.row.JobNo)+". Leave without saving?")) return;
+  var hide=false; try{ hide=localStorage.getItem("vm_co_hidena")==="1"; }catch(e){}
+  CUR={row:r, id:r._id||null, no:String(r.JobNo||r.Title||"").trim(), name:String(r.JobName||"").trim(), items:merge(parseItems(r.Items)), open:{}};
+  DIRTY=false; E("hideNA").checked=hide; E("jNotes").value=r.Notes||""; E("msg").className="msg"; E("topMsg").className="msg";
+  E("ovView").style.display="none"; E("jobView").style.display="block"; E("bar").style.display="block";
+  E("jName").textContent=(CUR.name||"(no name)")+" · "+CUR.no;
+  var pm=pmOf(CUR.no); E("jSub").textContent=[pm?"PM "+pm:"", r.LastUpdated?"Last saved "+nice(r.LastUpdated)+(r.UpdatedBy?" by "+r.UpdatedBy:""):"Not saved yet"].filter(Boolean).join(" · ");
+  renderJob(); setBar(); window.scrollTo(0,0); loadEvidence(CUR.no);
+}
+function renderHead(){ var s=summ(CUR.items); E("jPct").textContent=s.pct+"%"; E("jOpen").textContent=s.open+" open · "+s.done+" done";
+  E("jBar").className="pbar"+(s.open===0?" done":""); E("jBar").firstChild.style.width=s.pct+"%"; }
+function itemSummary(it){ var bits=[]; if(it.st!=="Not started"&&it.st!=="N/A"&&it.date) bits.push(nice(it.date)); else if(it.date&&it.st==="Done") bits.push(nice(it.date));
+  if(it.who) bits.push(esc(it.who)); if(it.notes) bits.push(esc(it.notes.length>70?it.notes.slice(0,70)+"…":it.notes));
+  var u=safeUrl(it.url), h=bits.join(" · "); if(u) h+=(h?" · ":"")+'<a href="'+esc(u)+'" target="_blank" rel="noopener">Link &#8599;</a>'; return h; }
+function renderJob(){
+  var hide=E("hideNA").checked, h="";
+  GROUPS.forEach(function(g){ var its=CUR.items.filter(function(i){return i.g===g;}), vis=its.filter(function(i){return !(hide&&i.st==="N/A");}), nNA=its.length-vis.length;
+    var s=summ(its);
+    h+='<div class="card"><h2><span>'+esc(g)+'</span><span class="chip '+(s.open===0?"done":"")+'">'+s.done+' / '+s.total+'</span></h2>';
+    h+=vis.map(function(it){ var idx=CUR.items.indexOf(it), op=CUR.open[it.k];
+      return '<div class="it'+(it.st==="N/A"?" na":"")+(op?" open":"")+'" data-i="'+idx+'">'+
+        '<div class="hd" data-tog="'+idx+'"><div class="lbl">'+esc(it.t)+(it.custom?'<span class="cus">CUSTOM</span>':'')+'<div class="sm">'+itemSummary(it)+'</div></div><span class="car">'+(op?"&#9650;":"Details &#9660;")+'</span></div>'+
+        '<div class="ev-slot" data-ev="'+idx+'">'+evHint(it)+'</div>'+
+        '<div class="seg">'+STATUSES.map(function(v){ return '<button data-st="'+idx+'" data-v="'+v+'" class="'+(it.st===v?"on":"")+'">'+v+'</button>'; }).join("")+'</div>'+
+        '<div class="det"><div class="g2"><div><label>Date done</label><input type="date" data-f="date" data-i="'+idx+'" value="'+esc(d10(it.date))+'"></div>'+
+        '<div><label>Who</label><input type="text" data-f="who" data-i="'+idx+'" value="'+esc(it.who)+'" placeholder="Name"></div></div>'+
+        '<label>Link (SharePoint folder, transmittal, report…)</label><input type="url" data-f="url" data-i="'+idx+'" value="'+esc(it.url)+'" placeholder="https://">'+
+        '<label>Notes</label><textarea rows="2" data-f="notes" data-i="'+idx+'" placeholder="Who has it, what\'s missing…">'+esc(it.notes)+'</textarea>'+
+        (it.custom?'<div style="margin-top:8px"><button class="btn btn-d btn-s" data-del="'+idx+'">Remove this item</button></div>':'')+'</div></div>'; }).join("");
+    if(nNA) h+='<div class="na-note">'+nNA+' N/A item'+(nNA===1?"":"s")+' hidden</div>';
+    h+='<div class="addit"><button class="btn btn-g btn-s" data-add="'+esc(g)+'">+ Add item</button></div></div>';
+  });
+  E("groups").innerHTML=h; renderHead();
+  var G=E("groups");
+  G.querySelectorAll("[data-tog]").forEach(function(el){ el.onclick=function(e){ if(e.target.tagName==="A") return; var it=CUR.items[+el.getAttribute("data-tog")]; CUR.open[it.k]=!CUR.open[it.k]; renderJob(); }; });
+  G.querySelectorAll("[data-st]").forEach(function(b){ b.onclick=function(){ var it=CUR.items[+b.getAttribute("data-st")], v=b.getAttribute("data-v"); if(it.st===v) return; it.st=v;
+    if(v==="Done"){ if(!it.date) it.date=today(); if(!it.who) it.who=MY_NAME; }
+    markDirty(); renderJob(); }; });
+  G.querySelectorAll("[data-f]").forEach(function(inp){ inp.addEventListener("input",function(){ var it=CUR.items[+inp.getAttribute("data-i")]; it[inp.getAttribute("data-f")]=inp.value; markDirty();
+    var sm=inp.closest(".it").querySelector(".sm"); if(sm) sm.innerHTML=itemSummary(it); }); });
+  G.querySelectorAll("[data-del]").forEach(function(b){ b.onclick=function(){ var it=CUR.items[+b.getAttribute("data-del")]; if(!confirm("Remove “"+it.t+"”?")) return; CUR.items.splice(CUR.items.indexOf(it),1); markDirty(); renderJob(); }; });
+  G.querySelectorAll("[data-add]").forEach(function(b){ b.onclick=function(){ openAdd(b.getAttribute("data-add")); }; });
+}
+E("hideNA").onchange=function(){ try{ localStorage.setItem("vm_co_hidena",E("hideNA").checked?"1":"0"); }catch(e){} renderJob(); };
+E("jNotes").addEventListener("input",markDirty);
+function markDirty(){ DIRTY=true; setBar(); }
+function setBar(t){ var c=E("barCnt"); if(t){ c.className="cnt saved"; c.textContent=t; return; }
+  if(DIRTY){ c.className="cnt dirty"; c.textContent="Unsaved changes"; } else { c.className="cnt"; c.textContent=CUR&&CUR.id?"All changes saved":"Not saved yet"; } }
+window.addEventListener("beforeunload",function(e){ if(DIRTY){ e.preventDefault(); e.returnValue=""; } });
+E("backBtn").onclick=function(){ if(DIRTY&&!confirm("Leave without saving your changes?")) return; DIRTY=false; CUR=null;
+  E("jobView").style.display="none"; E("bar").style.display="none"; E("ovView").style.display="block"; renderOverview(); window.scrollTo(0,0); };
+
+/* custom items */
+var ADD_G=null;
+function openAdd(g){ ADD_G=g; E("aGroup").innerHTML=GROUPS.map(function(x){return '<option'+(x===g?" selected":"")+'>'+esc(x)+'</option>';}).join(""); E("aName").value=""; E("aMsg").className="msg"; E("addModal").style.display="block"; E("aName").focus(); }
+E("aCancel").onclick=function(){ E("addModal").style.display="none"; };
+E("aAdd").onclick=function(){ var t=E("aName").value.trim(); if(!t){ showMsg("aMsg","err","Type the item."); return; }
+  var g=E("aGroup").value, k="c"+Date.now().toString(36)+(++NEWK);
+  var it={k:k,g:g,t:t,st:"Not started",date:"",who:"",notes:"",url:"",custom:true}, last=-1;
+  CUR.items.forEach(function(x,i){ if(x.g===g) last=i; }); CUR.items.splice(last+1,0,it);
+  E("addModal").style.display="none"; markDirty(); renderJob(); };
+
+/* ===== save ===== */
+E("saveBtn").onclick=async function(){
+  if(!CUR) return; var btn=E("saveBtn"); btn.disabled=true; setBar("Saving…"); E("barCnt").className="cnt";
+  var s=summ(CUR.items), now=new Date();
+  var store=CUR.items.map(function(i){ var o={k:i.k,g:i.g,t:i.t,st:i.st}; ["date","who","notes","url"].forEach(function(f){ if(i[f]) o[f]=i[f]; }); if(i.custom) o.custom=true; return o; });
+  var f={Title:CUR.no, JobNo:CUR.no, JobName:CUR.name, Items:JSON.stringify(store), PctComplete:String(s.pct), OpenCount:String(s.open),
+    Status:s.open===0?"Complete":"Open", UpdatedBy:MY_NAME, LastUpdated:now.toISOString(), Notes:E("jNotes").value.trim()};
+  Object.keys(f).forEach(function(k){ if(k!=="Title"&&LIST_COLS&&!LIST_COLS[k]) delete f[k]; });
+  try{
+    if(!CUR.id){ var r=await gfetch(GRAPH+LIST_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})}); CUR.id=r.id; }
+    else await gfetch(GRAPH+LIST_ID+"/items/"+CUR.id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)});
+    /* keep the local copy in step so the overview updates without a reload */
+    var row=ROWS.filter(function(x){return String(x._id)===String(CUR.id);})[0];
+    if(!row){ row={_id:CUR.id}; ROWS.push(row); }
+    Object.assign(row,{Title:CUR.no,JobNo:CUR.no,JobName:CUR.name,Items:f.Items||JSON.stringify(store),PctComplete:String(s.pct),OpenCount:String(s.open),Status:s.open===0?"Complete":"Open",UpdatedBy:MY_NAME,LastUpdated:now.toISOString(),Notes:E("jNotes").value.trim(),_pct:s.pct,_open:s.open});
+    CUR.row=row; DIRTY=false; fillNewJob();
+    E("jSub").textContent=[pmOf(CUR.no)?"PM "+pmOf(CUR.no):"","Last saved "+nice(row.LastUpdated)+" by "+MY_NAME].filter(Boolean).join(" · ");
+    setBar("Saved ✓ "+now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})); E("msg").className="msg";
+  }catch(e){ setBar(); showMsg("msg","err","Couldn't save ("+e.message+"). Your changes are still on screen — try again."); }
+  btn.disabled=false;
+};
+
+/* ===== auto evidence (read-only, live, quiet on failure) ===== */
+/* returns rows for the job, or null when the list / JobNo column isn't there */
+async function evRows(listId,jobNo,alsoName){
+  var c; try{ c=await colsOf(listId); }catch(e){ return null; }
+  if(!c.JobNo) return null;
+  var rows;
+  if(alsoName&&c.JobName){ rows=await pullAll(listId); }
+  else { try{ rows=await pullAll(listId,null,"fields/JobNo eq '"+String(jobNo).replace(/'/g,"''")+"'"); }catch(e){ rows=await pullAll(listId); } }
+  var J=njob(jobNo), N=njob(alsoName||"");
+  return {cols:c, rows:rows.filter(function(r){ var x=njob(r.JobNo); return x===J||(!x&&N&&njob(r.JobName)===N)||(N&&x===N); })};
+}
+async function loadEvidence(no){
+  EV={}; var mine=CUR; renderEv();
+  var jobs=[
+    ["startup",function(){ var l=listByName(L_SU); return l?evRows(l.id,no):null; }],
+    ["pressure",function(){ var l=ALL_LISTS.filter(function(x){return x.id===PRESSURE_ID;})[0]||ALL_LISTS.filter(function(x){return /pressure/i.test(x.displayName||"");})[0]; return l?evRows(l.id,no,mine.name):null; }],
+    ["rentals",function(){ var l=listByName(L_RENT); return l?evRows(l.id,no):null; }],
+    ["actions",function(){ return evRows(ACTIONS,no); }],
+    ["tm",function(){ var l=listByName(L_TM); return l?evRows(l.id,no):null; }]
+  ];
+  await Promise.all(jobs.map(async function(j){ var v; try{ v=await j[1](); }catch(e){ v=null; } if(CUR!==mine) return; EV[j[0]]=v||null; renderEv(); }));
+}
+/* one hint per evidence key: {t, cls} or null */
+function evText(key){
+  if(!(key in EV)) return {t:"Checking…",cls:"mut"};
+  var v=EV[key]; if(!v) return null; var rows=v.rows, n=rows.length;
+  if(key==="startup"){ var types={}; rows.forEach(function(r){ var t=String(r.EquipmentType||"").trim(); if(t) types[t]=(types[t]||0)+1; });
+    var last=rows.map(function(r){return d10(r.ServiceDate);}).filter(Boolean).sort().pop();
+    return {t:"Start-Up Reports: "+n+" on file"+(last?" · latest "+nice(last):"")+(Object.keys(types).length?" ("+Object.keys(types).slice(0,4).map(function(k){return types[k]+" "+k;}).join(", ")+(Object.keys(types).length>4?"…":"")+")":""),cls:n?"good":""}; }
+  if(key==="pressure"){ var lt=rows.map(function(r){return d10(r.TestDate)||d10(r.TestDateText);}).filter(Boolean).sort().pop();
+    return {t:"Pressure tests: "+n+" on file"+(lt?" · latest "+nice(lt):""),cls:n?"good":""}; }
+  if(key==="rentals"){ if(!v.cols.Status) return null; var on=rows.filter(function(r){ return !/^picked\s*up$/i.test(String(r.Status||"").trim()); }).length;
+    return on?{t:"Rentals still on rent: "+on,cls:"warn"}:{t:n?"All "+n+" rental"+(n===1?"":"s")+" picked up":"No rentals on file",cls:n?"good":""}; }
+  if(key==="actions"){ if(!v.cols.Status) return null; var op=rows.filter(function(r){ return String(r.Status||"").trim().toLowerCase()==="open"; }).length;
+    return op?{t:"Open action items: "+op,cls:"warn"}:{t:"No open action items",cls:"good"}; }
+  if(key==="tm"){ if(!v.cols.SignedStatus) return null; var un=rows.filter(function(r){ return !/^signed/i.test(String(r.SignedStatus||"").trim()); }).length;
+    return un?{t:"T&M tickets unsigned: "+un,cls:"warn"}:{t:n?"All "+n+" T&M ticket"+(n===1?"":"s")+" signed":"No T&M tickets",cls:n?"good":""}; }
+  return null;
+}
+function evHint(it){ var k=evKey(it.k); if(!k) return ""; var x=evText(k); return x?'<span class="ev '+x.cls+'">'+esc(x.t)+'</span>':""; }
+function renderEv(){
+  if(!CUR) return;
+  var keys=["startup","pressure","rentals","actions","tm"], h=keys.map(function(k){ var x=evText(k); return x?'<span class="ev '+x.cls+'">'+esc(x.t)+'</span>':""; }).join("");
+  E("evSum").innerHTML=h||'<span class="ev mut">Nothing linked to this job number in the other lists.</span>';
+  document.querySelectorAll(".ev-slot").forEach(function(sl){ var it=CUR.items[+sl.getAttribute("data-ev")]; if(it) sl.innerHTML=evHint(it); });
+}
+
+/* ===== print ===== */
+E("printBtn").onclick=function(){ if(!CUR) return; var s=summ(CUR.items);
+  var stc={"Done":"#15803d","In progress":"#b45309","N/A":"#64748b","Not started":"#b91c1c"};
+  var ev=["startup","pressure","rentals","actions","tm"].map(function(k){ var x=evText(k); return x&&x.cls!=="mut"?'<li>'+esc(x.t)+'</li>':""; }).join("");
+  var body=GROUPS.map(function(g){ var its=CUR.items.filter(function(i){return i.g===g;}); if(!its.length) return "";
+    return '<div class="rec"><h3>'+esc(g)+'</h3><table><tr><th style="width:38%">Item</th><th>Status</th><th>Date</th><th>By</th><th>Notes / link</th></tr>'+its.map(function(i){ var u=safeUrl(i.url);
+      return '<tr><td>'+esc(i.t)+(i.custom?' <i style="color:#555">(added)</i>':'')+'</td><td style="color:'+stc[i.st]+';font-weight:700">'+esc(i.st)+'</td><td>'+(i.st==="Done"||i.st==="In progress"?nice(i.date):"")+'</td><td>'+esc(i.who)+'</td><td>'+esc(i.notes)+(u?(i.notes?'<br>':'')+'<a href="'+esc(u)+'">'+esc(u.length>60?u.slice(0,60)+"…":u)+'</a>':'')+'</td></tr>'; }).join("")+'</table></div>'; }).join("");
+  var notes=E("jNotes").value.trim(), r=CUR.row||{};
+  var w=window.open("","_blank"); if(!w){ alert("Allow pop-ups for this site to print."); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc("Closeout — "+CUR.no+" "+CUR.name)+'</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:24px;font-size:12.5px}'+
+    '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #7f1d1d;padding-bottom:8px;margin-bottom:14px}.hd h1{margin:0;font-size:18px;color:#7f1d1d}.hd .s{color:#555;font-size:12px;text-align:right}'+
+    '.sum{display:flex;gap:24px;margin:0 0 6px}.sum b{font-size:20px;color:#7f1d1d;display:block}.pb{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin:6px 0 12px}.pb i{display:block;height:100%;background:#7f1d1d}'+
+    'table{border-collapse:collapse;width:100%}.rec{margin-top:14px;page-break-inside:avoid}.rec h3{font-size:13px;color:#7f1d1d;margin:0 0 4px}td,th{border:1px solid #ddd;padding:4px 6px;vertical-align:top;text-align:left}th{background:#f3f4f6;font-size:11px}a{color:#7f1d1d;word-break:break-all}'+
+    'ul{margin:4px 0 0 18px;padding:0}@media print{body{margin:10mm}.np{display:none}}</style></head><body>'+
+    '<div class="hd"><div><h1>Vision Mechanical — Job Closeout</h1><div style="color:#555;font-size:14px;font-weight:700">'+esc(CUR.name)+' · '+esc(CUR.no)+'</div>'+(pmOf(CUR.no)?'<div style="color:#555">PM: '+esc(pmOf(CUR.no))+'</div>':'')+'</div>'+
+    '<div class="s">'+(r.LastUpdated?'Last saved '+esc(nice(r.LastUpdated))+(r.UpdatedBy?' by '+esc(r.UpdatedBy):'')+'<br>':'')+(DIRTY?'<b style="color:#b45309">Includes unsaved changes</b><br>':'')+'Printed '+esc(new Date().toLocaleString())+'</div></div>'+
+    '<div class="sum"><div><b>'+s.pct+'%</b>complete</div><div><b>'+s.done+'</b>done</div><div><b>'+s.open+'</b>open</div><div><b>'+(CUR.items.length-s.total)+'</b>N/A</div></div><div class="pb"><i style="width:'+s.pct+'%"></i></div>'+
+    (ev?'<div class="rec"><h3>On file (from other lists)</h3><ul>'+ev+'</ul></div>':'')+body+
+    (notes?'<div class="rec"><h3>Closeout notes</h3><div style="white-space:pre-wrap">'+esc(notes)+'</div></div>':'')+
+    '<div class="np" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 18px;font-size:14px">Print</button></div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+  w.document.close(); };
+</script>
+<script>
+/* ===== Job lists show NAME first, A–Z (e.g. "Epic Phase II · A26103") =====
+   Works on any <select> or <datalist> whose options are jobs. Values the page saves are unchanged:
+   a picked datalist entry is turned back into "A26103 Epic Phase II" before the page reads it. */
+(function(){
+  var NO="[A-Z]?\\d{2}[A-Z]?-?\\d{3,}";
+  var FWD=new RegExp("^("+NO+")(?:\\s*·\\s*|\\s+)(.+)$"), REV=new RegExp("^(.+?)\\s+·\\s+("+NO+")$");
+  function fl(t){ var m=FWD.exec(String(t||"").trim()); return m?{no:m[1],name:m[2].trim()}:null; }
+  function cmp(a,b){ return a.k.localeCompare(b.k,undefined,{sensitivity:"base",numeric:true}); }
+  function doSelect(sel){
+    var opts=Array.prototype.slice.call(sel.options), real=opts.filter(function(o){return o.value!=="";});
+    var jobs=real.filter(function(o){ return o.getAttribute("data-vmflip")||fl(o.textContent); });
+    if(jobs.length<2||jobs.length<real.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmflip");})) return;
+    var v=sel.value;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; if(!o.hasAttribute("value")) o.setAttribute("value",o.textContent); var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
+    var items=jobs.map(function(o){return {o:o,k:o.textContent.toLowerCase()};}).sort(cmp);
+    items.forEach(function(it){ sel.appendChild(it.o); });
+    opts.filter(function(o){return jobs.indexOf(o)<0&&o.value!=="";}).forEach(function(o){ sel.appendChild(o); });
+    sel.value=v;
+  }
+  function doList(dl){
+    var opts=Array.prototype.slice.call(dl.options), jobs=opts.filter(function(o){ return o.getAttribute("data-vmorig")||fl(o.value); });
+    if(jobs.length<2||jobs.length<opts.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmorig");})) return;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmorig")) return; var f=fl(o.value); o.setAttribute("data-vmorig",o.value); o.value=f.name+" · "+f.no; });
+    jobs.map(function(o){return {o:o,k:o.value.toLowerCase()};}).sort(cmp).forEach(function(it){ dl.appendChild(it.o); });
+  }
+  var busy=false;
+  function scan(){ if(busy) return; busy=true; try{ document.querySelectorAll("select").forEach(doSelect); document.querySelectorAll("datalist").forEach(doList); }catch(e){} busy=false; }
+  function back(e){ var t=e.target; if(!t||t.tagName!=="INPUT"||!t.getAttribute("list")) return; var m=REV.exec(String(t.value||"").trim()); if(m) t.value=m[2]+" "+m[1]; }
+  document.addEventListener("input",back,true); document.addEventListener("change",back,true); document.addEventListener("focusout",back,true);
+  var tmr=null; new MutationObserver(function(){ if(busy) return; clearTimeout(tmr); tmr=setTimeout(scan,30); }).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState!=="loading") scan(); else document.addEventListener("DOMContentLoaded",scan);
+  window.vmJobScan=scan;
+})();
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>

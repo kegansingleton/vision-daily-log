@@ -81,7 +81,10 @@ canvas.sk{width:100%;height:auto;border:1.5px dashed #9ca3af;border-radius:10px;
       <div><label>Needed by</label><input type="date" id="need"></div>
       <div><label>Priority</label><div class="seg" id="prio"><button data-v="Normal" class="on">Normal</button><button data-v="Rush" class="rush">Rush</button></div></div>
     </div>
-    <label>Deliver to / area</label><input type="text" id="deliver" placeholder="e.g. Level 2 east, or job trailer">
+    <div class="g2">
+      <div><label>Deliver to / area</label><input type="text" id="deliver" placeholder="e.g. Level 2 east, or job trailer"></div>
+      <div><label>Stratus package # (if any)</label><input type="text" id="stratus" placeholder="ties this order to a pipe package"></div>
+    </div>
     <label>Notes to the shop</label><textarea id="notes" rows="2" placeholder="Anything that applies to the whole ticket"></textarea>
   </div>
 
@@ -370,7 +373,7 @@ async function start(a){
     if(l){ LIST_ID=l.id; var c=await gfetch(GRAPH+LIST_ID+"/columns?$select=name,readOnly"); LIST_COLS={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) LIST_COLS[x.name]=1; }); }
     else showMsg("topMsg","err","The “Fitting Tickets” list isn't set up in SharePoint yet — you can draw fittings, but sending will wait until it is.");
   }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); }
-  ["job","need","deliver","notes"].forEach(function(id){ E(id).addEventListener("input",saveDraft); E(id).addEventListener("change",saveDraft); });
+  ["job","need","deliver","stratus","notes"].forEach(function(id){ E(id).addEventListener("input",saveDraft); E(id).addEventListener("change",saveDraft); });
   restoreDraft(); renderItems();
 }
 E("prio").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ PRIO=b.getAttribute("data-v"); E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); saveDraft(); }; });
@@ -476,7 +479,7 @@ var ROD=['1/4"','3/8"','1/2"','5/8"','3/4"','1"'];
 var SUPCAT=[
  {c:"Screws",items:[{n:'1/4" zip screws',len:"Length (optional)",u:["box","ea"]},{n:'1/4" tek screws',len:"Length (optional)",u:["box","ea"]},{n:'5/16" zip screws',len:"Length (optional)",u:["box","ea"]},{n:'5/16" tek screws',len:"Length (optional)",u:["box","ea"]},{n:"Super tek screws",len:"Length (optional)",u:["box","ea"]}]},
  {c:"Sealant & tape",items:[{n:"Duct sealer",u:["gal","5-gal pail","tube"]},{n:"Sikaflex",u:["tube","case"]},{n:"Tacky tape",u:["roll","box"]},{n:"RTU curb gasket",len:"Width / thickness (optional)",u:["roll","ft"]},{n:"Pookie brushes",u:["ea","box"]}]},
- {c:"Hangers & anchors",items:[{n:"Sammy — metal deck",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — wood",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — side winder",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — purlin",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — concrete",s:ROD.slice(0,3),u:["ea","box"]},{n:"Knock-in anchors",s:ROD.slice(0,4),u:["ea","box"]},{n:"Shot pins",len:"Length (optional)",u:["box","ea"]},{n:"Beam clamps",s:ROD.slice(0,4),u:["ea","box"]}]},
+ {c:"Hangers & anchors",items:[{n:"Sammy — metal deck",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — wood",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — side winder",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — purlin",s:ROD.slice(0,3),u:["ea","box"]},{n:"Sammy — concrete",s:ROD.slice(0,3),u:["ea","box"]},{n:"Knock-in anchors",s:ROD.slice(0,4),u:["ea","box"]},{n:"Shot pins",len:"Length (optional)",u:["box","ea"]},{n:"Beam clamps",s:ROD.slice(0,4),u:["ea","box"]},{n:"Hanger strap",s:['1" × 22 ga','1" × 20 ga','1" × 18 ga','1-1/2" × 18 ga','2" × 16 ga'],m:{full:"Full 10' lengths",cut:"Cut to length",uf:"lengths"},u:["lengths","pcs"]}]},
  {c:"Rod & hardware",items:[{n:"All thread",s:ROD,m:{full:"Full 10' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:"Bolts",s:ROD,len:"Bolt length",u:["ea","box"]},{n:"Nuts",s:ROD,u:["ea","box"]},{n:"Washers",s:ROD,u:["ea","box"]},{n:"Fender washers",s:ROD,u:["ea","box"]},{n:"Strut nuts (spring)",s:ROD.slice(0,4),u:["ea","box"]}]},
  {c:"Unistrut",items:[{n:'Unistrut 1-5/8" (P1000)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:'Unistrut 1-5/8" deep (P1001)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]},{n:'Unistrut 13/16" half (P4000)',m:{full:"Full 20' sticks",cut:"Cut to length"},u:["sticks","pcs"]}]},
  {c:"Other",items:[{n:"Other",other:1,len:"Size / length (optional)",u:["ea","box","ft","roll","gal"]}]}
@@ -502,8 +505,8 @@ function spItemChanged(keep){ var d=supDef(SUPCAT[SPC].c,E("spItem").value);
   if(d.m){ if(!keep) SPMODE="full"; E("spMode").innerHTML=["full","cut"].map(function(k){return '<button data-m="'+k+'"'+(SPMODE===k?' class="on"':'')+'>'+esc(d.m[k])+'</button>';}).join("");
     E("spMode").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ SPMODE=b.getAttribute("data-m"); spItemChanged({size:E("spSize").value,unit:E("spUnit").value,keepMode:1}); }; }); }
   var showLen=d.m?(SPMODE==="cut"):!!d.len; E("spLenW").style.display=showLen?"block":"none"; E("spLenL").textContent=d.m?"Cut length (each piece)":(d.len||"Length");
-  E("spQtyL").textContent=d.m?(SPMODE==="cut"?"Pieces":"Sticks"):"Qty";
-  var units=d.m?[SPMODE==="cut"?"pcs":"sticks"]:d.u; E("spUnit").innerHTML=units.map(function(u){return '<option'+(keep&&keep.unit===u?" selected":"")+'>'+esc(u)+'</option>';}).join(""); }
+  E("spQtyL").textContent=d.m?(SPMODE==="cut"?"Pieces":(d.m.uf?"Lengths":"Sticks")):"Qty";
+  var units=d.m?[SPMODE==="cut"?"pcs":(d.m.uf||"sticks")]:d.u; E("spUnit").innerHTML=units.map(function(u){return '<option'+(keep&&keep.unit===u?" selected":"")+'>'+esc(u)+'</option>';}).join(""); }
 function openSup(x){ E("spMsg").className="msg";
   if(x){ SPC=Math.max(0,SUPCAT.map(function(c){return c.c;}).indexOf(x.cat)); SPMODE=x.mode||"full"; } else { SPMODE="full"; }
   spCatBtns(); spFillItems(x?x.item:null); spItemChanged(x||null);
@@ -523,9 +526,9 @@ E("spSave").onclick=function(){ var cat=SUPCAT[SPC].c, d=supDef(cat,E("spItem").
 
 /* ===== draft ===== */
 function dkey(){ return "vm_ft_draft_"+loginEmail; }
-function saveDraft(){ if(SENT) return; try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,items:ITEMS,sups:SUPS})); }catch(e){ try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,sups:SUPS,items:ITEMS.map(function(it){ var c=Object.assign({},it); c.photo=""; return c; })})); }catch(e2){} } }
+function saveDraft(){ if(SENT) return; try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,stratus:E("stratus").value,notes:E("notes").value,items:ITEMS,sups:SUPS})); }catch(e){ try{ localStorage.setItem(dkey(),JSON.stringify({job:E("job").value,need:E("need").value,prio:PRIO,deliver:E("deliver").value,notes:E("notes").value,sups:SUPS,items:ITEMS.map(function(it){ var c=Object.assign({},it); c.photo=""; return c; })})); }catch(e2){} } }
 function restoreDraft(){ var d=null; try{ d=JSON.parse(localStorage.getItem(dkey())||"null"); }catch(e){} if(!d||!d.items) return; SUPS=d.sups||[]; renderSups();
-  if(d.job) E("job").value=d.job; if(d.need) E("need").value=d.need; E("deliver").value=d.deliver||""; E("notes").value=d.notes||""; PRIO=d.prio||"Normal";
+  if(d.job) E("job").value=d.job; if(d.need) E("need").value=d.need; E("deliver").value=d.deliver||""; E("stratus").value=d.stratus||""; E("notes").value=d.notes||""; PRIO=d.prio||"Normal";
   E("prio").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")===PRIO);}); ITEMS=d.items||[];
   if(ITEMS.length) showMsg("topMsg","info","Picked up your unsent ticket."); }
 
@@ -540,7 +543,7 @@ async function buildReport(ticketNo){ var jn=E("job").value, jname=(E("job").sel
   var gs=groupsOf(), tot=0, pcs=0; gs.forEach(function(g){ tot+=g.lbs; pcs+=g.pcs; });
   var row=function(a,b){ return '<tr><td style="padding:3px 12px 3px 0;color:#6b7280">'+esc(a)+'</td><td style="padding:3px 0;font-weight:700">'+b+'</td></tr>'; };
   return '<h2 style="color:#7f1d1d;margin:0 0 6px">Fitting Ticket '+esc(ticketNo)+(PRIO==="Rush"?' <span style="background:#b91c1c;color:#fff;border-radius:6px;padding:2px 8px;font-size:14px">RUSH</span>':'')+'</h2>'+
-    '<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(jn+" "+(jname||"")))+row("Requested by",esc(MY_NAME)+" · "+esc(new Date().toLocaleDateString()))+row("Needed by",esc(nice(E("need").value)))+(E("deliver").value.trim()?row("Deliver to",esc(E("deliver").value.trim())):"")+row("Totals",ITEMS.length+" fittings · "+pcs+" pc · ≈ "+Math.round(tot)+" lb"+(SUPS.length?" · "+SUPS.length+" supply lines":""))+'</table>'+
+    '<table style="border-collapse:collapse;font-size:14px">'+row("Job",esc(jn+" "+(jname||"")))+row("Requested by",esc(MY_NAME)+" · "+esc(new Date().toLocaleDateString()))+row("Needed by",esc(nice(E("need").value)))+(E("deliver").value.trim()?row("Deliver to",esc(E("deliver").value.trim())):"")+(E("stratus").value.trim()?row("Stratus package",esc(E("stratus").value.trim())):"")+row("Totals",ITEMS.length+" fittings · "+pcs+" pc · ≈ "+Math.round(tot)+" lb"+(SUPS.length?" · "+SUPS.length+" supply lines":""))+'</table>'+
     (E("notes").value.trim()?'<div style="margin:8px 0;padding:8px;background:#fef3c7;border-radius:6px;white-space:pre-wrap">'+esc(E("notes").value.trim())+'</div>':'')+
     (ITEMS.length?'<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:10px"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd">Mark</th><th style="padding:6px;border:1px solid #ddd">Drawing</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Fitting</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd">Est lb</th></tr>'+rows.join("")+'</table>':'')+
     (SUPS.length?'<h3 style="color:#7f1d1d;margin:14px 0 4px">Hardware &amp; supplies</h3><table style="border-collapse:collapse;font-size:13px;width:100%"><tr style="background:#f3f4f6"><th style="padding:6px;border:1px solid #ddd;text-align:left">Item</th><th style="padding:6px;border:1px solid #ddd">Qty</th><th style="padding:6px;border:1px solid #ddd;text-align:left">Category</th><th style="padding:6px;border:1px solid #ddd">✓</th></tr>'+SUPS.map(function(x){ var t=supText(x).split(" · "); return '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:700">'+esc(t.slice(1).join(" · "))+'</td><td style="padding:6px;border:1px solid #ddd;text-align:center;font-weight:800">'+esc(t[0])+'</td><td style="padding:6px;border:1px solid #ddd;color:#6b7280">'+esc(x.cat)+'</td><td style="padding:6px;border:1px solid #ddd;width:30px"></td></tr>'; }).join("")+'</table>':'')+
@@ -555,7 +558,7 @@ E("submitBtn").onclick=async function(){
     var gs=groupsOf(), tot=0, pcs=0; gs.forEach(function(g){ tot+=g.lbs; pcs+=g.pcs; });
     var jn=E("job").value, jname=E("job").selectedOptions[0].getAttribute("data-name")||"";
     var f={Title:"New ticket | "+jn+" | "+MY_NAME, JobNo:jn, JobName:jname, RequestedBy:MY_NAME, LoginEmail:loginEmail, SubmittedDate:iso(new Date())+"T12:00:00Z", NeededBy:E("need").value+"T12:00:00Z",
-      Priority:PRIO, Status:"New", DeliverTo:E("deliver").value.trim(), Notes:E("notes").value.trim(), ItemCount:String(ITEMS.length), PieceCount:String(pcs), EstLbs:String(Math.round(tot)),
+      Priority:PRIO, Status:"New", DeliverTo:E("deliver").value.trim(), StratusPkg:E("stratus").value.trim(), Notes:E("notes").value.trim(), ItemCount:String(ITEMS.length), PieceCount:String(pcs), EstLbs:String(Math.round(tot)),
       GaugeSummary:gs.map(function(g){return g.phase+" "+g.gauge+"ga "+Math.round(g.lbs)+"lb";}).join(", "),
       Items:JSON.stringify(ITEMS.map(function(it){ var t=ftype(it.type); return {mark:it.mark,type:it.type,name:t.name,d:it.d,qty:it.qty,gauge:it.gauge,conn:it.conn,liner:it.liner,dimsAre:it.dimsAre,notes:it.notes,desc:it.desc||"",phase:t.phase,lbs:Math.round(estLbs(it)*10)/10,line:itemLine(it)}; })),
       Supplies:JSON.stringify(SUPS), SupplyCount:String(SUPS.length),
@@ -611,5 +614,6 @@ E("submitBtn").onclick=async function(){
   window.vmJobScan=scan;
 })();
 </script>
+<script src="/feedback.js" defer></script>
 </body>
 </html>

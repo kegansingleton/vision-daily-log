@@ -250,5 +250,6 @@ E("csvBtn").onclick=function(){
     .map(function(a){ return a.map(function(v){ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(","); }).join("\r\n");
   var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines],{type:"text/csv"})); a.download="certifications-"+iso(new Date())+".csv"; a.click(); };
 </script>
+<script src="/feedback.js" defer></script>
 </body>
 </html>
