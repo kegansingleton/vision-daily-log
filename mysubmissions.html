@@ -79,6 +79,7 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
     <div class="tab" data-tab="tm" style="display:none">T&amp;M / Pre-Task</div>
     <div class="tab" data-tab="shop" style="display:none">Shop</div>
     <div class="tab" data-tab="ft" style="display:none">Fittings</div>
+    <div class="tab" data-tab="rn" style="display:none">Rentals</div>
   </div>
 
   <div class="panel" id="panel-tc">
@@ -105,6 +106,10 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
   <div class="panel" id="panel-tm" style="display:none">
     <h3 class="subh">T&amp;M tickets</h3><div class="tablewrap" id="tmTbl"><div class="empty">Loading…</div></div>
     <h3 class="subh">Pre-task plans</h3><div class="tablewrap" id="ptTbl"><div class="empty">Loading…</div></div>
+  </div>
+  <div class="panel" id="panel-rn" style="display:none">
+    <h3 class="subh">Equipment you've requested</h3><div class="tablewrap" id="rnTbl"><div class="empty">Loading…</div></div>
+    <p style="font-size:12.5px;color:#6b7280">Done with it? Open <a href="/rentals.html">Equipment Rentals</a> and tap <b>Ready for pickup</b> so it gets called off.</p>
   </div>
   <div class="panel" id="panel-ft" style="display:none">
     <h3 class="subh">Fitting tickets sent to the shop</h3><div class="tablewrap" id="ftTbl"><div class="empty">Loading…</div></div>
@@ -157,6 +162,7 @@ document.querySelectorAll(".tab").forEach(function(t){
     E("panel-look").style.display=id==="look"?"block":"none";
     E("panel-svc").style.display=id==="svc"?"block":"none";
     if(E("panel-ft")) E("panel-ft").style.display=id==="ft"?"block":"none";
+    if(E("panel-rn")) E("panel-rn").style.display=id==="rn"?"block":"none";
     E("panel-su").style.display=id==="su"?"block":"none";
     E("panel-tm").style.display=id==="tm"?"block":"none";
     E("panel-shop").style.display=id==="shop"?"block":"none";
@@ -244,7 +250,7 @@ async function loadSU(){
 /* ===== T&M, pre-task, shop log, shop bill-outs: found by list name; a tab only appears if you have something in it ===== */
 async function loadExtras(){
   var L={}; try{ var token=await getToken(); var j=await fetch(GRAPH.replace(/lists\/$/,"lists?$select=id,displayName&$top=999"),{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); (j.value||[]).forEach(function(l){ L[(l.displayName||"").toLowerCase()]=l.id; }); }catch(e){}
-  var from=iso(addDays(new Date(),-120)), found={tm:0,shop:0,ft:0};
+  var from=iso(addDays(new Date(),-120)), found={tm:0,shop:0,ft:0,rn:0};
   function job(f){ return ((f.JobNo||"")+" "+(f.JobName||"")).trim(); }
   function money(n){ return "$"+(Math.round((parseFloat(n)||0)*100)/100).toFixed(2); }
   var defs=[
@@ -252,11 +258,12 @@ async function loadExtras(){
     {name:"pre-task plans",el:"ptTbl",tab:"tm",date:"PlanDate",sel:"PlanDate,JobNo,JobName,ToolboxTopic,CrewCount,LoginEmail",cols:[["Date",function(f){return shortD(f.PlanDate);}],["Job",job],["Toolbox talk",function(f){return f.ToolboxTopic||"";}],["Crew",function(f){return f.CrewCount||"";}]]},
     {name:"shop daily logs",el:"slTbl",tab:"shop",date:"LogDate",sel:"LogDate,Foreman,Jobs,JobCount,ShopHours,ActionItemsCreated,LoginEmail",cols:[["Date",function(f){return shortD(f.LogDate);}],["Jobs",function(f){return (f.JobCount||0)+": "+(f.Jobs||"");}],["Shop hrs",function(f){return f.ShopHours||0;}],["Action items",function(f){return f.ActionItemsCreated||"";}]]},
     {name:"fitting tickets",el:"ftTbl",tab:"ft",date:"SubmittedDate",sel:"SubmittedDate,TicketNo,JobNo,JobName,NeededBy,Status,Priority,ItemCount,EstLbs,ShopNotes,LoginEmail",cols:[["Ticket",function(f){return (f.TicketNo||"")+(f.Priority==="Rush"?" · RUSH":"");}],["Job",job],["Needed",function(f){return shortD(f.NeededBy);}],["Status",function(f){return (f.Status||"New")+(f.ShopNotes?" — "+f.ShopNotes:"");}],["Fittings",function(f){return (f.ItemCount||0)+" · ≈"+(f.EstLbs||0)+" lb";}]]},
+    {name:"equipment rentals",el:"rnTbl",tab:"rn",date:"Created",body:"StatusLog",html:false,sel:"Created,Title,Category,JobNo,JobName,Status,NeededDate,OnRentDate,PlannedOffDate,Vendor,ContractNo,LoginEmail",cols:[["Equipment",function(f){return f.Title||f.Category||"";}],["Job",job],["Status",function(f){ var st=f.Status||"Requested"; return st==="On rent"?("✅ On rent"+(f.OnRentDate?" "+shortD(f.OnRentDate):"")+(f.Vendor?" — "+f.Vendor:"")+(f.ContractNo?" #"+f.ContractNo:"")):(st==="Requested"?"⏳ Requested — not ordered yet":st);}],["Needed",function(f){return shortD(f.NeededDate);}],["Off rent",function(f){return shortD(f.PlannedOffDate);}]]},
     {name:"shop bill-outs",el:"sbTbl",tab:"shop",date:"RunDate",sel:"RunDate,JobNo,JobName,PhaseCode,Total,LoginEmail",cols:[["Date",function(f){return shortD(f.RunDate);}],["Job",job],["Phase",function(f){return f.PhaseCode||"";}],["Total",function(f){return money(f.Total);}]]}
   ];
   for(var i=0;i<defs.length;i++){ var d=defs[i], id=L[d.name];
     if(!id){ E(d.el).innerHTML='<div class="empty">Not set up yet.</div>'; continue; }
-    try{ var rows=await getMineBy(id,d.date,"LoginEmail",from,d.sel); if(rows.length) found[d.tab]++; if(rows.length) renderReports(d.el,rows,id,"ReportHTML",true,d.cols); else E(d.el).innerHTML='<div class="empty">None submitted yet.</div>'; }
+    try{ var rows=await getMineBy(id,d.date,"LoginEmail",from,d.sel); if(rows.length) found[d.tab]++; if(rows.length) renderReports(d.el,rows,id,d.body||"ReportHTML",d.html!==false,d.cols); else E(d.el).innerHTML='<div class="empty">None submitted yet.</div>'; }
     catch(e){ E(d.el).innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; } }
   /* the shop foreman and the owners always see the Shop tab, even before the first log is in */
   if(["nholliday@visionmech.net","kegan.singleton@visionmech.net","bsingleton@visionmech.net"].indexOf(loginEmail)>-1) found.shop++;

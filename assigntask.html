@@ -87,6 +87,11 @@ body.mtg .wrap{max-width:1180px}
 @media(max-width:700px){.mtg .job .jname{flex-basis:100%}.mtg .job>.jh .tslink,.mtg .job>.jh .addbtn{flex:1;text-align:center}}
 @media(max-width:700px){.qadd .row1{grid-template-columns:1fr 1fr}.qadd .row1 .tcell{grid-column:1/-1}}
 .lacol{padding:10px 14px 12px;background:#fcfcfd;border-radius:0 0 12px 0}
+.rnstrip{border-top:1px solid var(--line);padding:8px 14px 10px;background:#f8fafc}
+.rnstrip h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.rn{display:flex;gap:8px;align-items:baseline;padding:4px 0;font-size:13.5px;border-top:1px dashed #e5e7eb}.rn:first-of-type{border-top:none}
+.rn b{flex:1}.rn .w{font-size:12px;font-weight:800;white-space:nowrap}.rn .w.bad{color:#b91c1c}.rn .w.amb{color:#b45309}.rn .w.ok{color:#15803d}.rn .w.gry{color:#64748b}
+.rnbar{display:none;margin:8px 0 0;padding:9px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:13.5px;font-weight:700}.rnbar a{color:#c0392b}
 .lacol h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .lacol h4 .who{color:var(--ink);text-transform:none;letter-spacing:0;font-size:13px;font-weight:700}
 .lacol .stale{background:var(--ambbg);color:var(--amb);border-radius:10px;padding:1px 8px;font-size:10.5px}
@@ -177,6 +182,7 @@ table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:11.5px;white-space:n
       <div class="kpi ink"><b id="kOpen">0</b><span>Open total</span></div>
       <div class="kpi grn"><b id="kDone">0</b><span id="kDoneLbl">Done since Mon</span></div>
     </div>
+    <div class="rnbar" id="rnBar"></div>
     <div class="controls">
       <div class="seg" id="groupSeg"><button data-g="job">By job</button><button data-g="person">By person</button></div>
       <input type="text" id="search" placeholder="Filter by task, person, or job…">
@@ -208,6 +214,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);
 var RTOKEN=null, loginEmail="", myName="", ITEMS=[];
 var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";   /* Weekly 2-Week Look Ahead */
+var RN={}, RN_ALL=[], RN_LOADED=false;
 var LA={}, LA_LOADED=false, OPEN_ADD={}, ASSIGNEE_OPTS="", IS_ADMIN=false;
 var GROUP=(function(){ try{ return localStorage.getItem("vm_ai_group")||"job"; }catch(e){ return "job"; } })();
 
@@ -248,7 +255,7 @@ async function showApp(a){
     ASSIGNEE_OPTS=E("assignee").innerHTML;
     if(!E("due").value) E("due").value=today();
     setHdr(); window.addEventListener("resize",setHdr);
-    loadLookAheads();
+    loadLookAheads(); loadRentals();
     E("submitBtn").onclick=assign;
     E("search").oninput=render; E("showDone").onchange=render;
     Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-g")===GROUP); b.onclick=function(){ GROUP=b.getAttribute("data-g"); try{ localStorage.setItem("vm_ai_group",GROUP); }catch(e){} Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(x){ x.classList.toggle("on",x===b); }); render(); }; });
@@ -278,6 +285,33 @@ async function loadLookAheads(){
   }catch(e){ LA={}; }
   LA_LOADED=true; render();
 }
+/* ===== Equipment rentals by job (anything not picked up yet) ===== */
+async function loadRentals(){
+  try{ var token=await getToken(), L=await fetch("https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists?$select=id,displayName&$top=999",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();});
+    var l=(L.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()==="equipment rentals";})[0]; if(!l){ RN_LOADED=true; return; }
+    var url=GRAPH+l.id+"/items?$expand=fields($select=Title,Category,JobNo,JobName,Status,NeededDate,OnRentDate,PlannedOffDate,CallOffNo,CallOffDate,Vendor,StatusLog)&$top=999", out=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._mod=it.lastModifiedDateTime; out.push(it.fields); } }); url=j["@odata.nextLink"]||null; }
+    RN={}; RN_ALL=out.filter(function(f){ return (f.Status||"Requested")!=="Picked up"; });
+    RN_ALL.forEach(function(f){ f._st=rnState(f); var jn=String(f.JobNo||"").trim()||"__GENERAL__"; (RN[jn]=RN[jn]||[]).push(f); });
+  }catch(e){ RN={}; RN_ALL=[]; }
+  RN_LOADED=true; render();
+}
+function rnDays(a,b){ var x=new Date(String(a).slice(0,10)+"T12:00:00"), y=new Date(String(b).slice(0,10)+"T12:00:00"); return Math.round((y-x)/864e5); }
+function rnState(f){ var td=today(), st=f.Status||"Requested", off=String(f.PlannedOffDate||"").slice(0,10), on=String(f.OnRentDate||"").slice(0,10), need=String(f.NeededDate||"").slice(0,10);
+  if(st==="Requested") return need&&need<td?{c:"bad",t:"NOT ORDERED — needed "+shortDate(need),bad:1}:{c:"amb",t:"Requested, not ordered yet"+(need?" · need "+shortDate(need):"")};
+  if(st==="On rent"){ var days=on?rnDays(on,td):null, tail=(days!=null?days+" days on rent":"on rent");
+    if(off&&off<td) return {c:"bad",t:"PAST OFF DATE "+rnDays(off,td)+"d ("+shortDate(off)+") · "+tail,bad:1};
+    return {c:"ok",t:tail+(off?" · off "+shortDate(off):" · no off date"),on:1}; }
+  if(st==="Call off requested"){ var m=/(\d{1,2}\/\d{1,2}\/\d{2,4})[^\n]*Call off requested[^\n]*$/i.exec(String(f.StatusLog||"")); var since=String(f._mod||"").slice(0,10); var d=since?rnDays(since,td):0;
+    return d>1?{c:"bad",t:"Pickup asked "+d+" days ago — NOT CALLED OFF",bad:1}:{c:"amb",t:"Ready for pickup — needs call-off"}; }
+  if(st==="Off rent called") return {c:"gry",t:"Called off"+(f.CallOffNo?" #"+f.CallOffNo:"")+" — waiting on pickup"};
+  return {c:"gry",t:st}; }
+function rnPanel(jn){ var list=RN[jn]; if(!list||!list.length) return "";
+  list=list.slice().sort(function(a,b){ return (b._st.bad?1:0)-(a._st.bad?1:0); });
+  return '<div class="rnstrip"><h4>&#127959;&#65039; Rentals on this job · <a href="/rentals.html" target="_blank" style="color:#c0392b;text-transform:none">open</a></h4>'+list.map(function(f){ return '<div class="rn"><b>'+esc(f.Title||f.Category||"Rental")+(f.Vendor?' <span style="font-weight:400;color:#6b7280">· '+esc(f.Vendor)+'</span>':'')+'</b><span class="w '+f._st.c+'">'+esc(f._st.t)+'</span></div>'; }).join("")+'</div>'; }
+function rnBar(){ var b=E("rnBar"); if(!b) return; if(!RN_ALL.length){ b.style.display="none"; return; }
+  var on=RN_ALL.filter(function(f){return (f.Status||"")==="On rent";}).length, bad=RN_ALL.filter(function(f){return f._st.bad;}).length;
+  b.style.display="block"; b.innerHTML='&#127959;&#65039; Rentals: <span style="color:#15803d">'+on+' on rent</span>'+(bad?' · <span style="color:#b91c1c">'+bad+' need attention (past off date / not ordered / not called off)</span>':' · none overdue')+' · <a href="/rentals.html" target="_blank">open Equipment Rentals</a>'; }
 function hasTxt(v){ v=String(v||"").trim(); return v.length>0 && !/^(none|n\/a|na|no|-)$/i.test(v); }
 function laCell(v){ return hasTxt(v)?esc(v):'<span style="color:#c4c8cf">—</span>'; }
 function laPanel(jn){
@@ -393,6 +427,9 @@ function render(){
     if(r.status==="Done"){ if(r.recent) g.done++; if(showDone) g.items.push(r); }
     else { g.items.push(r); g.open++; if(r.due&&r.due<td)g.over++; else if(r.due&&r.due<=weekEnd)g.week++; }
   });
+  if(!byPerson){ Object.keys(RN).forEach(function(jn){ if(groups[jn]||jn==="__GENERAL__") return; var r=RN[jn][0]; if(q && (jn+" "+(r.JobName||"")).toLowerCase().indexOf(q)<0) return;
+    groups[jn]={key:jn,no:jn,name:r.JobName||"",who:"",items:[],over:0,week:0,open:0,done:0}; }); }
+  rnBar();
   if(!byPerson){ Object.keys(LA).forEach(function(jn){ var r=LA[jn]; if(groups[jn]) return; if(q && (jn+" "+r.name).toLowerCase().indexOf(q)<0) return;
     groups[jn]={key:jn,no:jn,name:r.name,who:"",items:[],over:0,week:0,open:0,done:0}; }); }
   var keys=Object.keys(groups);
@@ -423,7 +460,7 @@ function render(){
     var jid="job-"+String(k).replace(/[^A-Za-z0-9_-]/g,"_");
     return '<div class="job" id="'+jid+'"><div class="jh"><div class="jname">'+title+'</div><div>'+pills+'</div>'+(k!=="__GENERAL__"?'<a class="tslink" href="/taskschedule.html?job='+encodeURIComponent(g.no||k)+'" target="_blank" rel="noopener" title="Budget vs earned hours for this job">&#128202; Task schedule</a>':'')+'<button class="addbtn'+(OPEN_ADD[k]?" on":"")+'" data-k="'+esc(k)+'">'+(OPEN_ADD[k]?"&times; Close":"+ Add item")+'</button></div>'+
       qaddHtml(k,g.no||"",g.name||"")+
-      '<div class="jgrid"><div class="jbody">'+body+'</div>'+(k==="__GENERAL__"?'':laPanel(k))+'</div></div>';
+      '<div class="jgrid"><div class="jbody">'+body+'</div>'+(k==="__GENERAL__"?'':laPanel(k))+'</div>'+rnPanel(k)+'</div>';
   }).join("");
   /* jump bar (By job): one chip per job, dot = red overdue / amber due this week / green open / grey look-ahead only */
   E("jumpbar").innerHTML=byPerson?"":keys.map(function(k){ var g=groups[k]; var d=g.over?"r":g.week?"a":g.open?"g":"n"; var lbl=k==="__GENERAL__"?"General":((g.name||g.no)+"");
