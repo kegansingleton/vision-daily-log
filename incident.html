@@ -477,9 +477,19 @@ E("rSave").onclick=async function(){ if(!IS_ADMIN||!CUR) return; var rec=E("rRec
     ReviewNotes:E("rNotes").value.trim(), ReviewedBy:(MY_NAME||(account&&account.name)||loginEmail)+" · "+new Date().toLocaleDateString() });
   E("rSave").disabled=true; showMsg("rMsg","info","Saving…");
   try{ await gfetch(GRAPH+LIST_ID+"/items/"+CUR._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)}); Object.assign(CUR,f);
-    E("rModal").style.display="none"; if(TAB==="osha") renderOsha(); else renderList(); }
+    E("rModal").style.display="none"; if(TAB==="osha") renderOsha(); else renderList(); publishSafety(); }
   catch(e){ showMsg("rMsg","err","Couldn't save ("+e.message+")."); }
   E("rSave").disabled=false; };
+
+/* ===== Publish ONLY the last recordable date to "Safety Stats" so the shop/lobby TV screens can show
+   "days without a recordable" without being able to read any incident report ===== */
+async function publishSafety(){ try{
+  var rec=recordables().map(function(r){return d10(r.IncidentDate);}).filter(Boolean).sort(), last=rec.length?rec[rec.length-1]:"NONE";
+  var L=await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999"), l=(L.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()==="safety stats";})[0]; if(!l) return;
+  var j=await gfetch(GRAPH+l.id+"/items?$expand=fields($select=Title,Value)&$top=50"), it=(j.value||[]).filter(function(x){return x.fields&&x.fields.Title==="LastRecordable";})[0];
+  if(it){ if(it.fields.Value!==last) await gfetch(GRAPH+l.id+"/items/"+it.id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({Value:last})}); }
+  else await gfetch(GRAPH+l.id+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:"LastRecordable",Value:last}})});
+}catch(e){} }
 
 /* ===== OSHA 300 log ===== */
 function oshaRows(){ var y=E("oYear").value; return recordables().filter(function(r){ return d10(r.IncidentDate).slice(0,4)===y; })
