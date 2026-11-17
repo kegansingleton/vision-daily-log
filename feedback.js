@@ -28,6 +28,28 @@
   function account(){ var a=msalApp(); if(!a) return null; var all=a.getAllAccounts(); return a.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null; }
   async function token(){ var a=msalApp(), ac=account(); if(!a||!ac) throw new Error("not signed in"); return (await a.acquireTokenSilent({scopes:[SCOPE],account:ac})).accessToken; }
   function loadH2C(){ return new Promise(function(res){ if(window.html2canvas){ res(window.html2canvas); return; } var s=document.createElement("script"); s.src=H2C; s.onload=function(){ res(window.html2canvas||null); }; s.onerror=function(){ res(null); }; document.head.appendChild(s); }); }
+  /* ===== Installable app: register the offline helper + show an "Install" banner on the portal ===== */
+  if("serviceWorker" in navigator && location.protocol==="https:"){ window.addEventListener("load",function(){ navigator.serviceWorker.register("/sw.js").catch(function(){}); }); }
+  var deferredInstall=null;
+  window.addEventListener("beforeinstallprompt",function(e){ e.preventDefault(); deferredInstall=e; ready(installBanner); });
+  function standalone(){ return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true; }
+  function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1); }
+  function dismissed(){ try{ return localStorage.getItem("vm_install_dismissed")==="1"; }catch(e){ return false; } }
+  function installBanner(){
+    if(standalone()||dismissed()||document.getElementById("vmInstall")) return;
+    if(!/\/(portal\.html)?$/.test(location.pathname)) return;               /* only on the portal home page */
+    var ios=isIOS()&&!deferredInstall; if(!deferredInstall&&!ios) return;
+    var b=el("div","position:fixed;left:10px;right:10px;bottom:14px;z-index:9991;background:#fff;color:#1f2937;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.28);padding:12px 14px;display:flex;gap:12px;align-items:center;font:14px -apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto");
+    b.id="vmInstall"; b.setAttribute("data-html2canvas-ignore","1");
+    b.innerHTML='<img src="/icons/icon-192.png" width="44" height="44" style="border-radius:10px;flex:0 0 44px" alt=""><div style="flex:1"><b>Put Vision on your home screen</b><div style="font-size:12.5px;color:#6b7280;margin-top:2px">'+
+      (ios?'Tap the <b>Share</b> button <span style="font-size:15px">&#x2B06;&#xFE0E;</span> at the bottom of Safari, then <b>Add to Home Screen</b>.':'Opens like an app — full screen, faster on weak signal.')+'</div></div>'+
+      (ios?'':'<button id="vmInstGo" style="background:#c0392b;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:800;font-size:14px">Install</button>')+
+      '<button id="vmInstX" aria-label="Close" style="background:none;border:none;font-size:22px;color:#9ca3af;padding:0 2px">&times;</button>';
+    document.body.appendChild(b);
+    document.getElementById("vmInstX").onclick=function(){ try{ localStorage.setItem("vm_install_dismissed","1"); }catch(e){} b.remove(); };
+    var go=document.getElementById("vmInstGo"); if(go) go.onclick=function(){ if(!deferredInstall) return; deferredInstall.prompt(); deferredInstall.userChoice.then(function(){ deferredInstall=null; b.remove(); }); };
+  }
+  ready(function(){ if(isIOS()&&!standalone()&&/safari/i.test(navigator.userAgent)&&!/crios|fxios|edgios/i.test(navigator.userAgent)) installBanner(); });
   var shot="";
   ready(function(){
     if(/[?&]print=/.test(location.search)) return;
