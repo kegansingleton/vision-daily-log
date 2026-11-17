@@ -84,18 +84,23 @@ async function load(){
     var nameByNo={}; tasks.forEach(function(t){ var jn=(t.JobNo||"").trim(); if(jn && t.JobName && !nameByNo[jn]) nameByNo[jn]=t.JobName; });
     JOBS_LIST=jobs.filter(function(j){ return !isArch(j.Archive); })
       .map(function(j){ var no=(j.Title||"").trim(); return {no:no, name:nameByNo[no]||"", datto:(j.DattoLink||"").trim(), pm:j.PMName||"", addr:j.Address||"", start:d10(j.StartDate), finish:d10(j.FinishDate)}; })
-      .sort(function(a,b){return String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase())||String(a.no).localeCompare(String(b.no));});
+      .sort(function(a,b){ return grp(a)-grp(b) || String(a.name||"").toLowerCase().localeCompare(String(b.name||"").toLowerCase()) || String(a.no).localeCompare(String(b.no)); });
     render();
   }catch(e){ E("list").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
 }
+/* order: A jobs with a link, other jobs with a link, A jobs without, other jobs without */
+function grp(j){ return (j.datto?0:2)+(/^A/i.test(j.no)?0:1); }
+var GRP_TITLE=["A jobs · files","Other jobs · files","A jobs · no files link yet","Other jobs · no files link yet"];
 function render(){
   var q=(E("filter").value||"").toLowerCase().trim();
   var rows=JOBS_LIST.filter(function(j){ return !q || (j.no+" "+j.name+" "+j.pm+" "+j.addr).toLowerCase().indexOf(q)>-1; });
   if(!rows.length){ E("list").innerHTML='<div class="empty">'+(q?"No matching jobs.":"No jobs with files yet.")+'</div>'; return; }
+  var lastG=-1;
   E("list").innerHTML=rows.map(function(j){
+    var g=grp(j), hd=(g!==lastG)?'<div style="margin:16px 2px 6px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">'+GRP_TITLE[g]+'</div>':''; lastG=g;
     var meta=[]; if(j.addr)meta.push(esc(j.addr)); if(j.pm)meta.push("PM: "+esc(j.pm)); if(j.start||j.finish)meta.push((j.start?shortD(j.start):"?")+" – "+(j.finish?shortD(j.finish):"?"));
     var btn = j.datto ? '<a class="open" href="'+esc(j.datto)+'" target="_blank" rel="noopener">Open files ↗</a>' : '<span class="nolink">No files link yet</span>';
-    return '<div class="job"><div class="info"><div class="jn">'+esc(j.no)+(j.name?' <span style="font-weight:600;color:var(--muted)">'+esc(j.name)+'</span>':'')+'</div>'+(meta.length?'<div class="meta">'+meta.join(" &bull; ")+'</div>':'')+'</div>'+btn+'</div>';
+    return hd+'<div class="job"><div class="info"><div class="jn">'+esc(j.no)+(j.name?' <span style="font-weight:600;color:var(--muted)">'+esc(j.name)+'</span>':'')+'</div>'+(meta.length?'<div class="meta">'+meta.join(" &bull; ")+'</div>':'')+'</div>'+btn+'</div>';
   }).join("");
 }
 E("filter").oninput=function(){ render(); };
