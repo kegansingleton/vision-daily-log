@@ -11,6 +11,18 @@
   function el(tag,css,html){ var x=document.createElement(tag); if(css) x.style.cssText=css; if(html!=null) x.innerHTML=html; return x; }
   function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
   var app=null;
+  /* ===== Guest / viewer mode: these logins can open everything but nothing they do is saved ===== */
+  var VIEWERS=["pguest@visionmech.net"];
+  var GUEST_MSG="Cannot submit — you are viewing as a guest.";
+  function isViewer(){ var ac=account(); return !!(ac&&VIEWERS.indexOf(String(ac.username||"").toLowerCase())>-1); }
+  var FB_SENDING=false;
+  function toast(t){ var d=el("div","position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:9999;background:#1f2937;color:#fff;padding:12px 18px;border-radius:10px;font:700 14px -apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:90%;text-align:center",esc(t)); d.setAttribute("data-html2canvas-ignore","1"); document.body.appendChild(d); setTimeout(function(){ d.remove(); },3500); }
+  var _fetch=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    try{ var url=typeof input==="string"?input:(input&&input.url)||"", m=String((init&&init.method)||(input&&input.method)||"GET").toUpperCase();
+      if(m!=="GET"&&m!=="HEAD"&&/graph\.microsoft\.com|sharepoint\.com/i.test(url)&&!FB_SENDING&&isViewer()){ toast(GUEST_MSG); return Promise.reject(new Error(GUEST_MSG)); } }catch(e){}
+    return _fetch(input,init); };
+  ready(function(){ if(!isViewer()) return; var b=el("div","position:fixed;right:10px;bottom:88px;z-index:9990;background:#1d4ed8;color:#fff;border-radius:18px;padding:6px 12px;font:700 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif;opacity:.9","&#128065; Viewing as guest — read only"); b.setAttribute("data-html2canvas-ignore","1"); document.body.appendChild(b); });
   function msalApp(){ if(app) return app; if(!window.msal) return null;
     app=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(location.origin+location.pathname)},cache:{cacheLocation:"localStorage"}}); return app; }
   function account(){ var a=msalApp(); if(!a) return null; var all=a.getAllAccounts(); return a.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null; }
@@ -41,7 +53,7 @@
       btn.style.display=""; ov.style.display="block"; $("vmfbTxt").focus(); };
     $("vmfbCancel").onclick=function(){ ov.style.display="none"; };
     $("vmfbSend").onclick=async function(){ var txt=$("vmfbTxt").value.trim(); if(!txt){ msg("Type a quick description first."); return; }
-      var b=$("vmfbSend"); b.disabled=true; b.textContent="Sending…";
+      var b=$("vmfbSend"); b.disabled=true; b.textContent="Sending…"; FB_SENDING=true;
       var ac=account(), page=(document.title||"").replace(/^Vision Mechanical\s*[—-]\s*/,"")||location.pathname;
       var f={Title:page+" | "+(ac?(ac.name||ac.username):"not signed in"), Page:page, PageUrl:location.href.split("#")[0], Category:$("vmfbCat").value, Details:txt,
         ReportedBy:ac?(ac.name||""):"", LoginEmail:ac?String(ac.username||"").toLowerCase():"", Device:navigator.userAgent+" · "+window.innerWidth+"x"+window.innerHeight+(errs.length?" · recent errors: "+errs.join(" | "):""),
@@ -52,8 +64,8 @@
         Object.keys(f).forEach(function(k){ if(k!=="Title"&&!cols[k]) delete f[k]; if(f[k]==="") delete f[k]; });
         var r=await fetch(SITEURL+"/lists/"+l.id+"/items",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
         if(!r.ok) throw new Error("HTTP "+r.status);
-        msg("Sent — thanks. The office will take a look.",true); b.textContent="Sent ✓"; setTimeout(function(){ ov.style.display="none"; },1600);
-      }catch(e){ b.disabled=false; b.textContent="Send";
+        FB_SENDING=false; msg("Sent — thanks. The office will take a look.",true); b.textContent="Sent ✓"; setTimeout(function(){ ov.style.display="none"; },1600);
+      }catch(e){ FB_SENDING=false; b.disabled=false; b.textContent="Send";
         var body="Page: "+location.href+"\n"+$("vmfbCat").value+"\n\n"+txt+"\n\n"+navigator.userAgent;
         msg("Couldn't send it from here ("+e.message+"). Tap here to email it instead.",false);
         $("vmfbMsg").style.cursor="pointer"; $("vmfbMsg").onclick=function(){ location.href="mailto:reports@visionmech.net?subject="+encodeURIComponent("Portal problem: "+page)+"&body="+encodeURIComponent(body); }; } };
