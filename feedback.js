@@ -41,7 +41,7 @@
     var ios=isIOS()&&!deferredInstall; if(!deferredInstall&&!ios) return;
     var b=el("div","position:fixed;left:10px;right:10px;bottom:14px;z-index:9991;background:#fff;color:#1f2937;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.28);padding:12px 14px;display:flex;gap:12px;align-items:center;font:14px -apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto");
     b.id="vmInstall"; b.setAttribute("data-html2canvas-ignore","1");
-    b.innerHTML='<img src="/icons/icon-192.png" width="44" height="44" style="border-radius:10px;flex:0 0 44px" alt=""><div style="flex:1"><b>Put Vision on your home screen</b><div style="font-size:12.5px;color:#6b7280;margin-top:2px">'+
+    b.innerHTML='<img src="/icon-192.png" width="44" height="44" style="border-radius:10px;flex:0 0 44px" alt=""><div style="flex:1"><b>Put Vision on your home screen</b><div style="font-size:12.5px;color:#6b7280;margin-top:2px">'+
       (ios?'Tap the <b>Share</b> button <span style="font-size:15px">&#x2B06;&#xFE0E;</span> at the bottom of Safari, then <b>Add to Home Screen</b>.':'Opens like an app — full screen, faster on weak signal.')+'</div></div>'+
       (ios?'':'<button id="vmInstGo" style="background:#c0392b;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:800;font-size:14px">Install</button>')+
       '<button id="vmInstX" aria-label="Close" style="background:none;border:none;font-size:22px;color:#9ca3af;padding:0 2px">&times;</button>';
