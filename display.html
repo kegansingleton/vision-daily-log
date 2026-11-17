@@ -68,7 +68,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 /* tables / rows */
 .rows{display:flex;flex-direction:column;gap:1.1vh;margin-top:2.2vh;flex:1;min-height:0}
 .row{display:grid;align-items:center;background:var(--surface);border-radius:1.1vh;padding:0 1.6vw;height:8.4vh;font-size:2.6vw;column-gap:1.6vw;border-left:.6vw solid transparent}
-.row.hd{background:none;height:4.4vh;font-size:1.8vw;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.row.hd{background:none;height:4.4vh;white-space:nowrap;font-size:1.8vw;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
 .row .el{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .row .num{text-align:right;font-variant-numeric:tabular-nums}
 .row.late{border-left-color:var(--crit)}
@@ -90,6 +90,9 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 .arow .t{font-size:2.8vw;font-weight:700;line-height:1.12;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .arow .j{font-size:2vw;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.3vh}
 .p-hi{border:.25vh solid var(--crittxt);color:var(--crittxt)}
+.pf-b{background:var(--crit);color:#fff}.pf-w{background:var(--warn);color:#141414}.pf-g{background:var(--good);color:#fff}
+.ok{color:var(--goodtxt);font-weight:700}.warnt{color:var(--warn);font-weight:700}
+.meter{height:2.2vh;border-radius:1.1vh;background:#163a63;margin-top:1.2vh;overflow:hidden}.meter span{display:block;height:100%;background:var(--s1);border-radius:1.1vh}
 .p-lo{border:.25vh solid var(--base);color:var(--muted)}
 /* hero / centered */
 .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
@@ -149,21 +152,28 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 <script>
 /* ======================================================================
    Vision Mechanical — TV / kiosk display (read-only)
-   display.html?screen=sm|pipe|office|lobby  [&sec=20] [&who=email] [&zoom=1.3]
+   display.html?screen=owner|pm|lobby|sm|pipe  [&sec=20] [&who=email] [&zoom=1.3]
+     owner  (alias: office) owner dashboard + manpower iframes, my action items, overdue by person
+     pm     the signed-in PM's jobs (or ?who=email): action items, job hours/PF, field reporting, watch list, closeout
+     lobby  company KPIs only — no names, job names or dollars
+     sm / pipe  shop floor: fab rates, pounds/feet, shop queue (sm), toolbox talk, days since recordable
+   ?who= blank → whoever is signed in on this screen.
    This page only ever GETs from Microsoft Graph. It never writes.
    ====================================================================== */
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a", LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";
 var SHOP="b7bdc3ee-538a-404a-9046-1e26562ffe6d", TC="91c4a3db-97f6-4b52-a855-516d5c414124", ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8";
 var PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", PDFJS_W="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 var LS_USER="vmDisplayLastUser";
 var REFRESH_MS=5*60*1000, AUTH_RETRY_MS=10*60*1000;
 var Q=new URLSearchParams(location.search);
-var CHANNELS={sm:"Shop — Sheet Metal",pipe:"Shop — Pipe",office:"Owner’s Office",lobby:"Welcome to Vision Mechanical"};
-var SCREEN=String(Q.get("screen")||"lobby").toLowerCase(); if(!CHANNELS[SCREEN]) SCREEN="lobby";   /* unknown → lobby: the safe, no-names channel */
+var CHANNELS={owner:"Owner’s Office",pm:"Project Manager",lobby:"Welcome to Vision Mechanical",sm:"Shop — Sheet Metal",pipe:"Shop — Pipe"};
+var SCREEN=String(Q.get("screen")||"lobby").toLowerCase(); if(SCREEN==="office") SCREEN="owner";   /* old shortcuts */
+if(!CHANNELS[SCREEN]) SCREEN="lobby";   /* unknown → lobby: the safe, no-names channel */
 var SEC=Math.max(1,parseFloat(Q.get("sec"))||20);
-var WHO=String(Q.get("who")||"kegan.singleton@visionmech.net").trim().toLowerCase();
+var WHO_PARAM=String(Q.get("who")||"").trim().toLowerCase(); var WHO=WHO_PARAM;   /* blank = whoever is signed in on this screen */
 var ZOOM=Math.min(2,Math.max(.8,parseFloat(Q.get("zoom"))||1.3));
 var BOOT=Date.now();
 
@@ -250,7 +260,7 @@ async function named(name){
 /* ===== data store: each key keeps its last good value when a refresh fails ===== */
 var D={}, MISS={}, LAST_OK=0, FAILING=false, EVER_LOADED=false, LOADING=false, refreshTimer=null;
 async function loadKey(key,fn){
-  try{ D[key]=await fn(); MISS[key]=false; return true; }
+  try{ var v=await fn(); D[key]=v; MISS[key]=false; return !(v&&v._partial); }   /* _partial: some sections kept old data */
   catch(e){
     if(e instanceof AuthError) throw e;
     if(e instanceof Missing){ MISS[key]=true; delete D[key]; return true; }   /* list not set up → hide its slide */
@@ -260,7 +270,8 @@ async function loadKey(key,fn){
 var LOADERS={
   sm:["shop","queue","toolbox","inc"],
   pipe:["shop","toolbox","inc"],
-  office:["actions"],
+  owner:["actions"],
+  pm:["actions","pmj"],
   lobby:["inc","ptp","tcm","pm"]
 };
 async function loadAll(){
@@ -378,6 +389,80 @@ FETCH.tcm=async function(){
 FETCH.pm=async function(){
   var id=await named("PM Visits"), rows=await getRange(id,"VisitDate",monthStart(),iso(new Date()),"VisitDate,UnitCount");
   return {visits:rows.length, units:rows.reduce(function(s,r){return s+lead(r.UnitCount);},0)};
+};
+
+/* --- PM channel: my jobs (Jobs.PMName matched to the signed-in person's Employee name) --- */
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function meEmail(){ return WHO_PARAM||String((account&&account.username)||"").toLowerCase(); }
+/* "Beach, Jim" → [jim,beach]; drops punctuation */
+function nameKey(s){ s=String(s||"").toLowerCase().trim(); if(s.indexOf(",")>-1){ var p=s.split(","); s=p.slice(1).join(" ")+" "+p[0]; } return s.replace(/['’]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(Boolean); }
+/* same person: exact; or same first + last (middle names/initials ignored); or same last + same first initial */
+function sameName(a,b){
+  if(!a.length||!b.length) return false; if(a.join(" ")===b.join(" ")) return true;
+  if(a.length<2||b.length<2) return false;
+  if(a[a.length-1]!==b[b.length-1]) return false;
+  return a[0]===b[0]||a[0].charAt(0)===b[0].charAt(0);
+}
+function esc1(s){return String(s||"").replace(/'/g,"''");}
+FETCH.pmj=async function(){
+  var prev=D.pmj||{}, partial=false, email=meEmail(), names=[];
+  var emps=[]; try{ emps=await pullAll(EMP,"EmployeeName,LoginEmail,Active"); }catch(e){ if(e instanceof AuthError) throw e; partial=true; }
+  emps.forEach(function(f){ var e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e&&e===email&&f.EmployeeName&&names.indexOf(f.EmployeeName)<0) names.push(String(f.EmployeeName).trim()); });
+  if(!names.length&&account&&account.name&&String(account.username||"").toLowerCase()===email) names.push(account.name);
+  if(!names.length){ var loc=email.split("@")[0]; if(/[._]/.test(loc)) names.push(loc.replace(/[._]+/g," ")); }
+  var jl=await pullAll(JOBS,"Title,PMName,Archive"), mine={};
+  jl.forEach(function(j){ if(yes(val(j.Archive))) return; var no=String(j.Title||"").trim(), pm=String(val(j.PMName)||"").trim(); if(!no||!pm) return;
+    var ok=pm.indexOf("@")>-1?pm.toLowerCase()===email:names.some(function(n){ return sameName(nameKey(n),nameKey(pm)); }); if(ok) mine[no]=1; });
+  var nos=Object.keys(mine).sort(), tasks=[], JN={};
+  try{ tasks=await pullAll(JOBTASKS,"JobNo,JobName,PhaseCode,LineNum,BudgetHours,PercentComplete,AdjustHours"); }catch(e){ if(e instanceof AuthError) throw e; partial=true; tasks=null; }
+  (tasks||[]).forEach(function(t){ var n=String(t.JobNo||"").trim(); if(n&&!JN[n]&&t.JobName) JN[n]=String(t.JobName).trim(); });
+  if(!tasks&&prev.JN) JN=prev.JN;
+  var R={email:email,name:names[0]||"",jobs:nos.map(function(n){return {no:n,name:JN[n]||""};}),JN:JN};
+  if(!nos.length) return R;
+  var set={}; nos.forEach(function(n){ set[n]=1; });
+  function onMine(no,name){ var j=jobNo(no); if(j&&set[j]) return j; var nm=String(name||"").trim().toLowerCase(); if(!j&&nm){ for(var i=0;i<nos.length;i++) if(JN[nos[i]]&&JN[nos[i]].toLowerCase()===nm) return nos[i]; } return null; }
+  async function sec(k,fn){ try{ R[k]=await fn(); }catch(e){ if(e instanceof AuthError) throw e; if(e instanceof Missing){ R[k]=null; return; } partial=true; R[k]=prev[k]||null; console.warn("pm "+k+":",e&&e.message||e); } }
+  var now=new Date(), today=iso(now), ws=iso(payWeekStart(now)), we=iso(addDays(payWeekStart(now),6));
+  await Promise.all([
+    /* b. hours / budget / PF — the exact math in taskschedule.html (actual = AdjustHours + timecards on that phase|line) */
+    sec("sched",async function(){
+      if(!tasks) throw new Error("JobTasks unavailable");
+      var allP=null;
+      return Promise.all(nos.map(async function(no){
+        var tc; try{ tc=await pullRaw(TC,"JobNo,PhaseCode,LineNum,WorkDate,Hours","fields/JobNo eq '"+esc1(no)+"'"); }
+        catch(e){ if(e instanceof AuthError) throw e; if(!allP) allP=pullAll(TC,"JobNo,PhaseCode,LineNum,WorkDate,Hours"); tc=await allP; }
+        var act={}, wkH=0; tc.forEach(function(r){ if(r.JobNo!==no) return; var k=(r.PhaseCode||"")+"|"+(r.LineNum||""); act[k]=(act[k]||0)+(parseFloat(r.Hours)||0); var d=dkey(r.WorkDate); if(d>=ws&&d<=we) wkH+=(parseFloat(r.Hours)||0); });
+        var JB=0,AC=0,EA=0,n=0;
+        tasks.forEach(function(t){ if(t.JobNo!==no) return; n++; var b=parseFloat(t.BudgetHours)||0, logged=act[(t.PhaseCode||"")+"|"+(t.LineNum||"")]||0, prior=parseFloat(t.AdjustHours)||0, a=prior+logged, pct=parseFloat(t.PercentComplete)||0; JB+=b; AC+=a; EA+=b*pct/100; });
+        var JPct=JB>0?(EA/JB*100):0;
+        return {no:no,name:JN[no]||"",tasks:n,wk:wkH,bud:JB,act:AC,pct:JPct,earn:EA,pf:AC>0?EA/AC:null,fc:JPct>0?AC/(JPct/100):null};
+      }));
+    }),
+    /* c. field reporting: today's daily logs vs crews on the job today; latest 2-week look-ahead */
+    sec("field",async function(){
+      var logs=await getRange(LOGS,"LogDate",today,today,"LogDate,Project,LoginEmail");
+      var tcT=await getRange(TC,"WorkDate",today,today,"WorkDate,JobNo,ForemanEmail,Hours");
+      var look=[]; try{ look=await getRange(LOOK,"WeekOf",iso(addDays(now,-56)),iso(addDays(now,21)),"WeekOf,Project,LookAheadStatus,LateFlag"); }catch(e){ if(e instanceof AuthError) throw e; look=null; }
+      return nos.map(function(no){
+        var lg=logs.filter(function(r){return jobNo(r.Project)===no;}), fm={}, h=0;
+        tcT.forEach(function(r){ if(jobNo(r.JobNo)!==no) return; h+=num(r.Hours); fm[(r.ForemanEmail||"?").toLowerCase()]=1; });
+        var la=null; (look||[]).forEach(function(r){ if(jobNo(r.Project)!==no||!okDate(r.WeekOf)) return; if(!la||dkey(r.WeekOf)>dkey(la.WeekOf)) la=r; });
+        return {no:no,name:JN[no]||"",logs:lg.length,crews:Object.keys(fm).length,hrsToday:h,look:la?{week:dkey(la.WeekOf),status:String(val(la.LookAheadStatus)||""),late:yes(val(la.LateFlag))}:null,lookErr:look===null};
+      });
+    }),
+    /* d. watch list */
+    sec("tm",async function(){ var id=await named("T&M Tickets"), rows=await pullAll(id,"WorkDate,TicketNo,JobNo,JobName,SignedStatus");
+      return rows.filter(function(r){ return String(val(r.SignedStatus)||"").toLowerCase()!=="signed"&&onMine(r.JobNo,r.JobName); }).map(function(r){ var j=onMine(r.JobNo,r.JobName), d=dkey(r.WorkDate); return {no:r.TicketNo||"",job:j,date:okDate(d)?d:"",age:okDate(d)?daysBetween(d,today):null}; }); }),
+    sec("fit",async function(){ var id=await named("Fitting Tickets"), rows=await pullAll(id,"TicketNo,JobNo,JobName,Status,NeededBy,Priority");
+      return rows.filter(function(r){ var st=val(r.Status)||"New"; return (st==="New"||st==="Cutting")&&onMine(r.JobNo,r.JobName); }).map(function(r){ var nd=dkey(r.NeededBy); return {no:r.TicketNo||"",job:onMine(r.JobNo,r.JobName),st:val(r.Status)||"New",need:okDate(nd)?nd:"",late:okDate(nd)&&nd<today,rush:String(val(r.Priority)||"")==="Rush"}; }); }),
+    sec("rent",async function(){ var id=await named("Equipment Rentals"), rows=await pullAll(id,"Title,JobNo,JobName,Status,PlannedOffDate,CallOffNo");
+      return rows.filter(function(r){ var st=String(val(r.Status)||"").trim().toLowerCase(); return (st==="on rent"||st==="call off requested")&&onMine(r.JobNo,r.JobName); }).map(function(r){ var st=String(val(r.Status)||"").trim().toLowerCase(), d=dkey(r.PlannedOffDate); return {title:r.Title||"Rental",job:onMine(r.JobNo,r.JobName),callOff:st==="call off requested",off:okDate(d)?d:"",past:okDate(d)&&d<today,callNo:r.CallOffNo||""}; }); }),
+    /* e. closeout */
+    sec("close",async function(){ var id=await named("Job Closeout"), rows=await pullAll(id,"JobNo,JobName,PctComplete,OpenCount");
+      return rows.filter(function(r){ return onMine(r.JobNo,r.JobName); }).map(function(r){ var p=num(r.PctComplete); if(p>0&&p<=1&&String(r.PctComplete).indexOf(".")>-1) p*=100; var j=onMine(r.JobNo,r.JobName); return {no:j,name:r.JobName||JN[j]||"",p:Math.max(0,Math.min(100,p)),open:(r.OpenCount==null||r.OpenCount==="")?null:num(r.OpenCount)}; }); })
+  ]);
+  if(partial) R._partial=true;
+  return R;
 };
 
 /* ===== charts (inline SVG / CSS, sized from the live box so text stays in vw) ===== */
@@ -504,16 +589,17 @@ function pipeFeetSlide(S){
     '<div class="card" style="flex:1"><div class="kl" style="font-size:2.5vw">Last 8 weeks &middot; all pipe materials</div><div class="chart" data-chart="pcol" style="margin-top:1.6vh"></div></div></div>',
     draw:function(el){ columns(el.querySelector('[data-chart="pcol"]'),{vals:S.weeks.map(function(w,i){return wk(S,i,"Pipe","*").out;}),labels:weekLabels(S),color:"var(--s1)",aria:"Pipe feet per week"}); }};
 }
-/* office */
-var DASHFRAME=null;
-function dashSlide(){
-  return {key:"dash",flush:true,persistent:true,
-    build:function(el){ el.innerHTML='<div class="dashwrap"></div>'; var f=document.createElement("iframe"); f.src="/dashboard.html"; f.title="Owner dashboard"; f.setAttribute("tabindex","-1");
-      f.style.width=(100/ZOOM)+"%"; f.style.height=(100/ZOOM)+"%"; f.style.transform="scale("+ZOOM+")"; el.firstChild.appendChild(f); DASHFRAME=f; },
+/* owner: same-origin portal pages in a zoomed iframe (they share this origin's MSAL cache and sign in silently),
+   slowly scrolled top → bottom → top; the rotation timer waits for the scroll to finish */
+var FRAMES={};
+function frameSlide(key,src,title){
+  return {key:key,flush:true,persistent:true,
+    build:function(el){ el.innerHTML='<div class="dashwrap"></div>'; var f=document.createElement("iframe"); f.src=src; f.title=title; f.setAttribute("tabindex","-1");
+      f.style.width=(100/ZOOM)+"%"; f.style.height=(100/ZOOM)+"%"; f.style.transform="scale("+ZOOM+")"; el.firstChild.appendChild(f); FRAMES[key]=f; },
     runner:function(){
-      var st=performance.now(), last=0;
+      var st=performance.now(), last=0, FR=FRAMES[key];
       return function(now){
-        var t=(now-st)/1000, se=null; try{ se=DASHFRAME.contentDocument&&DASHFRAME.contentDocument.scrollingElement; }catch(e){}
+        var t=(now-st)/1000, se=null; try{ se=FR.contentDocument&&FR.contentDocument.scrollingElement; }catch(e){}
         var max=0; if(se) max=Math.max(0,se.scrollHeight-se.clientHeight);
         if(max<20){ return {p:t/45,done:t>=45}; }
         var hold1=6, down=Math.min(62,Math.max(36,max/22)), hold2=5, up=9, hold3=3, total=hold1+down+hold2+up+hold3, yv;
@@ -525,8 +611,9 @@ function dashSlide(){
     }};
 }
 function emailOf(r){ return String(r.AssignedTo||"").toLowerCase(); }
-function actionSlides(A){
+function actionSlides(A,mineOnly){
   var today=iso(new Date()), wkEnd=iso(addDays(new Date(),7));
+  if(!WHO_PARAM) WHO=String((account&&account.username)||"").toLowerCase();
   var mine=A.open.filter(function(r){ var e=emailOf(r); return e===WHO||e.split(/[;,\s]+/).indexOf(WHO)>-1; });
   var name=(mine[0]&&String(mine[0].AssignedToName||"").trim())||WHO.split("@")[0]; var firstName=name.split(/\s+/)[0]; firstName=firstName.charAt(0).toUpperCase()+firstName.slice(1);
   function bucket(r){ var d=dkey(r.DueDate); if(!okDate(d)) return 3; if(d<today) return 0; if(d<=wkEnd) return 1; return 2; }
@@ -546,6 +633,7 @@ function actionSlides(A){
         var job=(r.JobNo||r.JobName)?esc([r.JobName,r.JobNo].filter(Boolean).join(" · ")):"";
         return '<div class="arow'+(b===0?" od":"")+'">'+due+'<div style="min-width:0"><div class="t">'+esc(r.Title||"(untitled)")+'</div>'+(job?'<div class="j">'+job+'</div>':'')+'</div><div>'+(pr&&pr!=="Normal"?'<span class="pill '+(/high|urgent|rush/i.test(pr)?"p-hi":"p-lo")+'">'+esc(pr.toUpperCase())+'</span>':'')+'</div></div>'; }).join("")+'</div>'});
   }
+  if(mineOnly) return out;
   /* company-wide overdue by person */
   var by={}; A.open.forEach(function(r){ var d=dkey(r.DueDate); if(!okDate(d)||d>=today) return; var n=String(r.AssignedToName||"").trim()||emailOf(r)||"Unassigned"; by[n]=(by[n]||0)+1; });
   var people=Object.keys(by).sort(function(a,b){return by[b]-by[a]||a.localeCompare(b);}), tot=people.reduce(function(s,k){return s+by[k];},0);
@@ -553,6 +641,72 @@ function actionSlides(A){
   var items=shown.map(function(k){return {label:k,v:by[k],txt:String(by[k])};}); if(rest) items.push({label:"Everyone else ("+(people.length-9)+")",v:rest,txt:String(rest)});
   out.push({key:"overdue",html:'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:2vw"><h2 class="st">Overdue action items <span class="k">· by person</span></h2><div class="qsum"><b>'+tot+'</b> overdue &middot; <b>'+A.open.length+'</b> open</div></div>'+
     (tot?'<div class="card" style="flex:1;margin-top:3vh;justify-content:center">'+hbars(items)+'</div>':'<div class="center"><div class="hero" style="color:var(--goodtxt)">&#10003;</div><div class="big2">No overdue action items</div></div>')});
+  return out;
+}
+/* ===== PM channel slides (job-scoped, no dollars) ===== */
+function pmFirst(P){ var n=String(P.name||"").trim()||String(P.email||"").split("@")[0]; n=n.split(/\s+/)[0]; return n.charAt(0).toUpperCase()+n.slice(1); }
+function jl(no,name){ return name?esc(name)+' <span style="color:var(--muted)">· '+esc(no)+'</span>':esc(no); }
+function pageHead(title,k,p,pages,sum){ return '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:2vw"><h2 class="st">'+title+(k||pages>1?' <span class="k">'+(k?'· '+k:'')+(pages>1?' · '+(p+1)+' of '+pages:'')+'</span>':'')+'</h2>'+(sum||'')+'</div>'; }
+function paged(key,items,per,fn){ var pages=Math.max(1,Math.ceil(items.length/per)), out=[]; for(var p=0;p<pages;p++) out.push({key:key+(p+1),html:fn(items.slice(p*per,(p+1)*per),p,pages)}); return out; }
+function pfPill(v){ if(v==null) return '<span style="color:var(--muted)">—</span>'; var c=v>=1?"pf-g":(v>=0.9?"pf-w":"pf-b"); return '<span class="pill '+c+'">'+(v>=1?"&#9650; ":v>=0.9?"&#9679; ":"&#9660; ")+(Math.round(v*100)/100).toFixed(2)+'</span>'; }
+function pmSlides(P){
+  var out=[], who=pmFirst(P);
+  if(!P.jobs.length){ out.push({key:"pmnone",html:'<h2 class="st">'+esc(who)+'’s jobs</h2><div class="center"><div class="big2">No jobs list you as PM</div><div class="mid">Set the PM on each job in <b style="color:var(--ink)">Job Setup</b>'+(P.name?' — looking for “'+esc(P.name)+'”':' — signed in as '+esc(P.email))+'.</div></div>'}); return out; }
+  /* b. jobs at a glance */
+  if(P.sched&&P.sched.length){
+    var rows=P.sched.slice().sort(function(a,b){ return (a.pf==null?9:a.pf)-(b.pf==null?9:b.pf)||a.no.localeCompare(b.no); });
+    var cols="grid-template-columns:1fr 7vw 7.5vw 7.5vw 6.5vw 7.5vw 9.5vw 8.5vw";
+    out=out.concat(paged("pmjobs",rows,7,function(rs,p,pages){
+      return pageHead(esc(who)+'’s jobs','hours',p,pages,'<div class="qsum">this pay week &middot; to date</div>')+
+        '<div class="rows"><div class="row hd" style="'+cols+'"><div>Job</div><div class="num">Hrs wk</div><div class="num">Budget</div><div class="num">Actual</div><div class="num">Done</div><div class="num">Earned</div><div class="num">PF</div><div class="num">Forecast</div></div>'+
+        rs.map(function(j){ var over=j.fc!=null&&j.bud>0&&j.fc>j.bud;
+          return '<div class="row'+(j.pf!=null&&j.pf<0.9?" late":"")+'" style="'+cols+';font-size:2.4vw;height:auto;min-height:9vh;padding-top:.8vh;padding-bottom:.8vh"><div style="min-width:0"><div class="el">'+esc(j.name||j.no)+'</div>'+(j.name?'<div class="el" style="font-size:1.8vw;color:var(--muted)">'+esc(j.no)+'</div>':'')+'</div><div class="num">'+fmt(j.wk)+'</div><div class="num">'+(j.tasks?fmt(j.bud):'<span style="color:var(--muted)">—</span>')+'</div><div class="num">'+fmt(j.act)+'</div><div class="num">'+(j.bud>0?Math.round(j.pct)+'%':'—')+'</div><div class="num">'+(j.bud>0?fmt(j.earn):'—')+'</div><div class="num">'+pfPill(j.pf)+'</div><div class="num'+(over?' lt':'')+'">'+(j.fc==null?'—':fmt(j.fc))+'</div></div>'; }).join("")+'</div>'+
+        '<div class="more">PF = earned ÷ actual hrs (1.00+ on track) · Forecast = actual ÷ % done, red if over budget</div>';
+    }));
+  }
+  /* c. field reporting */
+  if(P.field&&P.field.length){
+    var now=new Date(), mon=new Date(now); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); var stale=iso(addDays(mon,-7));
+    var fr=P.field.map(function(f){ var bad=0, log, la;
+      if(f.logs) log='<span class="ok">&#10003; '+f.logs+' log'+(f.logs>1?"s":"")+' in</span>';
+      else if(f.crews){ log='<span class="lt">&#9888; Missing</span>'; bad=2; }
+      else log='<span style="color:var(--muted)">No time yet</span>';
+      if(f.lookErr) la='<span style="color:var(--muted)">—</span>';
+      else if(!f.look){ la='<span class="warnt">&#9888; None on file</span>'; bad=Math.max(bad,1); }
+      else { var old=f.look.week<stale; la=(f.look.late||old?'<span class="lt">&#9888; ':'<span>')+esc(shortD(f.look.week))+(f.look.late?' · LATE':old?' · stale':'')+(f.look.status?' · '+esc(f.look.status):'')+'</span>'; if(f.look.late||old) bad=Math.max(bad,2); }
+      return {f:f,bad:bad,log:log,la:la}; }).sort(function(a,b){ return b.bad-a.bad||a.f.no.localeCompare(b.f.no); });
+    var miss=fr.filter(function(x){return x.f.crews&&!x.f.logs;}).length;
+    var cols2="grid-template-columns:1fr 19vw 33vw";
+    out=out.concat(paged("pmfield",fr,7,function(rs,p,pages){
+      return pageHead('Field reporting','my jobs',p,pages,'<div class="qsum">'+(miss?'<span class="lt">&#9888; '+miss+' log'+(miss>1?"s":"")+' missing today</span>':'<b>Daily logs</b> today')+'</div>')+
+        '<div class="rows"><div class="row hd" style="'+cols2+'"><div>Job</div><div>Daily log today</div><div>Latest look-ahead (week of)</div></div>'+
+        rs.map(function(x){ return '<div class="row'+(x.bad>=2?" late":"")+'" style="'+cols2+';font-size:2.4vw"><div class="el">'+jl(x.f.no,x.f.name)+'</div><div class="el">'+x.log+'</div><div class="el">'+x.la+'</div></div>'; }).join("")+'</div>';
+    }));
+  }
+  /* d. watch list */
+  var W=[], JN=P.JN||{};
+  (P.fit||[]).forEach(function(t){ W.push({sev:t.late?0:2,type:"FITTING",main:(t.rush?'<span class="pill p-rush">RUSH</span> ':'')+esc(t.no),job:t.job,right:t.late?'<span class="lt">&#9888; LATE '+esc(shortD(t.need))+'</span>':esc(t.st)+(t.need?' · need '+esc(shortD(t.need)):'')}); });
+  (P.rent||[]).forEach(function(r){ var sev=r.past?0:(r.callOff?1:2); W.push({sev:sev,type:"RENTAL",main:esc(r.title),job:r.job,right:r.past?'<span class="lt">&#9888; '+daysBetween(r.off,iso(new Date()))+'d past off date</span>':r.callOff?'<span class="warnt">Call-off '+(r.callNo?'#'+esc(r.callNo):'requested')+'</span>':'On rent'+(r.off?' · off '+esc(shortD(r.off)):' · no off date')}); });
+  (P.tm||[]).forEach(function(t){ var old=t.age!=null&&t.age>7; W.push({sev:old?0:1,type:"T&amp;M",main:esc(t.no||"—"),job:t.job,right:t.date?(old?'<span class="lt">&#9888; unsigned '+t.age+' days</span>':'<span class="warnt">unsigned · '+esc(shortD(t.date))+'</span>'):'<span class="warnt">unsigned</span>'}); });
+  if(P.fit||P.rent||P.tm){
+    W.sort(function(a,b){return a.sev-b.sev;});
+    var red=W.filter(function(x){return x.sev===0;}).length;
+    var cols3="grid-template-columns:11vw 1fr 28vw 26vw";
+    if(!W.length) out.push({key:"pmwatch1",html:pageHead('Watch list','my jobs',0,1,'')+'<div class="center"><div class="hero" style="color:var(--goodtxt)">&#10003;</div><div class="big2">Nothing to chase</div><div class="mid">No unsigned T&amp;M, open fitting tickets or rentals on your jobs.</div></div>'});
+    else out=out.concat(paged("pmwatch",W,7,function(rs,p,pages){
+      return pageHead('Watch list','my jobs',p,pages,'<div class="qsum"><b>'+W.length+'</b> open'+(red?' &middot; <span class="lt">&#9888; '+red+' need action</span>':'')+'</div>')+
+        '<div class="rows">'+rs.map(function(x){ return '<div class="row'+(x.sev===0?" late":"")+'" style="'+cols3+';font-size:2.4vw"><div><span class="pill p-new">'+x.type+'</span></div><div class="el">'+x.main+'</div><div class="el" style="color:var(--ink2)">'+esc(JN[x.job]||x.job)+'</div><div class="el">'+x.right+'</div></div>'; }).join("")+'</div>';
+    }));
+  }
+  /* e. closeout */
+  if(P.close&&P.close.length){
+    var cl=P.close.slice().sort(function(a,b){return a.p-b.p;});
+    out=out.concat(paged("pmclose",cl,6,function(rs,p,pages){
+      return pageHead('Closeout','my jobs',p,pages,'')+'<div class="rows" style="gap:1.6vh">'+rs.map(function(x){
+        return '<div class="card" style="padding:1.6vh 2vw;flex:none"><div style="display:flex;align-items:baseline;gap:1.6vw;font-size:2.5vw"><div class="el" style="flex:1;font-weight:700">'+jl(x.no,x.name)+'</div>'+(x.open!=null?'<div style="color:'+(x.open?'var(--ink2)':'var(--goodtxt)')+';white-space:nowrap">'+(x.open?fmt(x.open)+' item'+(x.open===1?"":"s")+' open':'&#10003; nothing open')+'</div>':'')+'<div style="font-weight:800;min-width:7vw;text-align:right">'+Math.round(x.p)+'%</div></div>'+
+          '<div class="meter"><span style="width:'+x.p.toFixed(1)+'%"></span></div></div>'; }).join("")+'</div>';
+    }));
+  }
   return out;
 }
 /* lobby — company KPIs only: no names, no job names, no dollars */
@@ -568,7 +722,7 @@ function lobbySlides(){
   return out;
 }
 function buildList(){
-  if(!EVER_LOADED&&SCREEN!=="office") return [connectingSlide()];
+  if(!EVER_LOADED&&SCREEN!=="owner") return [connectingSlide()];
   var L=[];
   if(SCREEN==="sm"){
     if(D.shop){ L.push(smRateSlide(D.shop)); L.push(smLbsSlide(D.shop)); }
@@ -579,9 +733,14 @@ function buildList(){
     if(D.shop){ L.push(pipeRateSlide(D.shop)); L.push(pipeFeetSlide(D.shop)); }
     if(D.toolbox&&D.toolbox.talks.length) L.push(toolboxSlide(D.toolbox));
     if(D.inc&&D.inc.visible>0) L.push(incSlide(D.inc));
-  } else if(SCREEN==="office"){
-    L.push(dashSlide());
+  } else if(SCREEN==="owner"){
+    L.push(frameSlide("dash","/dashboard.html","Owner dashboard"));
     if(D.actions) L=L.concat(actionSlides(D.actions));
+    L.push(frameSlide("manpower","/manpower.html","Manpower load"));
+  } else if(SCREEN==="pm"){
+    if(D.pmj&&D.pmj.name) E("chan").textContent="Project Manager — "+D.pmj.name;
+    if(D.actions) L=L.concat(actionSlides(D.actions,true));
+    if(D.pmj) L=L.concat(pmSlides(D.pmj));
   } else L=lobbySlides();
   if(!L.length) L.push(brandSlide());
   return L;
