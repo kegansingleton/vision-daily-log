@@ -50,6 +50,15 @@
     var go=document.getElementById("vmInstGo"); if(go) go.onclick=function(){ if(!deferredInstall) return; deferredInstall.prompt(); deferredInstall.userChoice.then(function(){ deferredInstall=null; b.remove(); }); };
   }
   ready(function(){ if(isIOS()&&!standalone()&&/safari/i.test(navigator.userAgent)&&!/crios|fxios|edgios/i.test(navigator.userAgent)) installBanner(); });
+  /* ===== Home button on every page (the installed app has no browser back/home bar) ===== */
+  var DIRTY=false; document.addEventListener("input",function(e){ if(e.isTrusted) DIRTY=true; },true);
+  ready(function(){
+    if(/\/(portal|index|display)\.html$|\/$/.test(location.pathname)) return;
+    var h=el("a","position:fixed;left:10px;bottom:128px;z-index:9990;background:rgba(17,24,39,.88);color:#fff;text-decoration:none;border-radius:18px;padding:7px 13px;font:700 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:.9","&#8962; Home");
+    h.href="/portal.html"; h.id="vmHome"; h.setAttribute("data-html2canvas-ignore","1");
+    h.onclick=function(e){ if(DIRTY&&!confirm("Leave this page? Anything you haven't submitted will be lost.")) e.preventDefault(); };
+    document.body.appendChild(h);
+  });
   var shot="";
   ready(function(){
     if(/[?&]print=/.test(location.search)) return;
