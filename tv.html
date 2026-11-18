@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision TV Setup</title>
+<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" href="/favicon-32.png">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<style>
+  :root{--bg:#111827;--card:#1f2937;--line:#374151;--txt:#f9fafb;--mute:#9ca3af;--red:#c0392b;--focus:#facc15}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:22px -apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center}
+  .wrap{width:100%;max-width:1100px;padding:40px 28px}
+  h1{font-size:40px;margin:0 0 6px}
+  .sub{color:var(--mute);margin:0 0 28px}
+  h2{font-size:24px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin:28px 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  button{font:inherit;color:var(--txt);background:var(--card);border:3px solid var(--line);border-radius:14px;padding:22px 18px;text-align:left;cursor:pointer;outline:none}
+  button small{display:block;color:var(--mute);font-size:16px;margin-top:4px}
+  button:focus,button:hover{border-color:var(--focus);background:#273449}
+  button.primary{background:var(--red);border-color:var(--red);text-align:center;font-weight:800}
+  button.primary:focus{border-color:var(--focus)}
+  .card{background:var(--card);border-radius:16px;padding:26px;margin-bottom:20px}
+  .msg{color:var(--mute);margin-top:14px}
+  .big{font-size:30px;font-weight:800}
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vision TV setup</h1>
+  <p class="sub">Use the arrow buttons on the remote to move, and the center button to pick.</p>
+
+  <!-- step 1: sign in -->
+  <div id="stepSign" class="card hide">
+    <div class="big">Step 1 — Sign in</div>
+    <p>Sign in with the TV account <b>pguest@visionmech.net</b> (Kegan has the password). When it asks <b>“Stay signed in?”</b> pick <b>Yes</b>.</p>
+    <div class="row">
+      <button class="primary" id="btnSign">Sign in</button>
+      <button id="btnSignOther">Use a different account</button>
+    </div>
+    <div class="msg" id="signMsg"></div>
+  </div>
+
+  <!-- saved choice: auto-start -->
+  <div id="stepAuto" class="card hide">
+    <div class="big" id="autoTitle"></div>
+    <p id="autoTxt"></p>
+    <div class="row">
+      <button class="primary" id="btnGoNow">Start now</button>
+      <button id="btnChange">Pick a different screen</button>
+    </div>
+  </div>
+
+  <!-- step 2: pick screen -->
+  <div id="stepPick" class="hide">
+    <div class="big">Step 2 — What should this TV show?</div>
+    <p class="msg" id="who"></p>
+    <h2>Project manager screens</h2>
+    <div class="grid" id="pmGrid"><div class="msg">Loading project managers…</div></div>
+    <h2>Other screens</h2>
+    <div class="grid" id="otherGrid"></div>
+    <div class="row"><button id="btnSignOut">Sign out of this TV</button></div>
+  </div>
+</div>
+
+<script>
+var CLIENT="ece3c8e3-0f54-49dc-bf83-b46411ade0aa", AUTH="https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3";
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var JOBS="836523ba-cd20-4736-98ce-5716668b8973", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
+var TV_ACCOUNT="pguest@visionmech.net", LS_USER="vmDisplayLastUser", LS_CHOICE="vmTvChoice", AUTO_SECS=15;
+var OTHER=[
+  {label:"Owner screen",note:"Dashboard, action items, manpower",url:"/display.html?screen=owner"},
+  {label:"Lobby",note:"Safety, workload, service — no names",url:"/display.html?screen=lobby"},
+  {label:"Sheet metal shop",note:"Fab rates, shop queue, toolbox, safety",url:"/display.html?screen=sm"},
+  {label:"Pipe shop",note:"Fab rates, toolbox, safety",url:"/display.html?screen=pipe"}
+];
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function show(id){["stepSign","stepAuto","stepPick"].forEach(function(s){E(s).classList.toggle("hide",s!==id);}); var f=E(id).querySelector("button"); if(f) f.focus();}
+function val(v){return (v&&typeof v==="object"&&"Value" in v)?v.Value:v;}
+function yes(v){return v===true||v==="Yes"||v==="yes"||v==="true"||v===1;}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+
+var msalApp, account=null;
+async function token(){ var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account}); return r.accessToken; }
+async function pull(list,select){
+  var t=await token(), out=[], url="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+list+"/items?$expand=fields($select="+select+")&$top=999";
+  while(url){ var r=await fetch(url,{headers:{Authorization:"Bearer "+t}}); if(!r.ok) throw new Error("HTTP "+r.status); var j=await r.json(); (j.value||[]).forEach(function(i){out.push(i.fields||{});}); url=j["@odata.nextLink"]||null; }
+  return out;
+}
+function signIn(hint){ var o={scopes:[SCOPE],prompt:"select_account"}; if(hint){ o.loginHint=hint; delete o.prompt; } msalApp.loginRedirect(o); }
+
+function go(choice){ lsSet(LS_CHOICE,JSON.stringify(choice)); location.href=choice.url; }
+function button(c){ var b=document.createElement("button"); b.innerHTML=esc(c.label)+(c.note?"<small>"+esc(c.note)+"</small>":""); b.onclick=function(){go(c);}; return b; }
+
+async function loadPMs(){
+  var g=E("pmGrid");
+  try{
+    var jobs=await pull(JOBS,"Title,PMName,Archive"), emps=await pull(EMP,"EmployeeName,LoginEmail,Active");
+    var count={}; jobs.forEach(function(j){ if(yes(val(j.Archive))) return; var pm=String(val(j.PMName)||"").trim(); if(pm) count[pm]=(count[pm]||0)+1; });
+    var names=Object.keys(count).sort();
+    g.innerHTML="";
+    if(!names.length){ g.innerHTML='<div class="msg">No jobs have a PM set yet. Set PMs in Job Setup, then come back.</div>'; return; }
+    names.forEach(function(n){
+      var emp=emps.filter(function(f){ return String(f.EmployeeName||"").trim().toLowerCase()===n.toLowerCase(); })[0];
+      var email=(emp&&String(emp.LoginEmail||"").trim().toLowerCase())||autoEmail(n);
+      if(!email) return;
+      g.appendChild(button({label:n,note:count[n]+" open job"+(count[n]===1?"":"s"),url:"/display.html?screen=pm&who="+encodeURIComponent(email)}));
+    });
+    var first=g.querySelector("button"); if(first) first.focus();
+  }catch(e){ g.innerHTML='<div class="msg">Couldn’t load the PM list ('+esc(e.message)+'). Check the Wi-Fi, then press the center button to try again.</div>'; var b=document.createElement("button"); b.textContent="Try again"; b.onclick=loadPMs; g.appendChild(b); b.focus(); }
+}
+
+function pickScreen(){
+  E("who").textContent="Signed in as "+account.username;
+  var og=E("otherGrid"); og.innerHTML=""; OTHER.forEach(function(c){ og.appendChild(button(c)); });
+  show("stepPick"); loadPMs();
+}
+
+function autoStart(choice){
+  E("autoTitle").textContent="Starting: "+choice.label;
+  var n=AUTO_SECS, t;
+  function tick(){ E("autoTxt").textContent="Opening in "+n+" seconds…"; if(n--<=0){ clearInterval(t); location.href=choice.url; } }
+  tick(); t=setInterval(tick,1000);
+  E("btnGoNow").onclick=function(){ clearInterval(t); location.href=choice.url; };
+  E("btnChange").onclick=function(){ clearInterval(t); pickScreen(); };
+  show("stepAuto");
+}
+
+/* arrow-key navigation for TV remotes */
+document.addEventListener("keydown",function(e){
+  var k=e.key; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(k)<0) return;
+  var bs=[].slice.call(document.querySelectorAll("button")).filter(function(b){return b.offsetParent!==null;}); if(!bs.length) return;
+  var cur=document.activeElement; if(bs.indexOf(cur)<0){ bs[0].focus(); e.preventDefault(); return; }
+  var r=cur.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2, best=null, bd=1e9;
+  bs.forEach(function(b){ if(b===cur) return; var q=b.getBoundingClientRect(), x=q.left+q.width/2, y=q.top+q.height/2, dx=x-cx, dy=y-cy;
+    var ok=(k==="ArrowRight"&&dx>5)||(k==="ArrowLeft"&&dx<-5)||(k==="ArrowDown"&&dy>5)||(k==="ArrowUp"&&dy<-5); if(!ok) return;
+    var d=(k==="ArrowLeft"||k==="ArrowRight")?Math.abs(dx)+Math.abs(dy)*3:Math.abs(dy)+Math.abs(dx)*3; if(d<bd){bd=d;best=b;} });
+  if(best){ best.focus(); best.scrollIntoView({block:"nearest"}); e.preventDefault(); }
+});
+
+(async function(){
+  msalApp=new msal.PublicClientApplication({auth:{clientId:CLIENT,authority:AUTH,redirectUri:location.origin+location.pathname},cache:{cacheLocation:"localStorage"}});
+  var resp=null; try{ resp=await msalApp.handleRedirectPromise(); }catch(e){ E("signMsg").textContent="Sign-in error: "+(e.message||e); }
+  account=(resp&&resp.account)||msalApp.getActiveAccount()||(msalApp.getAllAccounts()||[])[0]||null;
+  E("btnSign").onclick=function(){ signIn(TV_ACCOUNT); };
+  E("btnSignOther").onclick=function(){ signIn(""); };
+  E("btnSignOut").onclick=function(){ lsDel(LS_CHOICE); msalApp.logoutRedirect({account:account,postLogoutRedirectUri:location.origin+location.pathname}); };
+  if(!account){ show("stepSign"); return; }
+  try{ msalApp.setActiveAccount(account); }catch(e){}
+  lsSet(LS_USER,account.username);
+  try{ await token(); }catch(e){ show("stepSign"); E("signMsg").textContent="Your sign-in expired. Sign in again."; return; }
+  var saved=null; try{ saved=JSON.parse(lsGet(LS_CHOICE)||"null"); }catch(e){}
+  if(saved&&saved.url&&!resp) autoStart(saved); else pickScreen();
+})();
+</script>
+</body>
+</html>
