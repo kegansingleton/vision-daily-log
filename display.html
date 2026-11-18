@@ -103,6 +103,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 .tiles{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2.6vw;margin-top:3.5vh;min-height:0}
 .tile{background:var(--surface);border-radius:1.6vh;padding:5vh 2.6vw;display:flex;flex-direction:column;justify-content:center}
 .tile .kv{font-size:12vw}
+.tiles.money{grid-auto-columns:minmax(0,1fr)}.tiles.money .tile{min-width:0}.tiles.money .tile .kv{font-size:7.6vw;white-space:nowrap}
 .tile .kl{font-size:3vw;color:var(--ink);min-height:7vw;align-items:flex-end}
 .tile .ks{margin-top:1.4vh}
 /* brand */
@@ -277,7 +278,7 @@ async function loadKey(key,fn){
 var LOADERS={
   sm:["shop","queue","toolbox","inc"],
   pipe:["shop","toolbox","inc"],
-  owner:["actions"],
+  owner:["actions","bids"],
   pm:["actions","pmj"],
   lobby:["inc","ptp","tcm","pm"]
 };
@@ -386,6 +387,13 @@ FETCH.inc=async function(){
 FETCH.actions=async function(){
   var rows=await pullAll(ACTIONS,"Title,JobNo,JobName,AssignedTo,AssignedToName,DueDate,Status,Priority");
   return {open:rows.filter(function(r){ return String(val(r.Status)||"Open")!=="Done"; })};
+};
+/* --- owner channel: bid hit / miss (Bid Log list is locked to Kegan & Bill; counts and % only, no dollars on screen) --- */
+var BID_OWNERS=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+FETCH.bids=async function(){
+  if(BID_OWNERS.indexOf(meEmail())<0) throw new Missing("Bid Log");
+  var id=await named("Bid Log"), rows=await pullAll(id,"BidDate,Status,Scope,BidAmount,AwardAmount");
+  return {rows:rows.map(function(r){ var st=String(r.Status||"").trim().toLowerCase(); return {d:dkey(r.BidDate),st:st==="won"?"W":st==="lost"?"L":"O",scope:String(r.Scope||"").trim()||"Other",bid:num(r.BidAmount),award:(r.AwardAmount!=null&&r.AwardAmount!=="")?num(r.AwardAmount):null}; })};
 };
 FETCH.ptp=async function(){ var id=await named("Pre-Task Plans"); return {n:(await getRange(id,"PlanDate",monthStart(),iso(new Date()),"PlanDate")).length}; };
 FETCH.tcm=async function(){
@@ -718,6 +726,31 @@ function pmSlides(P){
 }
 /* lobby — company KPIs only: no names, no job names, no dollars */
 function tile(label,v,sub){ return '<div class="tile"><div class="kl">'+label+'</div><div class="kv'+(v==null?" dash":"")+'">'+(v==null?"—":v)+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>'; }
+function bidStats(rows){ var w=0,l=0,o=0; rows.forEach(function(r){ if(r.st==="W") w++; else if(r.st==="L") l++; else o++; }); return {w:w,l:l,o:o,dec:w+l,pct:(w+l)?Math.round(w/(w+l)*100):null}; }
+function bidSlides(B){
+  var rows=B.rows, all=bidStats(rows), yr=String(new Date().getFullYear()), d12=iso(addDays(new Date(),-365));
+  var ty=bidStats(rows.filter(function(r){return r.d.slice(0,4)===yr;})), l12=bidStats(rows.filter(function(r){return r.d>=d12;}));
+  function pc(s){ return s.pct==null?null:s.pct+"<small>%</small>"; }
+  function wl(s){ return s.dec?'<b>'+s.w+'</b> won &middot; <b>'+s.l+'</b> lost':"no decided bids yet"; }
+  var out=[{key:"bids1",html:'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:2vw"><h2 class="st">Bid hit / miss <span class="k">· won ÷ (won + lost)</span></h2><div class="qsum"><b>'+fmt(all.o)+'</b> bids still open</div></div><div class="tiles">'+
+    tile("All time",pc(all),wl(all))+tile("This year &middot; "+yr,pc(ty),wl(ty))+tile("Last 12 months",pc(l12),wl(l12))+'</div>'}];
+  /* dollars this year vs last year (owners' screens only) */
+  function usd(n){ var a=Math.abs(n); return a>=1e6?"$"+(Math.round(n/1e5)/10)+"<small>M</small>":a>=1e3?"$"+Math.round(n/1e3)+"<small>K</small>":"$"+Math.round(n); }
+  function usdTxt(n){ var a=Math.abs(n); return a>=1e6?"$"+(Math.round(n/1e5)/10)+"M":a>=1e3?"$"+Math.round(n/1e3)+"K":"$"+Math.round(n); }
+  function dollars(y){ var b=0,a=0,nb=0,nw=0,o=0,no=0; rows.forEach(function(r){ if(r.d.slice(0,4)!==y) return; nb++; b+=r.bid||0; if(r.st==="W"){ nw++; a+=(r.award!=null?r.award:(r.bid||0)); } else if(r.st==="O"){ no++; o+=r.bid||0; } }); return {b:b,a:a,nb:nb,nw:nw,o:o,no:no}; }
+  var cy=dollars(yr), py=dollars(String(+yr-1));
+  out.push({key:"bids3",html:'<h2 class="st">Dollars bid &amp; awarded <span class="k">· '+yr+' so far</span></h2><div class="tiles money">'+
+    tile("Total bid",usd(cy.b),'<b>'+cy.nb+'</b> bids &middot; '+(+yr-1)+': '+usdTxt(py.b))+
+    tile("Awarded",usd(cy.a),'<b>'+cy.nw+'</b> won &middot; '+(+yr-1)+': '+usdTxt(py.a))+
+    tile("Still out",usd(cy.o),'<b>'+cy.no+'</b> bids pending or no status')+'</div>'});
+  function items(groups,order){ return order.map(function(k){ var s=bidStats(groups[k]); return {label:k,v:s.pct,txt:s.pct==null?"":s.pct+"%",sub:s.dec?s.w+"–"+s.l:"",none:"no decided bids"}; }); }
+  var byY={}, byS={}; rows.forEach(function(r){ var y=r.d.slice(0,4)||"No date"; (byY[y]=byY[y]||[]).push(r); (byS[r.scope]=byS[r.scope]||[]).push(r); });
+  var ys=Object.keys(byY).sort().reverse().slice(0,5), ss=Object.keys(byS).sort(function(a,b){return byS[b].length-byS[a].length;}).slice(0,6);
+  out.push({key:"bids2",html:'<h2 class="st">Hit ratio <span class="k">· by year and by project type</span></h2><div class="body" style="gap:2.4vw;margin-top:3vh">'+
+    '<div class="card" style="flex:1;justify-content:center"><div class="kl" style="margin-bottom:2.4vh">By year</div>'+hbars(items(byY,ys),100)+'</div>'+
+    '<div class="card" style="flex:1;justify-content:center"><div class="kl" style="margin-bottom:2.4vh">By project type</div>'+hbars(items(byS,ss),100)+'</div></div>'});
+  return out;
+}
 function lobbySlides(){
   var out=[brandSlide()], today=iso(new Date()), mn=esc(monthName());
   var t=[];
@@ -743,6 +776,7 @@ function buildList(){
   } else if(SCREEN==="owner"){
     L.push(frameSlide("dash","/dashboard.html","Owner dashboard"));
     if(D.actions) L=L.concat(actionSlides(D.actions));
+    if(D.bids&&D.bids.rows.length) L=L.concat(bidSlides(D.bids));
     L.push(frameSlide("manpower","/manpower.html","Manpower load"));
   } else if(SCREEN==="pm"){
     if(D.pmj&&D.pmj.name) E("chan").textContent="Project Manager — "+D.pmj.name;
