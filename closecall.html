@@ -31,6 +31,19 @@ textarea{min-height:100px;resize:vertical}
 .gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .msg{padding:12px;border-radius:9px;font-size:14px;margin:10px 0;display:none}
 .msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:#fde8e8;color:#b91c1c;display:block}
+.vtabs{display:flex;gap:6px;margin:4px 0 4px}.vtabs button{flex:1;text-align:center;padding:10px 6px;border-radius:10px;background:#fff;border:1.5px solid var(--line);color:var(--ink);font-weight:800;font-size:14px;cursor:pointer}.vtabs button.cur{background:var(--vm);border-color:var(--vm);color:#fff}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.tools input,.tools select{width:100%;padding:10px;font-size:15px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}.tools .full{grid-column:1/-1}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.tile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}.tile .n{font-size:24px;font-weight:800}.tile .l{font-size:12px;color:var(--mut)}
+.lst{display:flex;flex-direction:column;gap:8px}.it{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;cursor:pointer}.it:hover{border-color:var(--vm)}.it .m{flex:1;min-width:0}.it .t{font-weight:800;font-size:14.5px}.it .s{font-size:13px;color:var(--mut);margin-top:3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pill{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:999px;background:#f3f4f6;color:#374151;white-space:nowrap}.p-sub{background:#fef3c7;color:#92400e}.p-rev{background:#dbeafe;color:#1e40af}.p-act{background:#ede9fe;color:#5b21b6}.p-cl{background:var(--okbg);color:var(--ok)}.p-rw{background:#fde8e8;color:#b91c1c}
+.pills{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.empty{text-align:center;color:var(--mut);padding:30px 10px;font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9993;display:none;overflow:auto;padding:16px 10px}.modal .box{background:#fff;max-width:640px;margin:0 auto;border-radius:14px;padding:16px}
+.modal h3{margin:0 0 10px;font-size:17px;color:var(--vm2)}
+table.dt{border-collapse:collapse;width:100%;font-size:14px}table.dt td{padding:5px 10px 5px 0;vertical-align:top;border-bottom:1px solid #f3f4f6}table.dt td:first-child{color:var(--mut);white-space:nowrap;width:1%;font-weight:600}
+.rv{background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px}.rv select,.rv textarea{width:100%;padding:10px;font-size:15px;border:1px solid var(--line);border-radius:9px;font-family:inherit;background:#fff}
+.mrow{display:flex;gap:8px;margin-top:12px}.mrow button{flex:1;padding:12px;border-radius:10px;border:none;font-weight:800;font-size:15px;cursor:pointer}.b-g{background:#f3f4f6;color:var(--ink)}.b-r{background:var(--vm);color:#fff}
+.lnk{background:none;border:none;color:var(--vm);font-weight:700;font-size:13px;cursor:pointer;padding:4px 0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -52,6 +65,19 @@ textarea{min-height:100px;resize:vertical}
   <div><h1>Safety Close-Call Report</h1><div class="who" id="who"></div></div>
 </div></header>
 <div class="wrap" id="app" style="display:none">
+  <div class="vtabs" id="vtabs"><button data-tab="form" class="cur">&#9888;&#65039; New report</button><button data-tab="list" id="tabList">&#128203; My reports</button></div>
+  <div id="listView" style="display:none">
+    <div class="tiles" id="tiles" style="display:none"></div>
+    <div class="tools">
+      <input type="search" id="fq" class="full" placeholder="Search worker, jobsite, details…">
+      <select id="fKind"><option value="">All kinds</option><option>Incident</option><option>Injury</option><option>Injury + Incident</option></select>
+      <select id="fStatus"><option value="">All statuses</option><option>Submitted</option><option>Reviewed</option><option>Action taken</option><option>Closed</option><option value="RW">Reward earned</option></select>
+      <select id="fYear" class="full"><option value="">All years</option></select>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span id="lCount" style="font-size:13px;color:var(--mut)"></span><button class="lnk" id="csvAll" style="display:none">Download CSV</button></div>
+    <div id="list"></div>
+  </div>
+  <div id="formView">
   <div class="card">
     <h2><span class="n">1</span> Report info</h2>
     <div class="grid2">
@@ -79,7 +105,23 @@ textarea{min-height:100px;resize:vertical}
     <label>Details</label><textarea id="incDetails" placeholder="What happened or could have happened, and what would prevent it"></textarea>
   </div>
   <div class="msg" id="msg"></div>
+  </div>
 </div>
+<div class="modal" id="rModal"><div class="box">
+  <h3 id="rTitle"></h3>
+  <div id="rBody"></div>
+  <div class="rv" id="rReview" style="display:none">
+    <div style="font-weight:800;font-size:14px;margin-bottom:6px">Safety review</div>
+    <div class="grid2">
+      <div><label>Status</label><select id="rStatus"><option>Submitted</option><option>Reviewed</option><option>Action taken</option><option>Closed</option></select></div>
+      <div><label>Safety incentive reward</label><select id="rReward"><option>No</option><option>Yes</option></select></div>
+    </div>
+    <label>Review notes / what we changed</label><textarea id="rNotes" rows="3"></textarea>
+    <div id="rBy" style="font-size:12px;color:var(--mut);margin-top:6px"></div>
+  </div>
+  <div class="msg" id="rMsg"></div>
+  <div class="mrow"><button class="b-g" id="rClose">Close</button><button class="b-g" id="rPrint">Print</button><button class="b-r" id="rSave" style="display:none">Save review</button></div>
+</div></div>
 <div class="foot" id="foot" style="display:none"><div class="inner"><button class="btn" id="submitBtn">Submit report</button></div></div>
 <script>
 var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
@@ -98,7 +140,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 var msal_i=new msal.PublicClientApplication(MSAL_CONFIG);var loginEmail="";
 function E(id){return document.getElementById(id);}
 function today(){return new Date().toISOString().slice(0,10);}
-function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("worker").value)E("worker").value=(a.name||"").trim();if(!E("ccDate").value)E("ccDate").value=today();loadJobPicks();}
+function showApp(a){E("gate").style.display="none";E("app").style.display="block";E("foot").style.display="block";E("who").textContent=a.username||"";loginEmail=a.username||"";if(!E("worker").value)E("worker").value=(a.name||"").trim();if(!E("ccDate").value)E("ccDate").value=today();loadJobPicks();checkAdmin(a);}
 function start(){msal_i.handleRedirectPromise().then(function(resp){RTOKEN=(resp&&resp.accessToken)?resp.accessToken:null;var a=msal_i.getAllAccounts()[0];if(a){msal_i.setActiveAccount(a);showApp(a);}}).catch(function(e){E("gateMsg").textContent="Sign-in problem: "+String(e);});}
 E("signin").onclick=function(){msal_i.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});};
 function buildText(a){var L=["VISION MECHANICAL - SAFETY CLOSE-CALL REPORT","========================================","Worker: "+a.worker,"Date: "+a.ccDate,"Supervisor: "+a.sup,"Jobsite: "+a.site,"","-- INJURY --","Type: "+a.injType+"   Body part: "+a.bodyPart,"Details: "+a.injDetails,"","-- INCIDENT / CLOSE-CALL --","Type: "+a.accType,"Details: "+a.incDetails,"","Submitted: "+a.submittedAt+" by "+a.loginEmail,"========================================"];return L.join("\n");}
@@ -116,7 +158,82 @@ function submitReport(){
   var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0];
   msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct}).catch(function(){msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]});return new Promise(function(){});}).then(function(tok){return vmPostRetry(GRAPH_ITEMS_URL,tok.accessToken,{fields:fields});}).then(function(){msg.className="msg ok";msg.textContent="Submitted. Thank you for reporting.";btn.textContent="Submitted";}).catch(function(e){msg.className="msg err";msg.textContent="Could not submit yet ("+e.message+"). Move to better signal and tap Submit again.";btn.disabled=false;});
 }
-E("submitBtn").onclick=submitReport;start();
+E("submitBtn").onclick=submitReport;
+/* ===== Turned-in reports: everyone sees their own; admins (site owners) see all + review =====
+   The SharePoint list uses item-level security (read/edit own items) — only site Owners/admins can read everyone's. */
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var IS_ADMIN=false, MY_NAME="", ROWS=[], CUR=null, TAB="form", LOADED=false;
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=d10(s); if(!s) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0]; }
+function yesv(v){return v===true||v==="Yes"||v==="true";}
+function autoEmailCC(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function tokenCC(){ var acct=msal_i.getActiveAccount()||msal_i.getAllAccounts()[0]; try{ return (await msal_i.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct})).accessToken; }catch(e){ msal_i.acquireTokenRedirect({scopes:[GRAPH_SCOPE]}); throw e; } }
+async function gx(url,opt){ opt=opt||{}; var t=await tokenCC(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt); if(!r.ok){ var tx=""; try{tx=await r.text();}catch(e){} throw new Error("HTTP "+r.status+" "+tx.slice(0,140)); } return r.status===204?null:r.json(); }
+async function pullCC(base){ var url=base, out=[]; while(url){ var j=await gx(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+async function checkAdmin(a){
+  var me=String(a.username||"").toLowerCase(); if(VM_SUPER.indexOf(me)>-1) IS_ADMIN=true;
+  try{ var emps=await pullCC("https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+EMP_LIST+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999");
+    emps.forEach(function(f){ var e=String(f.LoginEmail||"").toLowerCase().trim()||autoEmailCC(f.EmployeeName); if(e===me){ MY_NAME=String(f.EmployeeName||"").trim(); if(yesv(f.Admin)&&(f.Active||"Yes")!=="No") IS_ADMIN=true; } }); }catch(e){}
+  if(IS_ADMIN){ E("tabList").innerHTML="&#128203; All reports"; E("tiles").style.display=""; E("csvAll").style.display=""; }
+  if(/[?&]view=list/.test(location.search)) showTab("list");
+}
+function showTab(t){ TAB=t; E("vtabs").querySelectorAll("button").forEach(function(b){ b.classList.toggle("cur",b.getAttribute("data-tab")===t); });
+  E("formView").style.display=t==="form"?"":"none"; E("foot").style.display=t==="form"?"block":"none"; E("listView").style.display=t==="list"?"":"none";
+  if(t==="list") loadRows(); }
+E("vtabs").addEventListener("click",function(e){ var b=e.target.closest("[data-tab]"); if(b) showTab(b.getAttribute("data-tab")); });
+async function loadRows(){
+  E("list").innerHTML='<div class="empty">Loading…</div>';
+  try{ ROWS=await pullCC(GRAPH_ITEMS_URL+"?$expand=fields&$top=999"); }
+  catch(e){ ROWS=[]; E("list").innerHTML='<div class="empty">Couldn\'t load reports ('+esc(e.message)+').</div>'; return; }
+  if(!IS_ADMIN) ROWS=ROWS.filter(function(r){ return String(r.SubmittedBy||"").toLowerCase()===loginEmail.toLowerCase(); });
+  ROWS.sort(function(a,b){ return d10(b.CloseCallDate||b.CloseCallDateText).localeCompare(d10(a.CloseCallDate||a.CloseCallDateText))||(+b._id)-(+a._id); });
+  var yrs={}; ROWS.forEach(function(r){ var y=d10(r.CloseCallDate||r.CloseCallDateText).slice(0,4); if(y) yrs[y]=1; });
+  var fy=E("fYear").value; E("fYear").innerHTML='<option value="">All years</option>'+Object.keys(yrs).sort().reverse().map(function(y){return '<option>'+y+'</option>';}).join(""); E("fYear").value=fy;
+  LOADED=true; renderList();
+}
+function dateOf(r){ return d10(r.CloseCallDate||r.CloseCallDateText); }
+function statusPill(r){ var s=r.Status||"Submitted", c=s==="Closed"?"p-cl":s==="Action taken"?"p-act":s==="Reviewed"?"p-rev":"p-sub"; return '<span class="pill '+c+'">'+esc(s)+'</span>'; }
+function filtered(){ var q=E("fq").value.toLowerCase().trim(), fk=E("fKind").value, fs=E("fStatus").value, fy=E("fYear").value;
+  return ROWS.filter(function(r){ if(fk&&r.ReportKind!==fk) return false; if(fy&&dateOf(r).slice(0,4)!==fy) return false;
+    if(fs==="RW"){ if(r.Reward!=="Yes") return false; } else if(fs&&(r.Status||"Submitted")!==fs) return false;
+    if(q&&[r.WorkerName,r.SupervisorName,r.Jobsite,r.InjuryType,r.BodyPart,r.InjuryDetails,r.AccidentType,r.IncidentDetails,r.SubmittedBy,r.ReviewNotes].join(" ").toLowerCase().indexOf(q)<0) return false; return true; }); }
+function renderList(){
+  if(IS_ADMIN){ var y=today().slice(0,4), open=ROWS.filter(function(r){return (r.Status||"Submitted")==="Submitted";}).length;
+    E("tiles").innerHTML='<div class="tile"><div class="n">'+open+'</div><div class="l">Waiting for review</div></div><div class="tile"><div class="n">'+ROWS.filter(function(r){return dateOf(r).slice(0,4)===y;}).length+'</div><div class="l">Turned in '+y+'</div></div><div class="tile"><div class="n">'+ROWS.filter(function(r){return r.Reward==="Yes";}).length+'</div><div class="l">Rewards earned</div></div>'; }
+  var rows=filtered(); E("lCount").textContent=rows.length+" of "+ROWS.length+" report"+(ROWS.length===1?"":"s");
+  if(!rows.length){ E("list").innerHTML='<div class="empty">'+(ROWS.length?"Nothing matches.":(IS_ADMIN?"No close-call reports yet.":"You haven't turned in any close-call reports."))+'</div>'; return; }
+  E("list").innerHTML='<div class="lst">'+rows.map(function(r){
+    var what=[r.AccidentType,r.IncidentDetails,r.InjuryType,r.BodyPart,r.InjuryDetails].filter(Boolean).join(" · ");
+    return '<div class="it" data-id="'+esc(r._id)+'"><div class="m"><div class="t">'+esc(r.ReportKind||"Close call")+' · '+esc(nice(dateOf(r)))+(r.WorkerName?' <span style="font-weight:600;color:#6b7280">· '+esc(r.WorkerName)+'</span>':'')+'</div><div class="s">'+esc([r.Jobsite,what].filter(Boolean).join(" · "))+'</div></div><div class="pills">'+statusPill(r)+(r.Reward==="Yes"?'<span class="pill p-rw">&#9733; Reward</span>':'')+'</div></div>'; }).join("")+'</div>';
+}
+["fq","fKind","fStatus","fYear"].forEach(function(id){ E(id).addEventListener("input",renderList); E(id).addEventListener("change",renderList); });
+E("list").addEventListener("click",function(e){ var it=e.target.closest("[data-id]"); if(it) openReport(it.getAttribute("data-id")); });
+function dRow(a,b){ return b?'<tr><td>'+esc(a)+'</td><td style="white-space:pre-wrap">'+esc(b)+'</td></tr>':''; }
+function openReport(id){ var r=ROWS.filter(function(x){return String(x._id)===String(id);})[0]; if(!r) return; CUR=r;
+  E("rTitle").textContent=(r.ReportKind||"Close call")+" — "+nice(dateOf(r));
+  E("rBody").innerHTML='<table class="dt">'+dRow("Worker",r.WorkerName)+dRow("Date",nice(dateOf(r)))+dRow("Supervisor",r.SupervisorName)+dRow("Jobsite",r.Jobsite)+
+    dRow("Injury type",r.InjuryType)+dRow("Body part",r.BodyPart)+dRow("Injury details",r.InjuryDetails)+dRow("Accident / hazard",r.AccidentType)+dRow("What happened",r.IncidentDetails)+
+    dRow("Turned in by",[r.SubmittedBy,r.SubmittedAt].filter(Boolean).join(" · "))+(!IS_ADMIN?dRow("Status",r.Status||"Submitted")+dRow("Safety team notes",r.ReviewNotes)+(r.Reward==="Yes"?dRow("Safety reward","Yes — earned"):""):"")+'</table>';
+  E("rMsg").className="msg"; E("rReview").style.display=IS_ADMIN?"":"none"; E("rSave").style.display=IS_ADMIN?"":"none";
+  if(IS_ADMIN){ E("rStatus").value=r.Status||"Submitted"; E("rReward").value=r.Reward==="Yes"?"Yes":"No"; E("rNotes").value=r.ReviewNotes||""; E("rBy").textContent=r.ReviewedBy?"Last reviewed by "+r.ReviewedBy:""; }
+  E("rModal").style.display="block"; E("rModal").scrollTop=0; }
+E("rClose").onclick=function(){ E("rModal").style.display="none"; };
+E("rModal").onclick=function(e){ if(e.target===E("rModal")) E("rModal").style.display="none"; };
+E("rPrint").onclick=function(){ if(!CUR) return; var w=window.open("","_blank"); if(!w) return;
+  w.document.write('<html><head><title>Close-call report</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td{padding:6px 10px;border-bottom:1px solid #ddd;vertical-align:top}td:first-child{font-weight:bold;width:170px;color:#555}h2{color:#7f1d1d}</style></head><body><h2>Vision Mechanical — Safety Close-Call Report</h2>'+E("rBody").innerHTML+
+    (IS_ADMIN?'<table>'+dRow("Status",E("rStatus").value)+dRow("Reward",E("rReward").value)+dRow("Review notes",E("rNotes").value)+dRow("Reviewed by",CUR.ReviewedBy||"")+'</table>':'')+'</body></html>'); w.document.close(); w.focus(); w.print(); };
+E("rSave").onclick=async function(){ if(!IS_ADMIN||!CUR) return;
+  var f={Status:E("rStatus").value,Reward:E("rReward").value,ReviewNotes:E("rNotes").value.trim(),ReviewedBy:(MY_NAME||loginEmail)+" · "+new Date().toLocaleDateString()};
+  E("rSave").disabled=true; E("rMsg").className="msg ok"; E("rMsg").textContent="Saving…";
+  try{ await gx(GRAPH_ITEMS_URL+"/"+CUR._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)}); Object.assign(CUR,f); E("rModal").style.display="none"; renderList(); }
+  catch(e){ E("rMsg").className="msg err"; E("rMsg").textContent="Couldn't save ("+e.message+")."; }
+  E("rSave").disabled=false; };
+E("csvAll").onclick=function(){ var rows=filtered(), H=["Date","Kind","Worker","Supervisor","Jobsite","Injury type","Body part","Injury details","Accident / hazard","What happened","Turned in by","Status","Reward","Review notes","Reviewed by"];
+  var q=function(v){ v=v==null?"":String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  var s=[H.join(",")].concat(rows.map(function(r){ return [dateOf(r),r.ReportKind,r.WorkerName,r.SupervisorName,r.Jobsite,r.InjuryType,r.BodyPart,r.InjuryDetails,r.AccidentType,r.IncidentDetails,r.SubmittedBy,r.Status||"Submitted",r.Reward||"No",r.ReviewNotes,r.ReviewedBy].map(q).join(","); })).join("\r\n");
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([s],{type:"text/csv"})); a.download="Close calls.csv"; a.click(); };
+start();
 </script>
 <script>
 /* ===== Job lists show NAME first, A–Z (e.g. "Epic Phase II · A26103") =====
