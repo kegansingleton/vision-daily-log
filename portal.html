@@ -124,6 +124,7 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 
   <div class="sec">Reports</div>
   <div class="grid">
+    <a class="tile" data-role="owner" href="/bids.html"><div class="ic">&#127919;</div><div class="tx"><b>Bid Tracking</b><span>Owners only: bids, hit ratios, GCs</span></div></a>
     <a class="tile" data-role="admin" href="/dashboard.html"><div class="ic">&#128202;</div><div class="tx"><b>Owner Dashboard</b><span>Everything at a glance</span></div></a>
     <a class="tile" data-role="pm" href="/closeout.html"><div class="ic">&#9989;</div><div class="tx"><b>Job Closeout</b><span>O&amp;Ms, warranties, start-ups, punch, permits</span></div></a>
     <a class="tile" data-role="admin" href="/manpower.html"><div class="ic">&#128200;</div><div class="tx"><b>Manpower Load</b><span>Company man-hours by job</span></div></a>
@@ -171,7 +172,7 @@ function truthy(v){return v===true||v==="Yes"||v==="true";}
 function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
 function showRoles(r){
   document.querySelectorAll(".tile[data-role]").forEach(function(el){ var need=el.getAttribute("data-role");
-    var ok=r.admin || (need==="pm"&&r.pm) || (need==="lead"&&(r.pm||r.foreman)) || (need==="shop"&&r.shop);
+    var ok=(need==="owner") ? !!r.owner : r.admin || (need==="pm"&&r.pm) || (need==="lead"&&(r.pm||r.foreman)) || (need==="shop"&&r.shop);
     el.classList.toggle("show",!!ok); });
   tidySections();
 }
@@ -186,7 +187,7 @@ function roleNote(t,fix){ var n=E("roleNote"); if(!n){ n=document.createElement(
 var REDIR_TOKEN=null;   /* token handed back by a sign-in redirect — used directly so we don't depend on the silent call */
 function applyRoles(acct){
   var em=String(acct&&acct.username||"").toLowerCase().trim();
-  var r={admin:SUPERADMIN.indexOf(em)>-1, pm:NAMED_PM.indexOf(em)>-1, foreman:false, shop:false};
+  var r={owner:SUPERADMIN.indexOf(em)>-1, admin:SUPERADMIN.indexOf(em)>-1, pm:NAMED_PM.indexOf(em)>-1, foreman:false, shop:false};
   try{ var c=JSON.parse(localStorage.getItem("vm_roles_v1")||"null"); if(c&&c.em===em) showRoles(c.r); }catch(e){}   /* instant from last visit */
   showRoles(r);
   (REDIR_TOKEN?Promise.resolve({accessToken:REDIR_TOKEN}):msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct})).then(function(tok){

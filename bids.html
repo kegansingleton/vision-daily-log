@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Bid Tracking</title>
+<link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/favicon-32.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vision"><meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --vm:#c0392b;--vm2:#7f1d1d;
+  --page:#f4f5f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#6f6d68;--axis:#898781;
+  --grid:#e1e0d9;--base:#c3c2b7;--border:rgba(11,11,11,.10);--wash:rgba(11,11,11,.04);
+  --s1:#2a78d6;--track:#cde2fb;
+  --good:#0ca30c;--crit:#d03b3b;--warn:#fab219;--goodtxt:#006300;--crittxt:#b42323;--warntxt:#8a5a00;
+  --link:#a5281c;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#a3a29b;--axis:#898781;
+    --grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);--wash:rgba(255,255,255,.05);
+    --s1:#3987e5;--track:#184f95;--goodtxt:#0ca30c;--crittxt:#ef7777;--warntxt:#fab219;--link:#f19a8f;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#a3a29b;--axis:#898781;
+  --grid:#2c2c2a;--base:#383835;--border:rgba(255,255,255,.10);--wash:rgba(255,255,255,.05);
+  --s1:#3987e5;--track:#184f95;--goodtxt:#0ca30c;--crittxt:#ef7777;--warntxt:#fab219;--link:#f19a8f;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--page);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1360px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+header .sp{flex:1}
+header button{background:#fff;color:var(--vm2);border:none;border-radius:9px;padding:9px 14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.wrap{max-width:1360px;margin:0 auto;padding:14px 16px 80px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+.sec{margin:0 0 16px}
+.sec>h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:0 0 8px;font-weight:800}
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters input,.filters select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--ink);min-width:0}
+.filters input[type=search]{flex:1 1 240px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;font-weight:700;padding:7px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--ink2);cursor:pointer}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.linkbtn{font:inherit;font-size:13px;font-weight:700;color:var(--link);background:none;border:none;cursor:pointer;padding:6px}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile .k{font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:28px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+/* breakdowns */
+.bd{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:1100px){.bd{grid-template-columns:minmax(0,1fr)}}
+.bd h3{margin:0 0 8px;font-size:14.5px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-size:12px;color:var(--ink2);font-weight:750;position:sticky;top:0;background:var(--surface)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--wash)}
+.click tbody tr{cursor:pointer}
+.hit{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.hit .bar{width:60px;height:8px;background:var(--track);border-radius:4px;overflow:hidden}
+.hit .bar i{display:block;height:100%;background:var(--s1);border-radius:4px}
+.scroll{overflow:auto;max-height:340px}
+.scroll.tall{max-height:none}
+th.sort{cursor:pointer;user-select:none}
+th.sort:after{content:" \2195";color:var(--base)}
+th.asc:after{content:" \25B2";color:var(--ink)}th.desc:after{content:" \25BC";color:var(--ink)}
+.st{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px}
+.st.Won{color:var(--goodtxt)}.st.Lost{color:var(--crittxt)}.st.Pending{color:var(--warntxt)}.st.none{color:var(--muted)}
+.bd td:first-child{white-space:normal;min-width:110px}
+td.notes{white-space:normal;min-width:180px;max-width:340px;color:var(--ink2)}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.top h2{margin:0;font-size:16px;flex:1}
+.btn{font:inherit;font-size:14px;font-weight:800;border:none;border-radius:9px;padding:9px 14px;cursor:pointer;background:var(--vm);color:#fff}
+.btn.gh{background:none;color:var(--ink2);border:1px solid var(--border)}
+.muted{color:var(--muted);font-size:12.5px}
+/* gate + modal */
+.gate{max-width:460px;margin:12vh auto;text-align:center;padding:0 16px}
+.gate button{font:inherit;font-size:16px;font-weight:800;padding:12px 22px;border-radius:10px;border:none;background:var(--vm);color:#fff;cursor:pointer}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow:auto}
+.modal{background:var(--surface);color:var(--ink);border-radius:14px;width:100%;max-width:620px;padding:18px}
+.modal h3{margin:0 0 12px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.fg .full{grid-column:1/-1}
+.fg input,.fg select,.fg textarea{font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--page);color:var(--ink)}
+@media(max-width:560px){.fg{grid-template-columns:1fr}}
+.mrow{display:flex;gap:8px;margin-top:14px;align-items:center}
+.mrow .sp{flex:1}
+.del{background:none;border:1px solid var(--crit);color:var(--crittxt)}
+.tip{position:fixed;z-index:200;background:var(--ink);color:var(--surface);font-size:12.5px;padding:6px 9px;border-radius:7px;pointer-events:none;display:none}
+</style>
+</head>
+<body>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Bid Tracking</h1><div class="who" id="who"></div></div>
+  <div class="sp"></div>
+  <button id="addTop" style="display:none">+ New bid</button>
+</div></header>
+
+<div id="gate" class="gate">
+  <h2>Bid Tracking</h2>
+  <p class="muted" id="gateMsg">Owners only. Sign in with your Vision account.</p>
+  <button id="signin">Sign in with Microsoft</button>
+</div>
+<div id="denied" class="gate" style="display:none"></div>
+
+<div id="app" class="wrap" style="display:none">
+  <div class="sec card">
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search project, GC, notes…">
+      <select id="fYear"><option value="">All years</option></select>
+      <select id="fGC"><option value="">All GCs / clients</option></select>
+      <select id="fScope"><option value="">All types</option></select>
+      <select id="fEst"><option value="">All estimators</option></select>
+      <button class="linkbtn" id="clear">Clear filters</button>
+    </div>
+    <div class="chips" id="stChips" style="margin-top:10px"></div>
+  </div>
+
+  <div class="sec tiles" id="tiles"></div>
+
+  <div class="sec bd">
+    <div class="card"><h3>By year</h3><div class="scroll"><table class="click" id="byYear"></table></div></div>
+    <div class="card"><h3>By project type</h3><div class="scroll"><table class="click" id="byScope"></table></div></div>
+    <div class="card"><h3>By GC / client</h3><div class="scroll"><table class="click" id="byGC"></table></div></div>
+  </div>
+
+  <div class="sec card">
+    <div class="top"><h2 id="listTitle">Bids</h2>
+      <button class="btn gh" id="csv">Download CSV</button>
+      <button class="btn" id="add">+ New bid</button></div>
+    <div class="scroll tall"><table class="click" id="list"></table></div>
+    <p class="muted">Hit ratio = Won ÷ (Won + Lost). Pending and blank-status bids aren't counted until they're decided. Click any row to edit; click a row in the year, type or GC boxes to filter to it.</p>
+  </div>
+</div>
+
+<div class="ov" id="ov"><div class="modal">
+  <h3 id="mTitle">New bid</h3>
+  <div class="fg">
+    <label class="full">Project name<input id="mName" autocomplete="off"></label>
+    <label>GC or client<input id="mGC" list="gcList" autocomplete="off"><datalist id="gcList"></datalist></label>
+    <label>Bid date<input id="mDate" type="date"></label>
+    <label>Estimator<input id="mEst" list="estList" autocomplete="off"><datalist id="estList"></datalist></label>
+    <label>Project type<input id="mScope" list="scopeList" autocomplete="off"><datalist id="scopeList"></datalist></label>
+    <label>Bid amount ($)<input id="mBid" inputmode="decimal"></label>
+    <label>Status<select id="mStatus"><option value="Pending">Pending</option><option value="Won">Won</option><option value="Lost">Lost</option><option value="">(no status)</option></select></label>
+    <label>Award amount ($)<input id="mAward" inputmode="decimal"></label>
+    <label>Bid ID<input id="mBidId" autocomplete="off"></label>
+    <label class="full">Notes<textarea id="mNotes" rows="3"></textarea></label>
+  </div>
+  <div class="mrow"><button class="btn del" id="mDel" style="display:none">Delete</button><div class="sp"></div>
+    <span class="muted" id="mMsg"></span>
+    <button class="btn gh" id="mCancel">Cancel</button><button class="btn" id="mSave">Save</button></div>
+</div></div>
+<div class="tip" id="tip"></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var LIST="Bid Log";
+var OWNERS=["kegan.singleton@visionmech.net","bsingleton@visionmech.net","wsingleton@visionmech.net"];
+var G="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+encodeURIComponent(LIST);
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, ROWS=[], EDIT=null, F={q:"",year:"",gc:"",scope:"",est:"",st:""}, SORT={k:"date",dir:-1};
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function num(v){ var n=parseFloat(String(v==null?"":v).replace(/[$,\s]/g,"")); return isFinite(n)?n:null; }
+function money(n){ return n==null?"—":"$"+Math.round(n).toLocaleString(); }
+function moneyK(n){ if(n==null) return "—"; var a=Math.abs(n); return a>=1e6?"$"+(Math.round(n/1e5)/10)+"M":a>=1e4?"$"+Math.round(n/1e3)+"K":"$"+Math.round(n).toLocaleString(); }
+function pct(a,b){ return b?Math.round(a/b*100)+"%":"—"; }
+function shortD(s){ if(!s) return "—"; var p=s.split("-"); return +p[1]+"/"+ +p[2]+"/"+p[0].slice(2); }
+function normGC(s){ return String(s||"").trim().replace(/\s+/g," "); }
+function normSt(s){ s=String(s||"").trim().toLowerCase(); return s==="won"?"Won":s==="lost"?"Lost":s==="pending"?"Pending":""; }
+
+/* ===== Graph ===== */
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gx(method,url,body){
+  var t=await getToken(), o={method:method,headers:{Authorization:"Bearer "+t}};
+  if(body){ o.headers["Content-Type"]="application/json"; o.body=JSON.stringify(body); }
+  var r=await fetch(url,o);
+  if(!r.ok){ var tx=""; try{tx=await r.text();}catch(e){} var er=new Error("HTTP "+r.status+" "+tx.slice(0,160)); er.status=r.status; throw er; }
+  return r.status===204?null:r.json();
+}
+async function load(){
+  var out=[], url=G+"/items?$expand=fields&$top=999";
+  while(url){ var j=await gx("GET",url); (j.value||[]).forEach(function(i){ out.push(toRow(i.id,i.fields||{})); }); url=j["@odata.nextLink"]||null; }
+  ROWS=out;
+}
+function toRow(id,f){
+  var d=String(f.BidDate||"").slice(0,10);
+  return {id:id,name:String(f.Title||"").trim(),gc:normGC(f.GC),date:d,year:d?d.slice(0,4):"",est:String(f.Estimator||"").trim(),scope:String(f.Scope||"").trim(),
+    bid:num(f.BidAmount),st:normSt(f.Status),award:num(f.AwardAmount),notes:String(f.Notes||"").trim(),bidId:String(f.BidID||"").trim()};
+}
+
+/* ===== filtering ===== */
+function match(r,skip){
+  if(F.q){ var q=F.q.toLowerCase(); if((r.name+" "+r.gc+" "+r.notes+" "+r.bidId+" "+r.est+" "+r.scope).toLowerCase().indexOf(q)<0) return false; }
+  if(F.year&&skip!=="year"&&r.year!==F.year) return false;
+  if(F.gc&&skip!=="gc"&&r.gc.toLowerCase()!==F.gc.toLowerCase()) return false;
+  if(F.scope&&skip!=="scope"&&r.scope!==F.scope) return false;
+  if(F.est&&r.est!==F.est) return false;
+  if(F.st&&skip!=="st"){ if(F.st==="none"){ if(r.st) return false; } else if(F.st==="Awarded"){ if(r.st!=="Won") return false; } else if(F.st==="NotAwarded"){ if(r.st==="Won") return false; } else if(r.st!==F.st) return false; }
+  return true;
+}
+function stats(rows){
+  var s={n:rows.length,won:0,lost:0,pend:0,none:0,bid:0,award:0,wonBid:0,decBid:0};
+  rows.forEach(function(r){ s.bid+=r.bid||0;
+    if(r.st==="Won"){ s.won++; s.award+=(r.award!=null?r.award:(r.bid||0)); s.wonBid+=r.bid||0; s.decBid+=r.bid||0; }
+    else if(r.st==="Lost"){ s.lost++; s.decBid+=r.bid||0; }
+    else if(r.st==="Pending") s.pend++; else s.none++; });
+  s.dec=s.won+s.lost; return s;
+}
+function opts(sel,vals,label){ var cur=sel.value; sel.innerHTML='<option value="">'+label+'</option>'+vals.map(function(v){return '<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>';}).join(""); }
+function uniq(k){ var m={}; ROWS.forEach(function(r){ if(r[k]) m[r[k]]=1; }); return Object.keys(m); }
+
+function render(){
+  var rows=ROWS.filter(function(r){return match(r);}), s=stats(rows);
+  /* tiles */
+  E("tiles").innerHTML=[
+    ["Bids",s.n.toLocaleString(),moneyK(s.bid)+" bid"],
+    ["Won",s.won,moneyK(s.award)+" awarded"],
+    ["Lost",s.lost,""],
+    ["Pending / open",s.pend+s.none,s.none?s.none+" with no status":""],
+    ["Hit ratio (count)",pct(s.won,s.dec),s.won+" of "+s.dec+" decided"],
+    ["Hit ratio ($)",pct(s.wonBid,s.decBid),moneyK(s.wonBid)+" of "+moneyK(s.decBid)+" decided"]
+  ].map(function(t){ return '<div class="card tile"><div class="k">'+t[0]+'</div><div class="v">'+t[1]+'</div><div class="s">'+esc(t[2])+'</div></div>'; }).join("");
+  /* breakdowns (each ignores its own filter so you can see the siblings) */
+  breakdown("byYear","year","Year",function(a,b){return b.key<a.key?-1:1;});
+  breakdown("byScope","scope","Type",function(a,b){return b.s.n-a.s.n;});
+  breakdown("byGC","gc","GC / client",function(a,b){return b.s.n-a.s.n||(a.key<b.key?-1:1);});
+  /* list */
+  var k=SORT.k, d=SORT.dir;
+  rows.sort(function(a,b){ var x=a[k],y=b[k]; if(x==null||x==="") return 1; if(y==null||y==="") return -1; if(typeof x==="string") return x.toLowerCase()<y.toLowerCase()?-d:x.toLowerCase()>y.toLowerCase()?d:0; return (x-y)*d; });
+  var cols=[["date","Bid date"],["name","Project"],["gc","GC / client"],["scope","Type"],["est","Estimator"],["bid","Bid $",1],["st","Status"],["award","Award $",1],["notes","Notes"]];
+  E("listTitle").textContent=rows.length===ROWS.length?"All bids ("+rows.length+")":rows.length+" of "+ROWS.length+" bids";
+  E("list").innerHTML='<thead><tr>'+cols.map(function(c){ return '<th class="sort'+(c[2]?' n':'')+(k===c[0]?(d>0?' asc':' desc'):'')+'" data-k="'+c[0]+'">'+c[1]+'</th>'; }).join("")+'</tr></thead><tbody>'+
+    (rows.length?rows.map(function(r){ return '<tr data-id="'+esc(r.id)+'"><td>'+shortD(r.date)+'</td><td><b>'+esc(r.name)+'</b></td><td>'+esc(r.gc)+'</td><td>'+esc(r.scope)+'</td><td>'+esc(r.est)+'</td><td class="n">'+money(r.bid)+'</td><td>'+stBadge(r.st)+'</td><td class="n">'+(r.award!=null?money(r.award):"")+'</td><td class="notes">'+esc(r.notes)+'</td></tr>'; }).join(""):'<tr><td colspan="9" class="muted">No bids match these filters.</td></tr>')+'</tbody>';
+  E("list").querySelectorAll("th.sort").forEach(function(th){ th.onclick=function(){ var kk=th.getAttribute("data-k"); if(SORT.k===kk) SORT.dir=-SORT.dir; else { SORT.k=kk; SORT.dir=(kk==="date"||kk==="bid"||kk==="award")?-1:1; } render(); }; });
+  E("list").querySelectorAll("tbody tr[data-id]").forEach(function(tr){ tr.onclick=function(){ openEdit(ROWS.filter(function(r){return r.id===tr.getAttribute("data-id");})[0]); }; });
+  /* chips */
+  var base=ROWS.filter(function(r){return match(r,"st");}), cs=stats(base);
+  var chips=[["","All",base.length],["Won","Won / awarded",cs.won],["NotAwarded","Not awarded",base.length-cs.won],["Lost","Lost",cs.lost],["Pending","Pending",cs.pend],["none","No status",cs.none]];
+  E("stChips").innerHTML=chips.map(function(c){ return '<button class="chip'+(F.st===c[0]?' on':'')+'" data-v="'+c[0]+'">'+c[1]+' · '+c[2]+'</button>'; }).join("");
+  E("stChips").querySelectorAll(".chip").forEach(function(b){ b.onclick=function(){ F.st=b.getAttribute("data-v"); render(); }; });
+}
+function stBadge(st){ if(!st) return '<span class="st none">— none</span>'; var ic=st==="Won"?"&#10003;":st==="Lost"?"&#10007;":"&#9679;"; return '<span class="st '+st+'">'+ic+' '+st+'</span>'; }
+function breakdown(id,key,label,sorter){
+  var rows=ROWS.filter(function(r){return match(r,key);}), g={};
+  rows.forEach(function(r){ var k=r[key]||"(blank)"; (g[k]=g[k]||[]).push(r); });
+  var list=Object.keys(g).map(function(k){ return {key:k,s:stats(g[k])}; }).sort(sorter);
+  var cur=F[key];
+  E(id).innerHTML='<thead><tr><th>'+label+'</th><th class="n">Bids</th><th class="n">W–L</th><th class="n">Hit</th><th class="n">Bid $</th></tr></thead><tbody>'+
+    list.map(function(x){ var h=x.s.dec?x.s.won/x.s.dec:0, on=cur&&cur.toLowerCase()===x.key.toLowerCase();
+      return '<tr data-v="'+esc(x.key)+'"'+(on?' style="background:var(--wash);font-weight:700"':'')+'><td>'+esc(x.key)+'</td><td class="n">'+x.s.n+'</td><td class="n">'+x.s.won+'–'+x.s.lost+'</td><td class="n"><div class="hit" data-tip="'+esc(x.key)+': '+x.s.won+' won of '+x.s.dec+' decided ('+pct(x.s.won,x.s.dec)+')"><span>'+pct(x.s.won,x.s.dec)+'</span><span class="bar"><i style="width:'+Math.round(h*100)+'%"></i></span></div></td><td class="n">'+moneyK(x.s.bid)+'</td></tr>'; }).join("")+'</tbody>';
+  E(id).querySelectorAll("tbody tr").forEach(function(tr){ tr.onclick=function(){ var v=tr.getAttribute("data-v"); if(v==="(blank)") return; F[key]=(F[key]&&F[key].toLowerCase()===v.toLowerCase())?"":v; syncSelects(); render(); }; });
+  E(id).querySelectorAll("[data-tip]").forEach(bindTip);
+}
+function bindTip(el){ var t=E("tip"); el.onmouseenter=function(){ t.textContent=el.getAttribute("data-tip"); t.style.display="block"; }; el.onmousemove=function(e){ t.style.left=Math.min(e.clientX+12,innerWidth-t.offsetWidth-8)+"px"; t.style.top=(e.clientY+14)+"px"; }; el.onmouseleave=function(){ t.style.display="none"; }; }
+function refreshOptions(){
+  opts(E("fYear"),uniq("year").sort().reverse(),"All years");
+  var gcs={}; ROWS.forEach(function(r){ if(r.gc) gcs[r.gc.toLowerCase()]=gcs[r.gc.toLowerCase()]||r.gc; });
+  var gcList=Object.keys(gcs).map(function(k){return gcs[k];}).sort(function(a,b){return a.toLowerCase()<b.toLowerCase()?-1:1;});
+  opts(E("fGC"),gcList,"All GCs / clients");
+  opts(E("fScope"),uniq("scope").sort(),"All types");
+  opts(E("fEst"),uniq("est").sort(),"All estimators");
+  E("gcList").innerHTML=gcList.map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+  E("estList").innerHTML=uniq("est").sort().map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+  E("scopeList").innerHTML=uniq("scope").sort().map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+}
+function syncSelects(){ E("fYear").value=F.year; E("fScope").value=F.scope; E("fEst").value=F.est;
+  var o=[].slice.call(E("fGC").options).filter(function(x){return x.value.toLowerCase()===F.gc.toLowerCase();})[0]; E("fGC").value=o?o.value:""; }
+
+/* ===== add / edit ===== */
+function openEdit(r){
+  EDIT=r||null; E("mTitle").textContent=r?"Edit bid":"New bid"; E("mMsg").textContent=""; E("mDel").style.display=r?"inline-block":"none";
+  var today=new Date(), iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  E("mName").value=r?r.name:""; E("mGC").value=r?r.gc:""; E("mDate").value=r?r.date:iso; E("mEst").value=r?r.est:"Kegan"; E("mScope").value=r?r.scope:"";
+  E("mBid").value=r&&r.bid!=null?r.bid:""; E("mStatus").value=r?r.st:"Pending"; E("mAward").value=r&&r.award!=null?r.award:""; E("mBidId").value=r?r.bidId:""; E("mNotes").value=r?r.notes:"";
+  E("ov").style.display="flex"; E("mName").focus();
+}
+function closeEdit(){ E("ov").style.display="none"; EDIT=null; }
+async function save(){
+  var name=E("mName").value.trim(); if(!name){ E("mMsg").textContent="Project name is required."; return; }
+  var d=E("mDate").value, st=E("mStatus").value, bid=num(E("mBid").value), award=num(E("mAward").value);
+  if(st==="Won"&&award==null&&bid!=null&&confirm("No award amount entered. Use the bid amount ("+money(bid)+")?")){ award=bid; E("mAward").value=bid; }
+  var f={Title:name,GC:normGC(E("mGC").value),BidDate:d?d+"T12:00:00Z":null,Estimator:E("mEst").value.trim(),Scope:E("mScope").value.trim(),
+    BidAmount:bid,Status:st,AwardAmount:award,BidID:E("mBidId").value.trim(),Notes:E("mNotes").value.trim()};
+  E("mSave").disabled=true; E("mMsg").textContent="Saving…";
+  try{
+    if(EDIT){ var j=await gx("PATCH",G+"/items/"+EDIT.id+"/fields",f); var nr=toRow(EDIT.id,Object.assign({},f,j||{})); ROWS=ROWS.map(function(r){return r.id===EDIT.id?nr:r;}); }
+    else { Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]==="") delete f[k]; }); var c=await gx("POST",G+"/items",{fields:f}); ROWS.push(toRow(c.id,c.fields||f)); }
+    closeEdit(); refreshOptions(); render();
+  }catch(e){ E("mMsg").textContent="Didn't save: "+e.message; }
+  E("mSave").disabled=false;
+}
+async function del(){
+  if(!EDIT||!confirm("Delete \""+EDIT.name+"\"? It goes to the SharePoint recycle bin.")) return;
+  try{ await gx("DELETE",G+"/items/"+EDIT.id); var id=EDIT.id; ROWS=ROWS.filter(function(r){return r.id!==id;}); closeEdit(); refreshOptions(); render(); }
+  catch(e){ E("mMsg").textContent="Didn't delete: "+e.message; }
+}
+function csv(){
+  var rows=ROWS.filter(function(r){return match(r);}), h=["Bid ID","Project Name","GC or Client","Bid Date","Year","Estimator","Type","Bid Amount","Status","Award Amount","Notes"];
+  var q=function(v){ v=v==null?"":String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  var s=[h.join(",")].concat(rows.map(function(r){ return [r.bidId,r.name,r.gc,r.date,r.year,r.est,r.scope,r.bid,r.st,r.award,r.notes].map(q).join(","); })).join("\r\n");
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([s],{type:"text/csv"})); a.download="Vision bids.csv"; a.click();
+}
+
+/* ===== wiring ===== */
+E("q").oninput=function(){ F.q=this.value.trim(); render(); };
+E("fYear").onchange=function(){ F.year=this.value; render(); };
+E("fGC").onchange=function(){ F.gc=this.value; render(); };
+E("fScope").onchange=function(){ F.scope=this.value; render(); };
+E("fEst").onchange=function(){ F.est=this.value; render(); };
+E("clear").onclick=function(){ F={q:"",year:"",gc:"",scope:"",est:"",st:""}; E("q").value=""; syncSelects(); render(); };
+E("add").onclick=E("addTop").onclick=function(){ openEdit(null); };
+E("mCancel").onclick=closeEdit; E("mSave").onclick=save; E("mDel").onclick=del; E("csv").onclick=csv;
+E("ov").onclick=function(e){ if(e.target===E("ov")) closeEdit(); };
+document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&E("ov").style.display==="flex") closeEdit(); });
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){
+  var all=msalApp.getAllAccounts()||[], a=r&&r.account?r.account:(all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null);
+  if(a) start(a);
+}).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+
+function deny(html){ E("gate").style.display="none"; E("denied").style.display="block"; E("denied").innerHTML=html; }
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); var em=(a.username||"").toLowerCase();
+  E("who").textContent=a.name||a.username;
+  if(OWNERS.indexOf(em)<0){ deny('<h2>Owners only</h2><p class="muted">Bid Tracking is limited to Kegan and Bill. Signed in as <b>'+esc(em)+'</b>.</p><p><a href="/portal.html" style="color:var(--link);font-weight:700">Back to the portal</a></p>'); return; }
+  E("gateMsg").textContent="Loading bids…";
+  try{ await load(); }
+  catch(e){
+    if(e.status===404||e.status===403) deny('<h2>No access to the Bid Log</h2><p class="muted">The “Bid Log” list either isn’t set up yet or this account ('+esc(em)+') isn’t on its permissions.</p>');
+    else deny('<h2>Couldn’t load bids</h2><p class="muted">'+esc(e.message)+'</p>');
+    return;
+  }
+  E("gate").style.display="none"; E("app").style.display="block"; E("addTop").style.display="inline-block";
+  refreshOptions(); render();
+}
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>
