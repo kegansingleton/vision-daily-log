@@ -1,7 +1,7 @@
 /* Vision portal service worker — makes the portal installable and quick on weak signal.
    Pages: network first (always the latest when there's signal), saved copy when offline.
    Code libraries: saved copy first. Microsoft sign-in and SharePoint data are NEVER cached. */
-const CACHE = "vision-v7";
+const CACHE = "vision-v8";
 const PRECACHE = ["/", "/feedback.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/offline.html", "/absence.html","/adminreview.html","/assigntask.html","/certifications.html","/closecall.html","/closeout.html","/compliance.html","/dashboard.html","/display.html","/employees.html","/equipment.html","/expense.html","/fieldfiles.html","/fitting.html","/fleet.html","/incident.html","/index.html","/jobsetup.html","/library.html","/lookahead.html","/lookaheadreview.html","/manpower.html","/mysubmissions.html","/mytasks.html","/phasecodes.html","/pmvisit.html","/portal.html","/pressuretest.html","/pretask.html","/rentals.html","/servicereport.html","/shopbillout.html","/shopdash.html","/shoplog.html","/shopproduction.html","/shopqueue.html","/startupreport.html","/taskschedule.html","/tcadmin.html","/timecard.html","/tmticket.html","/toolbox.html","/training.html","/transmittal.html","/tv.html","/bids.html","/weeklyreport.html"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(PRECACHE.map(u => c.add(new Request(u, {cache: "reload"})).catch(() => null)))).then(() => self.skipWaiting()));

@@ -141,7 +141,7 @@ async function walk(){
   async function one(f){
     var url=G+"/drives/"+DRIVE.id+"/items/"+f.id+"/children?$select=id,name,file,folder,size,lastModifiedDateTime&$top=999";
     while(url){ var j=await gget(url);
-      (j.value||[]).forEach(function(it){ if(/^_/.test(it.name||"")) return; /* folders/files starting with _ (archive, index) stay hidden */ if(it.folder) queue.push({id:it.id,path:(f.path?f.path+" / ":"")+it.name}); else if(it.file) FILES.push({id:it.id,name:it.name,folder:f.path,top:f.path.split(" / ")[0]||"",size:it.size,mod:it.lastModifiedDateTime,key:norm(f.path+" "+it.name)}); });
+      (j.value||[]).forEach(function(it){ if(/^_/.test(it.name||"")) return; /* folders/files starting with _ (archive, index) stay hidden */ if(it.folder) queue.push({id:it.id,path:(f.path?f.path+" / ":"")+it.name}); else if(it.file) FILES.push({id:it.id,name:it.name,folder:f.path,top:f.path.split(" / ")[0]||"General",size:it.size,mod:it.lastModifiedDateTime,key:norm(f.path+" "+it.name)}); });
       url=j["@odata.nextLink"]||null; }
     seen++; if(seen%5===0) E("stat").textContent="Loading… "+FILES.length+" documents";
   }
@@ -164,7 +164,11 @@ function render(){
   if(!words.length&&!FOLDER){ var rec=getRecent().map(function(id){ return FILES.filter(function(f){return f.id===id;})[0]; }).filter(Boolean);
     if(rec.length) H+='<div class="sec">Recently opened</div>'+rec.map(row).join("")+'<div class="sec">All documents</div>'; }
   var cap=words.length||FOLDER?400:200;
-  H+=rows.slice(0,cap).map(row).join("");
+  if(FOLDER&&FOLDER!=="General"&&!words.length){
+    /* inside a section: group by sub-folder (01, 02 …) so it reads like a binder */
+    rows=rows.slice().sort(function(a,b){ return a.folder.localeCompare(b.folder,undefined,{numeric:true,sensitivity:"base"})||base(a.name).localeCompare(base(b.name),undefined,{numeric:true,sensitivity:"base"}); });
+    var last=null; rows.slice(0,cap).forEach(function(f){ var sub=f.folder.split(" / ").slice(1).join(" / ")||FOLDER; if(sub!==last){ H+='<div class="sec">'+esc(sub)+'</div>'; last=sub; } H+=row(f).replace('<div class="s">'+esc(f.folder)+'</div>',''); });
+  } else H+=rows.slice(0,cap).map(row).join("");
   if(rows.length>cap) H+='<div class="empty">Showing '+cap+' of '+rows.length+' — type to narrow it down.</div>';
   if(!rows.length) H='<div class="empty">'+(FILES.length?"Nothing matches “"+esc(E("q").value)+"”.":"This library is empty.")+'</div>';
   E("list").innerHTML=H; E("stat").textContent=rows.length+" of "+FILES.length+" documents";
