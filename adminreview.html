@@ -31,7 +31,7 @@ table.list tr.open td{background:#fdf2f1}
 .tag{display:inline-block;font-size:11px;font-weight:800;border-radius:10px;padding:1px 8px;white-space:nowrap}
 .tag.late{background:var(--redbg);color:var(--red)}.tag.st{background:#eef2f7;color:#475569}
 .detail{padding:12px 14px 16px;background:#fff;border-top:2px solid var(--vm2)}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.dgrid>div{min-width:0}
 @media(max-width:860px){.dgrid{grid-template-columns:1fr}}
 .dgrid h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--vm2)}
 .fld{margin-bottom:8px}
@@ -49,6 +49,10 @@ table.list tr.open td{background:#fdf2f1}
 .acts .m{font-size:13px}
 .empty{padding:24px;text-align:center;color:var(--mut)}
 .note{font-size:12px;color:var(--mut);margin:8px 2px}
+.li{border:1px solid var(--line);border-radius:10px;padding:10px;margin:10px 0;background:#fafafa}.li h5{margin:0 0 6px;font-size:12px;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em}
+.lr{display:flex;gap:6px;margin-bottom:6px;align-items:center}.lr input,.lr select{padding:7px 8px;border:1.5px solid #9ca3af;border-radius:7px;font-size:13.5px;font-family:inherit;min-width:0;background:#fff}
+.lr .x{border:none;background:none;color:#b91c1c;font-size:18px;cursor:pointer;padding:0 4px}.li .add{font-size:12.5px;font-weight:700;color:var(--vm);background:none;border:none;cursor:pointer;padding:2px 0}
+.lierr{background:#fde8e8;color:#b91c1c;border-radius:8px;padding:8px;font-size:12.5px;margin-bottom:8px}
 .denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px 24px}
 .gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
 .gate .box{max-width:340px}.gate img{height:74px;width:auto;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
@@ -208,7 +212,52 @@ function renderList(){
 
 /* ===== detail: editable fields + full report ===== */
 function editable(tab){
-  return tab.meta.filter(function(c){ return !c.readOnly && !c.hidden && !SKIP[c.name] && c.name!==tab.body && (c.text||c.number||c.dateTime||c.choice||c.boolean||c.currency); });
+  return tab.meta.filter(function(c){ if(tab.k==="svc"&&/^(LineItems|LaborHours|OvertimeHours)$/.test(c.name)) return false;
+    return !c.readOnly && !c.hidden && !SKIP[c.name] && c.name!==tab.body && (c.text||c.number||c.dateTime||c.choice||c.boolean||c.currency); });
+}
+/* ===== Service reports: labor / materials / refrigerant / filters as real rows (not raw JSON), and the report text rebuilt on save ===== */
+var LI_DEF={labor:[["tech","Tech",3],["hrs","Hrs",1],["ot","OT",1]],materials:[["qty","Qty",1],["item","Item",4],["source","Source",2],["po","PO #",1.5]],refrigerant:[["type","Type",2],["lbs","Lbs",1]],filters:[["size","Size",2],["qty","Qty",1]]};
+var LI_T={labor:"Labor",materials:"Materials",refrigerant:"Refrigerant",filters:"Filters"};
+function parseLI(raw){ var o=null; try{ o=JSON.parse(raw||"{}"); }catch(e){
+    /* broken JSON (typed over by hand): rescue whichever sections still read cleanly */
+    var v={labor:[],materials:[],refrigerant:[],filters:[]}; ["labor","materials","refrigerant","filters"].forEach(function(k){ var m=new RegExp('"'+k+'"\\s*:\\s*(\\[[^\\]]*\\])').exec(String(raw||"")); if(m){ try{ v[k]=JSON.parse(m[1]); }catch(e2){} } });
+    return {bad:true,v:v}; }
+  o=o||{}; ["labor","materials","refrigerant","filters"].forEach(function(k){ if(!Array.isArray(o[k])) o[k]=[]; }); return {bad:false,v:o}; }
+function liRow(k,r){ return '<div class="lr" data-li="'+k+'">'+LI_DEF[k].map(function(d){ var v=r[d[0]];
+    if(d[0]==="ot") return '<select data-f="ot" style="flex:'+d[2]+'"><option value="">Reg</option><option value="1"'+(v?" selected":"")+'>OT</option></select>';
+    return '<input data-f="'+d[0]+'" placeholder="'+d[1]+'" value="'+esc(v==null?"":v)+'" style="flex:'+d[2]+'">'; }).join("")+'<button type="button" class="x" title="Remove">&times;</button></div>'; }
+function liHtml(o,bad,raw){ return (bad?'<div class="lierr">The line items on this report were saved in a broken format and couldn\'t be read. Re-enter them below. What was saved: <i>'+esc(String(raw||"").slice(0,300))+'</i></div>':'')+
+  ["labor","materials","refrigerant","filters"].map(function(k){ return '<div class="li" data-sec="'+k+'"><h5>'+LI_T[k]+'</h5><div class="rows">'+o[k].map(function(r){return liRow(k,r);}).join("")+'</div><button type="button" class="add" data-add="'+k+'">+ Add '+LI_T[k].toLowerCase().replace(/s$/,"")+'</button></div>'; }).join(""); }
+function readLI(box){ var o={labor:[],materials:[],refrigerant:[],filters:[]};
+  Array.prototype.forEach.call(box.querySelectorAll(".lr[data-li]"),function(row){ var k=row.getAttribute("data-li"), r={};
+    Array.prototype.forEach.call(row.querySelectorAll("[data-f]"),function(el){ r[el.getAttribute("data-f")]=el.value.trim(); });
+    if(k==="labor"){ if(!r.tech&&!r.hrs) return; o.labor.push({tech:r.tech,hrs:parseFloat(r.hrs)||0,ot:!!r.ot}); }
+    else if(k==="materials"){ if(!r.item&&!r.qty) return; o.materials.push({item:r.item,qty:r.qty,source:r.source||"",po:r.po||""}); }
+    else if(k==="refrigerant"){ if(!r.type&&!r.lbs) return; o.refrigerant.push({type:r.type,lbs:parseFloat(r.lbs)||0}); }
+    else { if(!r.size&&!r.qty) return; o.filters.push({size:r.size,qty:r.qty}); } });
+  return o; }
+function svcText(f,o,who){
+  var reg=0,ot=0; o.labor.forEach(function(r){ if(r.ot) ot+=r.hrs; else reg+=r.hrs; });
+  var date=f.WorkDateText||String(f.WorkDate||"").slice(0,10), L=[];
+  L.push("VISION MECHANICAL - SERVICE DAILY REPORT");L.push("========================================");
+  L.push("Date: "+date);L.push("Job No: "+(f.JobNo||""));L.push("Job/Customer: "+(f.JobName||""));L.push("Phase: "+(f.PhaseCode||""));L.push("Status: "+(f.ServiceStatus||""));L.push("Lead technician: "+(f.Technician||""));
+  L.push("");L.push("-- REASON FOR CALL --");L.push(f.ReasonForCall||"");
+  L.push("");L.push("-- WORK PERFORMED / ISSUES --");L.push(f.WorkPerformed||"");
+  L.push("");L.push("-- LABOR --");
+  if(o.labor.length) o.labor.forEach(function(r){L.push(r.tech+" — "+r.hrs+" hr"+(r.ot?" (OVERTIME)":""));}); else L.push("(none entered)");
+  L.push("Regular hrs: "+reg+"   Overtime hrs: "+ot);
+  L.push("");L.push("-- MATERIALS --");
+  if(o.materials.length) o.materials.forEach(function(r,i){L.push((i+1)+". "+(r.qty?r.qty+" x ":"")+r.item+" | "+(r.source||"source not set")+(r.po?" | PO "+r.po:""));}); else L.push("(none)");
+  if(o.refrigerant.length||o.filters.length){L.push("");L.push("-- REFRIGERANT & FILTERS --");
+    o.refrigerant.forEach(function(r){L.push("Refrigerant: "+(r.type||"?")+" — "+r.lbs+" lbs");});
+    o.filters.forEach(function(r){L.push("Filters: "+(r.size||"?")+" — qty "+(r.qty||"?"));});}
+  if(f.Manufacturer||f.Model||f.SerialNumber||f.BeltSize||f.BeltType||f.DataPlatePhoto){L.push("");L.push("-- EQUIPMENT --");if(f.Manufacturer)L.push("Manufacturer: "+f.Manufacturer);if(f.Model)L.push("Model: "+f.Model);if(f.SerialNumber)L.push("Serial: "+f.SerialNumber);
+    if(f.BeltSize||f.BeltType)L.push("Belt: "+[f.BeltQty?f.BeltQty+" x":"",f.BeltSize,f.BeltType?"("+f.BeltType+")":""].filter(Boolean).join(" "));if(f.DataPlatePhoto)L.push("Data plate photo: "+f.DataPlatePhoto);}
+  if(f.PhotoFolder){L.push("");L.push("Photos: "+f.PhotoFolder);}
+  L.push("");L.push("Signed: "+(f.ForemanSignature||""));L.push("Submitted: "+(f.SubmittedAt||"")+" by "+(f.SubmittedBy||""));
+  L.push("Corrected: "+new Date().toLocaleString()+" by "+who);
+  L.push("========================================");
+  return {text:L.join("\n"),reg:reg,ot:ot};
 }
 async function openDetail(id){
   var tab=TAB, box=E("detail"); if(!box) return;
@@ -227,11 +276,16 @@ async function openDetail(id){
     var body=f[tab.body]||"";
     var prev=body?(tab.html?body:'<pre>'+esc(body)+'</pre>'):'<span style="color:#9ca3af">(no report text saved)</span>';
     if(tab.k==="fb"){ prev+='<p style="font-size:12px;color:#6b7280">'+(f.PageUrl?'<a href="'+esc(f.PageUrl)+'" target="_blank">'+esc(f.PageUrl)+'</a><br>':'')+esc(f.Device||"")+'</p>'+(f.Screenshot&&/^data:image\//.test(f.Screenshot)?'<img src="'+f.Screenshot+'" style="max-width:100%;border:1px solid #e5e7eb;border-radius:8px">':''); }
-    var bodyEdit=(!tab.html && tab.names[tab.body])?'<div class="fld" style="margin-top:10px"><label>Edit report text</label><textarea data-c="'+tab.body+'" style="min-height:200px">'+esc(body)+'</textarea></div>':'';
-    box.innerHTML='<div class="dgrid"><div><h4>Fields</h4>'+form+'</div><div><h4>Submitted report</h4><div class="preview">'+prev+'</div>'+bodyEdit+
+    var bodyEdit=(!tab.html && tab.names[tab.body] && tab.k!=="svc")?'<div class="fld" style="margin-top:10px"><label>Edit report text</label><textarea data-c="'+tab.body+'" style="min-height:200px">'+esc(body)+'</textarea></div>':'';
+    var liBox=""; if(tab.k==="svc"){ var pl=parseLI(f.LineItems); CURREC.li=JSON.stringify(pl.v); CURREC.liBad=pl.bad; liBox='<h4 style="margin-top:14px">Labor &amp; materials</h4>'+liHtml(pl.v,pl.bad,f.LineItems)+'<div class="note">Saving rebuilds the report (and the printout) from these rows and the fields above.</div>'; }
+    box.innerHTML='<div class="dgrid"><div><h4>Fields</h4>'+form+liBox+'</div><div><h4>Submitted report</h4><div class="preview">'+prev+'</div>'+bodyEdit+
       '<div class="note">Last changed '+esc(new Date(j.lastModifiedDateTime).toLocaleString())+(j.lastModifiedBy&&j.lastModifiedBy.user?' by '+esc(j.lastModifiedBy.user.displayName||""):'')+'</div></div></div>'+
       '<div class="acts"><button class="save" id="saveBtn" disabled>Save changes</button><button class="cancel" id="printBtn">&#128424; Print</button><button class="cancel" id="closeBtn">Close</button><span class="m" id="saveMsg"></span></div>';
     var orig={}; Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ orig[el.getAttribute("data-c")]=el.value; var on=function(){ var ch=el.value!==orig[el.getAttribute("data-c")]; el.parentNode.classList.toggle("chg",ch); E("saveBtn").disabled=!box.querySelector(".fld.chg"); }; el.oninput=on; el.onchange=on; });
+    if(tab.k==="svc"){ var liDirty=function(){ E("saveBtn").disabled=!(box.querySelector(".fld.chg")||JSON.stringify(readLI(box))!==CURREC.li||CURREC.liBad); };
+      box.addEventListener("input",function(e){ if(e.target.closest(".li")) liDirty(); }); box.addEventListener("change",function(e){ if(e.target.closest(".li")) liDirty(); });
+      box.addEventListener("click",function(e){ var a=e.target.closest("[data-add]"); if(a){ var k=a.getAttribute("data-add"); a.previousElementSibling.insertAdjacentHTML("beforeend",liRow(k,{})); liDirty(); return; }
+        var x=e.target.closest(".lr .x"); if(x){ x.parentNode.remove(); liDirty(); } }); }
     E("closeBtn").onclick=function(){ OPEN=null; renderList(); };
     E("printBtn").onclick=function(){ if(!E("saveBtn").disabled&&!confirm("You have unsaved changes — they won't be on the printout. Print anyway?")) return; printRecord(); };
     E("saveBtn").onclick=function(){ save(id,box,orig); };
@@ -257,6 +311,10 @@ async function save(id,box,orig){
   var tab=TAB, patch={}, btn=E("saveBtn"), m=E("saveMsg");
   Array.prototype.forEach.call(box.querySelectorAll("[data-c]"),function(el){ var k=el.getAttribute("data-c"); if(el.value===orig[k]) return;
     var v=el.value; if(el.getAttribute("data-n")) v=(v===""?null:parseFloat(v)); else if(el.getAttribute("data-b")) v=(v==="true"); else if(el.getAttribute("data-d")) v=(v?v+"T12:00:00Z":null); patch[k]=v; });
+  if(tab.k==="svc"&&CURREC&&CURREC.id===id){ var nl=readLI(box), nls=JSON.stringify(nl);
+    if(nls!==CURREC.li||CURREC.liBad) patch.LineItems=nls;
+    if(Object.keys(patch).length){ var merged=Object.assign({},CURREC.f,patch), st=svcText(merged,nl,loginEmail);
+      patch.ReportText=st.text; if(tab.names.LaborHours) patch.LaborHours=st.reg; if(tab.names.OvertimeHours) patch.OvertimeHours=st.ot; } }
   if(!Object.keys(patch).length) return;
   /* keep the stored report in step: where an old value shows up as a whole cell/line in the HTML report, swap in the corrected one */
   var rec=CURREC&&CURREC.id===id?CURREC:null, bodyCol=tab.body, fixed=0;
@@ -269,7 +327,8 @@ async function save(id,box,orig){
     var r=await fetch(GRAPH+tab.id+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(patch)});
     if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text()).slice(0,160));
     var row=ROWS.filter(function(x){return x.id===id;})[0]; if(row) Object.keys(patch).forEach(function(k){ row.f[k]=patch[k]; });
-    if(rec){ Object.keys(patch).forEach(function(k){ rec.f[k]=patch[k]; }); if(patch[bodyCol]!==undefined&&tab.html){ var pv=box.querySelector(".preview"); if(pv) pv.innerHTML=patch[bodyCol]; } }
+    if(rec){ Object.keys(patch).forEach(function(k){ rec.f[k]=patch[k]; }); if(patch[bodyCol]!==undefined&&tab.html){ var pv=box.querySelector(".preview"); if(pv) pv.innerHTML=patch[bodyCol]; }
+      if(tab.k==="svc"){ rec.li=JSON.stringify(readLI(box)); rec.liBad=false; var er=box.querySelector(".lierr"); if(er) er.remove(); if(patch.ReportText){ var pv2=box.querySelector(".preview"); if(pv2) pv2.innerHTML='<pre>'+esc(patch.ReportText)+'</pre>'; } } }
     var nf=Object.keys(patch).filter(function(k){return k!==bodyCol||!tab.html;}).length;
     m.style.color="#15803d"; m.textContent="Saved "+nf+" change"+(nf>1?"s":"")+"."+(fixed?" Report updated to match.":"");
     Object.keys(patch).forEach(function(k){ var el=box.querySelector('[data-c="'+k+'"]'); if(el){ orig[k]=el.value; el.parentNode.classList.remove("chg"); } });

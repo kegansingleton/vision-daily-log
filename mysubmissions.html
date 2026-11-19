@@ -41,6 +41,10 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
 .detail{background:#faf9f9;border:1px solid var(--line);border-radius:8px;margin:2px 0 8px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;overflow-x:auto}
 .detail img{max-width:100%}
 .legend{font-size:12px;color:var(--muted);margin-top:10px}
+.scope{display:none;gap:6px;margin:0 0 10px;align-items:center;flex-wrap:wrap}.scope button{font-size:13px;font-weight:700;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;cursor:pointer}.scope button.on{background:var(--vm);color:#fff;border-color:var(--vm)}
+.scope input{flex:1;min-width:140px;font-size:14px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px}
+td.oth{background:#eef4ff;color:#1e3a8a;font-weight:700;cursor:help}td.both{background:#fff4d6;color:#8a5a00;font-weight:800;cursor:help}
+.key{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
 .editwrap{margin-top:18px;border-top:2px solid var(--line);padding-top:12px}
 .edithdr{font-size:14px;font-weight:700;color:var(--vm2);margin-bottom:8px}
 .editnote{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
@@ -90,9 +94,10 @@ tr.totals td{font-weight:700;border-top:2px solid var(--line);background:#fafafa
   </div>
 
   <div class="panel" id="panel-tc">
+    <div class="scope" id="tcScope"><button id="scMine" class="on">My entries</button><button id="scAll">Everyone</button><input type="search" id="tcFind" placeholder="Find a worker…" style="display:none"></div>
     <div class="navbar"><button id="prev">&larr; Prev</button><div class="wk" id="wkLabel"></div><button id="next">Next &rarr;</button><button class="today" id="thisWk">This Week</button></div>
     <div class="tablewrap" id="tcGrid"><div class="empty">Loading…</div></div>
-    <div class="legend">Hours you entered, by day. <b>Shaded ⚠</b> = a weekday with no hours for that person.</div>
+    <div class="legend" id="tcLegend">Hours you entered, by day. <b>Shaded ⚠</b> = a weekday with no hours for that person.</div>
     <div class="editwrap">
       <div class="edithdr">Edit this pay week's entries <span class="mut" id="payWkLabel"></span></div>
       <div class="tablewrap" id="editList"><div class="empty">Loading…</div></div>
@@ -278,12 +283,38 @@ async function loadExtras(){
 }
 
 /* ===== Timecards (weekly grid) ===== */
-var tcRows=[], selMon=mondayOf(new Date());
-async function loadTC(){
-  try{ tcRows=await getMine(TC,"WorkDate","ForemanEmail",iso(addDays(mondayOf(new Date()),-35)),"WorkDate,EmployeeName,EmployeeNumber,JobNo,Hours,ForemanEmail"); renderTC(); }
-  catch(e){ E("tcGrid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }
+var tcRows=[], tcAll=[], TC_SCOPE="mine", CAN_ALL=false, FOREMAN_NAME={}, selMon=mondayOf(new Date());
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", TC_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+function autoEmailTC(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+async function getAllTC(fromISO){
+  var token=await getToken(), base=GRAPH+TC+"/items?$expand=fields($select=WorkDate,EmployeeName,EmployeeNumber,JobNo,Hours,ForemanEmail,PayType)&$top=999", out=[];
+  async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; } }
+  try{ await page(base+"&$filter=fields/WorkDate ge '"+fromISO+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
+  catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
+  return out.filter(function(r){return dkey(r.WorkDate)>=fromISO;});
 }
+async function loadTC(){
+  var from=iso(addDays(mondayOf(new Date()),-35));
+  try{ tcRows=await getMine(TC,"WorkDate","ForemanEmail",from,"WorkDate,EmployeeName,EmployeeNumber,JobNo,Hours,ForemanEmail"); renderTC(); }
+  catch(e){ E("tcGrid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; return; }
+  /* foremen (and admins) can also see everyone's time — read-only — to spot a borrowed worker who already has hours */
+  try{ var token=await getToken(), emps=[], url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Foreman,Active)&$top=999";
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); (j.value||[]).forEach(function(it){ if(it.fields) emps.push(it.fields); }); url=j["@odata.nextLink"]||null; }
+    var yes=function(v){return v===true||v==="Yes"||v==="true";};
+    emps.forEach(function(f){ var e=String(f.LoginEmail||"").toLowerCase().trim()||autoEmailTC(f.EmployeeName); if(e) FOREMAN_NAME[e]=String(f.EmployeeName||"").trim();
+      if(e===loginEmail&&(yes(f.Foreman)||yes(f.Admin))) CAN_ALL=true; });
+    if(TC_SUPER.indexOf(loginEmail)>-1||tcRows.length) CAN_ALL=CAN_ALL||TC_SUPER.indexOf(loginEmail)>-1||tcRows.length>0;
+  }catch(e){ if(tcRows.length) CAN_ALL=true; }
+  if(CAN_ALL){ E("tcScope").style.display="flex"; }
+}
+function setScope(sc){ TC_SCOPE=sc; E("scMine").classList.toggle("on",sc==="mine"); E("scAll").classList.toggle("on",sc==="all"); E("tcFind").style.display=sc==="all"?"":"none";
+  E("tcLegend").innerHTML=sc==="all"?'Everyone\'s hours by day (read-only). <span class="key" style="background:#eef4ff"></span>entered by another foreman <span class="key" style="background:#fff4d6"></span>two foremen entered time for the same person that day — check for a double entry. Hover or tap a cell to see who entered it.':'Hours you entered, by day. <b>Shaded ⚠</b> = a weekday with no hours for that person.';
+  if(sc==="all"&&!tcAll.length){ E("tcGrid").innerHTML='<div class="empty">Loading everyone\'s time…</div>'; getAllTC(iso(addDays(mondayOf(new Date()),-35))).then(function(r){ tcAll=r; renderTC(); }).catch(function(e){ E("tcGrid").innerHTML='<div class="empty">Could not load: '+esc(e.message||e)+'</div>'; }); return; }
+  renderTC(); }
+E("scMine").onclick=function(){ setScope("mine"); }; E("scAll").onclick=function(){ setScope("all"); }; E("tcFind").oninput=function(){ renderTC(); };
+function fmName(e){ e=String(e||"").toLowerCase(); return FOREMAN_NAME[e]||e.split("@")[0]||"?"; }
 function renderTC(){
+  if(TC_SCOPE==="all") return renderAll();
   var days=[]; for(var i=0;i<5;i++) days.push(iso(addDays(selMon,i)));
   E("wkLabel").textContent="Week of "+shortD(iso(selMon))+" – "+shortD(iso(addDays(selMon,4)));
   var prevStart=iso(addDays(selMon,-7)), prevEnd=iso(addDays(selMon,-3)), ws=days[0], we=days[4];
@@ -298,6 +329,23 @@ function renderTC(){
   emps.forEach(function(emp){ h+='<tr><td class="name">'+esc(emp)+'</td>'; var wk=0; for(var d=0;d<5;d++){ var hv=(byEmp[emp][days[d]]||0); wk+=hv; dayTot[d]+=hv; h+= hv>0 ? '<td class="num">'+(Math.round(hv*100)/100)+'</td>' : '<td class="gap">0</td>'; } grand+=wk; h+='<td class="tot">'+(Math.round(wk*100)/100)+'</td></tr>'; });
   h+='<tr class="totals"><td class="name">Daily total</td>'; for(var d2=0;d2<5;d2++) h+='<td class="num">'+(Math.round(dayTot[d2]*100)/100)+'</td>'; h+='<td class="tot">'+(Math.round(grand*100)/100)+'</td></tr></tbody></table>';
   E("tcGrid").innerHTML=h;
+}
+function renderAll(){
+  var days=[]; for(var i=0;i<5;i++) days.push(iso(addDays(selMon,i)));
+  E("wkLabel").textContent="Week of "+shortD(iso(selMon))+" – "+shortD(iso(addDays(selMon,4)));
+  var q=String(E("tcFind").value||"").toLowerCase().trim(), cell={}, emps={};
+  tcAll.forEach(function(r){ var k=dkey(r.WorkDate); if(days.indexOf(k)<0) return; var emp=r.EmployeeName||r.EmployeeNumber||"—"; if(q&&String(emp).toLowerCase().indexOf(q)<0) return;
+    emps[emp]=1; var c=(cell[emp+"|"+k]=cell[emp+"|"+k]||{h:0,by:{}}); var hv=hoursNum(r.Hours); c.h+=hv; var fm=String(r.ForemanEmail||"").toLowerCase(); (c.by[fm]=c.by[fm]||[]).push((r.JobNo||"?")+" "+hv+"h"); });
+  var list=Object.keys(emps).sort();
+  if(!list.length){ E("tcGrid").innerHTML='<div class="empty">'+(q?"No one by that name has time this week.":"No time entered for this week.")+'</div>'; return; }
+  var h='<table><thead><tr><th class="name">Employee</th>'; for(var d=0;d<5;d++) h+='<th>'+DOW[d]+'<br><span style="font-weight:400;color:#9aa6b3">'+shortD(days[d])+'</span></th>'; h+='<th class="tot">Week</th></tr></thead><tbody>';
+  list.forEach(function(emp){ var wk=0; h+='<tr><td class="name">'+esc(emp)+'</td>';
+    days.forEach(function(k){ var c=cell[emp+"|"+k]; if(!c){ h+='<td class="gap">0</td>'; return; } wk+=c.h;
+      var fms=Object.keys(c.by), mine=fms.indexOf(loginEmail)>-1, cls=fms.length>1?"both":(mine?"num":"oth");
+      var tip=fms.map(function(f){ return fmName(f)+": "+c.by[f].join(", "); }).join(" \n");
+      h+='<td class="'+cls+'" title="'+esc(tip)+'" onclick="alert(this.title)">'+(Math.round(c.h*100)/100)+'</td>'; });
+    h+='<td class="tot">'+(Math.round(wk*100)/100)+'</td></tr>'; });
+  E("tcGrid").innerHTML=h+'</tbody></table>';
 }
 E("prev").onclick=function(){ selMon=addDays(selMon,-7); renderTC(); };
 E("next").onclick=function(){ selMon=addDays(selMon,7); renderTC(); };
