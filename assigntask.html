@@ -254,6 +254,7 @@ async function showApp(a){
     var active=emps.filter(function(e){ return (e.Active||"Yes")!=="No"; });
     var me=emps.filter(function(e){ return emailOf(e)===loginEmail; })[0];
     IS_ADMIN = SUPERADMIN.indexOf(loginEmail)>-1 || !!(me&&truthy(me.Admin));
+    CAN_FLAG = IS_ADMIN || NAMED_PM.indexOf(loginEmail)>-1;
     var canAssign = SUPERADMIN.indexOf(loginEmail)>-1 || NAMED_PM.indexOf(loginEmail)>-1 || (me&&(truthy(me.Admin)||truthy(me.Foreman)));
     if(!canAssign){ E("denied").style.display="block"; return; }
     E("main").style.display="block";
@@ -262,7 +263,7 @@ async function showApp(a){
     ASSIGNEE_OPTS=E("assignee").innerHTML;
     if(!E("due").value) E("due").value=today();
     setHdr(); window.addEventListener("resize",setHdr);
-    loadLookAheads(); loadRentals();
+    loadLookAheads(); loadRentals(); loadJobFlags();
     E("submitBtn").onclick=assign;
     E("search").oninput=render; E("showDone").onchange=render;
     Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(b){ b.classList.toggle("on",b.getAttribute("data-g")===GROUP); b.onclick=function(){ GROUP=b.getAttribute("data-g"); try{ localStorage.setItem("vm_ai_group",GROUP); }catch(e){} Array.prototype.forEach.call(E("groupSeg").querySelectorAll("button"),function(x){ x.classList.toggle("on",x===b); }); render(); }; });
@@ -325,7 +326,28 @@ function rnBar(){ var b=E("rnBar"); if(!b) return; if(!RN_ALL.length){ b.style.d
   b.style.display="block"; b.innerHTML='&#127959;&#65039; Rentals: <span style="color:#15803d">'+on+' on rent</span>'+(bad?' · <span style="color:#b91c1c">'+bad+' need attention (past off date / not ordered / not called off)</span>':' · none overdue')+' · <a href="/rentals.html" target="_blank">open Equipment Rentals</a>'; }
 function hasTxt(v){ v=String(v||"").trim(); return v.length>0 && !/^(none|n\/a|na|no|-)$/i.test(v); }
 function laCell(v){ return hasTxt(v)?esc(v):'<span style="color:#c4c8cf">—</span>'; }
-function laPanel(jn){
+/* ===== "2-week look-ahead required" checkbox per job (same flag as Job Setup; compliance page reads it) ===== */
+var JOBFLAG={}, JOBFLAG_LOADED=false, CAN_FLAG=false;
+function laType(no){ no=String(no||"").trim(); if(/^A/i.test(no)) return "A"; var m=/^\d{2}([A-Z])-/i.exec(no); return m?m[1].toUpperCase():"A"; }
+function laRequired(no){ var t=laType(no); if(t==="S") return false; var x=JOBFLAG[no]; if(x&&x.v) return x.v==="Yes"; return t==="A"; }
+async function loadJobFlags(){ try{ var token=await getToken(), url=GRAPH+"836523ba-cd20-4736-98ce-5716668b8973/items?$expand=fields($select=Title,LookAheadRequired)&$top=999", rows=[];
+    while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message);
+      (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; rows.push(it.fields);} }); url=j["@odata.nextLink"]||null; }
+    JOBFLAG={};
+    rows.forEach(function(f){ var n=String(f.Title||"").trim().split(/\s+/)[0]; if(!n) return; var cur=JOBFLAG[n], v=String(f.LookAheadRequired||"");
+      if(!cur||(v&&!cur.v)||(v==="Yes")) JOBFLAG[n]={id:f._id||f.id,v:v||(cur&&cur.v)||""}; }); }catch(e){} JOBFLAG_LOADED=true; render(); }
+function laToggle(jn){ if(!JOBFLAG_LOADED||jn==="__GENERAL__") return ""; var t=laType(jn), req=laRequired(jn);
+  if(t==="S") return '<div class="lareq" style="font-size:12.5px;color:#6b7280;margin-bottom:8px">Service job — no look-ahead needed</div>';
+  var x=JOBFLAG[jn], how=(x&&x.v)?"":" <span style=\"color:#9ca3af\">(default for "+t+" jobs)</span>";
+  return '<label class="lareq" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:8px;cursor:'+(CAN_FLAG?"pointer":"default")+'"><input type="checkbox" data-lareq="'+esc(jn)+'"'+(req?" checked":"")+(CAN_FLAG?"":" disabled")+' style="width:18px;height:18px;margin:0"> 2-week look-ahead required'+how+'</label>'; }
+document.addEventListener("change",async function(e){ var cb=e.target; if(!cb||!cb.getAttribute||!cb.hasAttribute("data-lareq")) return; var jn=cb.getAttribute("data-lareq"), v=cb.checked?"Yes":"No";
+  cb.disabled=true; try{ var token=await getToken(), x=JOBFLAG[jn], base=GRAPH+"836523ba-cd20-4736-98ce-5716668b8973/items";
+    var r=x&&x.id?await fetch(base+"/"+x.id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({LookAheadRequired:v})})
+                  :await fetch(base,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:jn,LookAheadRequired:v}})});
+    if(!r.ok) throw new Error("HTTP "+r.status); var j=await r.json().catch(function(){return {};}); JOBFLAG[jn]={id:(x&&x.id)||j.id,v:v}; render();
+  }catch(err){ cb.checked=!cb.checked; alert("Couldn't save: "+err.message); } cb.disabled=false; });
+function laPanel(jn){ var h=laPanel0(jn); return h.replace('<div class="lacol">','<div class="lacol">'+laToggle(jn)); }
+function laPanel0(jn){
   if(!LA_LOADED) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">Loading…</div></div>';
   var r=LA[jn];
   if(!r) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">No look-ahead submitted in the last 3 weeks.</div></div>';

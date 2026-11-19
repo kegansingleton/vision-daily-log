@@ -245,6 +245,7 @@ async function run(){
     var logs=await getRange(LOGS,"LogDate",loadFrom,to,"LogDate,Project,LoginEmail,SubmittedBy");
     var look=await getRange(LOOK,"WeekOf",iso(addDays(parseISO(loadFrom),-7)),to,"WeekOf,Project,LoginEmail,SubmittedBy");
     var emps=(await getAll(EMP,"EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail")).filter(function(e){return (e.Active||"Yes")!=="No";});
+    LA_REQ={}; try{ (await getAll("836523ba-cd20-4736-98ce-5716668b8973","Title,LookAheadRequired")).forEach(function(j){ var n=jobNo(j.Title), v=String(j.LookAheadRequired||""); if(!n||!v) return; if(v==="Yes"||!LA_REQ[n]) LA_REQ[n]=v; }); }catch(e){}
     /* Who owes daily logs & look-aheads = employees flagged Foreman in Employee Master. Match on LoginEmail (auto from name if blank). */
     ROSTER_EMAILS={}; ROSTER_NAMES={};
     emps.forEach(function(e){ var isF=(e.Foreman===true||e.Foreman==="Yes"||e.Foreman==="true"); if(!isF) return; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); if(em){ ROSTER_EMAILS[em]=1; ROSTER_NAMES[em]=e.EmployeeName||em; } });
@@ -342,11 +343,15 @@ async function compute30Day(){
 }
 
 /* ===== Section 3: Look-aheads (per foreman-week-job) ===== */
+/* Which jobs owe look-aheads: Job Setup checkbox wins; otherwise A jobs yes, Q / T jobs no; S jobs never */
+var LA_REQ={};
+function laType(no){ no=String(no||"").trim(); if(/^A/i.test(no)) return "A"; var m=/^\d{2}([A-Z])-/i.exec(no); return m?m[1].toUpperCase():"A"; }
+function laRequired(no){ var t=laType(no); if(t==="S") return false; var v=LA_REQ[no]; if(v) return v==="Yes"; return t==="A"; }
 function computeLook(tc,look,from,to){
   var names=foremanNames(tc);
   /* owed: distinct foremanEmail | weekMonday | job, for weeks touched by the range */
   var owed={}, list=[], wkFrom=mondayOf(parseISO(from));   /* look-aheads are by calendar week (Mon), so count the whole week the range starts in — not just from Wednesday */
-  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<wkFrom||d>to||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn||!ROSTER_EMAILS[fe]) return; var wk=mondayOf(parseISO(d)); var k=fe+"|"+wk+"|"+jn; if(!owed[k]){owed[k]=1;list.push({fe:fe,wk:wk,job:jn});} });
+  tc.forEach(function(r){ var d=dkey(r.WorkDate); if(d<wkFrom||d>to||!isWeekday(d)) return; var fe=(r.ForemanEmail||"").toLowerCase(); var jn=jobNo(r.JobNo); if(!fe||!jn||!ROSTER_EMAILS[fe]||!laRequired(jn)) return; var wk=mondayOf(parseISO(d)); var k=fe+"|"+wk+"|"+jn; if(!owed[k]){owed[k]=1;list.push({fe:fe,wk:wk,job:jn});} });
   var submitted={}; look.forEach(function(r){ var k=(r.LoginEmail||"").toLowerCase()+"|"+mondayOf(parseISO(dkey(r.WeekOf)))+"|"+jobNo(r.Project); submitted[k]=true; });
   var missBy={};
   list.forEach(function(o){ if(!submitted[o.fe+"|"+o.wk+"|"+o.job]){ (missBy[o.fe]=missBy[o.fe]||[]).push(o); } });

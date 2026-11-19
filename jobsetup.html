@@ -123,6 +123,8 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
       <div style="display:flex;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><label>PM name</label><input type="text" id="dPM"></div><div style="flex:1;min-width:150px"><label>GC</label><input type="text" id="dGC"></div></div>
       <label>Address</label>
       <input type="text" id="dAddr">
+      <label style="display:flex;align-items:center;gap:10px;margin-top:14px;font-weight:700;cursor:pointer"><input type="checkbox" id="dLA" style="width:22px;height:22px;margin:0"> 2-week look-ahead required</label>
+      <div id="dLAnote" style="font-size:12.5px;color:#6b7280;margin:4px 0 0 32px"></div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">
         <button class="btn" id="dSave">Save details</button>
         <button class="btn" id="dArchive" style="background:#6b7280">Archive job</button>
@@ -357,11 +359,14 @@ async function ensureJob(token, jobsRel, jn, name){
 var JOBSDATA=[];
 function isArch(v){ return v===true||v==="Yes"||v==="true"; }
 function d10(v){return v?String(v).slice(0,10):"";}
+/* look-ahead rule by job type: A = required by default, Q / T = not by default, S = never */
+function laType(no){ no=String(no||"").trim(); if(/^A/i.test(no)) return "A"; var m=/^\d{2}([A-Z])-/i.exec(no); return m?m[1].toUpperCase():"A"; }
+function laDefault(no){ return laType(no)==="A"; }
 function todayISO(){var d=new Date();function p(n){return (n<10?"0":"")+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
 function dmsg(t,m){ var el=document.getElementById("dMsg"); if(!el)return; el.textContent=m; el.style.color=(t==="err"?"#b91c1c":"#15803d"); }
 async function loadJobDetails(){
   try{ var token=await getToken();
-    var url=GRAPH+LIST.jobs+"/items?$expand=fields($select=Title,StartDate,FinishDate,DattoLink,PMName,GC,Address,Archive)&$top=999", out=[];
+    var url=GRAPH+LIST.jobs+"/items?$expand=fields($select=Title,StartDate,FinishDate,DattoLink,PMName,GC,Address,Archive,LookAheadRequired)&$top=999", out=[];
     while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message); (j.value||[]).forEach(function(it){if(it.fields)out.push({id:it.id,f:it.fields});}); url=j["@odata.nextLink"]||null; }
     /* one entry per job number — if duplicates exist, use the row with the most filled-in details */
     var F=["StartDate","FinishDate","DattoLink","PMName","GC","Address"], best={};
@@ -382,6 +387,9 @@ function fillDetails(i){
   document.getElementById("dPM").value=x.PMName||"";
   document.getElementById("dGC").value=x.GC||"";
   document.getElementById("dAddr").value=x.Address||"";
+  var t=laType(x.Title), cb=document.getElementById("dLA"), v=String(x.LookAheadRequired||"");
+  cb.disabled=(t==="S"); cb.checked=(t==="S")?false:(v?v==="Yes":laDefault(x.Title));
+  document.getElementById("dLAnote").textContent=t==="S"?"Service (S) jobs never need a look-ahead.":(v?"Set by the office.":"Default for "+(t==="A"?"A jobs: required":t+" jobs: not required")+" — check it if this job runs long enough to need one.");
   var arch=isArch(x.Archive), ab=document.getElementById("dArchive");
   ab.textContent=arch?"Un-archive job":"Archive job"; ab.style.background=arch?"#15803d":"#6b7280";
   var pf=document.getElementById("pastFlag"), fin=d10(x.FinishDate);
@@ -392,7 +400,7 @@ document.getElementById("dSave").onclick=async function(){
   var i=document.getElementById("dJob").value; if(i==="") return;
   var x=JOBSDATA[+i];
   var sv=document.getElementById("dStart").value, fv=document.getElementById("dFinish").value;
-  var body={ StartDate:(sv?sv+"T12:00:00Z":null), FinishDate:(fv?fv+"T12:00:00Z":null), DattoLink:document.getElementById("dDatto").value.trim(), PMName:document.getElementById("dPM").value.trim(), GC:document.getElementById("dGC").value.trim(), Address:document.getElementById("dAddr").value.trim() };
+  var body={ StartDate:(sv?sv+"T12:00:00Z":null), FinishDate:(fv?fv+"T12:00:00Z":null), DattoLink:document.getElementById("dDatto").value.trim(), PMName:document.getElementById("dPM").value.trim(), GC:document.getElementById("dGC").value.trim(), Address:document.getElementById("dAddr").value.trim(), LookAheadRequired:(laType(x.f.Title)==="S"?"No":(document.getElementById("dLA").checked?"Yes":"No")) };
   this.disabled=true;
   try{ var token=await getToken();
     var r=await fetch(GRAPH+LIST.jobs+"/items/"+x.id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
