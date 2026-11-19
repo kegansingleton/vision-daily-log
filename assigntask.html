@@ -285,9 +285,13 @@ async function loadLookAheads(){
     async function page(url,hdr){ while(url){ var j=await fetch(url,{headers:hdr}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,f:it.fields}); }); url=j["@odata.nextLink"]||null; } }
     try{ await page(base+"&$filter=fields/WeekOf ge '"+from+"T00:00:00Z'",{Authorization:"Bearer "+token,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}); }
     catch(e){ out.length=0; await page(base,{Authorization:"Bearer "+token}); }
-    var map={};
+    /* latest look-ahead per job PER FOREMAN — two crafts on one job each show their own */
+    var per={};
     out.forEach(function(r){ var f=r.f, wk=String(f.WeekOf||"").slice(0,10); if(!wk||wk<from) return; var jn=String(f.Project||"").trim().split(/\s+/)[0]; if(!jn) return;
-      var cur=map[jn]; var key=wk+"|"+String(f.SubmittedAt||"")+"|"+r.id; if(!cur||key>cur._k){ r._k=key; r.wk=mondayOfISO(wk); r.name=String(f.Project||"").trim().slice(jn.length).trim(); map[jn]=r; } });
+      var who=String(f.SubmittedBy||f.ForemanSuper||"?").trim().toLowerCase(), m=(per[jn]=per[jn]||{}), cur=m[who], key=wk+"|"+String(f.SubmittedAt||"")+"|"+r.id;
+      if(!cur||key>cur._k){ r._k=key; r.wk=mondayOfISO(wk); r.name=String(f.Project||"").trim().slice(jn.length).trim(); m[who]=r; } });
+    var map={};
+    Object.keys(per).forEach(function(jn){ var all=Object.keys(per[jn]).map(function(k){return per[jn][k];}).sort(function(a,b){return b._k.localeCompare(a._k);}); var top=all[0]; top.all=all; map[jn]=top; });
     LA=map;
   }catch(e){ LA={}; }
   LA_LOADED=true; render();
@@ -325,8 +329,12 @@ function laPanel(jn){
   if(!LA_LOADED) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">Loading…</div></div>';
   var r=LA[jn];
   if(!r) return '<div class="lacol"><h4>2-week look-ahead</h4><div class="none">No look-ahead submitted in the last 3 weeks.</div></div>';
+  var all=r.all||[r];
+  return '<div class="lacol">'+(all.length>1?'<div class="none" style="margin-bottom:6px">'+all.length+' foremen on this job — each one\'s latest:</div>':'')+all.map(laOne).join('<hr style="border:none;border-top:2px dashed #e5e7eb;margin:14px 0">')+'</div>';
+}
+function laOne(r){
   var f=r.f, thisMon=mondayOfISO(today()), stale=r.wk<thisMon;
-  return '<div class="lacol"><h4>2-week look-ahead <span class="who">'+esc(f.ForemanSuper||f.SubmittedBy||"")+'</span> · week of '+niceD(r.wk)+
+  return '<div><h4>2-week look-ahead <span class="who">'+esc(f.ForemanSuper||f.SubmittedBy||"")+'</span> · week of '+niceD(r.wk)+
       (stale?' <span class="stale">from '+(r.wk===addDaysTo(thisMon,-7)?"last week":"an older week")+'</span>':'')+
       (f.LookAheadStatus?' <span class="pill ink">'+esc(f.LookAheadStatus)+'</span>':'')+(f.LateFlag==="Yes"?' <span class="pill red">Late</span>':'')+'</h4>'+
     '<table class="wk2"><thead><tr><th></th><th>Wk 1 · '+niceD(r.wk)+'</th><th>Wk 2 · '+niceD(addDaysTo(r.wk,7))+'</th></tr></thead><tbody>'+
