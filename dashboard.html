@@ -184,6 +184,15 @@ table.tv th{color:var(--ink2);font-weight:700}
     <div class="card c3" id="cRent"></div>
     <div class="card c3" id="cClose"></div>
   </div></section>
+
+  <section class="sec"><h2>Purchasing</h2><div class="grid">
+    <div class="card c4" id="cOrd"></div>
+    <div class="card c4" id="cPO"></div>
+    <div class="card c4" id="cPrice"></div>
+    <div class="card c6" id="cSpendV"></div>
+    <div class="card c6" id="cSpendC"></div>
+    <div class="card c12" id="cSpendM"></div>
+  </div></section>
 </div>
 <div id="tip" role="tooltip"></div>
 
@@ -338,10 +347,10 @@ async function start(a){
 async function loadAll(){
   if(BUSY) return; BUSY=true; document.body.classList.add("busy"); E("refresh").disabled=true; E("refresh").textContent="Loading…";
   LISTS=null; TIPS=[];
-  if(!E("cHours").innerHTML) ["cHours","cLogs","cJobs","cActions","cFit","cTM","cShopSM","cShopPipe","cInc","cCert","cFleet","cPTP","cPM","cSU","cRent","cClose"].forEach(function(id){ E(id).innerHTML='<div class="note">Loading…</div>'; });
+  if(!E("cHours").innerHTML) ["cHours","cLogs","cJobs","cActions","cFit","cTM","cShopSM","cShopPipe","cInc","cCert","cFleet","cPTP","cPM","cSU","cRent","cClose","cOrd","cPO"].forEach(function(id){ E(id).innerHTML='<div class="note">Loading…</div>'; });
   if(EMPS.length===0){ try{ EMPS=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Active,Foreman"); }catch(e){} }
   try{ var jt=await pullAll(JOBTASKS,"JobNo,JobName"); JOBNAMES={}; jt.forEach(function(x){ var n=String(x.JobNo||"").trim(); if(n&&!JOBNAMES[n]&&x.JobName) JOBNAMES[n]=String(x.JobName).trim(); }); }catch(e){}
-  await Promise.all([loadField(),loadActions(),loadFittings(),loadTM(),loadShop(),loadIncidents(),loadCerts(),loadFleet(),loadPTP(),loadPM(),loadSU(),loadRentals(),loadCloseout()].map(function(p){ return p.catch(function(e){ console.warn(e); }); }));
+  await Promise.all([loadField(),loadActions(),loadFittings(),loadTM(),loadShop(),loadIncidents(),loadCerts(),loadFleet(),loadPTP(),loadPM(),loadSU(),loadRentals(),loadCloseout(),loadOrders()].map(function(p){ return p.catch(function(e){ console.warn(e); }); }));
   E("asof").textContent="as of "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   document.body.classList.remove("busy"); E("refresh").disabled=false; E("refresh").textContent="Refresh"; BUSY=false;
 }
@@ -421,6 +430,53 @@ async function loadTM(){ await section("cTM","T&M tickets","/adminreview.html?ta
   E("cTM").innerHTML=head("T&M tickets","/adminreview.html?tab=tm","Review")+'<div class="stats">'+
     stat("Unsigned",fmt(uns.length),"/adminreview.html?tab=tm",uns.length?badge("warn","Need signature"):badge("good","All signed"))+stat("Unsigned > 7 days",fmt(old.length),"/adminreview.html?tab=tm",old.length?badge("crit","Aging"):"")+stat("Written last 30 days",fmt(m30),"/adminreview.html?tab=tm")+'</div>'+
     (uns.length?'<div class="rows">'+uns.slice(0,5).map(function(r){ return '<a class="r" href="/adminreview.html?tab=tm"><span class="m"><b>'+esc(r.TicketNo||"—")+'</b> '+esc(jobLabel(r.JobNo,r.JobName))+'</span><span class="x">'+(okDate(r.WorkDate)?shortD(r.WorkDate)+' · '+daysBetween(dkey(r.WorkDate),today)+'d':'')+'</span></a>'; }).join("")+'</div>':'');
+});}
+
+/* ===== Purchasing (Order Log). Spend & price watch are % only, and only for people SharePoint lets read "Order Costs" ===== */
+function pbars(items,href){ return '<div class="hb">'+items.map(function(it){ var ti=tipReg(it.label,[{v:it.txt,k:it.sub||"",c:cssv("--s1")}]);
+  return '<a class="lb" href="'+href+'" title="'+esc(it.label)+'">'+esc(it.label)+'</a><div class="tr" tabindex="0" data-tip="'+ti+'"><div class="bar" style="width:calc((100% - 56px) * '+Math.max(0.004,it.v/100).toFixed(4)+')"></div><span class="val">'+esc(it.txt)+'</span></div>'; }).join("")+'</div>'; }
+var ORD_CACHE=null;
+async function loadOrders(){ await section("cOrd","Order log","/orders.html",async function(){
+  var today=iso(new Date()), wk=iso(addDays(new Date(),7)), yr=today.slice(0,4);
+  if(!ORD_CACHE||Date.now()-ORD_CACHE.at>30*60000){
+    var lid=await named("Order Log"), rows=await pullAll(lid,"Title,Vendor,JobNo,PONumber,ExpectedDate,ReceivedDate,Status,Category,LineKey");
+    var cost=null; try{ var cid=await listId("Order Costs"); if(cid){ cost={}; (await pullAll(cid,"Title,TotalCost,UnitCost")).forEach(function(c){ cost[c.Title]={t:num(c.TotalCost),u:num(c.UnitCost)}; }); } }catch(e){ cost=null; }
+    ORD_CACHE={at:Date.now(),costs:!!cost,rows:rows.map(function(r){ var c=cost&&cost[r.LineKey]||{}; return {item:String(r.Title||""),v:String(r.Vendor||"").trim().toUpperCase(),job:String(r.JobNo||"").trim(),po:String(r.PONumber||"").trim(),exp:dkey(r.ExpectedDate),rec:dkey(r.ReceivedDate),st:String(r.Status||"Ordered"),cat:r.Category||"Other",t:c.t||0,u:c.u||0}; })};
+  }
+  var O=ORD_CACHE, rows=O.rows, d=function(r){ return r.rec||r.exp||""; };
+  var open=rows.filter(function(r){return r.st!=="Received";}), over=open.filter(function(r){return r.exp&&r.exp<today;}), due=open.filter(function(r){return r.exp&&r.exp>=today&&r.exp<=wk;}), bo=open.filter(function(r){return r.st==="Backordered";});
+  /* overdue grouped by vendor + job so you know who to call */
+  var g={}; over.forEach(function(r){ var k=r.v+"|"+r.job; (g[k]=g[k]||{v:r.v,job:r.job,n:0,old:r.exp}); g[k].n++; if(r.exp<g[k].old) g[k].old=r.exp; });
+  var gl=Object.keys(g).map(function(k){return g[k];}).sort(function(a,b){return a.old.localeCompare(b.old);});
+  E("cOrd").innerHTML=head("Order log","/orders.html","Open orders")+'<div class="stats">'+
+    stat("Open lines",fmt(open.length),"/orders.html")+stat("Overdue",fmt(over.length),"/orders.html?chip=od",over.length?badge("crit","Past expected"):badge("good","None"))+
+    stat("Due ≤ 7 days",fmt(due.length),"/orders.html?chip=wk")+stat("Backordered",fmt(bo.length),"/orders.html?chip=bo",bo.length?badge("warn","On BO"):"")+'</div>'+
+    (gl.length?'<div class="rows">'+gl.slice(0,5).map(function(x){ return '<a class="r" href="/orders.html?chip=od"><span class="m"><b>'+esc(x.v)+'</b> <span style="color:var(--muted)">· '+esc(jobLabel(x.job))+' · '+x.n+' line'+(x.n===1?"":"s")+'</span></span><span class="x crit">'+daysBetween(x.old,today)+'d late</span></a>'; }).join("")+(gl.length>5?'<a class="r" href="/orders.html?chip=od"><span class="m" style="color:var(--muted)">+ '+(gl.length-5)+' more vendor / job groups overdue</span></a>':'')+'</div>':'');
+  /* POs per year — a PO counts in the year of its first line */
+  var po={}; rows.forEach(function(r){ var k=r.v+"|"+r.po, dd=d(r); if(!r.po||!dd) return; if(!po[k]||dd<po[k]) po[k]=dd; });
+  var byY={}, ytd=0, ly=0, cut=today.slice(5); Object.keys(po).forEach(function(k){ var dd=po[k], y=dd.slice(0,4); byY[y]=(byY[y]||0)+1; if(y===yr) ytd++; if(+y===+yr-1&&dd.slice(5)<=cut) ly++; });
+  var ys=Object.keys(byY).sort().slice(-5).reverse(), maxY=Math.max.apply(null,ys.map(function(y){return byY[y];}).concat([1])), ch=ly?Math.round((ytd/ly-1)*100):null;
+  E("cPO").innerHTML=head("POs written","/orders.html?tab=ins","Insights")+'<div class="stats">'+stat("This year",fmt(ytd),"/orders.html?tab=ins",ch==null?"":badge("none",(ch>=0?"▲ ":"▼ ")+Math.abs(ch)+"% vs last year to date"))+stat("By this date last year",fmt(ly),"/orders.html?tab=ins")+'</div>'+
+    pbars(ys.map(function(y){ return {label:y===yr?y+" so far":y,v:byY[y]/maxY*100,txt:fmt(byY[y]),sub:"POs"}; }),"/orders.html?tab=ins");
+  var costCards=["cPrice","cSpendV","cSpendC","cSpendM"];
+  if(!O.costs){ costCards.forEach(function(id){ E(id).style.display="none"; }); bindTips(E("cOrd").parentNode); return; }
+  costCards.forEach(function(id){ E(id).style.display=""; });
+  var Y=rows.filter(function(r){ return d(r).slice(0,4)===yr&&r.t>0; }), tot=Y.reduce(function(s,r){return s+r.t;},0);
+  function pct(keyF,n,restLbl){ var m={}; Y.forEach(function(r){ var k=keyF(r)||"(blank)"; m[k]=(m[k]||0)+r.t; }); var a=Object.keys(m).map(function(k){return {k:k,v:m[k]};}).sort(function(x,y){return y.v-x.v;});
+    var top=n?a.slice(0,n):a, rest=n?a.slice(n).reduce(function(s,x){return s+x.v;},0):0; if(rest>0) top.push({k:restLbl+" ("+(a.length-n)+")",v:rest});
+    return top.map(function(x){ var p=tot?x.v/tot*100:0; return {label:x.k,v:p,txt:(p>0&&p<1?"<1":Math.round(p))+"%",sub:"of "+yr+" spend"}; }); }
+  E("cSpendV").innerHTML=head("Spend by vendor · "+yr+" so far","/orders.html?tab=ins","Insights")+(tot?pbars(pct(function(r){return r.v;},10,"All other vendors"),"/orders.html?tab=ins"):'<div class="note">No priced orders yet this year.</div>');
+  E("cSpendC").innerHTML=head("Spend by category · "+yr+" so far","/orders.html?tab=ins","Insights")+(tot?pbars(pct(function(r){return r.cat;},0,""),"/orders.html?tab=ins"):'<div class="note">No priced orders yet this year.</div>');
+  var mm={}; Y.forEach(function(r){ var k=d(r).slice(0,7); mm[k]=(mm[k]||0)+r.t; }); var mx=Math.max.apply(null,Object.keys(mm).map(function(k){return mm[k];}).concat([1]));
+  E("cSpendM").innerHTML=head("Spend by month · share of "+yr+" so far","/orders.html?tab=ins","Insights")+(tot?pbars(Object.keys(mm).sort().map(function(k){ var a=k.split("-"), p=mm[k]/tot*100; return {label:new Date(+a[0],+a[1]-1,1).toLocaleDateString([], {month:"long"}),v:mm[k]/mx*100,txt:Math.round(p)+"%",sub:"of "+yr+" spend"}; }),"/orders.html?tab=ins"):'');
+  /* price watch: latest vs usual (median), bought 3+ times, last 12 months, skip 4x+ unit mix-ups */
+  var pg={}; rows.forEach(function(r){ if(!(r.u>0)) return; var k=r.item.toUpperCase().replace(/\s+/g," ").trim(); (pg[k]=pg[k]||{n:r.item,u:[]}).u.push({d:d(r),u:r.u}); });
+  var d365=iso(addDays(new Date(),-365));
+  var pw=Object.keys(pg).map(function(k){ var x=pg[k]; if(x.u.length<3) return null; x.u.sort(function(a,b){return a.d.localeCompare(b.d);}); var s2=x.u.map(function(a){return a.u;}).sort(function(a,b){return a-b;}), med=s2[Math.floor(s2.length/2)], last=x.u[x.u.length-1]; return {n:x.n,ch:last.u/med-1,d:last.d}; })
+    .filter(function(p){return p&&Math.abs(p.ch)>=0.05&&p.ch<3&&p.ch>-0.75&&p.d>=d365;}).sort(function(a,b){return Math.abs(b.ch)-Math.abs(a.ch);}).slice(0,5);
+  E("cPrice").innerHTML=head("Price watch","/orders.html?tab=ins","Insights")+'<div class="note" style="margin-top:-4px">Latest price vs. our usual price · last 12 months</div>'+
+    (pw.length?'<div class="rows">'+pw.map(function(p){ var up=p.ch>0; return '<a class="r" href="/orders.html?tab=ins"><span class="m"><b>'+esc(p.n)+'</b> <span style="color:var(--muted)">· '+shortD(p.d)+'</span></span><span class="x" style="color:'+(up?"var(--crittxt)":"var(--goodtxt)")+';font-weight:800">'+(up?"▲ +":"▼ ")+Math.round(Math.abs(p.ch)*100)+'%</span></a>'; }).join("")+'</div>':'<div class="note">No big price swings.</div>');
+  bindTips(E("cOrd").parentNode);
 });}
 
 /* ===== 3. Shop ===== */

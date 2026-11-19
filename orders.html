@@ -487,7 +487,9 @@ async function start(a){
   try{ await load(); }catch(e){ E("gateMsg").textContent="Couldn't load: "+e.message; return; }
   E("gate").style.display="none"; E("app").style.display="block"; E("newTop").style.display="";
   if(SUPER.indexOf(me)>-1) E("tabAdm").style.display="";
+  var QP=new URLSearchParams(location.search); if(QP.get("chip")) OF.chip=QP.get("chip");
   fillFilters(); render();
+  var qt=QP.get("tab"); if(qt){ var tb=document.querySelector('#tabs [data-t="'+qt+'"]'); if(tb&&tb.style.display!=="none") tb.click(); }
 }
 </script>
 <script src="/feedback.js" defer></script>
