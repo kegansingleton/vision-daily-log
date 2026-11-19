@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Order Log</title>
+<link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/favicon-32.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vision"><meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--page:#f4f5f7;--surface:#fff;--ink:#111827;--ink2:#4b5563;--muted:#6b7280;--line:#e5e7eb;--wash:#f9fafb;
+  --s1:#2a78d6;--track:#dbe8f8;--good:#15803d;--goodbg:#dcfce7;--warn:#a16207;--warnbg:#fef3c7;--crit:#b91c1c;--critbg:#fde8e8;--info:#1e40af;--infobg:#dbeafe}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--page);color:var(--ink);font-size:14px;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:1400px;margin:0 auto}
+header img{height:36px;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9}
+header .sp{flex:1}
+header button{background:#fff;color:var(--vm2);border:none;border-radius:9px;padding:9px 14px;font-size:14px;font-weight:800;cursor:pointer}
+.wrap{max-width:1400px;margin:0 auto;padding:12px 14px 90px}
+.tabs{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
+.tabs button{font:inherit;font-weight:800;padding:10px 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.tabs button.on{background:var(--vm);border-color:var(--vm);color:#fff}
+.tabs .n{display:inline-block;background:rgba(0,0,0,.12);border-radius:999px;padding:0 7px;margin-left:4px;font-size:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;min-width:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{font:inherit;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff;min-width:0}
+.filters input[type=search]{flex:1 1 220px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--ink2);font-weight:800;background:var(--wash);position:sticky;top:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th.sort{cursor:pointer;user-select:none;white-space:nowrap}th.asc:after{content:" ▲"}th.desc:after{content:" ▼"}
+.scroll{overflow:auto;max-height:70vh}
+tr.po td{background:#f3f4f6;font-weight:800;border-top:2px solid #d1d5db}
+tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
+.pill{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.p-ord{background:var(--infobg);color:var(--info)}.p-part{background:var(--warnbg);color:var(--warn)}.p-bo{background:var(--critbg);color:var(--crit)}.p-rec{background:var(--goodbg);color:var(--good)}
+.od{color:var(--crit);font-weight:800}.soon{color:var(--warn);font-weight:700}
+.btn{font:inherit;font-weight:800;border:none;border-radius:9px;padding:8px 12px;cursor:pointer;background:var(--vm);color:#fff}
+.btn.sm{padding:5px 10px;font-size:12.5px}.btn.gh{background:#fff;color:var(--ink);border:1.5px solid var(--line)}.btn.ok{background:var(--good)}
+.btn:disabled{opacity:.5}
+.muted{color:var(--muted);font-size:12.5px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.tile .k{font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em}.tile .v{font-size:26px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}.tile .s{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media(max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.card h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}.card h3 .sp{flex:1}
+.bar{display:flex;align-items:center;gap:8px}.bar .t{flex:1;height:10px;background:var(--track);border-radius:5px;overflow:hidden;min-width:40px}.bar .t i{display:block;height:100%;background:var(--s1);border-radius:5px}
+.hb td{border:none;padding:4px 6px}.hb td.l{white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.up{color:var(--crit);font-weight:800}.dn{color:var(--good);font-weight:800}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9993;display:none;align-items:flex-start;justify-content:center;padding:3vh 10px;overflow:auto}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:880px;padding:16px}
+.modal h3{margin:0 0 10px;color:var(--vm2)}
+.fg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media(max-width:700px){.fg{grid-template-columns:minmax(0,1fr)}}
+.fg label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--ink2)}
+.fg input,.fg select,.fg textarea,.lines input{font:inherit;font-size:15px;padding:9px 10px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;min-width:0}
+.lines .lr{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.lines .x{border:none;background:none;color:var(--crit);font-size:20px;cursor:pointer}
+.mrow{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}.mrow .sp{flex:1}
+.msg{font-size:13px;font-weight:700}
+.gate{max-width:440px;margin:12vh auto;text-align:center;padding:0 16px}
+.gate button{font:inherit;font-size:16px;font-weight:800;padding:12px 22px;border:none;border-radius:10px;background:var(--vm);color:#fff;cursor:pointer}
+.lock{color:var(--muted);font-size:12px}
+.spark{display:block}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+.tip{position:fixed;z-index:9999;background:#111827;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;pointer-events:none;display:none;max-width:320px}
+</style>
+</head>
+<body>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Order Log</h1><div class="who" id="who"></div></div>
+  <div class="sp"></div>
+  <button id="newTop" style="display:none">+ New order</button>
+</div></header>
+
+<div id="gate" class="gate"><h2>Order Log</h2><p class="muted" id="gateMsg">Sign in with your Vision account.</p><button id="signin">Sign in with Microsoft</button></div>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="tabs" id="tabs">
+    <button data-t="open" class="on">Open orders <span class="n" id="nOpen">0</span></button>
+    <button data-t="hist">Received / history</button>
+    <button data-t="ins">Insights &amp; top 100</button>
+    <button data-t="adm" id="tabAdm" style="display:none">Setup</button>
+  </div>
+
+  <!-- OPEN -->
+  <section id="v-open">
+    <div class="tiles" id="openTiles"></div>
+    <div class="card">
+      <div class="filters">
+        <input type="search" id="oq" placeholder="Search item, PO, vendor, job…">
+        <select id="oJob"><option value="">All jobs</option></select>
+        <select id="oVen"><option value="">All vendors</option></select>
+        <select id="oTo"><option value="">Deliver to: any</option></select>
+      </div>
+      <div class="chips" id="oChips"></div>
+    </div>
+    <div class="card" style="padding:0"><div class="scroll" id="openList"></div></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="v-hist" style="display:none">
+    <div class="card">
+      <div class="filters">
+        <input type="search" id="hq" placeholder="Search item, PO, vendor, job…">
+        <select id="hJob"><option value="">All jobs</option></select>
+        <select id="hVen"><option value="">All vendors</option></select>
+        <select id="hCat"><option value="">All categories</option></select>
+        <select id="hRange"><option value="365">Last 12 months</option><option value="ytd">This year</option><option value="all" selected>All time</option></select>
+      </div>
+      <div class="muted" style="margin-top:8px">Received orders are locked — nobody can change them here. Tap an item to see every time we bought it.</div>
+    </div>
+    <div class="card" style="padding:0"><div class="scroll" id="histList"></div></div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="v-ins" style="display:none">
+    <div class="card"><div class="filters">
+      <select id="iRange"><option value="365">Last 12 months</option><option value="ytd">This year</option><option value="all">All time</option></select>
+      <select id="iJob"><option value="">All jobs</option></select>
+      <select id="iCat"><option value="">All categories</option></select>
+      <select id="iVen"><option value="">All vendors</option></select>
+      <span class="muted" id="iNote"></span>
+    </div></div>
+    <div class="tiles" id="insTiles"></div>
+    <div class="grid2">
+      <div class="card" id="cTopCost"><h3>Top 100 most costly <span class="sp"></span><span class="muted">total $ spent</span></h3><div class="scroll" id="topCost"></div></div>
+      <div class="card"><h3>Top 100 most purchased <span class="sp"></span>
+        <select id="topQtyBy" style="font:inherit;font-size:12.5px;padding:4px 6px;border-radius:7px;border:1px solid var(--line)"><option value="qty">by quantity</option><option value="n">by times ordered</option></select></h3><div class="scroll" id="topQty"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card" data-cost="1"><h3>Spend by vendor</h3><div id="byVen"></div></div>
+      <div class="card" data-cost="1"><h3>Spend by job</h3><div id="byJob"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card" data-cost="1"><h3>Spend by category</h3><div id="byCat"></div></div>
+      <div class="card" data-cost="1"><h3>Spend by month</h3><div id="byMon"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card" data-cost="1"><h3>Price watch <span class="sp"></span><span class="muted">latest price vs. our average</span></h3><div class="scroll" id="priceWatch"></div></div>
+      <div class="card"><h3>Vendor scorecard <span class="sp"></span><span class="muted">on time = received in the portal by the expected date</span></h3><div class="scroll" id="vendorScore"></div></div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="v-adm" style="display:none">
+    <div class="card"><h3>Load the order history</h3>
+      <p class="muted">One time: pick <b>order-log-import.json</b> (from Kegan's Downloads). Lines already loaded are skipped, so it's safe to run again if it stops.</p>
+      <input type="file" id="impFile" accept=".json"> <button class="btn" id="impGo">Import</button> <span class="msg" id="impMsg"></span>
+    </div>
+  </section>
+</div>
+
+<!-- new order -->
+<div class="ov" id="ovNew"><div class="modal">
+  <h3>New order</h3>
+  <div class="fg">
+    <label>Vendor<input id="nVen" list="dlVen" autocomplete="off"></label>
+    <label>Job<input id="nJob" list="dlJob" autocomplete="off"></label>
+    <label>PO #<input id="nPo" inputmode="numeric" autocomplete="off"></label>
+    <label>Expected delivery<input type="date" id="nExp"></label>
+    <label>Deliver to<select id="nTo"><option>SHIP TO SITE</option><option>PICK UP</option><option>PL SHOP</option><option>SM SHOP</option><option>STOCK</option></select></label>
+    <label>Urgency<select id="nUrg"><option value="">Normal</option><option>High</option><option>Critical</option></select></label>
+  </div>
+  <div style="margin:14px 0 6px;font-weight:800">Items</div>
+  <div class="lines" id="nLines"></div>
+  <button class="btn gh sm" id="nAdd">+ Add item</button>
+  <div class="fg" style="margin-top:10px;grid-template-columns:minmax(0,1fr)"><label>Notes<input id="nNotes"></label></div>
+  <div class="mrow"><span class="msg" id="nMsg"></span><span class="sp"></span><button class="btn gh" id="nCancel">Cancel</button><button class="btn" id="nSave">Save order</button></div>
+</div></div>
+
+<!-- receive / line detail -->
+<div class="ov" id="ovLine"><div class="modal">
+  <h3 id="lTitle"></h3>
+  <div id="lBody"></div>
+  <div class="mrow"><span class="msg" id="lMsg"></span><span class="sp"></span><button class="btn gh" id="lClose">Close</button></div>
+</div></div>
+
+<!-- item history -->
+<div class="ov" id="ovItem"><div class="modal">
+  <h3 id="iTitle"></h3>
+  <div id="iBody"></div>
+  <div class="mrow"><span class="sp"></span><button class="btn gh" id="iClose">Close</button></div>
+</div></div>
+
+<datalist id="dlVen"></datalist><datalist id="dlJob"></datalist><datalist id="dlItem"></datalist>
+<div class="tip" id="tip"></div>
+
+<script>
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var G="https://graph.microsoft.com/v1.0/sites/"+SITE;
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var L_LOG="Order Log", L_COST="Order Costs";
+var SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(location.origin+location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, me="", MY_NAME="", IS_ADMIN=false, COSTS=false, LOG_ID=null, COST_ID=null, LINES=[], COST={}, JOBS=[], TAB="open";
+var OF={chip:"open"}, HSORT={k:"date",d:-1};
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function today(){return iso(new Date());}
+function addDays(s,n){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);return iso(d);}
+function d10(v){return String(v||"").slice(0,10);}
+function shortD(s){s=d10(s);if(!s)return "—";var p=s.split("-");return +p[1]+"/"+ +p[2]+"/"+p[0].slice(2);}
+function num(v){var n=parseFloat(String(v==null?"":v).replace(/[$,\s]/g,""));return isFinite(n)?n:null;}
+function money(n){return n==null?"—":"$"+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function money0(n){if(n==null)return "—";var a=Math.abs(n);return a>=1e6?"$"+(Math.round(n/1e5)/10)+"M":a>=1e4?"$"+Math.round(n/1e3)+"K":"$"+Math.round(n).toLocaleString();}
+function q(n){return n==null?"—":(Math.round(n*100)/100).toLocaleString();}
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function itemKey(s){return String(s||"").toUpperCase().replace(/''/g,'"').replace(/[“”]/g,'"').replace(/\s+/g," ").replace(/^[\s.,-]+|[\s.,-]+$/g,"");}
+var CATS=[["Valves",/\b(BV|VALVE|VLV|CHECK|GATE|BUTTERFLY|BFV|PRV|RELIEF|STRAINER|BALANCING|CIRCUIT SETTER)\b/],["Backflow",/\b(BACKFLOW|RPZ|DCVA|AIRGAP|LF009|909)\b/],["Firestop",/\b(FIRE ?STOP|FIRE CAULK|CP ?25|FB-?3000|INTUMESCENT)\b/],
+ ["Equipment",/\b(PUMP|BOILER|RTU|AHU|CHILLER|WATER HEATER|HEATER|TANK|EXHAUST FAN|ERV|FCU|UNIT HEATER|MINI SPLIT|CONDENSER|COMPRESSOR)\b/],["Gauges & controls",/\b(GAUGE|THERM|THERMOMETER|SENSOR|THERMOSTAT|ACTUATOR|TRANSDUCER|SWITCH|RELAY|CONTROLLER)\b/],
+ ["Insulation",/\b(INSUL|ARMAFLEX|FIBERGLASS|DUCT WRAP|JACKET)\b/],["Sheet metal & air",/\b(DUCT|FLEX|SPIRAL|GRILLE|REGISTER|DIFFUSER|LOUVER|DAMPER|PLENUM|GRD|ACCESS DOOR|SHEET METAL)\b/],
+ ["Hangers & hardware",/\b(STRUT|UNISTRUT|ALL ?THREAD|ATR|ROD|NUT|NUTS|WASHER|BOLT|BOLTS|ANCHOR|CLAMP|HANGER|CLEVIS|SCREW|SCREWS|STRAP|TRAPEZE|BEAM)\b/],["Cast iron",/\b(CAST|NO ?HUB|NH|CI)\b/],["Plastic pipe",/\b(PVC|CPVC|ABS|POLY)\b/],["PEX",/\bPEX\b/],
+ ["Steel pipe & fittings",/\b(BLK|BLACK|A53|GALV|STL|STEEL|TOL|FLG|FLANGE|WELD|SCH ?40|SCH ?80|GROOVED|VIC|VICTAULIC|NIPPLE)\b/],["Copper",/\b(COP|COPPER|CU|PROPRESS|PRO ?PRESS|TYPE L|TYPE M|TYPE K|SWEAT|CXC)\b/],
+ ["Consumables & tools",/\b(SOLDER|FLUX|TAPE|TEF|TEFLON|DOPE|RAG|RAGS|SANDCLOTH|EMERY|BRUSH|GLUE|PRIMER|CEMENT|WHEEL|BLADE|BLADES|BIT|BITS|CAULK|SEALANT|SIKAFLEX|GAS|ACETYLENE|OXYGEN|PROPANE|MAPP|GLOVES|BATTERY|BATTERIES|LIGHT|LIGHTS|DRILL|SAW|CUTTER)\b/]];
+function catOf(item){var s=String(item||"").toUpperCase();for(var i=0;i<CATS.length;i++) if(CATS[i][1].test(s)) return CATS[i][0];return "Other";}
+
+/* ===== Graph ===== */
+async function token(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gx(method,url,body){ var t=await token(), o={method:method,headers:{Authorization:"Bearer "+t,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}};
+  if(body){ o.headers["Content-Type"]="application/json"; o.body=JSON.stringify(body); }
+  var r=await fetch(url.indexOf("http")===0?url:G+url,o); if(!r.ok){ var tx=""; try{tx=await r.text();}catch(e){} var er=new Error("HTTP "+r.status+" "+tx.slice(0,160)); er.status=r.status; throw er; }
+  return r.status===204?null:r.json(); }
+async function pullAll(path){ var out=[], url=path; while(url){ var j=await gx("GET",url); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+async function listId(name){ var j=await gx("GET","/lists?$select=id,displayName&$top=999"); var l=(j.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()===name.toLowerCase();})[0]; return l?l.id:null; }
+
+/* ===== load ===== */
+function toLine(f){ return {id:f._id,key:f.LineKey||("SP"+f._id),item:String(f.Title||"").trim(),vendor:String(f.Vendor||"").trim().toUpperCase(),job:String(f.JobNo||"").trim().toUpperCase(),po:String(f.PONumber||"").trim(),
+  exp:d10(f.ExpectedDate),urg:f.Urgency||"",qo:num(f.QtyOrdered)||0,qr:num(f.QtyReceived)||0,st:f.Status||"Ordered",to:String(f.DeliverTo||"").toUpperCase(),notes:f.Notes||"",
+  rec:d10(f.ReceivedDate),by:f.ReceivedBy||"",ent:f.EnteredBy||"",cat:f.Category||catOf(f.Title),locked:f.Locked==="Yes"||f.Status==="Received",src:f.Source||""}; }
+async function load(){
+  E("gateMsg").textContent="Loading orders…";
+  LOG_ID=await listId(L_LOG); if(!LOG_ID) throw new Error("The “"+L_LOG+"” list isn't set up yet.");
+  var rows=await pullAll("/lists/"+LOG_ID+"/items?$expand=fields&$top=999");
+  LINES=rows.map(toLine);
+  COST={};
+  if(IS_ADMIN){ try{ COST_ID=await listId(L_COST); if(COST_ID){ (await pullAll("/lists/"+COST_ID+"/items?$expand=fields($select=Title,TotalCost,UnitCost)&$top=999")).forEach(function(f){ COST[f.Title]={tot:num(f.TotalCost),unit:num(f.UnitCost),id:f._id}; }); COSTS=true; } }catch(e){ COSTS=false; } }
+  try{ var t=await pullAll("/lists/"+JOBTASKS+"/items?$expand=fields($select=JobNo,JobName,Active)&$top=999"), seen={}; JOBS=[];
+    t.forEach(function(x){ var n=String(x.JobNo||"").trim(); if(!n||seen[n]||(x.Active||"Yes")==="No") return; seen[n]=1; JOBS.push(n+(x.JobName?" "+x.JobName:"")); }); }catch(e){}
+}
+function cost(l){ var c=COST[l.key]; return c||{tot:null,unit:null}; }
+function lineDate(l){ return l.rec||l.exp||""; }
+
+/* ===== OPEN ===== */
+function isOpen(l){ return l.st!=="Received"; }
+function remaining(l){ return Math.max(0,(l.qo||0)-(l.qr||0)); }
+function dueCls(l){ if(!l.exp) return ""; var t=today(); if(l.exp<t) return "od"; if(l.exp<=addDays(t,3)) return "soon"; return ""; }
+function stPill(l){ var c={Ordered:"p-ord",Partial:"p-part",Backordered:"p-bo",Received:"p-rec"}[l.st]||"p-ord"; return '<span class="pill '+c+'">'+esc(l.st)+'</span>'; }
+function opts(sel,vals,label){ var cur=sel.value; sel.innerHTML='<option value="">'+label+'</option>'+vals.map(function(v){return '<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>';}).join(""); }
+function uniq(arr){ var m={}; arr.forEach(function(v){ if(v) m[v]=1; }); return Object.keys(m).sort(); }
+function fillFilters(){
+  var open=LINES.filter(isOpen);
+  opts(E("oJob"),uniq(open.map(function(l){return l.job;})),"All jobs"); opts(E("oVen"),uniq(open.map(function(l){return l.vendor;})),"All vendors"); opts(E("oTo"),uniq(open.map(function(l){return l.to;})),"Deliver to: any");
+  var hist=LINES.filter(function(l){return !isOpen(l);});
+  opts(E("hJob"),uniq(hist.map(function(l){return l.job;})),"All jobs"); opts(E("hVen"),uniq(hist.map(function(l){return l.vendor;})),"All vendors"); opts(E("hCat"),uniq(LINES.map(function(l){return l.cat;})),"All categories");
+  opts(E("iJob"),uniq(LINES.map(function(l){return l.job;})),"All jobs"); opts(E("iCat"),uniq(LINES.map(function(l){return l.cat;})),"All categories"); opts(E("iVen"),uniq(LINES.map(function(l){return l.vendor;})),"All vendors");
+  E("dlVen").innerHTML=uniq(LINES.map(function(l){return l.vendor;})).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+  E("dlJob").innerHTML=uniq(JOBS.concat(LINES.map(function(l){return l.job;}))).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+  var seen={}, items=[]; LINES.slice().reverse().forEach(function(l){ var k=itemKey(l.item); if(k&&!seen[k]){ seen[k]=1; items.push(l.item); } }); E("dlItem").innerHTML=items.slice(0,4000).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
+}
+function renderOpen(){
+  var t=today(), all=LINES.filter(isOpen), qs=E("oq").value.toLowerCase().trim(), fj=E("oJob").value, fv=E("oVen").value, ft=E("oTo").value;
+  var base=all.filter(function(l){ if(fj&&l.job!==fj) return false; if(fv&&l.vendor!==fv) return false; if(ft&&l.to!==ft) return false;
+    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
+  var cnt={open:base.length,od:base.filter(function(l){return l.exp&&l.exp<t;}).length,wk:base.filter(function(l){return l.exp&&l.exp>=t&&l.exp<=addDays(t,7);}).length,
+    bo:base.filter(function(l){return l.st==="Backordered";}).length,part:base.filter(function(l){return l.st==="Partial";}).length,crit:base.filter(function(l){return /critical|high/i.test(l.urg);}).length};
+  E("nOpen").textContent=all.length;
+  E("oChips").innerHTML=[["open","All open"],["od","Overdue"],["wk","Due in 7 days"],["bo","Backordered"],["part","Partly in"],["crit","High / critical"]].map(function(c){ return '<button class="chip'+(OF.chip===c[0]?' on':'')+'" data-c="'+c[0]+'">'+c[1]+' · '+cnt[c[0]]+'</button>'; }).join("");
+  E("oChips").querySelectorAll(".chip").forEach(function(b){ b.onclick=function(){ OF.chip=b.getAttribute("data-c"); renderOpen(); }; });
+  var rows=base.filter(function(l){ switch(OF.chip){ case "od": return l.exp&&l.exp<t; case "wk": return l.exp&&l.exp>=t&&l.exp<=addDays(t,7); case "bo": return l.st==="Backordered"; case "part": return l.st==="Partial"; case "crit": return /critical|high/i.test(l.urg); } return true; });
+  var pos=uniq(base.map(function(l){return l.po;})).length;
+  E("openTiles").innerHTML=tileH("Open lines",all.length,pos+" POs in this view")+tileH("Overdue",cnt.od,"past the expected date")+tileH("Due in 7 days",cnt.wk,"")+tileH("Backordered",cnt.bo,"")+
+    (COSTS?tileH("$ still coming",money0(base.reduce(function(s,l){ var c=cost(l); return s+(c.unit!=null?c.unit*remaining(l):(l.qr?0:(c.tot||0))); },0)),"open value in this view"):"");
+  if(!rows.length){ E("openList").innerHTML='<div class="empty">'+(all.length?"Nothing matches.":"No open orders.")+'</div>'; return; }
+  rows.sort(function(a,b){ return (a.exp||"9999").localeCompare(b.exp||"9999")||a.po.localeCompare(b.po)||a.item.localeCompare(b.item); });
+  var byPo={}, order=[]; rows.forEach(function(l){ var k=l.po+"|"+l.vendor; if(!byPo[k]){ byPo[k]=[]; order.push(k); } byPo[k].push(l); });
+  var h='<table><thead><tr><th>Item</th><th class="n">Ordered</th><th class="n">In</th><th>Expected</th><th>Status</th><th>Deliver to</th>'+(COSTS?'<th class="n">Total $</th>':'')+'<th></th></tr></thead><tbody>';
+  order.forEach(function(k){ var g=byPo[k], f=g[0];
+    h+='<tr class="po"><td colspan="'+(COSTS?8:7)+'">PO '+esc(f.po||"—")+' · '+esc(f.vendor)+' · '+esc(f.job)+(f.urg&&!/low/i.test(f.urg)?' · <span class="pill p-bo">'+esc(f.urg)+'</span>':'')+'</td></tr>';
+    g.forEach(function(l){ h+='<tr class="clk" data-id="'+esc(l.id)+'"><td>'+esc(l.item)+(l.notes?'<div class="muted">'+esc(l.notes)+'</div>':'')+'</td><td class="n">'+q(l.qo)+'</td><td class="n">'+q(l.qr)+'</td><td class="'+dueCls(l)+'">'+shortD(l.exp)+'</td><td>'+stPill(l)+'</td><td>'+esc(l.to)+'</td>'+(COSTS?'<td class="n">'+money(cost(l).tot)+'</td>':'')+'<td><button class="btn ok sm" data-rcv="'+esc(l.id)+'">Receive</button></td></tr>'; }); });
+  E("openList").innerHTML=h+'</tbody></table>';
+  E("openList").querySelectorAll("tr.clk").forEach(function(tr){ tr.onclick=function(e){ var b=e.target.closest("[data-rcv]"); openLine(tr.getAttribute("data-id"),!!b); }; });
+}
+function tileH(k,v,s){ return '<div class="tile"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+esc(s||"")+'</div></div>'; }
+
+/* ===== line: receive / backorder / edit (open lines only) ===== */
+function byId(id){ return LINES.filter(function(l){return String(l.id)===String(id);})[0]; }
+function openLine(id,focusRcv){
+  var l=byId(id); if(!l) return; var c=cost(l);
+  E("lTitle").textContent=l.item; E("lMsg").textContent="";
+  var info='<table style="margin-bottom:12px">'+[["PO",l.po],["Vendor",l.vendor],["Job",l.job],["Ordered",q(l.qo)],["Received so far",q(l.qr)],["Expected",shortD(l.exp)],["Status",l.st],["Deliver to",l.to],["Urgency",l.urg||"Normal"],["Notes",l.notes],
+    ["Received",l.rec?shortD(l.rec)+(l.by?" by "+l.by:""):""],["Entered by",l.ent],["Category",l.cat]].concat(COSTS?[["Total $",money(c.tot)],["Unit $",money(c.unit)]]:[]).filter(function(r){return r[1]!==""&&r[1]!=null;}).map(function(r){ return '<tr><td style="color:var(--muted);width:150px">'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>'; }).join("")+'</table>';
+  var act="";
+  if(l.locked||l.st==="Received") act='<div class="lock">&#128274; Received — this line is locked. Need a correction? Ask the office; every change is kept in SharePoint version history.</div>';
+  else act='<div class="card" style="background:var(--wash)"><b>Receive</b><div class="fg" style="margin-top:8px"><label>Qty received now<input type="number" step="any" id="rQty" value="'+remaining(l)+'"></label><label>Date<input type="date" id="rDate" value="'+today()+'"></label><label>Note (optional)<input id="rNote" placeholder="e.g. 2 short, rest on BO"></label></div>'+
+    '<div class="mrow"><button class="btn ok" id="rAll">Received all '+q(remaining(l))+'</button><button class="btn gh" id="rPart">Save this qty</button></div></div>'+
+    '<div class="card" style="background:var(--wash)"><b>Backordered / update</b><div class="fg" style="margin-top:8px"><label>New expected date<input type="date" id="bExp" value="'+(l.exp||"")+'"></label><label>Note<input id="bNote" value=""></label><label>Urgency<select id="bUrg"><option value="">Normal</option><option'+(l.urg==="High"?" selected":"")+'>High</option><option'+(l.urg==="Critical"?" selected":"")+'>Critical</option></select></label></div>'+
+    '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+
+    (COSTS?'<div class="card" style="background:var(--wash)"><b>Cost</b> <span class="muted">(office only)</span><div class="fg" style="margin-top:8px"><label>Total $<input type="number" step="any" id="cTot" value="'+(c.tot==null?"":c.tot)+'"></label></div><div class="mrow"><button class="btn gh" id="cSave">Save cost</button></div></div>':'');
+  E("lBody").innerHTML=info+act; E("ovLine").style.display="flex";
+  if(E("rAll")){ E("rAll").onclick=function(){ receive(l,remaining(l)); }; E("rPart").onclick=function(){ receive(l,num(E("rQty").value)); };
+    E("bBo").onclick=function(){ upd(l,{Status:"Backordered",ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:noteAdd(l,"Backordered"+(E("bNote").value?": "+E("bNote").value:""))}); };
+    E("bSave").onclick=function(){ upd(l,{ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:E("bNote").value?noteAdd(l,E("bNote").value):l.notes}); };
+    if(focusRcv) setTimeout(function(){ E("rQty").focus(); E("rQty").select(); },50); }
+  if(E("cSave")) E("cSave").onclick=function(){ saveCost(l,num(E("cTot").value)); };
+}
+function noteAdd(l,t){ var stamp=shortD(today())+" "+(MY_NAME||me.split("@")[0]); return (l.notes?l.notes+" | ":"")+stamp+": "+t; }
+async function receive(l,n){ if(n==null||n<=0){ E("lMsg").textContent="Enter the quantity that came in."; return; }
+  var tot=(l.qr||0)+n, full=tot>=(l.qo||0), f={QtyReceived:tot,Status:full?"Received":"Partial",ReceivedDate:(E("rDate").value||today())+"T12:00:00Z",ReceivedBy:MY_NAME||me};
+  if(full) f.Locked="Yes"; if(E("rNote").value.trim()) f.Notes=noteAdd(l,E("rNote").value.trim());
+  await upd(l,f); }
+async function upd(l,f){ E("lMsg").textContent="Saving…";
+  try{ await gx("PATCH","/lists/"+LOG_ID+"/items/"+l.id+"/fields",f); var n=toLine(Object.assign(fieldsOf(l),f,{_id:l.id})); Object.assign(l,n); E("ovLine").style.display="none"; fillFilters(); render(); }
+  catch(e){ E("lMsg").textContent="Didn't save: "+e.message; } }
+function fieldsOf(l){ return {Title:l.item,Vendor:l.vendor,JobNo:l.job,PONumber:l.po,ExpectedDate:l.exp,Urgency:l.urg,QtyOrdered:l.qo,QtyReceived:l.qr,Status:l.st,DeliverTo:l.to,Notes:l.notes,ReceivedDate:l.rec,ReceivedBy:l.by,EnteredBy:l.ent,Category:l.cat,LineKey:l.key,Locked:l.locked?"Yes":"",Source:l.src}; }
+async function saveCost(l,tot){ if(!COSTS) return; E("lMsg").textContent="Saving…";
+  var f={TotalCost:tot,UnitCost:(tot!=null&&l.qo)?Math.round(tot/l.qo*10000)/10000:null};
+  try{ var c=COST[l.key]; if(c&&c.id) await gx("PATCH","/lists/"+COST_ID+"/items/"+c.id+"/fields",f); else { var r=await gx("POST","/lists/"+COST_ID+"/items",{fields:Object.assign({Title:l.key},f)}); c={id:r.id}; }
+    COST[l.key]={tot:f.TotalCost,unit:f.UnitCost,id:c.id}; E("ovLine").style.display="none"; render(); }catch(e){ E("lMsg").textContent="Didn't save: "+e.message; } }
+
+/* ===== NEW ORDER ===== */
+function nRow(){ return '<div class="lr"><input data-f="qty" placeholder="Qty" inputmode="decimal" style="flex:0 0 80px"><input data-f="item" placeholder="Item description" list="dlItem" style="flex:1">'+(COSTS?'<input data-f="tot" placeholder="Total $" inputmode="decimal" style="flex:0 0 110px">':'')+'<button type="button" class="x" title="Remove">&times;</button></div>'; }
+function openNew(){ ["nVen","nJob","nPo","nNotes"].forEach(function(id){E(id).value="";}); E("nExp").value=addDays(today(),7); E("nUrg").value=""; E("nMsg").textContent="";
+  E("nLines").innerHTML=nRow()+nRow()+nRow(); E("ovNew").style.display="flex"; E("nVen").focus(); }
+E("nAdd").onclick=function(){ E("nLines").insertAdjacentHTML("beforeend",nRow()); };
+E("nLines").addEventListener("click",function(e){ if(e.target.classList.contains("x")) e.target.parentNode.remove(); });
+E("nCancel").onclick=function(){ E("ovNew").style.display="none"; };
+E("nSave").onclick=async function(){
+  var ven=E("nVen").value.trim().toUpperCase(), job=E("nJob").value.trim().toUpperCase(), po=E("nPo").value.trim(), exp=E("nExp").value;
+  var items=[].slice.call(E("nLines").querySelectorAll(".lr")).map(function(r){ var o={}; r.querySelectorAll("[data-f]").forEach(function(i){ o[i.getAttribute("data-f")]=i.value.trim(); }); return o; }).filter(function(o){return o.item;});
+  if(!ven||!job||!items.length){ E("nMsg").textContent="Vendor, job and at least one item are required."; return; }
+  if(items.some(function(o){return !(num(o.qty)>0);})){ E("nMsg").textContent="Every item needs a quantity."; return; }
+  if(po&&LINES.some(function(l){return l.po===po&&l.vendor===ven;})&&!confirm("PO "+po+" from "+ven+" is already in the log. Add these lines to it anyway?")) return;
+  var jobNo=job.split(/\s+/)[0];
+  E("nSave").disabled=true; E("nMsg").textContent="Saving…"; var made=0;
+  try{ for(var i=0;i<items.length;i++){ var o=items[i], key="N"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      var f={Title:o.item,Vendor:ven,JobNo:jobNo,PONumber:po,ExpectedDate:exp?exp+"T12:00:00Z":null,Urgency:E("nUrg").value,QtyOrdered:num(o.qty),QtyReceived:0,Status:"Ordered",DeliverTo:E("nTo").value,
+        Notes:E("nNotes").value.trim(),EnteredBy:MY_NAME||me,Category:catOf(o.item),LineKey:key,Source:"Portal"};
+      Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]==="") delete f[k]; });
+      var r=await gx("POST","/lists/"+LOG_ID+"/items",{fields:f}); f._id=r.id; LINES.push(toLine(f)); made++;
+      if(COSTS&&num(o.tot)!=null){ var tot=num(o.tot), cf={Title:key,TotalCost:tot,UnitCost:Math.round(tot/num(o.qty)*10000)/10000}; var cr=await gx("POST","/lists/"+COST_ID+"/items",{fields:cf}); COST[key]={tot:cf.TotalCost,unit:cf.UnitCost,id:cr.id}; } }
+    E("ovNew").style.display="none"; fillFilters(); render();
+  }catch(e){ E("nMsg").textContent="Saved "+made+" of "+items.length+" lines. Problem: "+e.message; }
+  E("nSave").disabled=false; };
+
+/* ===== HISTORY ===== */
+function inRange(d,r){ if(r==="all") return true; if(!d) return false; if(r==="ytd") return d.slice(0,4)===today().slice(0,4); return d>=addDays(today(),-(+r)); }
+function renderHist(){
+  var qs=E("hq").value.toLowerCase().trim(), fj=E("hJob").value, fv=E("hVen").value, fc=E("hCat").value, rg=E("hRange").value;
+  var rows=LINES.filter(function(l){ if(isOpen(l)) return false; if(fj&&l.job!==fj) return false; if(fv&&l.vendor!==fv) return false; if(fc&&l.cat!==fc) return false; if(!inRange(lineDate(l),rg)) return false;
+    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
+  var k=HSORT.k, d=HSORT.d, val=function(l){ return k==="date"?lineDate(l):k==="tot"?(cost(l).tot||0):k==="unit"?(cost(l).unit||0):k==="qty"?l.qo:(l[k]||""); };
+  rows.sort(function(a,b){ var x=val(a),y=val(b); return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d; });
+  var cols=[["date","Received"],["item","Item"],["vendor","Vendor"],["job","Job"],["po","PO"],["qty","Qty",1]].concat(COSTS?[["unit","Unit $",1],["tot","Total $",1]]:[]);
+  var show=rows.slice(0,600);
+  var h='<div class="muted" style="padding:8px 10px">'+rows.length.toLocaleString()+' lines'+(COSTS?' · '+money0(rows.reduce(function(s,l){return s+(cost(l).tot||0);},0)):'')+(rows.length>600?' · showing first 600 — narrow the search':'')+'</div><table><thead><tr>'+cols.map(function(c){ return '<th class="sort'+(c[2]?' n':'')+(HSORT.k===c[0]?(d>0?' asc':' desc'):'')+'" data-k="'+c[0]+'">'+c[1]+'</th>'; }).join("")+'</tr></thead><tbody>'+
+    show.map(function(l){ var c=cost(l); return '<tr class="clk" data-item="'+esc(itemKey(l.item))+'"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.item)+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>';
+  E("histList").innerHTML=h;
+  E("histList").querySelectorAll("th.sort").forEach(function(th){ th.onclick=function(){ var kk=th.getAttribute("data-k"); if(HSORT.k===kk) HSORT.d=-HSORT.d; else { HSORT.k=kk; HSORT.d=/date|tot|unit|qty/.test(kk)?-1:1; } renderHist(); }; });
+  E("histList").querySelectorAll("tr[data-item]").forEach(function(tr){ tr.onclick=function(){ openItem(tr.getAttribute("data-item")); }; });
+}
+
+/* ===== INSIGHTS ===== */
+function insRows(){ var rg=E("iRange").value, fj=E("iJob").value, fc=E("iCat").value, fv=E("iVen").value;
+  return LINES.filter(function(l){ if(fj&&l.job!==fj) return false; if(fc&&l.cat!==fc) return false; if(fv&&l.vendor!==fv) return false; return inRange(lineDate(l),rg); }); }
+function group(rows){ var g={}; rows.forEach(function(l){ var k=itemKey(l.item); if(!k) return; var c=cost(l), x=g[k]=g[k]||{k:k,name:l.item,n:0,qty:0,tot:0,units:[],last:null,vendors:{}};
+  x.n++; x.qty+=l.qo||0; x.tot+=c.tot||0; if(c.unit!=null&&c.unit>0) x.units.push({d:lineDate(l),u:c.unit,v:l.vendor}); x.vendors[l.vendor]=(x.vendors[l.vendor]||0)+1; if(!x.last||lineDate(l)>x.last.d) x.last={d:lineDate(l),v:l.vendor,u:c.unit}; });
+  return Object.keys(g).map(function(k){ var x=g[k]; x.units.sort(function(a,b){return a.d.localeCompare(b.d);}); x.avg=x.units.length?x.units.reduce(function(s,u){return s+u.u;},0)/x.units.length:null; return x; }); }
+function hbars(list,valF,lblF,txtF,max){ max=max||Math.max.apply(null,list.map(valF).concat([1]));
+  return '<table class="hb"><tbody>'+list.map(function(x){ var v=valF(x); return '<tr><td class="l" title="'+esc(lblF(x))+'">'+esc(lblF(x))+'</td><td style="width:55%"><div class="bar"><div class="t"><i style="width:'+Math.max(1,v/max*100).toFixed(1)+'%"></i></div></div></td><td class="n">'+txtF(x)+'</td></tr>'; }).join("")+'</tbody></table>'; }
+function renderIns(){
+  var rows=insRows(), G2=group(rows), spend=rows.reduce(function(s,l){return s+(cost(l).tot||0);},0);
+  document.querySelectorAll('[data-cost="1"]').forEach(function(el){ el.style.display=COSTS?"":"none"; }); E("cTopCost").style.display=COSTS?"":"none";
+  if(!COSTS){ E("cTopCost").parentNode.style.gridTemplateColumns="minmax(0,1fr)"; E("vendorScore").closest(".grid2").style.gridTemplateColumns="minmax(0,1fr)"; }
+  E("iNote").textContent=rows.length.toLocaleString()+" order lines · dated by received date (or expected date if not in yet)";
+  E("insTiles").innerHTML=(COSTS?tileH("Spent",money0(spend),"in this view"):"")+tileH("Order lines",rows.length.toLocaleString(),"")+tileH("POs",uniq(rows.map(function(l){return l.po;})).length.toLocaleString(),"")+
+    tileH("Different items",G2.length.toLocaleString(),"")+tileH("Vendors",uniq(rows.map(function(l){return l.vendor;})).length,"")+tileH("Backordered lines",rows.filter(function(l){return l.st==="Backordered"||/backorder/i.test(l.notes);}).length,"");
+  /* top 100 costly */
+  if(COSTS){ var tc=G2.filter(function(x){return x.tot>0;}).sort(function(a,b){return b.tot-a.tot;}).slice(0,100);
+    E("topCost").innerHTML=tc.length?'<table><thead><tr><th>#</th><th>Item</th><th class="n">Total $</th><th class="n">Times</th><th class="n">Qty</th><th class="n">Avg unit</th><th class="n">Last unit</th></tr></thead><tbody>'+tc.map(function(x,i){ var lu=x.units.length?x.units[x.units.length-1].u:null, ch=(x.avg&&lu)?(lu/x.avg-1):0;
+      return '<tr class="clk" data-item="'+esc(x.k)+'"><td class="n">'+(i+1)+'</td><td>'+esc(x.name)+'</td><td class="n"><b>'+money0(x.tot)+'</b></td><td class="n">'+x.n+'</td><td class="n">'+q(x.qty)+'</td><td class="n">'+money(x.avg)+'</td><td class="n'+(ch>0.1?' up':ch<-0.1?' dn':'')+'">'+money(lu)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="empty">No cost data in this view.</div>'; }
+  /* top 100 purchased */
+  var by=E("topQtyBy").value, tq=G2.slice().sort(function(a,b){ return by==="n"?(b.n-a.n||b.qty-a.qty):(b.qty-a.qty||b.n-a.n); }).slice(0,100);
+  E("topQty").innerHTML='<table><thead><tr><th>#</th><th>Item</th><th class="n">'+(by==="n"?"Times ordered":"Qty")+'</th><th class="n">'+(by==="n"?"Qty":"Times")+'</th>'+(COSTS?'<th class="n">Total $</th>':'')+'<th>Usual vendor</th></tr></thead><tbody>'+tq.map(function(x,i){ var uv=Object.keys(x.vendors).sort(function(a,b){return x.vendors[b]-x.vendors[a];})[0];
+    return '<tr class="clk" data-item="'+esc(x.k)+'"><td class="n">'+(i+1)+'</td><td>'+esc(x.name)+'</td><td class="n"><b>'+(by==="n"?x.n:q(x.qty))+'</b></td><td class="n">'+(by==="n"?q(x.qty):x.n)+'</td>'+(COSTS?'<td class="n">'+money0(x.tot)+'</td>':'')+'<td>'+esc(uv||"")+'</td></tr>'; }).join("")+'</tbody></table>';
+  if(COSTS){
+    function sumBy(f){ var m={}; rows.forEach(function(l){ var k=f(l)||"(blank)"; m[k]=(m[k]||0)+(cost(l).tot||0); }); return Object.keys(m).map(function(k){return {k:k,v:m[k]};}).sort(function(a,b){return b.v-a.v;}); }
+    var v=sumBy(function(l){return l.vendor;}), j=sumBy(function(l){return l.job;}), c=sumBy(function(l){return l.cat;});
+    var f15=function(a){ var top=a.slice(0,14), rest=a.slice(14).reduce(function(s,x){return s+x.v;},0); if(rest>0) top.push({k:"Everything else ("+(a.length-14)+")",v:rest}); return top; };
+    E("byVen").innerHTML=hbars(f15(v),function(x){return x.v;},function(x){return x.k;},function(x){return money0(x.v);});
+    E("byJob").innerHTML=hbars(f15(j),function(x){return x.v;},function(x){return x.k;},function(x){return money0(x.v);});
+    E("byCat").innerHTML=hbars(c,function(x){return x.v;},function(x){return x.k;},function(x){return money0(x.v)+" · "+Math.round(x.v/Math.max(1,spend)*100)+"%";});
+    var mm={}; rows.forEach(function(l){ var d=lineDate(l); if(!d) return; var k=d.slice(0,7); mm[k]=(mm[k]||0)+(cost(l).tot||0); });
+    var mk=Object.keys(mm).sort().slice(-18).map(function(k){return {k:k,v:mm[k]};});
+    E("byMon").innerHTML=hbars(mk,function(x){return x.v;},function(x){ var p=x.k.split("-"); return new Date(+p[0],+p[1]-1,1).toLocaleDateString([], {month:"short",year:"numeric"}); },function(x){return money0(x.v);});
+    /* price watch: items bought 3+ times whose latest unit price is 10%+ off their average */
+    var pw=group(LINES.filter(function(l){ return inRange(lineDate(l),"all"); })).filter(function(x){ return x.units.length>=3; }).map(function(x){ var lu=x.units[x.units.length-1].u; return {x:x,lu:lu,ch:lu/x.avg-1,lo:x.units.reduce(function(m,u){return u.u<m.u?u:m;})}; })
+      .filter(function(p){return Math.abs(p.ch)>=0.1;}).sort(function(a,b){return b.ch-a.ch;}).slice(0,60);
+    E("priceWatch").innerHTML=pw.length?'<table><thead><tr><th>Item</th><th class="n">Avg</th><th class="n">Latest</th><th class="n">Change</th><th>Cheapest we paid</th></tr></thead><tbody>'+pw.map(function(p){
+      return '<tr class="clk" data-item="'+esc(p.x.k)+'"><td>'+esc(p.x.name)+'</td><td class="n">'+money(p.x.avg)+'</td><td class="n">'+money(p.lu)+'</td><td class="n '+(p.ch>0?'up':'dn')+'">'+(p.ch>0?"▲ +":"▼ ")+Math.round(p.ch*100)+'%</td><td>'+money(p.lo.u)+' · '+esc(p.lo.v)+' '+shortD(p.lo.d)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="empty">No big price swings.</div>';
+  }
+  /* vendor scorecard (no dollars) */
+  var vs={}; rows.forEach(function(l){ var x=vs[l.vendor]=vs[l.vendor]||{v:l.vendor,n:0,ontime:0,judged:0,bo:0,open:0,late:0};
+    x.n++; if(l.st==="Backordered"||/backorder/i.test(l.notes)) x.bo++; if(isOpen(l)){ x.open++; if(l.exp&&l.exp<today()) x.late++; }
+    if(l.rec&&l.exp&&l.src!=="Import"){ x.judged++; if(l.rec<=l.exp) x.ontime++; } });   /* imported history only has the day it was marked complete, so on-time starts with lines received in the portal */
+  var vl=Object.keys(vs).map(function(k){return vs[k];}).filter(function(x){return x.n>=5;}).sort(function(a,b){return b.n-a.n;}).slice(0,25);
+  E("vendorScore").innerHTML='<table><thead><tr><th>Vendor</th><th class="n">Lines</th><th class="n">On time</th><th class="n">Backorders</th><th class="n">Open / late</th></tr></thead><tbody>'+vl.map(function(x){ var ot=x.judged?Math.round(x.ontime/x.judged*100):null;
+    return '<tr><td>'+esc(x.v)+'</td><td class="n">'+x.n+'</td><td class="n">'+(ot==null?"—":'<div class="bar" style="justify-content:flex-end"><span>'+ot+'%</span><div class="t" style="max-width:60px"><i style="width:'+ot+'%"></i></div></div>')+'</td><td class="n">'+x.bo+'</td><td class="n">'+x.open+(x.late?' / <span class="od">'+x.late+'</span>':'')+'</td></tr>'; }).join("")+'</tbody></table>';
+  document.querySelectorAll("#v-ins tr[data-item]").forEach(function(tr){ tr.onclick=function(){ openItem(tr.getAttribute("data-item")); }; });
+}
+
+/* ===== item history ===== */
+function openItem(k){
+  var rows=LINES.filter(function(l){return itemKey(l.item)===k;}).sort(function(a,b){return lineDate(b).localeCompare(lineDate(a));});
+  if(!rows.length) return; var g=group(rows)[0];
+  E("iTitle").textContent=rows[0].item;
+  var sv=""; if(COSTS&&g.units.length>=2){ var W=760,H=120,P=24, us=g.units, mn=Math.min.apply(null,us.map(function(u){return u.u;})), mx=Math.max.apply(null,us.map(function(u){return u.u;})); if(mx===mn) mx=mn+1;
+    var pts=us.map(function(u,i){ return [P+i*(W-2*P)/Math.max(1,us.length-1), H-P-(u.u-mn)/(mx-mn)*(H-2*P)]; });
+    sv='<svg class="spark" viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'"><polyline fill="none" stroke="#2a78d6" stroke-width="2" points="'+pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" ")+'"/>'+
+      pts.map(function(p,i){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="4" fill="#2a78d6" stroke="#fff" stroke-width="2"><title>'+shortD(us[i].d)+' · '+esc(us[i].v)+' · '+money(us[i].u)+'</title></circle>'; }).join("")+
+      '<text x="'+P+'" y="14" font-size="11" fill="#6b7280">'+money(mx)+'</text><text x="'+P+'" y="'+(H-4)+'" font-size="11" fill="#6b7280">'+money(mn)+'</text></svg><div class="muted">Unit price each time we bought it (hover a dot)</div>'; }
+  var vend={}; rows.forEach(function(l){ var c=cost(l), x=vend[l.vendor]=vend[l.vendor]||{n:0,qty:0,units:[]}; x.n++; x.qty+=l.qo||0; if(c.unit) x.units.push(c.unit); });
+  E("iBody").innerHTML='<div class="tiles">'+tileH("Times ordered",g.n,"")+tileH("Total qty",q(g.qty),"")+(COSTS?tileH("Total $",money0(g.tot),"")+tileH("Avg unit",money(g.avg),""):"")+'</div>'+sv+
+    '<h4 style="margin:14px 0 6px">By vendor</h4><table><thead><tr><th>Vendor</th><th class="n">Times</th><th class="n">Qty</th>'+(COSTS?'<th class="n">Avg unit</th><th class="n">Low</th>':'')+'</tr></thead><tbody>'+Object.keys(vend).map(function(v){ var x=vend[v], a=x.units.length?x.units.reduce(function(s,u){return s+u;},0)/x.units.length:null;
+      return '<tr><td>'+esc(v)+'</td><td class="n">'+x.n+'</td><td class="n">'+q(x.qty)+'</td>'+(COSTS?'<td class="n">'+money(a)+'</td><td class="n">'+money(x.units.length?Math.min.apply(null,x.units):null)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>'+
+    '<h4 style="margin:14px 0 6px">Every order</h4><div class="scroll" style="max-height:40vh"><table><thead><tr><th>Date</th><th>Vendor</th><th>Job</th><th>PO</th><th class="n">Qty</th>'+(COSTS?'<th class="n">Unit $</th><th class="n">Total $</th>':'')+'<th>Status</th></tr></thead><tbody>'+
+    rows.map(function(l){ var c=cost(l); return '<tr><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'<td>'+stPill(l)+'</td></tr>'; }).join("")+'</tbody></table></div>';
+  E("ovItem").style.display="flex"; }
+
+/* ===== one-time import (owners) ===== */
+E("impGo").onclick=async function(){
+  var file=E("impFile").files[0]; if(!file){ E("impMsg").textContent="Pick the file first."; return; }
+  var data; try{ data=JSON.parse(await file.text()); }catch(e){ E("impMsg").textContent="That file isn't the import file."; return; }
+  if(!COST_ID) COST_ID=await listId(L_COST);
+  var have={}; LINES.forEach(function(l){ have[l.key]=1; }); var haveC={}; Object.keys(COST).forEach(function(k){ haveC[k]=1; });
+  var todo=data.lines.filter(function(r){return !have[r[0]];}), ctodo=COST_ID?data.costs.filter(function(c){return !haveC[c[0]]&&(c[1]!=null||c[2]!=null);}):[];
+  var reqs=todo.map(function(r){ var f={LineKey:r[0],Title:r[1]||"(no description)",Vendor:r[2],JobNo:r[3],PONumber:r[4],ExpectedDate:r[5]?r[5]+"T12:00:00Z":null,Urgency:r[6],QtyOrdered:r[7],QtyReceived:r[8],Status:r[9],DeliverTo:r[10],ReceivedDate:r[11]?r[11]+"T12:00:00Z":null,Category:r[12],Locked:r[13],Source:"Import"};
+      Object.keys(f).forEach(function(k){ if(f[k]===null||f[k]===""||f[k]===undefined) delete f[k]; }); return {u:"/sites/"+SITE+"/lists/"+LOG_ID+"/items",b:{fields:f}}; })
+    .concat(ctodo.map(function(c){ var f={Title:c[0]}; if(c[1]!=null) f.TotalCost=c[1]; if(c[2]!=null) f.UnitCost=c[2]; return {u:"/sites/"+SITE+"/lists/"+COST_ID+"/items",b:{fields:f}}; }));
+  if(!reqs.length){ E("impMsg").textContent="Everything is already loaded."; return; }
+  E("impGo").disabled=true; var done=0, fail=0;
+  for(var i=0;i<reqs.length;i+=20){ var chunk=reqs.slice(i,i+20);
+    var body={requests:chunk.map(function(r,j){ return {id:String(j+1),method:"POST",url:r.u,headers:{"Content-Type":"application/json"},body:r.b}; })};
+    for(var tries=0;tries<4;tries++){ try{ var res=await gx("POST","https://graph.microsoft.com/v1.0/$batch",body); var retry=(res.responses||[]).filter(function(x){return x.status===429||x.status>=500;});
+        (res.responses||[]).forEach(function(x){ if(x.status<300) done++; else if(!(x.status===429||x.status>=500)) fail++; });
+        if(!retry.length) break; body={requests:body.requests.filter(function(r){ return retry.some(function(x){return x.id===r.id;}); })}; await new Promise(function(r){setTimeout(r,3000*(tries+1));}); }
+      catch(e){ await new Promise(function(r){setTimeout(r,3000*(tries+1));}); } }
+    E("impMsg").textContent="Loaded "+done.toLocaleString()+" of "+reqs.length.toLocaleString()+(fail?" · "+fail+" failed":"")+"…"; }
+  E("impMsg").textContent="Done: "+done.toLocaleString()+" loaded"+(fail?", "+fail+" failed (run it again to retry)":"")+". Reloading…"; E("impGo").disabled=false;
+  setTimeout(function(){ location.reload(); },1500); };
+
+/* ===== tabs / wiring ===== */
+function render(){ if(TAB==="open") renderOpen(); else if(TAB==="hist") renderHist(); else if(TAB==="ins") renderIns(); }
+E("tabs").addEventListener("click",function(e){ var b=e.target.closest("[data-t]"); if(!b) return; TAB=b.getAttribute("data-t");
+  E("tabs").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on",x===b); }); ["open","hist","ins","adm"].forEach(function(t){ E("v-"+t).style.display=t===TAB?"":"none"; }); render(); });
+["oq","oJob","oVen","oTo"].forEach(function(id){ E(id).addEventListener("input",renderOpen); });
+["hq","hJob","hVen","hCat","hRange"].forEach(function(id){ E(id).addEventListener("input",renderHist); });
+["iRange","iJob","iCat","iVen","topQtyBy"].forEach(function(id){ E(id).addEventListener("input",renderIns); });
+E("newTop").onclick=openNew; E("lClose").onclick=function(){ E("ovLine").style.display="none"; }; E("iClose").onclick=function(){ E("ovItem").style.display="none"; };
+["ovNew","ovLine","ovItem"].forEach(function(id){ E(id).addEventListener("click",function(e){ if(e.target===E(id)) E(id).style.display="none"; }); });
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") ["ovNew","ovLine","ovItem"].forEach(function(id){ E(id).style.display="none"; }); });
+
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts()||[], a=r&&r.account?r.account:(all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); }).catch(function(e){ E("gateMsg").textContent="Sign-in error: "+e.message; });
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); me=(a.username||"").toLowerCase(); E("who").textContent=a.name||a.username;
+  IS_ADMIN=SUPER.indexOf(me)>-1;
+  try{ (await pullAll("/lists/"+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999")).forEach(function(f){ var e=String(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e===me){ MY_NAME=String(f.EmployeeName||"").trim(); if(yes(f.Admin)&&(f.Active||"Yes")!=="No") IS_ADMIN=true; } }); }catch(e){}
+  try{ await load(); }catch(e){ E("gateMsg").textContent="Couldn't load: "+e.message; return; }
+  E("gate").style.display="none"; E("app").style.display="block"; E("newTop").style.display="";
+  if(SUPER.indexOf(me)>-1) E("tabAdm").style.display="";
+  fillFilters(); render();
+}
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>
