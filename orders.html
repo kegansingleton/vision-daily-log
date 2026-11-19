@@ -96,7 +96,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
     <div class="tiles" id="openTiles"></div>
     <div class="card">
       <div class="filters">
-        <input type="search" id="oq" placeholder="Search item, PO, vendor, job…">
+        <input type="search" id="oq" placeholder="Search item, PO, vendor, job, shelf / bay…">
         <select id="oJob"><option value="">All jobs</option></select>
         <select id="oVen"><option value="">All vendors</option></select>
         <select id="oTo"><option value="">Deliver to: any</option></select>
@@ -110,7 +110,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
   <section id="v-hist" style="display:none">
     <div class="card">
       <div class="filters">
-        <input type="search" id="hq" placeholder="Search item, PO, vendor, job…">
+        <input type="search" id="hq" placeholder="Search item, PO, vendor, job, shelf / bay…">
         <select id="hJob"><option value="">All jobs</option></select>
         <select id="hVen"><option value="">All vendors</option></select>
         <select id="hCat"><option value="">All categories</option></select>
@@ -191,7 +191,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
   <div class="mrow"><span class="sp"></span><button class="btn gh" id="iClose">Close</button></div>
 </div></div>
 
-<datalist id="dlVen"></datalist><datalist id="dlJob"></datalist><datalist id="dlItem"></datalist>
+<datalist id="dlLoc"></datalist><datalist id="dlVen"></datalist><datalist id="dlJob"></datalist><datalist id="dlItem"></datalist>
 <div class="tip" id="tip"></div>
 
 <script>
@@ -240,7 +240,7 @@ async function listId(name){ var j=await gx("GET","/lists?$select=id,displayName
 /* ===== load ===== */
 function toLine(f){ return {id:f._id,key:f.LineKey||("SP"+f._id),item:String(f.Title||"").trim(),vendor:String(f.Vendor||"").trim().toUpperCase(),job:String(f.JobNo||"").trim().toUpperCase(),po:String(f.PONumber||"").trim(),
   exp:d10(f.ExpectedDate),urg:f.Urgency||"",qo:num(f.QtyOrdered)||0,qr:num(f.QtyReceived)||0,st:f.Status||"Ordered",to:String(f.DeliverTo||"").toUpperCase(),notes:f.Notes||"",
-  rec:d10(f.ReceivedDate),by:f.ReceivedBy||"",ent:f.EnteredBy||"",cat:f.Category||catOf(f.Title),locked:f.Locked==="Yes"||f.Status==="Received",src:f.Source||""}; }
+  rec:d10(f.ReceivedDate),by:f.ReceivedBy||"",loc:String(f.BinLocation||"").trim(),ent:f.EnteredBy||"",cat:f.Category||catOf(f.Title),locked:f.Locked==="Yes"||f.Status==="Received",src:f.Source||""}; }
 async function load(){
   E("gateMsg").textContent="Loading orders…";
   LOG_ID=await listId(L_LOG); if(!LOG_ID) throw new Error("The “"+L_LOG+"” list isn't set up yet.");
@@ -268,6 +268,7 @@ function fillFilters(){
   var hist=LINES.filter(function(l){return !isOpen(l);});
   opts(E("hJob"),uniq(hist.map(function(l){return l.job;})),"All jobs"); opts(E("hVen"),uniq(hist.map(function(l){return l.vendor;})),"All vendors"); opts(E("hCat"),uniq(LINES.map(function(l){return l.cat;})),"All categories");
   opts(E("iJob"),uniq(LINES.map(function(l){return l.job;})),"All jobs"); opts(E("iCat"),uniq(LINES.map(function(l){return l.cat;})),"All categories"); opts(E("iVen"),uniq(LINES.map(function(l){return l.vendor;})),"All vendors");
+  E("dlLoc").innerHTML=["JOBSITE (delivered)"].concat(uniq(LINES.map(function(l){return l.loc;})).filter(function(v){return v!=="JOBSITE (delivered)";})).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
   E("dlVen").innerHTML=uniq(LINES.map(function(l){return l.vendor;})).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
   E("dlJob").innerHTML=uniq(JOBS.concat(LINES.map(function(l){return l.job;}))).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
   var seen={}, items=[]; LINES.slice().reverse().forEach(function(l){ var k=itemKey(l.item); if(k&&!seen[k]){ seen[k]=1; items.push(l.item); } }); E("dlItem").innerHTML=items.slice(0,4000).map(function(v){return '<option value="'+esc(v)+'">';}).join("");
@@ -275,7 +276,7 @@ function fillFilters(){
 function renderOpen(){
   var t=today(), all=LINES.filter(isOpen), qs=E("oq").value.toLowerCase().trim(), fj=E("oJob").value, fv=E("oVen").value, ft=E("oTo").value;
   var base=all.filter(function(l){ if(fj&&l.job!==fj) return false; if(fv&&l.vendor!==fv) return false; if(ft&&l.to!==ft) return false;
-    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
+    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes,l.loc].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
   var cnt={open:base.length,od:base.filter(function(l){return l.exp&&l.exp<t;}).length,wk:base.filter(function(l){return l.exp&&l.exp>=t&&l.exp<=addDays(t,7);}).length,
     bo:base.filter(function(l){return l.st==="Backordered";}).length,part:base.filter(function(l){return l.st==="Partial";}).length,crit:base.filter(function(l){return /critical|high/i.test(l.urg);}).length};
   E("nOpen").textContent=all.length;
@@ -291,7 +292,7 @@ function renderOpen(){
   var h='<table><thead><tr><th>Item</th><th class="n">Ordered</th><th class="n">In</th><th>Expected</th><th>Status</th><th>Deliver to</th>'+(COSTS?'<th class="n">Total $</th>':'')+'<th></th></tr></thead><tbody>';
   order.forEach(function(k){ var g=byPo[k], f=g[0];
     h+='<tr class="po"><td colspan="'+(COSTS?8:7)+'">PO '+esc(f.po||"—")+' · '+esc(f.vendor)+' · '+esc(f.job)+(f.urg&&!/low/i.test(f.urg)?' · <span class="pill p-bo">'+esc(f.urg)+'</span>':'')+'</td></tr>';
-    g.forEach(function(l){ h+='<tr class="clk" data-id="'+esc(l.id)+'"><td>'+esc(l.item)+(l.notes?'<div class="muted">'+esc(l.notes)+'</div>':'')+'</td><td class="n">'+q(l.qo)+'</td><td class="n">'+q(l.qr)+'</td><td class="'+dueCls(l)+'">'+shortD(l.exp)+'</td><td>'+stPill(l)+'</td><td>'+esc(l.to)+'</td>'+(COSTS?'<td class="n">'+money(cost(l).tot)+'</td>':'')+'<td><button class="btn ok sm" data-rcv="'+esc(l.id)+'">Receive</button></td></tr>'; }); });
+    g.forEach(function(l){ h+='<tr class="clk" data-id="'+esc(l.id)+'"><td>'+esc(l.item)+(l.notes?'<div class="muted">'+esc(l.notes)+'</div>':'')+(l.loc?'<div class="muted">&#128205; '+esc(l.loc)+'</div>':'')+'</td><td class="n">'+q(l.qo)+'</td><td class="n">'+q(l.qr)+'</td><td class="'+dueCls(l)+'">'+shortD(l.exp)+'</td><td>'+stPill(l)+'</td><td>'+esc(l.to)+'</td>'+(COSTS?'<td class="n">'+money(cost(l).tot)+'</td>':'')+'<td><button class="btn ok sm" data-rcv="'+esc(l.id)+'">Receive</button></td></tr>'; }); });
   E("openList").innerHTML=h+'</tbody></table>';
   E("openList").querySelectorAll("tr.clk").forEach(function(tr){ tr.onclick=function(e){ var b=e.target.closest("[data-rcv]"); openLine(tr.getAttribute("data-id"),!!b); }; });
 }
@@ -303,10 +304,10 @@ function openLine(id,focusRcv){
   var l=byId(id); if(!l) return; var c=cost(l);
   E("lTitle").textContent=l.item; E("lMsg").textContent="";
   var info='<table style="margin-bottom:12px">'+[["PO",l.po],["Vendor",l.vendor],["Job",l.job],["Ordered",q(l.qo)],["Received so far",q(l.qr)],["Expected",shortD(l.exp)],["Status",l.st],["Deliver to",l.to],["Urgency",l.urg||"Normal"],["Notes",l.notes],
-    ["Received",l.rec?shortD(l.rec)+(l.by?" by "+l.by:""):""],["Entered by",l.ent],["Category",l.cat]].concat(COSTS?[["Total $",money(c.tot)],["Unit $",money(c.unit)]]:[]).filter(function(r){return r[1]!==""&&r[1]!=null;}).map(function(r){ return '<tr><td style="color:var(--muted);width:150px">'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>'; }).join("")+'</table>';
+    ["Received",l.rec?shortD(l.rec)+(l.by?" by "+l.by:""):""],["Shelf / bay",l.loc],["Entered by",l.ent],["Category",l.cat]].concat(COSTS?[["Total $",money(c.tot)],["Unit $",money(c.unit)]]:[]).filter(function(r){return r[1]!==""&&r[1]!=null;}).map(function(r){ return '<tr><td style="color:var(--muted);width:150px">'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>'; }).join("")+'</table>';
   var act="";
   if(l.locked||l.st==="Received") act='<div class="lock">&#128274; Received — this line is locked. Need a correction? Ask the office; every change is kept in SharePoint version history.</div>';
-  else act='<div class="card" style="background:var(--wash)"><b>Receive</b><div class="fg" style="margin-top:8px"><label>Qty received now<input type="number" step="any" id="rQty" value="'+remaining(l)+'"></label><label>Date<input type="date" id="rDate" value="'+today()+'"></label><label>Note (optional)<input id="rNote" placeholder="e.g. 2 short, rest on BO"></label></div>'+
+  else act='<div class="card" style="background:var(--wash)"><b>Receive</b><div class="fg" style="margin-top:8px"><label>Qty received now<input type="number" step="any" id="rQty" value="'+remaining(l)+'"></label><label>Date<input type="date" id="rDate" value="'+today()+'"></label><label>Shelf / bay it\'s in <span style="color:var(--crit)">*</span><input id="rLoc" list="dlLoc" autocomplete="off" placeholder="e.g. Bay 3, Shelf B" value="'+esc(l.loc||(/SITE/.test(l.to)?"JOBSITE (delivered)":""))+'"></label><label style="grid-column:1/-1">Note (optional)<input id="rNote" placeholder="e.g. 2 short, rest on BO"></label></div>'+
     '<div class="mrow"><button class="btn ok" id="rAll">Received all '+q(remaining(l))+'</button><button class="btn gh" id="rPart">Save this qty</button></div></div>'+
     '<div class="card" style="background:var(--wash)"><b>Backordered / update</b><div class="fg" style="margin-top:8px"><label>New expected date<input type="date" id="bExp" value="'+(l.exp||"")+'"></label><label>Note<input id="bNote" value=""></label><label>Urgency<select id="bUrg"><option value="">Normal</option><option'+(l.urg==="High"?" selected":"")+'>High</option><option'+(l.urg==="Critical"?" selected":"")+'>Critical</option></select></label></div>'+
     '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+
@@ -320,13 +321,14 @@ function openLine(id,focusRcv){
 }
 function noteAdd(l,t){ var stamp=shortD(today())+" "+(MY_NAME||me.split("@")[0]); return (l.notes?l.notes+" | ":"")+stamp+": "+t; }
 async function receive(l,n){ if(n==null||n<=0){ E("lMsg").textContent="Enter the quantity that came in."; return; }
-  var tot=(l.qr||0)+n, full=tot>=(l.qo||0), f={QtyReceived:tot,Status:full?"Received":"Partial",ReceivedDate:(E("rDate").value||today())+"T12:00:00Z",ReceivedBy:MY_NAME||me};
+  var loc=E("rLoc").value.trim().toUpperCase(); if(!loc){ E("lMsg").textContent="Enter the shelf / bay it was put in (or JOBSITE if it went to the job)."; E("rLoc").focus(); return; }
+  var tot=(l.qr||0)+n, full=tot>=(l.qo||0), f={QtyReceived:tot,Status:full?"Received":"Partial",ReceivedDate:(E("rDate").value||today())+"T12:00:00Z",ReceivedBy:MY_NAME||me,BinLocation:loc};
   if(full) f.Locked="Yes"; if(E("rNote").value.trim()) f.Notes=noteAdd(l,E("rNote").value.trim());
   await upd(l,f); }
 async function upd(l,f){ E("lMsg").textContent="Saving…";
   try{ await gx("PATCH","/lists/"+LOG_ID+"/items/"+l.id+"/fields",f); var n=toLine(Object.assign(fieldsOf(l),f,{_id:l.id})); Object.assign(l,n); E("ovLine").style.display="none"; fillFilters(); render(); }
   catch(e){ E("lMsg").textContent="Didn't save: "+e.message; } }
-function fieldsOf(l){ return {Title:l.item,Vendor:l.vendor,JobNo:l.job,PONumber:l.po,ExpectedDate:l.exp,Urgency:l.urg,QtyOrdered:l.qo,QtyReceived:l.qr,Status:l.st,DeliverTo:l.to,Notes:l.notes,ReceivedDate:l.rec,ReceivedBy:l.by,EnteredBy:l.ent,Category:l.cat,LineKey:l.key,Locked:l.locked?"Yes":"",Source:l.src}; }
+function fieldsOf(l){ return {Title:l.item,Vendor:l.vendor,JobNo:l.job,PONumber:l.po,ExpectedDate:l.exp,Urgency:l.urg,QtyOrdered:l.qo,QtyReceived:l.qr,Status:l.st,DeliverTo:l.to,Notes:l.notes,ReceivedDate:l.rec,ReceivedBy:l.by,BinLocation:l.loc,EnteredBy:l.ent,Category:l.cat,LineKey:l.key,Locked:l.locked?"Yes":"",Source:l.src}; }
 async function saveCost(l,tot){ if(!COSTS) return; E("lMsg").textContent="Saving…";
   var f={TotalCost:tot,UnitCost:(tot!=null&&l.qo)?Math.round(tot/l.qo*10000)/10000:null};
   try{ var c=COST[l.key]; if(c&&c.id) await gx("PATCH","/lists/"+COST_ID+"/items/"+c.id+"/fields",f); else { var r=await gx("POST","/lists/"+COST_ID+"/items",{fields:Object.assign({Title:l.key},f)}); c={id:r.id}; }
@@ -362,13 +364,13 @@ function inRange(d,r){ if(r==="all") return true; if(!d) return false; if(r==="y
 function renderHist(){
   var qs=E("hq").value.toLowerCase().trim(), fj=E("hJob").value, fv=E("hVen").value, fc=E("hCat").value, rg=E("hRange").value;
   var rows=LINES.filter(function(l){ if(isOpen(l)) return false; if(fj&&l.job!==fj) return false; if(fv&&l.vendor!==fv) return false; if(fc&&l.cat!==fc) return false; if(!inRange(lineDate(l),rg)) return false;
-    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
+    if(qs&&[l.item,l.po,l.vendor,l.job,l.notes,l.loc].join(" ").toLowerCase().indexOf(qs)<0) return false; return true; });
   var k=HSORT.k, d=HSORT.d, val=function(l){ return k==="date"?lineDate(l):k==="tot"?(cost(l).tot||0):k==="unit"?(cost(l).unit||0):k==="qty"?l.qo:(l[k]||""); };
   rows.sort(function(a,b){ var x=val(a),y=val(b); return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d; });
-  var cols=[["date","Received"],["item","Item"],["vendor","Vendor"],["job","Job"],["po","PO"],["qty","Qty",1]].concat(COSTS?[["unit","Unit $",1],["tot","Total $",1]]:[]);
+  var cols=[["date","Received"],["item","Item"],["loc","Shelf / bay"],["vendor","Vendor"],["job","Job"],["po","PO"],["qty","Qty",1]].concat(COSTS?[["unit","Unit $",1],["tot","Total $",1]]:[]);
   var show=rows.slice(0,600);
   var h='<div class="muted" style="padding:8px 10px">'+rows.length.toLocaleString()+' lines'+(COSTS?' · '+money0(rows.reduce(function(s,l){return s+(cost(l).tot||0);},0)):'')+(rows.length>600?' · showing first 600 — narrow the search':'')+'</div><table><thead><tr>'+cols.map(function(c){ return '<th class="sort'+(c[2]?' n':'')+(HSORT.k===c[0]?(d>0?' asc':' desc'):'')+'" data-k="'+c[0]+'">'+c[1]+'</th>'; }).join("")+'</tr></thead><tbody>'+
-    show.map(function(l){ var c=cost(l); return '<tr class="clk" data-item="'+esc(itemKey(l.item))+'"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.item)+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>';
+    show.map(function(l){ var c=cost(l); return '<tr class="clk" data-item="'+esc(itemKey(l.item))+'"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.item)+'</td><td>'+(l.loc?'<b>'+esc(l.loc)+'</b>':'<span class="muted">—</span>')+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>';
   E("histList").innerHTML=h;
   E("histList").querySelectorAll("th.sort").forEach(function(th){ th.onclick=function(){ var kk=th.getAttribute("data-k"); if(HSORT.k===kk) HSORT.d=-HSORT.d; else { HSORT.k=kk; HSORT.d=/date|tot|unit|qty/.test(kk)?-1:1; } renderHist(); }; });
   E("histList").querySelectorAll("tr[data-item]").forEach(function(tr){ tr.onclick=function(){ openItem(tr.getAttribute("data-item")); }; });
