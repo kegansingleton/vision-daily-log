@@ -247,7 +247,8 @@ async function load(){
   var rows=await pullAll("/lists/"+LOG_ID+"/items?$expand=fields&$top=999");
   LINES=rows.map(toLine);
   COST={};
-  if(IS_ADMIN){ try{ COST_ID=await listId(L_COST); if(COST_ID){ (await pullAll("/lists/"+COST_ID+"/items?$expand=fields($select=Title,TotalCost,UnitCost)&$top=999")).forEach(function(f){ COST[f.Title]={tot:num(f.TotalCost),unit:num(f.UnitCost),id:f._id}; }); COSTS=true; } }catch(e){ COSTS=false; } }
+  /* prices: SharePoint decides — only people in "Order Costs - Office" (and site owners) can even see the Order Costs list */
+  { try{ COST_ID=await listId(L_COST); if(COST_ID){ (await pullAll("/lists/"+COST_ID+"/items?$expand=fields($select=Title,TotalCost,UnitCost)&$top=999")).forEach(function(f){ COST[f.Title]={tot:num(f.TotalCost),unit:num(f.UnitCost),id:f._id}; }); COSTS=true; } }catch(e){ COSTS=false; } }
   try{ var t=await pullAll("/lists/"+JOBTASKS+"/items?$expand=fields($select=JobNo,JobName,Active)&$top=999"), seen={}; JOBS=[];
     t.forEach(function(x){ var n=String(x.JobNo||"").trim(); if(!n||seen[n]||(x.Active||"Yes")==="No") return; seen[n]=1; JOBS.push(n+(x.JobName?" "+x.JobName:"")); }); }catch(e){}
 }
