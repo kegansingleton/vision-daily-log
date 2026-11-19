@@ -64,6 +64,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 .hb .bar{height:100%;border-radius:0 .5vw .5vw 0;min-width:2px}
 .hb .val{font-size:2.6vw;font-weight:700;margin-left:1vw;white-space:nowrap;font-variant-numeric:tabular-nums}
 .hb .val small{font-size:1.9vw;color:var(--muted);font-weight:600;margin-left:.6vw}
+.tight .hb{row-gap:1.2vh}.tight .hb .lb,.tight .hb .val{font-size:2.15vw}.tight .hb .tr{height:2.9vh}.tight .hb .val small{font-size:1.6vw}
 .hb .none{font-size:2.3vw;color:var(--muted);white-space:nowrap}
 /* tables / rows */
 .rows{display:flex;flex-direction:column;gap:1.1vh;margin-top:2.2vh;flex:1;min-height:0}
@@ -177,8 +178,8 @@ var PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", P
 var LS_USER="vmDisplayLastUser";
 var REFRESH_MS=5*60*1000, AUTH_RETRY_MS=10*60*1000;
 var Q=new URLSearchParams(location.search);
-var CHANNELS={owner:"Owner’s Office",pm:"Project Manager",lobby:"Welcome to Vision Mechanical",sm:"Shop — Sheet Metal",pipe:"Shop — Pipe"};
-var SCREEN=String(Q.get("screen")||"lobby").toLowerCase(); if(SCREEN==="office") SCREEN="owner";   /* old shortcuts */
+var CHANNELS={owner:"Owner’s Office",pm:"Office",lobby:"Welcome to Vision Mechanical",sm:"Shop — Sheet Metal",pipe:"Shop — Pipe"};
+var SCREEN=String(Q.get("screen")||"lobby").toLowerCase(); if(SCREEN==="office") SCREEN="owner"; if(SCREEN==="person"||SCREEN==="me") SCREEN="pm";   /* pm = the any-employee screen */
 if(!CHANNELS[SCREEN]) SCREEN="lobby";   /* unknown → lobby: the safe, no-names channel */
 var SEC=Math.max(1,parseFloat(Q.get("sec"))||20);
 var WHO_PARAM=String(Q.get("who")||"").trim().toLowerCase(); var WHO=WHO_PARAM;   /* blank = whoever is signed in on this screen */
@@ -276,10 +277,10 @@ async function loadKey(key,fn){
   }
 }
 var LOADERS={
-  sm:["shop","queue","toolbox","inc"],
-  pipe:["shop","toolbox","inc"],
-  owner:["actions","bids"],
-  pm:["actions","pmj"],
+  sm:["shop","queue","toolbox","inc","safe","ptp"],
+  pipe:["shop","toolbox","inc","safe","ptp"],
+  owner:["actions","bids","orders"],
+  pm:["inc","safe","ptp","toolbox","shop","queue","actions","pmj","due","orders"],
   lobby:["inc","ptp","tcm","pm"]
 };
 async function loadAll(){
@@ -395,6 +396,31 @@ FETCH.bids=async function(){
   var id=await named("Bid Log"), rows=await pullAll(id,"BidDate,Status,Scope,BidAmount,AwardAmount");
   return {rows:rows.map(function(r){ var st=String(r.Status||"").trim().toLowerCase(); return {d:dkey(r.BidDate),st:st==="won"?"W":st==="lost"?"L":"O",scope:String(r.Scope||"").trim()||"Other",bid:num(r.BidAmount),award:(r.AwardAmount!=null&&r.AwardAmount!=="")?num(r.AwardAmount):null}; })};
 };
+/* --- close-call COUNT only (published to "Safety Stats" by the Close Call page when a safety admin opens it; no names or details) --- */
+FETCH.safe=async function(){
+  var sid=await named("Safety Stats"), st=await pullAll(sid,"Title,Value"), it=st.filter(function(r){return r.Title==="CloseCalls";})[0], o=null;
+  try{ o=it&&it.Value?JSON.parse(it.Value):null; }catch(e){ o=null; }
+  return {cc:o};
+};
+/* --- today's paperwork for a foreman: timecard + daily log turned in today? --- */
+FETCH.due=async function(){
+  var email=meEmail(), emps=await pullAll(EMP,"EmployeeName,LoginEmail,Foreman,Active"), fm=false;
+  emps.forEach(function(f){ var e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e===email&&yes(val(f.Foreman))) fm=true; });
+  if(!fm) return {foreman:false};
+  var today=iso(new Date()), tc=0, lg=0;
+  try{ tc=(await getRange(TC,"WorkDate",today,today,"WorkDate,ForemanEmail")).filter(function(r){return String(r.ForemanEmail||"").toLowerCase()===email;}).length; }catch(e){ if(e instanceof AuthError) throw e; tc=null; }
+  try{ lg=(await getRange(LOGS,"LogDate",today,today,"LogDate,LoginEmail")).filter(function(r){return String(r.LoginEmail||"").toLowerCase()===email;}).length; }catch(e){ if(e instanceof AuthError) throw e; lg=null; }
+  return {foreman:true,tc:tc,log:lg,day:today};
+};
+var ORDER_VIEWERS=["kegan.singleton@visionmech.net","bsingleton@visionmech.net","ssnow@visionmech.net"];   /* whose screens get the order-log slides */
+/* --- owner channel: Order Log metrics (prices come from "Order Costs", which only office/owners can read). Refreshed every 30 min — it's 7k+ rows --- */
+FETCH.orders=async function(){
+  if(ORDER_VIEWERS.indexOf(meEmail())<0) throw new Missing("Order Log");
+  var prev=D.orders; if(prev&&Date.now()-prev.at<30*60000) return prev;
+  var lid=await named("Order Log"), rows=await pullAll(lid,"Title,Vendor,PONumber,ExpectedDate,ReceivedDate,Status,Category,LineKey,QtyOrdered");
+  var cost={}; try{ var cid=await named("Order Costs"); (await pullAll(cid,"Title,TotalCost,UnitCost")).forEach(function(c){ cost[c.Title]={t:num(c.TotalCost),u:num(c.UnitCost)}; }); }catch(e){ if(e instanceof AuthError) throw e; cost=null; }
+  return {at:Date.now(),costs:!!cost,rows:rows.map(function(r){ var c=cost&&cost[r.LineKey]||{}; return {item:String(r.Title||""),v:String(r.Vendor||"").trim().toUpperCase(),po:String(r.PONumber||"").trim(),exp:dkey(r.ExpectedDate),rec:dkey(r.ReceivedDate),st:String(r.Status||"Ordered"),cat:r.Category||"Other",t:c.t||0,u:c.u||0}; })};
+};
 FETCH.ptp=async function(){ var id=await named("Pre-Task Plans"); return {n:(await getRange(id,"PlanDate",monthStart(),iso(new Date()),"PlanDate")).length}; };
 FETCH.tcm=async function(){
   var rows=await getRange(TC,"WorkDate",monthStart(),iso(new Date()),"WorkDate,JobNo,Hours"), h=0, jobs={};
@@ -428,6 +454,7 @@ FETCH.pmj=async function(){
   var jl=await pullAll(JOBS,"Title,PMName,Archive"), mine={};
   jl.forEach(function(j){ if(yes(val(j.Archive))) return; var no=String(j.Title||"").trim(), pm=String(val(j.PMName)||"").trim(); if(!no||!pm) return;
     var ok=pm.indexOf("@")>-1?pm.toLowerCase()===email:names.some(function(n){ return sameName(nameKey(n),nameKey(pm)); }); if(ok) mine[no]=1; });
+  try{ var since=iso(addDays(new Date(),-21)); (await getRange(TC,"WorkDate",since,iso(new Date()),"WorkDate,JobNo,ForemanEmail")).forEach(function(r){ if(String(r.ForemanEmail||"").toLowerCase()===email){ var n=jobNo(r.JobNo); if(n&&!/^shop$/i.test(n)) mine[n]=1; } }); }catch(e){ if(e instanceof AuthError) throw e; }
   var nos=Object.keys(mine).sort(), tasks=[], JN={};
   try{ tasks=await pullAll(JOBTASKS,"JobNo,JobName,PhaseCode,LineNum,BudgetHours,PercentComplete,AdjustHours"); }catch(e){ if(e instanceof AuthError) throw e; partial=true; tasks=null; }
   (tasks||[]).forEach(function(t){ var n=String(t.JobNo||"").trim(); if(n&&!JN[n]&&t.JobName) JN[n]=String(t.JobName).trim(); });
@@ -586,6 +613,20 @@ function incSlide(I,lobby){
     '<div class="hero" style="font-size:22vw">'+fmt(since)+'</div><div class="big2">day'+(since===1?"":"s")+' without a recordable injury</div><div class="mid">Last OSHA recordable: '+esc(longD(I.last))+'</div>';
   return {key:"inc",html:'<h2 class="st">Safety</h2><div class="center">'+inner+'</div>'};
 }
+/* safety board: days without a recordable + close calls + pre-task plans (counts only) */
+function safetySlide(){
+  var t=[], today=iso(new Date()), mn=esc(monthName());
+  if(D.inc&&D.inc.visible>0){ var since=D.inc.last?daysBetween(D.inc.last,today):null; t.push(tile("Days without a recordable injury",since==null?"&#10003;":fmt(since),since==null?"none on file":"last one "+esc(shortD(D.inc.last)))); }
+  var cc=D.safe&&D.safe.cc; if(cc){ var cur=cc.m===today.slice(0,7); t.push(tile("Close calls reported",fmt(cur?cc.month:0),(cur?mn:"this month")+" &middot; "+fmt(cc.y===today.slice(0,4)?cc.ytd:0)+" this year")); }
+  if(D.ptp) t.push(tile("Pre-task safety plans",fmt(D.ptp.n),"done in "+mn));
+  if(!t.length) return null;
+  return {key:"safety",html:'<h2 class="st">Safety <span class="k">· every close call reported helps the next guy</span></h2><div class="tiles">'+t.join("")+'</div>'};
+}
+function dueSlide(U){
+  if(!U||!U.foreman) return null; var dw=new Date().getDay(); if(dw===0||dw===6) return null;
+  function st(n,label){ return tile(label,n==null?"—":(n>0?'<span style="color:var(--goodtxt)">&#10003;</span>':'<span style="color:var(--crittxt)">&#10007;</span>'),n==null?"couldn’t check":(n>0?"turned in today":"not in yet today")); }
+  return {key:"due",html:'<h2 class="st">Today’s paperwork <span class="k">· '+esc(dayD(U.day))+'</span></h2><div class="tiles">'+st(U.tc,"Crew timecard")+st(U.log,"Daily log")+'</div>'};
+}
 function pipeRateSlide(S){
   var n=S.weeks.length, used=PIPE_GROUPS.filter(function(g){ return S.weeks.some(function(w,i){ return wk(S,i,"Pipe",g).n>0; }); });
   if(!used.length) used=PIPE_GROUPS.filter(function(g){return g!=="Steel pipe";});
@@ -727,6 +768,41 @@ function pmSlides(P){
 /* lobby — company KPIs only: no names, no job names, no dollars */
 function tile(label,v,sub){ return '<div class="tile"><div class="kl">'+label+'</div><div class="kv'+(v==null?" dash":"")+'">'+(v==null?"—":v)+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>'; }
 function bidStats(rows){ var w=0,l=0,o=0; rows.forEach(function(r){ if(r.st==="W") w++; else if(r.st==="L") l++; else o++; }); return {w:w,l:l,o:o,dec:w+l,pct:(w+l)?Math.round(w/(w+l)*100):null}; }
+function orderSlides(O){
+  var out=[], t=iso(new Date()), wk=iso(addDays(new Date(),7)), yr=t.slice(0,4), rows=O.rows;
+  function d(r){ return r.rec||r.exp||""; }
+  var open=rows.filter(function(r){return r.st!=="Received";});
+  out.push({key:"ord1",html:'<h2 class="st">Order log <span class="k">· open orders right now</span></h2><div class="tiles">'+
+    tile("Open lines",fmt(open.length),fmt(Object.keys(open.reduce(function(m,r){ m[r.v+"|"+r.po]=1; return m; },{})).length)+" POs")+
+    tile("Overdue",'<span style="color:'+(open.some(function(r){return r.exp&&r.exp<t;})?"var(--crittxt)":"inherit")+'">'+fmt(open.filter(function(r){return r.exp&&r.exp<t;}).length)+'</span>',"past the expected date")+
+    tile("Due in 7 days",fmt(open.filter(function(r){return r.exp&&r.exp>=t&&r.exp<=wk;}).length),"")+
+    tile("Backordered",fmt(open.filter(function(r){return r.st==="Backordered";}).length),"")+'</div>'});
+  /* POs per year (a PO counts in the year of its first line) + same point last year */
+  var poY={}; rows.forEach(function(r){ var k=r.v+"|"+r.po, dd=d(r); if(!r.po||!dd) return; if(!poY[k]||dd<poY[k]) poY[k]=dd; });
+  var byY={}, ytd=0, lytd=0, cut=t.slice(5); Object.keys(poY).forEach(function(k){ var dd=poY[k], y=dd.slice(0,4); byY[y]=(byY[y]||0)+1; if(y===yr) ytd++; if(+y===+yr-1&&dd.slice(5)<=cut) lytd++; });
+  var ys=Object.keys(byY).sort().slice(-5);
+  if(ys.length) out.push({key:"ord2",html:'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:2vw"><h2 class="st">POs written <span class="k">· by year</span></h2><div class="qsum"><b>'+fmt(ytd)+'</b> this year &middot; <b>'+fmt(lytd)+'</b> by this date last year</div></div>'+
+    '<div class="card" style="flex:1;margin-top:3vh;justify-content:center">'+hbars(ys.slice().reverse().map(function(y){ return {label:y===yr?y+" so far":y,v:byY[y],txt:fmt(byY[y]),sub:y===yr&&lytd?(ytd>=lytd?"▲ ":"▼ ")+Math.abs(Math.round((ytd/lytd-1)*100))+"% vs last year to date":""}; }))+'</div>'});
+  if(!O.costs) return out;
+  var Y=rows.filter(function(r){ return d(r).slice(0,4)===yr&&r.t>0; }), tot=Y.reduce(function(s,r){return s+r.t;},0);
+  if(tot>0){
+    function pctList(keyF,n){ var m={}; Y.forEach(function(r){ var k=keyF(r)||"(blank)"; m[k]=(m[k]||0)+r.t; }); var a=Object.keys(m).map(function(k){return {k:k,v:m[k]};}).sort(function(x,y){return y.v-x.v;});
+      var top=n?a.slice(0,n):a, rest=n?a.slice(n).reduce(function(s,x){return s+x.v;},0):0; if(rest>0) top.push({k:"All other vendors ("+(a.length-n)+")",v:rest});
+      return top.map(function(x){ var p=x.v/tot*100; return {label:x.k,v:p,txt:(p<1?"<1":Math.round(p))+"%"}; }); }
+    out.push({key:"ord3",html:'<h2 class="st">Spend by vendor <span class="k">· '+yr+' so far, % of total</span></h2><div class="card tight" style="flex:1;margin-top:2vh;justify-content:center">'+hbars(pctList(function(r){return r.v;},10),100)+'</div>'});
+    out.push({key:"ord4",html:'<h2 class="st">Spend by category <span class="k">· '+yr+' so far, % of total</span></h2><div class="card tight" style="flex:1;margin-top:2vh;justify-content:center">'+hbars(pctList(function(r){return r.cat;},0).slice(0,12),100)+'</div>'});
+    var mm={}; Y.forEach(function(r){ var k=d(r).slice(0,7); mm[k]=(mm[k]||0)+r.t; });
+    var months=Object.keys(mm).sort().map(function(k){ var p=mm[k]/tot*100, a=k.split("-"); return {label:new Date(+a[0],+a[1]-1,1).toLocaleDateString([], {month:"long"}),v:p,txt:Math.round(p)+"%"}; });
+    out.push({key:"ord5",html:'<h2 class="st">Spend by month <span class="k">· share of '+yr+' spend so far</span></h2><div class="card tight" style="flex:1;margin-top:2vh;justify-content:center">'+hbars(months,Math.max.apply(null,months.map(function(m){return m.v;}).concat([1])))+'</div>'});
+  }
+  /* price watch: items bought 3+ times, latest unit price vs. their average — top 5 by size of change */
+  var g={}; rows.forEach(function(r){ if(!(r.u>0)) return; var k=String(r.item).toUpperCase().replace(/\s+/g," ").trim(); (g[k]=g[k]||{n:r.item,u:[]}).u.push({d:d(r),u:r.u}); });
+  var pw=Object.keys(g).map(function(k){ var x=g[k]; if(x.u.length<3) return null; x.u.sort(function(a,b){return a.d.localeCompare(b.d);}); var srt=x.u.map(function(a){return a.u;}).sort(function(a,b){return a-b;}), med=srt[Math.floor(srt.length/2)], last=x.u[x.u.length-1].u; return {n:x.n,ch:last/med-1,d:x.u[x.u.length-1].d}; })
+    .filter(function(p){return p&&Math.abs(p.ch)>=0.05&&p.ch<3&&p.ch>-0.75&&p.d>=iso(addDays(new Date(),-365));}).sort(function(a,b){return Math.abs(b.ch)-Math.abs(a.ch);}).slice(0,5);
+  if(pw.length) out.push({key:"ord6",html:'<h2 class="st">Price watch <span class="k">· latest vs. usual price · last 12 mo</span></h2><div class="rows" style="margin-top:3vh">'+pw.map(function(p){ var up=p.ch>0;
+      return '<div class="arow"><div class="due'+(up?" od":"")+'" style="font-size:3.4vw;'+(up?"":"color:var(--goodtxt)")+'">'+(up?"▲ +":"▼ ")+Math.round(Math.abs(p.ch)*100)+'%</div><div style="min-width:0"><div class="t">'+esc(p.n)+'</div><div class="j">last bought '+esc(shortD(p.d))+'</div></div><div></div></div>'; }).join("")+'</div>'});
+  return out;
+}
 function bidSlides(B){
   var rows=B.rows, all=bidStats(rows), yr=String(new Date().getFullYear()), d12=iso(addDays(new Date(),-365));
   var ty=bidStats(rows.filter(function(r){return r.d.slice(0,4)===yr;})), l12=bidStats(rows.filter(function(r){return r.d>=d12;}));
@@ -768,20 +844,28 @@ function buildList(){
     if(D.shop){ L.push(smRateSlide(D.shop)); L.push(smLbsSlide(D.shop)); }
     if(D.queue) L=L.concat(queueSlides(D.queue));
     if(D.toolbox&&D.toolbox.talks.length) L.push(toolboxSlide(D.toolbox));
-    if(D.inc&&D.inc.visible>0) L.push(incSlide(D.inc));
+    var sf=safetySlide(); if(sf) L.push(sf);
   } else if(SCREEN==="pipe"){
     if(D.shop){ L.push(pipeRateSlide(D.shop)); L.push(pipeFeetSlide(D.shop)); }
     if(D.toolbox&&D.toolbox.talks.length) L.push(toolboxSlide(D.toolbox));
-    if(D.inc&&D.inc.visible>0) L.push(incSlide(D.inc));
+    var sf2=safetySlide(); if(sf2) L.push(sf2);
   } else if(SCREEN==="owner"){
     L.push(frameSlide("dash","/dashboard.html","Owner dashboard"));
     if(D.actions) L=L.concat(actionSlides(D.actions));
     if(D.bids&&D.bids.rows.length) L=L.concat(bidSlides(D.bids));
+    if(D.orders&&D.orders.rows.length) L=L.concat(orderSlides(D.orders));
     L.push(frameSlide("manpower","/manpower.html","Manpower load"));
   } else if(SCREEN==="pm"){
-    if(D.pmj&&D.pmj.name) E("chan").textContent="Project Manager — "+D.pmj.name;
-    if(D.actions) L=L.concat(actionSlides(D.actions,true));
-    if(D.pmj) L=L.concat(pmSlides(D.pmj));
+    /* any employee: company safety + shop first, then whatever is theirs — slides with nothing to show are skipped */
+    if(D.pmj&&D.pmj.name) E("chan").textContent=D.pmj.name;
+    var sf3=safetySlide(); if(sf3) L.push(sf3);
+    if(D.toolbox&&D.toolbox.talks.length) L.push(toolboxSlide(D.toolbox));
+    if(D.shop){ L.push(smRateSlide(D.shop)); L.push(pipeRateSlide(D.shop)); }
+    if(D.queue) L.push(queueSlides(D.queue)[0]);
+    var du=dueSlide(D.due); if(du) L.push(du);
+    if(D.actions){ var mine=D.actions.open.filter(function(r){ var e=emailOf(r), w=meEmail(); return e===w||e.split(/[;,\s]+/).indexOf(w)>-1; }); if(mine.length) L=L.concat(actionSlides(D.actions,true)); }
+    if(D.pmj&&D.pmj.jobs&&D.pmj.jobs.length) L=L.concat(pmSlides(D.pmj));
+    if(D.orders&&D.orders.rows.length) L=L.concat(orderSlides(D.orders));
   } else L=lobbySlides();
   if(!L.length) L.push(brandSlide());
   return L;

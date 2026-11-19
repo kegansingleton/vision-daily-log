@@ -145,7 +145,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
       <div class="card" data-cost="1"><h3>Spend by month</h3><div id="byMon"></div></div>
     </div>
     <div class="grid2">
-      <div class="card" data-cost="1"><h3>Price watch <span class="sp"></span><span class="muted">latest price vs. our average</span></h3><div class="scroll" id="priceWatch"></div></div>
+      <div class="card" data-cost="1"><h3>Price watch <span class="sp"></span><span class="muted">latest price vs. our usual (median) price</span></h3><div class="scroll" id="priceWatch"></div></div>
       <div class="card"><h3>Vendor scorecard <span class="sp"></span><span class="muted">on time = received in the portal by the expected date</span></h3><div class="scroll" id="vendorScore"></div></div>
     </div>
   </section>
@@ -306,18 +306,18 @@ function openLine(id,focusRcv){
   var info='<table style="margin-bottom:12px">'+[["PO",l.po],["Vendor",l.vendor],["Job",l.job],["Ordered",q(l.qo)],["Received so far",q(l.qr)],["Expected",shortD(l.exp)],["Status",l.st],["Deliver to",l.to],["Urgency",l.urg||"Normal"],["Notes",l.notes],
     ["Received",l.rec?shortD(l.rec)+(l.by?" by "+l.by:""):""],["Shelf / bay",l.loc],["Entered by",l.ent],["Category",l.cat]].concat(COSTS?[["Total $",money(c.tot)],["Unit $",money(c.unit)]]:[]).filter(function(r){return r[1]!==""&&r[1]!=null;}).map(function(r){ return '<tr><td style="color:var(--muted);width:150px">'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>'; }).join("")+'</table>';
   var act="";
-  if(l.locked||l.st==="Received") act='<div class="lock">&#128274; Received — this line is locked. Need a correction? Ask the office; every change is kept in SharePoint version history.</div>';
+  var locBox='<div class="card" style="background:var(--wash)"><b>Moved it?</b> <span class="muted">Update where it is now</span><div class="fg" style="margin-top:8px"><label>Shelf / bay<input id="mLoc" list="dlLoc" autocomplete="off" value="'+esc(l.loc)+'"></label></div><div class="mrow"><button class="btn gh" id="mSave">Save location</button></div></div>';
+  if(l.locked||l.st==="Received") act='<div class="lock" style="margin-bottom:10px">&#128274; Received — quantities, dates and prices are locked. Only the shelf / bay can be updated. Every change is kept in SharePoint version history.</div>'+locBox;
   else act='<div class="card" style="background:var(--wash)"><b>Receive</b><div class="fg" style="margin-top:8px"><label>Qty received now<input type="number" step="any" id="rQty" value="'+remaining(l)+'"></label><label>Date<input type="date" id="rDate" value="'+today()+'"></label><label>Shelf / bay it\'s in <span style="color:var(--crit)">*</span><input id="rLoc" list="dlLoc" autocomplete="off" placeholder="e.g. Bay 3, Shelf B" value="'+esc(l.loc||(/SITE/.test(l.to)?"JOBSITE (delivered)":""))+'"></label><label style="grid-column:1/-1">Note (optional)<input id="rNote" placeholder="e.g. 2 short, rest on BO"></label></div>'+
     '<div class="mrow"><button class="btn ok" id="rAll">Received all '+q(remaining(l))+'</button><button class="btn gh" id="rPart">Save this qty</button></div></div>'+
     '<div class="card" style="background:var(--wash)"><b>Backordered / update</b><div class="fg" style="margin-top:8px"><label>New expected date<input type="date" id="bExp" value="'+(l.exp||"")+'"></label><label>Note<input id="bNote" value=""></label><label>Urgency<select id="bUrg"><option value="">Normal</option><option'+(l.urg==="High"?" selected":"")+'>High</option><option'+(l.urg==="Critical"?" selected":"")+'>Critical</option></select></label></div>'+
-    '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+
-    (COSTS?'<div class="card" style="background:var(--wash)"><b>Cost</b> <span class="muted">(office only)</span><div class="fg" style="margin-top:8px"><label>Total $<input type="number" step="any" id="cTot" value="'+(c.tot==null?"":c.tot)+'"></label></div><div class="mrow"><button class="btn gh" id="cSave">Save cost</button></div></div>':'');
+    '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+(l.qr>0?locBox:'');
   E("lBody").innerHTML=info+act; E("ovLine").style.display="flex";
   if(E("rAll")){ E("rAll").onclick=function(){ receive(l,remaining(l)); }; E("rPart").onclick=function(){ receive(l,num(E("rQty").value)); };
     E("bBo").onclick=function(){ upd(l,{Status:"Backordered",ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:noteAdd(l,"Backordered"+(E("bNote").value?": "+E("bNote").value:""))}); };
     E("bSave").onclick=function(){ upd(l,{ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:E("bNote").value?noteAdd(l,E("bNote").value):l.notes}); };
     if(focusRcv) setTimeout(function(){ E("rQty").focus(); E("rQty").select(); },50); }
-  if(E("cSave")) E("cSave").onclick=function(){ saveCost(l,num(E("cTot").value)); };
+  if(E("mSave")) E("mSave").onclick=function(){ var v=E("mLoc").value.trim().toUpperCase(); if(!v){ E("lMsg").textContent="Enter the shelf / bay."; return; } if(v===l.loc){ E("ovLine").style.display="none"; return; } upd(l,{BinLocation:v,Notes:noteAdd(l,"Moved to "+v+(l.loc?" (was "+l.loc+")":""))}); };
 }
 function noteAdd(l,t){ var stamp=shortD(today())+" "+(MY_NAME||me.split("@")[0]); return (l.notes?l.notes+" | ":"")+stamp+": "+t; }
 async function receive(l,n){ if(n==null||n<=0){ E("lMsg").textContent="Enter the quantity that came in."; return; }
@@ -410,10 +410,12 @@ function renderIns(){
     var mk=Object.keys(mm).sort().slice(-18).map(function(k){return {k:k,v:mm[k]};});
     E("byMon").innerHTML=hbars(mk,function(x){return x.v;},function(x){ var p=x.k.split("-"); return new Date(+p[0],+p[1]-1,1).toLocaleDateString([], {month:"short",year:"numeric"}); },function(x){return money0(x.v);});
     /* price watch: items bought 3+ times whose latest unit price is 10%+ off their average */
-    var pw=group(LINES.filter(function(l){ return inRange(lineDate(l),"all"); })).filter(function(x){ return x.units.length>=3; }).map(function(x){ var lu=x.units[x.units.length-1].u; return {x:x,lu:lu,ch:lu/x.avg-1,lo:x.units.reduce(function(m,u){return u.u<m.u?u:m;})}; })
-      .filter(function(p){return Math.abs(p.ch)>=0.1;}).sort(function(a,b){return b.ch-a.ch;}).slice(0,60);
-    E("priceWatch").innerHTML=pw.length?'<table><thead><tr><th>Item</th><th class="n">Avg</th><th class="n">Latest</th><th class="n">Change</th><th>Cheapest we paid</th></tr></thead><tbody>'+pw.map(function(p){
-      return '<tr class="clk" data-item="'+esc(p.x.k)+'"><td>'+esc(p.x.name)+'</td><td class="n">'+money(p.x.avg)+'</td><td class="n">'+money(p.lu)+'</td><td class="n '+(p.ch>0?'up':'dn')+'">'+(p.ch>0?"▲ +":"▼ ")+Math.round(p.ch*100)+'%</td><td>'+money(p.lo.u)+' · '+esc(p.lo.v)+' '+shortD(p.lo.d)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="empty">No big price swings.</div>';
+    var pw=group(LINES).filter(function(x){ return x.units.length>=3; }).map(function(x){ var lu=x.units[x.units.length-1].u, srt=x.units.map(function(u){return u.u;}).sort(function(a,b){return a-b;}), med=srt[Math.floor(srt.length/2)];
+        return {x:x,lu:lu,med:med,ch:lu/med-1,last:x.units[x.units.length-1].d,lo:x.units.reduce(function(m,u){return u.u<m.u?u:m;})}; })
+      /* median baseline; skip 4x+ jumps (usually a different unit — box vs each, ft vs stick) */
+      .filter(function(p){return Math.abs(p.ch)>=0.1&&p.ch<3&&p.ch>-0.75;}).sort(function(a,b){return b.ch-a.ch;}).slice(0,60);
+    E("priceWatch").innerHTML=pw.length?'<table><thead><tr><th>Item</th><th class="n">Usual</th><th class="n">Latest</th><th class="n">Change</th><th>Cheapest we paid</th></tr></thead><tbody>'+pw.map(function(p){
+      return '<tr class="clk" data-item="'+esc(p.x.k)+'"><td>'+esc(p.x.name)+'<div class="muted">last bought '+shortD(p.last)+'</div></td><td class="n">'+money(p.med)+'</td><td class="n">'+money(p.lu)+'</td><td class="n '+(p.ch>0?'up':'dn')+'">'+(p.ch>0?"▲ +":"▼ ")+Math.round(p.ch*100)+'%</td><td>'+money(p.lo.u)+' · '+esc(p.lo.v)+' '+shortD(p.lo.d)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="empty">No big price swings.</div>';
   }
   /* vendor scorecard (no dollars) */
   var vs={}; rows.forEach(function(l){ var x=vs[l.vendor]=vs[l.vendor]||{v:l.vendor,n:0,ontime:0,judged:0,bo:0,open:0,late:0};
