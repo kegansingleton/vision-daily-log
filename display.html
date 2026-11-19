@@ -162,7 +162,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 /* ======================================================================
    Vision Mechanical — TV / kiosk display (read-only)
    display.html?screen=owner|pm|lobby|sm|pipe  [&sec=20] [&who=email] [&zoom=1.3]
-     owner  (alias: office) owner dashboard + manpower iframes, my action items, overdue by person
+     owner  (alias: office) executive dashboard + manpower iframes, my action items, overdue by person
      pm     the signed-in PM's jobs (or ?who=email): action items, job hours/PF, field reporting, watch list, closeout
      lobby  company KPIs only — no names, job names or dollars
      sm / pipe  shop floor: fab rates, pounds/feet, shop queue (sm), toolbox talk, days since recordable
@@ -850,7 +850,7 @@ function buildList(){
     if(D.toolbox&&D.toolbox.talks.length) L.push(toolboxSlide(D.toolbox));
     var sf2=safetySlide(); if(sf2) L.push(sf2);
   } else if(SCREEN==="owner"){
-    L.push(frameSlide("dash","/dashboard.html","Owner dashboard"));
+    L.push(frameSlide("dash","/dashboard.html","Executive dashboard"));
     if(D.actions) L=L.concat(actionSlides(D.actions));
     if(D.bids&&D.bids.rows.length) L=L.concat(bidSlides(D.bids));
     if(D.orders&&D.orders.rows.length) L=L.concat(orderSlides(D.orders));
