@@ -148,6 +148,8 @@ function submitReport(){
   var msg=E("msg"),btn=E("submitBtn");
   if(!E("worker").value.trim()){msg.className="msg err";msg.textContent="Enter worker name";return;}
   if(!E("ccDate").value){msg.className="msg err";msg.textContent="Pick the date";return;}
+  /* "none", "n/a", "-" typed into a box counts as blank, so a near miss isn't labeled an injury */
+  ["injType","bodyPart","injDetails","accType","incDetails"].forEach(function(id){ if(/^\s*(none|no|n\/?a|na|-+|nothing|no injury)\.?\s*$/i.test(E(id).value)) E(id).value=""; });
   var hasInj=E("injType").value.trim()||E("bodyPart").value.trim()||E("injDetails").value.trim();
   var hasInc=E("accType").value.trim()||E("incDetails").value.trim();
   if(!hasInj&&!hasInc){msg.className="msg err";msg.textContent="Fill in either the Injury or the Incident section";return;}
