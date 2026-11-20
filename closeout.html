@@ -133,6 +133,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
       <div class="tools">
         <button class="btn btn-g btn-s" id="backBtn">&#8592; All closeouts</button>
         <button class="btn btn-g btn-s" id="printBtn">&#128424; Print report</button>
+        <a class="btn btn-g btn-s" id="punchLink" href="/punch.html" style="text-decoration:none">&#128203; Punch &amp; deficiency lists</a>
         <label class="tog" style="margin-left:auto"><input type="checkbox" id="hideNA"> Hide N/A</label>
       </div>
     </div>
@@ -200,7 +201,8 @@ var STD=[
  ["mpf","Inspections & punch","Mechanical permit final"],
  ["ppf","Inspections & punch","Plumbing permit final"],
  ["fsd","Inspections & punch","Fire/smoke damper inspection"],
- ["punch","Inspections & punch","Punch list complete","actions"],
+ ["punch","Inspections & punch","Punch list complete","punchP"],
+ ["defic","Inspections & punch","Deficiency list complete","punchD"],
  ["clean","Inspections & punch","Final cleaning"],
  ["lien","Admin","Lien waivers"],
  ["payapp","Admin","Final pay app submitted","tm"],
@@ -316,6 +318,7 @@ function openJob(r){
   E("ovView").style.display="none"; E("jobView").style.display="block"; E("bar").style.display="block";
   E("jName").textContent=(CUR.name||"(no name)")+" · "+CUR.no;
   var pm=pmOf(CUR.no); E("jSub").textContent=[pm?"PM "+pm:"", r.LastUpdated?"Last saved "+nice(r.LastUpdated)+(r.UpdatedBy?" by "+r.UpdatedBy:""):"Not saved yet"].filter(Boolean).join(" · ");
+  E("punchLink").href="/punch.html?job="+encodeURIComponent(CUR.no);
   renderJob(); setBar(); window.scrollTo(0,0); loadEvidence(CUR.no);
 }
 function renderHead(){ var s=summ(CUR.items); E("jPct").textContent=s.pct+"%"; E("jOpen").textContent=s.open+" open · "+s.done+" done";
@@ -411,12 +414,18 @@ async function loadEvidence(no){
     ["pressure",function(){ var l=ALL_LISTS.filter(function(x){return x.id===PRESSURE_ID;})[0]||ALL_LISTS.filter(function(x){return /pressure/i.test(x.displayName||"");})[0]; return l?evRows(l.id,no,mine.name):null; }],
     ["rentals",function(){ var l=listByName(L_RENT); return l?evRows(l.id,no):null; }],
     ["actions",function(){ return evRows(ACTIONS,no); }],
-    ["tm",function(){ var l=listByName(L_TM); return l?evRows(l.id,no):null; }]
+    ["tm",function(){ var l=listByName(L_TM); return l?evRows(l.id,no):null; }],
+    ["plists",function(){ var l=listByName("Punch Lists"); return l?evRows(l.id,no):null; }]
   ];
   await Promise.all(jobs.map(async function(j){ var v; try{ v=await j[1](); }catch(e){ v=null; } if(CUR!==mine) return; EV[j[0]]=v||null; renderEv(); }));
 }
 /* one hint per evidence key: {t, cls} or null */
 function evText(key){
+  if(key==="punchP"||key==="punchD"){ if(!("plists" in EV)) return {t:"Checking…",cls:"mut"}; var pv=EV.plists; if(!pv) return null;
+    var want=key==="punchD"?"Deficiency":"Punch", ls=pv.rows.filter(function(r){ return (r.ListType||"Punch")===want; }), nm=want==="Punch"?"punch":"deficiency";
+    if(!ls.length) return {t:"No "+nm+" list in the portal yet",cls:""};
+    var op=ls.reduce(function(n,r){ return n+(r.Status==="Signed off"?0:(+r.OpenCount||0)); },0), so=ls.filter(function(r){return r.Status==="Signed off";}).length;
+    return {t:ls.length+" "+nm+" list"+(ls.length===1?"":"s")+" · "+(op?op+" item"+(op===1?"":"s")+" open":"nothing open")+" · "+so+" of "+ls.length+" signed off", cls:so===ls.length?"good":(op?"warn":"")}; }
   if(!(key in EV)) return {t:"Checking…",cls:"mut"};
   var v=EV[key]; if(!v) return null; var rows=v.rows, n=rows.length;
   if(key==="startup"){ var types={}; rows.forEach(function(r){ var t=String(r.EquipmentType||"").trim(); if(t) types[t]=(types[t]||0)+1; });
@@ -435,7 +444,7 @@ function evText(key){
 function evHint(it){ var k=evKey(it.k); if(!k) return ""; var x=evText(k); return x?'<span class="ev '+x.cls+'">'+esc(x.t)+'</span>':""; }
 function renderEv(){
   if(!CUR) return;
-  var keys=["startup","pressure","rentals","actions","tm"], h=keys.map(function(k){ var x=evText(k); return x?'<span class="ev '+x.cls+'">'+esc(x.t)+'</span>':""; }).join("");
+  var keys=["startup","pressure","rentals","actions","tm","punchP","punchD"], h=keys.map(function(k){ var x=evText(k); return x?'<span class="ev '+x.cls+'">'+esc(x.t)+'</span>':""; }).join("");
   E("evSum").innerHTML=h||'<span class="ev mut">Nothing linked to this job number in the other lists.</span>';
   document.querySelectorAll(".ev-slot").forEach(function(sl){ var it=CUR.items[+sl.getAttribute("data-ev")]; if(it) sl.innerHTML=evHint(it); });
 }
@@ -443,7 +452,7 @@ function renderEv(){
 /* ===== print ===== */
 E("printBtn").onclick=function(){ if(!CUR) return; var s=summ(CUR.items);
   var stc={"Done":"#15803d","In progress":"#b45309","N/A":"#64748b","Not started":"#b91c1c"};
-  var ev=["startup","pressure","rentals","actions","tm"].map(function(k){ var x=evText(k); return x&&x.cls!=="mut"?'<li>'+esc(x.t)+'</li>':""; }).join("");
+  var ev=["startup","pressure","rentals","actions","tm","punchP","punchD"].map(function(k){ var x=evText(k); return x&&x.cls!=="mut"?'<li>'+esc(x.t)+'</li>':""; }).join("");
   var body=GROUPS.map(function(g){ var its=CUR.items.filter(function(i){return i.g===g;}); if(!its.length) return "";
     return '<div class="rec"><h3>'+esc(g)+'</h3><table><tr><th style="width:38%">Item</th><th>Status</th><th>Date</th><th>By</th><th>Notes / link</th></tr>'+its.map(function(i){ var u=safeUrl(i.url);
       return '<tr><td>'+esc(i.t)+(i.custom?' <i style="color:#555">(added)</i>':'')+'</td><td style="color:'+stc[i.st]+';font-weight:700">'+esc(i.st)+'</td><td>'+(i.st==="Done"||i.st==="In progress"?nice(i.date):"")+'</td><td>'+esc(i.who)+'</td><td>'+esc(i.notes)+(u?(i.notes?'<br>':'')+'<a href="'+esc(u)+'">'+esc(u.length>60?u.slice(0,60)+"…":u)+'</a>':'')+'</td></tr>'; }).join("")+'</table></div>'; }).join("");

@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Punch &amp; Deficiency Lists</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7;--blu:#1d4ed8;--blubg:#eef4fe}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:860px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:860px;margin:0 auto;padding:12px 12px 90px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+input,select,textarea{width:100%;padding:10px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn:disabled{opacity:.55;cursor:default}
+.chip{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap;background:var(--grybg);color:var(--gry)}
+.chip.done{background:var(--okbg);color:var(--ok)}.chip.prog{background:var(--ambbg);color:var(--amb)}
+.sec{font-size:11.5px;font-weight:800;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px;border-bottom:1px solid #f1d5d2;padding-bottom:3px}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.bar .in{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}.bar .in .btn{flex:1;padding:13px}
+.bar .cnt{font-size:12.5px;color:var(--mut);font-weight:700;min-width:110px}
+.bar .cnt.dirty{color:var(--amb)}.bar .cnt.saved{color:var(--ok)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:540px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.empty{color:var(--mut);font-size:14px;padding:10px 2px}
+/* punch & deficiency */
+.chip.red{background:var(--redbg);color:var(--red)}.chip.blu{background:var(--blubg);color:var(--blu)}.chip.pur{background:#ede9fe;color:#5b21b6}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.tog{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--gry);margin:0}.tog input{width:18px;height:18px}
+.fil{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.fil select,.fil input{width:auto;flex:1;min-width:130px;font-size:14px;padding:8px}
+.pills{display:flex;gap:4px;flex-wrap:wrap}.pills button{padding:6px 11px;border-radius:16px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:12.5px;color:var(--gry);cursor:pointer}
+.pills button.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.pl{display:block;border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin:8px 0;background:#fafbfc;cursor:pointer}
+.pl:hover{border-color:#d1d5db;background:#fff}
+.pl .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pl .t b{font-size:15px;min-width:0}
+.pl .s{font-size:12.5px;color:var(--mut);margin-top:5px}
+.pbar{height:9px;background:#e5e7eb;border-radius:6px;overflow:hidden;margin-top:7px}.pbar i{display:block;height:100%;background:var(--vm);border-radius:6px}.pbar.done i{background:var(--ok)}
+.big{font-size:26px;font-weight:800;color:var(--vm2)}
+.jh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.jh .nm{font-size:17px;font-weight:800}.jh .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.files a{font-size:12.5px;font-weight:700;color:var(--blu);background:var(--blubg);border-radius:8px;padding:4px 8px;text-decoration:none}
+.so{background:var(--okbg);border:1px solid #86efac;border-radius:10px;padding:10px;margin-top:10px;font-size:13.5px;color:#14532d}
+.pi{border:1px solid var(--line);border-left:5px solid var(--red);border-radius:10px;padding:10px 11px;margin:8px 0;background:#fff}
+.pi.s-prog{border-left-color:var(--amb)}.pi.s-fixed{border-left-color:var(--ok)}.pi.s-na{border-left-color:#94a3b8}
+.pi .top{display:flex;gap:8px;align-items:flex-start}.pi .no{font-weight:800;color:var(--vm2);font-size:13px;min-width:28px;padding-top:1px}
+.pi .d{flex:1;font-size:14.5px;font-weight:600;white-space:pre-wrap;min-width:0;word-wrap:break-word}
+.pi.s-na .d{color:var(--mut);text-decoration:line-through}
+.pi .ed{background:none;border:none;font-size:16px;color:var(--mut);cursor:pointer;padding:0 2px}
+.pi .meta{font-size:12.5px;color:var(--mut);margin:4px 0 0 36px}
+.seg{display:flex;gap:4px;margin-top:8px}
+.seg button{flex:1;padding:8px 2px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:12px;cursor:pointer;color:var(--gry);white-space:nowrap}
+.seg button.on[data-v="Open"]{background:var(--red);border-color:var(--red);color:#fff}
+.seg button.on[data-v="In progress"]{background:var(--amb);border-color:var(--amb);color:#fff}
+.seg button.on[data-v="Fixed"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.seg button.on[data-v="Not ours"]{background:#94a3b8;border-color:#94a3b8;color:#fff}
+.seg button:disabled{opacity:.6;cursor:default}
+.phs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.phs .col{background:#f8fafc;border-radius:8px;padding:6px}
+.phs .lb{font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.thumbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;align-items:center}
+.thumbs a{display:block;width:58px;height:58px;border-radius:6px;overflow:hidden;background:#e5e7eb}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.addph{width:58px;height:58px;border:1.5px dashed #9ca3af;border-radius:6px;background:#fff;color:var(--mut);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.addph input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fx{font-size:12.5px;color:var(--ok);margin-top:6px;font-weight:600}.fx.na{color:var(--mut)}
+.modal .box.wide{max-width:900px}
+.imp{max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:9px;margin-top:8px}
+.imp table{border-collapse:collapse;width:100%;font-size:13px}
+.imp th{position:sticky;top:0;background:#f3f4f6;text-align:left;padding:6px;font-size:11.5px;z-index:1}
+.imp td{border-top:1px solid #eef0f3;padding:4px 6px;vertical-align:top}
+.imp td input[type=text],.imp td textarea{font-size:13px;padding:5px;border-width:1px;border-radius:6px}
+.imp td textarea{min-height:34px;resize:vertical}
+.imp tr.off td{opacity:.45}
+.map{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.map label{margin:4px 0 2px}.map select{font-size:14px;padding:7px}
+.prog{font-size:13px;font-weight:700;color:var(--gry);margin-top:8px}
+.deny{text-align:center;padding:30px 16px}.deny .ic{font-size:40px}.deny h2{justify-content:center}
+@media(max-width:560px){.map{grid-template-columns:1fr 1fr}.phs{grid-template-columns:1fr}.seg button{font-size:11px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vision">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Punch &amp; Deficiency Lists</h1><p>Bring in the architect's, owner's or GC's punch, track every item with photos, and sign it off. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Punch &amp; Deficiency</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg" id="topMsg"></div>
+
+  <div class="card deny" id="deny" style="display:none">
+    <div class="ic">&#128274;</div>
+    <h2>Foremen, PMs and admins</h2>
+    <div class="hint" style="font-size:14px">Punch and deficiency lists are worked by the foremen and kept by the PMs. If you need something here, ask your foreman or PM.</div>
+  </div>
+
+  <!-- ===== home ===== -->
+  <div id="homeView" style="display:none">
+    <div class="card">
+      <h2><span>Lists <span id="hCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span>
+        <button class="btn btn-p btn-s" id="newBtn" style="display:none">+ New list</button></h2>
+      <div class="fil">
+        <select id="fJob"><option value="">All jobs</option></select>
+        <div class="pills" id="fSt"><button data-v="open" class="on">Open</button><button data-v="signed">Signed off</button><button data-v="all">All</button></div>
+        <label class="tog" id="myWrap" style="display:none"><input type="checkbox" id="fMine" checked> My jobs</label>
+      </div>
+      <div id="hList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== one list ===== -->
+  <div id="listView" style="display:none">
+    <div class="card">
+      <div class="jh">
+        <div style="min-width:0;flex:1"><div class="nm" id="lName"></div><div class="sub" id="lSub"></div><div id="lChips" style="margin-top:6px"></div></div>
+        <div style="text-align:right"><div class="big" id="lPct">0%</div><div class="hint" id="lCnt"></div></div>
+      </div>
+      <div class="pbar" id="lBar"><i style="width:0"></i></div>
+      <div class="files" id="lFiles"></div>
+      <div id="lSO"></div>
+      <div class="tools">
+        <button class="btn btn-g btn-s" id="backBtn">&#8592; All lists</button>
+        <button class="btn btn-g btn-s" id="addItemBtn">+ Add item</button>
+        <button class="btn btn-g btn-s mgr" id="importBtn">&#128229; Import Excel / PDF</button>
+        <button class="btn btn-g btn-s" id="printBtn">&#128424; Print</button>
+        <button class="btn btn-p btn-s mgr" id="signBtn">&#9997;&#65039; Sign off</button>
+        <button class="btn btn-g btn-s mgr" id="reopenBtn" style="display:none">Reopen</button>
+        <button class="btn btn-g btn-s mgr" id="editListBtn">&#9998; List details</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="fil">
+        <div class="pills" id="iSt"><button data-v="open" class="on">Open</button><button data-v="fixed">Fixed</button><button data-v="na">Not ours</button><button data-v="all">All</button></div>
+        <select id="iLoc"><option value="">All locations</option></select>
+        <select id="iResp"><option value="">Anyone responsible</option></select>
+        <input type="search" id="iQ" placeholder="Search items">
+      </div>
+      <div id="items"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- new / edit list -->
+<div class="modal" id="nlModal"><div class="box">
+  <h2 id="nlTitle">New list</h2>
+  <label>Job</label><select id="nlJob"></select>
+  <div class="g2">
+    <div><label>Type</label><select id="nlType"><option>Punch</option><option>Deficiency</option></select></div>
+    <div><label>From</label><select id="nlSrc"></select></div>
+  </div>
+  <div class="g2">
+    <div><label>List name</label><input type="text" id="nlName" placeholder="e.g. Architect punch #1"></div>
+    <div><label>Received</label><input type="date" id="nlDate"></div>
+  </div>
+  <label id="nlFileL">Their list (Excel or PDF) — optional</label><input type="file" id="nlFile" accept=".xlsx,.xlsm,.xls,.pdf,image/*" multiple>
+  <div class="hint" id="nlFileHint">Excel and typed PDFs get turned into items for you to check. Scanned PDFs and pictures are attached so you can type the items in.</div>
+  <label>Notes</label><textarea id="nlNotes" rows="2" placeholder="Walk date, who walked it, anything to know"></textarea>
+  <div class="msg" id="nlMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="nlCancel">Cancel</button><button class="btn btn-d" id="nlDel" style="display:none;flex:0 0 auto">Delete list</button><button class="btn btn-p" id="nlSave">Create list</button></div>
+</div></div>
+
+<!-- add / edit item -->
+<div class="modal" id="itModal"><div class="box">
+  <h2 id="itTitle">Add item</h2>
+  <div class="g2"><div><label>Item #</label><input type="text" id="itNo"></div><div><label>Location / room</label><input type="text" id="itLoc" list="dlLoc"></div></div>
+  <label>Item</label><textarea id="itDesc" rows="3" placeholder="What's wrong / what needs done"></textarea>
+  <label>Responsible</label><input type="text" id="itResp" list="dlResp" placeholder="Vision, sheet metal, plumbing, controls, another trade…">
+  <label>Notes</label><textarea id="itNotes" rows="2"></textarea>
+  <div id="itPhWrap"><label>Before photos (optional)</label><input type="file" id="itPh" accept="image/*" multiple></div>
+  <div class="msg" id="itMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="itCancel">Cancel</button><button class="btn btn-d mgr" id="itDel" style="display:none;flex:0 0 auto">Delete</button><button class="btn btn-p" id="itSave">Save</button></div>
+</div></div>
+<datalist id="dlLoc"></datalist><datalist id="dlResp"></datalist>
+
+<!-- mark fixed -->
+<div class="modal" id="fxModal"><div class="box">
+  <h2>Mark fixed</h2>
+  <div class="hint" id="fxWhat" style="font-size:14px;color:var(--ink)"></div>
+  <label>Photo of the finished work</label><input type="file" id="fxPh" accept="image/*" multiple>
+  <div class="hint" id="fxPhHint"></div>
+  <label>Notes (optional)</label><textarea id="fxNotes" rows="2" placeholder="What was done"></textarea>
+  <div class="msg" id="fxMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="fxCancel">Cancel</button><button class="btn btn-p" id="fxSave">Mark fixed</button></div>
+</div></div>
+
+<!-- sign off -->
+<div class="modal" id="soModal"><div class="box">
+  <h2>Sign off this list</h2>
+  <div class="hint" id="soWhat" style="font-size:14px;color:var(--ink)"></div>
+  <div class="g2"><div><label>Signed off by</label><input type="text" id="soBy"></div><div><label>Date</label><input type="date" id="soDate"></div></div>
+  <label>Photos of the finished product</label><input type="file" id="soPh" accept="image/*" multiple>
+  <label>Notes</label><textarea id="soNotes" rows="2" placeholder="Walked with…, accepted by…"></textarea>
+  <label class="tog" style="margin-top:10px"><input type="checkbox" id="soOk"> I walked it — every item is fixed or not ours.</label>
+  <div class="msg" id="soMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="soCancel">Cancel</button><button class="btn btn-p" id="soSave">Sign off</button></div>
+</div></div>
+
+<!-- import review -->
+<div class="modal" id="imModal"><div class="box wide">
+  <h2 id="imTitle">Import items</h2>
+  <div id="imPick">
+    <label>Excel or PDF file</label><input type="file" id="imFile" accept=".xlsx,.xlsm,.xls,.pdf">
+    <div class="hint">The file is also attached to this list.</div>
+  </div>
+  <div id="imXl" style="display:none">
+    <div class="g2"><div><label>Sheet</label><select id="imSheet"></select></div><div><label>Header row</label><select id="imHdr"></select></div></div>
+    <div class="map" id="imMap"></div>
+  </div>
+  <div id="imInfo" class="hint" style="font-size:13.5px;margin-top:8px"></div>
+  <div class="fil" style="margin-top:8px" id="imTools">
+    <input type="text" id="imKeep" placeholder="Only check rows that mention… (e.g. mech, HVAC, plumb)">
+    <button class="btn btn-g btn-s" id="imKeepBtn">Apply</button>
+    <button class="btn btn-g btn-s" id="imAll">All</button><button class="btn btn-g btn-s" id="imNone">None</button>
+  </div>
+  <div class="imp" id="imTbl"></div>
+  <div class="prog" id="imProg"></div>
+  <div class="msg" id="imMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="imCancel">Cancel</button><button class="btn btn-p" id="imGo" disabled>Add items</button></div>
+</div></div>
+
+<script>
+/* ===================== Punch & Deficiency Lists =====================
+   "Punch Lists"  one row per list: JobNo, JobName, ListType (Punch|Deficiency), Source, ReceivedDate,
+                  Files (JSON [{n,url,id}]), Status (Open|Ready for sign-off|Signed off), ItemCount, OpenCount,
+                  SignedOffBy, SignedOffDate, SignOffNotes, SignOffPhotos (JSON), AddedBy, Notes
+   "Punch Items"  one row per item: ListRef (= Punch Lists item id), JobNo, ItemNo, Title/Description, Location,
+                  Responsible, Status (Open|In progress|Fixed|Not ours), BeforePhotos, AfterPhotos (JSON [{id,url,n}]),
+                  FixedBy, FixedDate, Notes, AddedBy, SortOrder
+   Files and photos go to the site's Documents library under "Punch Lists/<job>/<list id>/".
+   Foremen work items (status, photos, add items). PMs + admins create/import lists, delete, and sign off. No dollars here. */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973", TC="91c4a3db-97f6-4b52-a855-516d5c414124";
+var L_HDR="Punch Lists", L_ITM="Punch Items", FILE_ROOT="Punch Lists";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_PMS=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SOURCES=["Architect","Owner","GC","Engineer","Inspector","Vision (internal)","Other"];
+var IST=["Open","In progress","Fixed","Not ours"];
+var XLSX_SRC="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+var PDF_SRC="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", PDF_WORKER="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+
+var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, IS_PM=false, IS_FOREMAN=false, CAN_MANAGE=false;
+var HDR_ID=null, ITM_ID=null, HDR_COLS={}, ITM_COLS={};
+var JOBLIST=[], JOBNAME={}, MYJOBS=null, LISTS=[], CUR=null, ITEMS=[], THUMB={}, HSTAT="open", ISTAT="open";
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=d10(s); if(!/^\d{4}-\d\d-\d\d$/.test(s)) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0].slice(2); }
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function njob(s){ return String(s||"").trim().split(/\s+/)[0].toUpperCase(); }
+function safe(s){ return String(s||"").replace(/[\\\/:*?"<>|#%&{}~]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"file"; }
+function encPath(p){ return p.split("/").map(encodeURIComponent).join("/"); }
+function js(s){ if(!s) return []; try{ var j=JSON.parse(s); return Array.isArray(j)?j:[]; }catch(e){ return []; } }
+function showMsg(id,cls,t){ var m=E(id); m.className="msg "+cls; m.textContent=t; }
+function hideMsg(id){ E(id).className="msg"; }
+function stCls(s){ return {"Open":"s-open","In progress":"s-prog","Fixed":"s-fixed","Not ours":"s-na"}[s]||"s-open"; }
+function isOpen(s){ return s!=="Fixed"&&s!=="Not ours"; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt);
+  if(!r.ok&&r.status!==204){ var tx=await r.text(); var m=""; try{ m=JSON.parse(tx).error.message; }catch(e){ m=tx.slice(0,160); } throw new Error("HTTP "+r.status+(m?" — "+m:"")); }
+  if(r.status===204) return {}; var ct=r.headers.get("content-type")||""; return ct.indexOf("json")>-1?r.json():{}; }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields"+(select?"($select="+select+")":"")+"&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await gfetch(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+async function colsOf(listId){ var c=await gfetch(GRAPH+listId+"/columns?$select=name,readOnly"), o={}; (c.value||[]).forEach(function(x){ if(!x.readOnly) o[x.name]=1; }); return o; }
+function only(f,cols){ var o={}; Object.keys(f).forEach(function(k){ if(k==="Title"||cols[k]) o[k]=f[k]; }); return o; }
+/* Graph JSON batch, 20 at a time */
+async function batch(reqs,onProg){ var out=[], done=0;
+  for(var i=0;i<reqs.length;i+=20){ var chunk=reqs.slice(i,i+20).map(function(r,j){ return Object.assign({id:String(i+j)},r); });
+    var j=await gfetch("https://graph.microsoft.com/v1.0/$batch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requests:chunk})});
+    var rs=(j.responses||[]).slice().sort(function(a,b){return (+a.id)-(+b.id);});
+    var retry=rs.filter(function(r){return r.status===429||r.status===503;});
+    if(retry.length){ await new Promise(function(res){setTimeout(res,3000);}); for(var k=0;k<retry.length;k++){ var q=chunk.filter(function(c){return c.id===retry[k].id;})[0];
+        try{ var b=await gfetch("https://graph.microsoft.com/v1.0"+q.url,{method:q.method,headers:q.headers||{},body:q.body?JSON.stringify(q.body):undefined}); retry[k].status=200; retry[k].body=b; }catch(e){} } }
+    out=out.concat(rs); done+=chunk.length; if(onProg) onProg(done,reqs.length); }
+  return out; }
+
+/* ===== sign-in ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); })
+  .catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+(e.message||e); });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  try{ var emps=await pullAll(EMP,"EmployeeName,LoginEmail,Admin,Foreman,Active");
+    emps.forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      if(e===loginEmail){ MY_NAME=n; if(yes(f.Admin)) IS_ADMIN=true; if(yes(f.Foreman)) IS_FOREMAN=true; } });
+  }catch(e){}
+  if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+  IS_PM=VM_PMS.indexOf(loginEmail)>-1; CAN_MANAGE=IS_ADMIN||IS_PM;
+  if(!MY_NAME) MY_NAME=a.name||a.username;
+  if(!CAN_MANAGE&&!IS_FOREMAN){ E("deny").style.display="block"; return; }
+  document.querySelectorAll(".mgr").forEach(function(el){ if(!CAN_MANAGE) el.style.display="none"; });
+  if(CAN_MANAGE) E("newBtn").style.display="";
+  E("homeView").style.display="block";
+  try{
+    var lists=(await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999")).value||[];
+    var h=lists.filter(function(x){return (x.displayName||"").toLowerCase()===L_HDR.toLowerCase();})[0], i=lists.filter(function(x){return (x.displayName||"").toLowerCase()===L_ITM.toLowerCase();})[0];
+    if(!h||!i){ showMsg("topMsg","err","The “"+L_HDR+"” and “"+L_ITM+"” lists aren't set up in SharePoint yet."); E("hList").innerHTML=""; return; }
+    HDR_ID=h.id; ITM_ID=i.id; HDR_COLS=await colsOf(HDR_ID); ITM_COLS=await colsOf(ITM_ID);
+    await Promise.all([loadJobs(), loadLists(), IS_FOREMAN&&!CAN_MANAGE?loadMyJobs():null]);
+  }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); return; }
+  var q=new URLSearchParams(location.search);
+  if(q.get("job")){ var jv=njob(q.get("job")); fillJobFilter(); E("fJob").value=jv; if(E("fMine")) E("fMine").checked=false; }
+  renderHome();
+  if(q.get("list")){ var l=LISTS.filter(function(x){return String(x._id)===q.get("list");})[0]; if(l) openList(l); }
+}
+
+/* ===== jobs ===== */
+async function loadJobs(){
+  var tasks=await pullAll(JOBTASKS,"JobNo,JobName,Active"), seen={}, jobs=[];
+  tasks.forEach(function(t){ var no=String(t.JobNo||"").trim(); if(!no) return; if(!JOBNAME[njob(no)]) JOBNAME[njob(no)]=String(t.JobName||"").trim(); if((t.Active||"Yes")==="No"||seen[no]) return; seen[no]=1; jobs.push({no:no,name:String(t.JobName||"").trim()}); });
+  try{ var arch={}; (await pullAll(JOBS,"Title,Archive")).forEach(function(j){ if(j.Archive===true||j.Archive==="Yes") arch[njob(j.Title)]=1; }); jobs=jobs.filter(function(j){return !arch[njob(j.no)];}); }catch(e){}
+  jobs.sort(function(x,y){ return (x.name||x.no).toLowerCase().localeCompare((y.name||y.no).toLowerCase()); });
+  JOBLIST=jobs;
+}
+/* foremen: jobs they've entered time on in the last 6 months */
+async function loadMyJobs(){
+  try{ var since=new Date(Date.now()-183*864e5).toISOString().slice(0,10), rows;
+    try{ rows=await pullAll(TC,"JobNo,ForemanEmail,WorkDate","fields/ForemanEmail eq '"+loginEmail.replace(/'/g,"''")+"'"); }catch(e){ rows=[]; }
+    MYJOBS={}; rows.forEach(function(r){ if(d10(r.WorkDate)>=since&&(r.ForemanEmail||"").toLowerCase()===loginEmail) MYJOBS[njob(r.JobNo)]=1; });
+    if(!Object.keys(MYJOBS).length) MYJOBS=null;
+  }catch(e){ MYJOBS=null; }
+  if(MYJOBS) E("myWrap").style.display="";
+}
+
+/* ===== home ===== */
+async function loadLists(){ LISTS=await pullAll(HDR_ID); }
+function fillJobFilter(){ var have={}, v=E("fJob").value; LISTS.forEach(function(l){ have[njob(l.JobNo)]=l.JobName||JOBNAME[njob(l.JobNo)]||""; });
+  var ks=Object.keys(have).sort(function(a,b){ return (have[a]||a).toLowerCase().localeCompare((have[b]||b).toLowerCase()); });
+  E("fJob").innerHTML='<option value="">All jobs</option>'+ks.map(function(k){ return '<option value="'+esc(k)+'">'+esc((have[k]?have[k]+" · ":"")+k)+'</option>'; }).join(""); E("fJob").value=v; }
+function lstStat(l){ return l.Status==="Signed off"?"Signed off":(+l.ItemCount>0&&+l.OpenCount===0?"Ready for sign-off":"Open"); }
+function renderHome(){
+  fillJobFilter(); var jf=E("fJob").value, mine=MYJOBS&&E("fMine").checked;
+  var rows=LISTS.filter(function(l){ var s=lstStat(l); if(HSTAT==="open"&&s==="Signed off") return false; if(HSTAT==="signed"&&s!=="Signed off") return false;
+    if(jf&&njob(l.JobNo)!==jf) return false; if(mine&&!jf&&!MYJOBS[njob(l.JobNo)]) return false; return true; });
+  rows.sort(function(a,b){ return (+b.OpenCount||0)-(+a.OpenCount||0)||String(b.ReceivedDate||"").localeCompare(String(a.ReceivedDate||"")); });
+  E("hCount").textContent=LISTS.length?"("+rows.length+" shown)":"";
+  if(!rows.length){ E("hList").innerHTML='<div class="empty">'+(!LISTS.length?(CAN_MANAGE?"No lists yet. Tap + New list to bring in a punch or deficiency list.":"No lists yet — your PM adds them."):(mine?"Nothing open on your jobs. Untick “My jobs” to see every job.":"Nothing matches."))+'</div>'; return; }
+  E("hList").innerHTML=rows.map(function(l){ var s=lstStat(l), tot=+l.ItemCount||0, op=+l.OpenCount||0, pct=tot?Math.round((tot-op)*100/tot):0;
+    return '<div class="pl" data-id="'+esc(l._id)+'"><div class="t"><b>'+esc(l.Title||"(no name)")+'</b><span class="chip '+(s==="Signed off"?"done":s==="Ready for sign-off"?"blu":"prog")+'">'+esc(s==="Open"?op+" open":s)+'</span></div>'+
+      '<div class="s">'+esc((l.JobName||JOBNAME[njob(l.JobNo)]||"")+" · "+(l.JobNo||""))+'</div>'+
+      '<div class="pbar'+(s!=="Open"?" done":"")+'"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="s"><span class="chip '+(l.ListType==="Deficiency"?"pur":"red")+'">'+esc(l.ListType||"Punch")+'</span> '+[l.Source?"from "+esc(l.Source):"", l.ReceivedDate?"received "+nice(l.ReceivedDate):"", tot+" item"+(tot===1?"":"s"), s==="Signed off"&&l.SignedOffBy?"signed off by "+esc(l.SignedOffBy)+" "+nice(l.SignedOffDate):""].filter(Boolean).join(" · ")+'</div></div>'; }).join("");
+  E("hList").querySelectorAll(".pl").forEach(function(el){ el.onclick=function(){ var l=LISTS.filter(function(x){return String(x._id)===el.getAttribute("data-id");})[0]; if(l) openList(l); }; });
+}
+E("fJob").onchange=renderHome; E("fMine").onchange=renderHome;
+E("fSt").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ HSTAT=b.getAttribute("data-v"); E("fSt").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); renderHome(); }; });
+
+/* ===== new / edit list ===== */
+var NL_EDIT=null;
+function openNL(l){ NL_EDIT=l||null; hideMsg("nlMsg");
+  E("nlTitle").textContent=l?"List details":"New list"; E("nlSave").textContent=l?"Save":"Create list"; E("nlDel").style.display=(l&&IS_ADMIN)?"":"none";
+  var jobs=JOBLIST.slice(); if(l&&!jobs.some(function(j){return njob(j.no)===njob(l.JobNo);})) jobs.unshift({no:l.JobNo,name:l.JobName||""});
+  E("nlJob").innerHTML='<option value="">— Pick the job —</option>'+jobs.map(function(j){ return '<option value="'+esc(j.no)+'" data-name="'+esc(j.name)+'">'+esc(j.no+" "+j.name)+'</option>'; }).join("");
+  E("nlSrc").innerHTML=SOURCES.map(function(s){return '<option>'+esc(s)+'</option>';}).join("");
+  E("nlJob").disabled=!!l;
+  if(l){ E("nlJob").value=l.JobNo||""; E("nlType").value=l.ListType||"Punch"; E("nlSrc").value=SOURCES.indexOf(l.Source)>-1?l.Source:"Other"; E("nlName").value=l.Title||""; E("nlDate").value=d10(l.ReceivedDate); E("nlNotes").value=l.Notes||""; E("nlFileL").textContent="Attach more files (optional)"; }
+  else { var jf=E("fJob").value; E("nlJob").value=""; if(jf) Array.prototype.forEach.call(E("nlJob").options,function(o){ if(njob(o.value)===jf) E("nlJob").value=o.value; });
+    E("nlType").value="Punch"; E("nlSrc").value="Architect"; E("nlName").value=""; E("nlDate").value=today(); E("nlNotes").value=""; E("nlFileL").textContent="Their list (Excel or PDF) — optional"; }
+  E("nlFile").value=""; E("nlModal").style.display="block"; if(window.vmJobScan) window.vmJobScan(); }
+E("newBtn").onclick=function(){ openNL(null); };
+E("editListBtn").onclick=function(){ if(CUR) openNL(CUR.l); };
+E("nlCancel").onclick=function(){ E("nlModal").style.display="none"; };
+E("nlType").onchange=function(){ if(!NL_EDIT) E("nlSrc").value=E("nlType").value==="Deficiency"?"Vision (internal)":"Architect"; };
+function defaultName(){ var t=E("nlType").value, s=E("nlSrc").value, d=E("nlDate").value; return (t==="Deficiency"?"Deficiency list":(s&&s!=="Other"&&s!=="Vision (internal)"?s+" punch":"Punch list"))+(d?" "+nice(d):""); }
+async function uploadFile(blob,path){ var it=await gfetch(SITEURL+"/drive/root:/"+encPath(path)+":/content?@microsoft.graph.conflictBehavior=rename",{method:"PUT",headers:{"Content-Type":blob.type||"application/octet-stream"},body:blob}); return {id:it.id,url:it.webUrl,n:it.name}; }
+E("nlSave").onclick=async function(){
+  var sel=E("nlJob"), no=sel.value; if(!no){ showMsg("nlMsg","err","Pick the job."); return; }
+  var o=sel.options[sel.selectedIndex], jn=(o&&o.getAttribute("data-name"))||JOBNAME[njob(no)]||"";
+  var name=E("nlName").value.trim()||defaultName(), files=Array.prototype.slice.call(E("nlFile").files||[]);
+  if(files.some(function(f){return f.size>60e6;})){ showMsg("nlMsg","err","One of those files is over 60 MB."); return; }
+  var btn=E("nlSave"); btn.disabled=true; showMsg("nlMsg","info","Saving…");
+  try{
+    var f={Title:name, JobNo:njob(no), JobName:jn, ListType:E("nlType").value, Source:E("nlSrc").value, ReceivedDate:E("nlDate").value?E("nlDate").value+"T12:00:00Z":null, Notes:E("nlNotes").value.trim()};
+    var l=NL_EDIT, id;
+    if(l){ id=l._id; await gfetch(GRAPH+HDR_ID+"/items/"+id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(only(f,HDR_COLS))}); Object.assign(l,f); }
+    else { Object.assign(f,{Status:"Open",ItemCount:0,OpenCount:0,AddedBy:MY_NAME,Files:"[]"});
+      var r=await gfetch(GRAPH+HDR_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:only(f,HDR_COLS)})}); id=r.id; l=Object.assign({_id:id},f); LISTS.push(l); }
+    var parse=null;
+    if(files.length){ var have=js(l.Files);
+      for(var i=0;i<files.length;i++){ showMsg("nlMsg","info","Uploading "+files[i].name+"…"); var up=await uploadFile(files[i],FILE_ROOT+"/"+safe(l.JobNo)+"/"+id+"/"+safe(files[i].name.replace(/\.[^.]+$/,""))+(/\.[^.]+$/.exec(files[i].name)||[""])[0]);
+        have.push(up); if(!parse&&/\.(xlsx|xlsm|xls|pdf)$/i.test(files[i].name)) parse=files[i]; }
+      l.Files=JSON.stringify(have); await gfetch(GRAPH+HDR_ID+"/items/"+id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({Files:l.Files})}); }
+    E("nlModal").style.display="none"; btn.disabled=false;
+    if(CUR&&CUR.l===l) renderListHead(); else await openList(l);
+    if(parse) startImport(parse,true);
+  }catch(e){ btn.disabled=false; showMsg("nlMsg","err","Couldn't save ("+e.message+")."); }
+};
+E("nlDel").onclick=async function(){ var l=NL_EDIT; if(!l||!IS_ADMIN) return;
+  if(!confirm("Delete “"+(l.Title||"this list")+"” and all of its items? Photos and files stay in SharePoint.")) return;
+  var btn=E("nlDel"); btn.disabled=true; showMsg("nlMsg","info","Deleting…");
+  try{ var its=await pullItems(l._id); await batch(its.map(function(it){ return {method:"DELETE",url:"/sites/"+SITE+"/lists/"+ITM_ID+"/items/"+it._id}; }));
+    await gfetch(GRAPH+HDR_ID+"/items/"+l._id,{method:"DELETE"}); LISTS=LISTS.filter(function(x){return x!==l;});
+    E("nlModal").style.display="none"; btn.disabled=false; goHome();
+  }catch(e){ btn.disabled=false; showMsg("nlMsg","err","Couldn't delete ("+e.message+")."); } };
+
+/* ===== one list ===== */
+async function pullItems(listRef){ var rows;
+  try{ rows=await pullAll(ITM_ID,null,"fields/ListRef eq '"+String(listRef)+"'"); }catch(e){ rows=(await pullAll(ITM_ID)).filter(function(r){return String(r.ListRef)===String(listRef);}); }
+  return rows; }
+function sortItems(){ ITEMS.sort(function(a,b){ var x=+a.SortOrder||0, y=+b.SortOrder||0; if(x!==y) return x-y; return String(a.ItemNo||"").localeCompare(String(b.ItemNo||""),undefined,{numeric:true}); }); }
+async function openList(l){
+  CUR={l:l}; ITEMS=[]; ISTAT="open"; E("iSt").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")==="open");}); E("iLoc").value=""; E("iResp").value=""; E("iQ").value="";
+  E("homeView").style.display="none"; E("listView").style.display="block"; hideMsg("topMsg"); window.scrollTo(0,0);
+  try{ history.replaceState(null,"","?list="+encodeURIComponent(l._id)); }catch(e){}
+  renderListHead(); E("items").innerHTML='<div class="empty">Loading…</div>';
+  try{ ITEMS=await pullItems(l._id); }catch(e){ E("items").innerHTML='<div class="empty">Couldn\'t load items ('+esc(e.message)+').</div>'; return; }
+  if(CUR.l!==l) return; sortItems(); renderListHead(); renderItems(); loadThumbs(allPhotoIds());
+}
+function counts(){ var tot=ITEMS.length, op=ITEMS.filter(function(i){return isOpen(i.Status);}).length, na=ITEMS.filter(function(i){return i.Status==="Not ours";}).length;
+  var live=tot-na, fixed=live-op; return {tot:tot, open:op, na:na, fixed:fixed, pct:live?Math.round(fixed*100/live):(tot?100:0)}; }
+function renderListHead(){ var l=CUR.l, c=counts(), s=lstStat(l);
+  E("lName").textContent=l.Title||"(no name)";
+  E("lSub").textContent=[(l.JobName||JOBNAME[njob(l.JobNo)]||"")+" · "+(l.JobNo||""), l.Source?"from "+l.Source:"", l.ReceivedDate?"received "+nice(l.ReceivedDate):"", l.AddedBy?"added by "+l.AddedBy:""].filter(Boolean).join(" · ");
+  E("lChips").innerHTML='<span class="chip '+(l.ListType==="Deficiency"?"pur":"red")+'">'+esc(l.ListType||"Punch")+'</span> <span class="chip '+(s==="Signed off"?"done":s==="Ready for sign-off"?"blu":"prog")+'">'+esc(s)+'</span>'+(l.Notes?'<div class="hint" style="white-space:pre-wrap;margin-top:6px">'+esc(l.Notes)+'</div>':'');
+  E("lPct").textContent=c.pct+"%"; E("lCnt").textContent=c.open+" open · "+c.fixed+" fixed"+(c.na?" · "+c.na+" not ours":"");
+  E("lBar").className="pbar"+(c.open===0&&c.tot?" done":""); E("lBar").firstChild.style.width=c.pct+"%";
+  var fs=js(l.Files); E("lFiles").innerHTML=fs.map(function(f){ return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener">&#128206; '+esc(f.n||"file")+'</a>'; }).join("");
+  if(s==="Signed off"){ var ph=js(l.SignOffPhotos);
+    E("lSO").innerHTML='<div class="so"><b>&#10004; Signed off</b> by '+esc(l.SignedOffBy||"")+' on '+esc(nice(l.SignedOffDate))+(l.SignOffNotes?'<div style="white-space:pre-wrap;margin-top:4px">'+esc(l.SignOffNotes)+'</div>':'')+(ph.length?'<div class="thumbs" style="margin-top:6px">'+ph.map(thumbHtml).join("")+'</div>':'')+'</div>';
+    loadThumbs(ph.map(function(p){return p.id;})); }
+  else E("lSO").innerHTML="";
+  if(CAN_MANAGE){ E("signBtn").style.display=s==="Signed off"?"none":""; E("reopenBtn").style.display=s==="Signed off"?"":"none"; }
+  E("addItemBtn").style.display=s==="Signed off"&&!CAN_MANAGE?"none":"";
+  /* datalists + filters */
+  var locs={}, resp={}; ITEMS.forEach(function(i){ if(i.Location) locs[i.Location]=1; if(i.Responsible) resp[i.Responsible]=1; });
+  var lv=E("iLoc").value, rv=E("iResp").value, sk=function(o){ return Object.keys(o).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}); };
+  E("iLoc").innerHTML='<option value="">All locations</option>'+sk(locs).map(function(x){return '<option>'+esc(x)+'</option>';}).join(""); E("iLoc").value=lv;
+  E("iResp").innerHTML='<option value="">Anyone responsible</option>'+sk(resp).map(function(x){return '<option>'+esc(x)+'</option>';}).join(""); E("iResp").value=rv;
+  E("dlLoc").innerHTML=sk(locs).map(function(x){return '<option value="'+esc(x)+'">';}).join("");
+  E("dlResp").innerHTML=["Vision","Sheet metal","Plumbing","Pipefitting","Controls","Insulation","TAB","Electrical","Other trade"].concat(sk(resp)).filter(function(v,i,a){return a.indexOf(v)===i;}).map(function(x){return '<option value="'+esc(x)+'">';}).join("");
+  E("iLoc").style.display=Object.keys(locs).length?"":"none"; E("iResp").style.display=Object.keys(resp).length?"":"none";
+}
+function thumbHtml(p){ var t=THUMB[p.id]; return '<a href="'+esc(p.url)+'" target="_blank" rel="noopener" title="'+esc(p.n||"photo")+'"><img data-pid="'+esc(p.id)+'" alt=""'+(t&&t.m?' src="'+esc(t.m)+'"':'')+'></a>'; }
+function allPhotoIds(){ var ids=[]; ITEMS.forEach(function(i){ js(i.BeforePhotos).concat(js(i.AfterPhotos)).forEach(function(p){ if(p.id) ids.push(p.id); }); }); return ids; }
+async function loadThumbs(ids){ ids=ids.filter(function(id){ return id&&!THUMB[id]; }); if(!ids.length) return;
+  ids.forEach(function(id){ THUMB[id]={}; });
+  try{ var rs=await batch(ids.map(function(id){ return {method:"GET",url:"/sites/"+SITE+"/drive/items/"+id+"/thumbnails"}; }));
+    rs.forEach(function(r){ var id=ids[+r.id], t=r.body&&r.body.value&&r.body.value[0]; if(t) THUMB[id]={m:(t.medium||t.small||{}).url, l:(t.large||t.medium||{}).url}; });
+  }catch(e){}
+  document.querySelectorAll("img[data-pid]").forEach(function(img){ var t=THUMB[img.getAttribute("data-pid")]; if(t&&t.m&&img.getAttribute("src")!==t.m) img.src=t.m; }); }
+/* if a thumbnail link won't load, fall back to the file's short-lived download link */
+document.addEventListener("error",async function(e){ var img=e.target; if(!img||img.tagName!=="IMG"||!img.getAttribute("data-pid")||img.getAttribute("data-fb")) return; img.setAttribute("data-fb","1");
+  var id=img.getAttribute("data-pid"); try{ var meta=await gfetch(SITEURL+"/drive/items/"+id), dl=meta["@microsoft.graph.downloadUrl"]; if(dl){ THUMB[id]={m:dl,l:dl}; img.src=dl; } }catch(er){} },true);
+function filtered(){ var q=E("iQ").value.trim().toLowerCase(), lv=E("iLoc").value, rv=E("iResp").value;
+  return ITEMS.filter(function(i){ if(ISTAT==="open"&&!isOpen(i.Status)) return false; if(ISTAT==="fixed"&&i.Status!=="Fixed") return false; if(ISTAT==="na"&&i.Status!=="Not ours") return false;
+    if(lv&&i.Location!==lv) return false; if(rv&&i.Responsible!==rv) return false;
+    if(q&&[i.ItemNo,i.Description,i.Title,i.Location,i.Responsible,i.Notes].join(" ").toLowerCase().indexOf(q)<0) return false; return true; }); }
+function renderItems(){
+  var signed=lstStat(CUR.l)==="Signed off", rows=filtered(), lock=signed&&!CAN_MANAGE;
+  if(!ITEMS.length){ E("items").innerHTML='<div class="empty">No items yet.'+(CAN_MANAGE?" Import their Excel or PDF, or tap + Add item.":" Tap + Add item to add one.")+'</div>'; return; }
+  if(!rows.length){ E("items").innerHTML='<div class="empty">'+(ISTAT==="open"?"Nothing open here. &#127881;":"Nothing matches.")+'</div>'; return; }
+  E("items").innerHTML=rows.map(function(i){ var idx=ITEMS.indexOf(i), b=js(i.BeforePhotos), a=js(i.AfterPhotos), st=IST.indexOf(i.Status)>-1?i.Status:"Open";
+    return '<div class="pi '+stCls(st)+'"><div class="top"><span class="no">'+esc(i.ItemNo?("#"+i.ItemNo):"")+'</span><div class="d">'+esc(i.Description||i.Title||"")+'</div>'+(lock?'':'<button class="ed" data-ed="'+idx+'" title="Edit">&#9998;</button>')+'</div>'+
+      ((i.Location||i.Responsible)?'<div class="meta">'+[i.Location?"&#128205; "+esc(i.Location):"", i.Responsible?"&#128119; "+esc(i.Responsible):""].filter(Boolean).join(" · ")+'</div>':'')+
+      '<div class="seg">'+IST.map(function(v){ return '<button data-st="'+idx+'" data-v="'+v+'" class="'+(st===v?"on":"")+'"'+(lock?" disabled":"")+'>'+v+'</button>'; }).join("")+'</div>'+
+      '<div class="phs"><div class="col"><div class="lb">Before</div><div class="thumbs">'+b.map(thumbHtml).join("")+(lock?'':'<label class="addph" title="Add before photo">+<input type="file" accept="image/*" multiple data-ph="'+idx+'" data-k="BeforePhotos"></label>')+'</div></div>'+
+      '<div class="col"><div class="lb">After</div><div class="thumbs">'+a.map(thumbHtml).join("")+(lock?'':'<label class="addph" title="Add after photo">+<input type="file" accept="image/*" multiple data-ph="'+idx+'" data-k="AfterPhotos"></label>')+'</div></div></div>'+
+      (st==="Fixed"?'<div class="fx">&#10004; Fixed'+(i.FixedBy?" by "+esc(i.FixedBy):"")+(i.FixedDate?" "+nice(i.FixedDate):"")+(i.Notes?" · "+esc(i.Notes):"")+'</div>':(st==="Not ours"?'<div class="fx na">Not ours'+(i.Notes?" — "+esc(i.Notes):"")+'</div>':(i.Notes?'<div class="fx na">'+esc(i.Notes)+'</div>':'')))+
+      '</div>'; }).join("");
+  var C=E("items");
+  C.querySelectorAll("[data-st]").forEach(function(b){ b.onclick=function(){ setStatus(ITEMS[+b.getAttribute("data-st")],b.getAttribute("data-v")); }; });
+  C.querySelectorAll("[data-ed]").forEach(function(b){ b.onclick=function(){ openItem(ITEMS[+b.getAttribute("data-ed")]); }; });
+  C.querySelectorAll("[data-ph]").forEach(function(inp){ inp.onchange=function(){ addPhotos(ITEMS[+inp.getAttribute("data-ph")],inp.getAttribute("data-k"),inp.files,inp); }; });
+}
+E("iSt").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ ISTAT=b.getAttribute("data-v"); E("iSt").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); renderItems(); }; });
+E("iLoc").onchange=renderItems; E("iResp").onchange=renderItems; E("iQ").addEventListener("input",renderItems);
+function goHome(){ CUR=null; ITEMS=[]; E("listView").style.display="none"; E("homeView").style.display="block"; try{ history.replaceState(null,"",location.pathname+(E("fJob").value?"?job="+encodeURIComponent(E("fJob").value):"")); }catch(e){} renderHome(); window.scrollTo(0,0); }
+E("backBtn").onclick=goHome;
+
+/* keep the list row's counts in step */
+async function syncHead(){ if(!CUR) return; var l=CUR.l, c=counts(), st=l.Status==="Signed off"?"Signed off":(c.tot&&c.open===0?"Ready for sign-off":"Open");
+  var f={ItemCount:c.tot, OpenCount:c.open, Status:st};
+  if(+l.ItemCount===c.tot&&+l.OpenCount===c.open&&l.Status===st) { renderListHead(); return; }
+  Object.assign(l,f); renderListHead();
+  try{ await gfetch(GRAPH+HDR_ID+"/items/"+l._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(only(f,HDR_COLS))}); }catch(e){ showMsg("topMsg","err","Couldn't update the list totals ("+e.message+")."); } }
+async function patchItem(i,f){ await gfetch(GRAPH+ITM_ID+"/items/"+i._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(only(f,ITM_COLS))}); Object.assign(i,f); }
+
+/* ===== status ===== */
+var FX_ITEM=null;
+async function setStatus(i,v){ if(i.Status===v) return;
+  if(v==="Fixed"){ FX_ITEM=i; E("fxWhat").textContent=(i.ItemNo?"#"+i.ItemNo+" — ":"")+(i.Description||i.Title||""); E("fxPh").value=""; E("fxNotes").value=i.Notes||""; hideMsg("fxMsg");
+    var n=js(i.AfterPhotos).length; E("fxPhHint").textContent=n?n+" after photo"+(n===1?"":"s")+" already on it — add more if you like.":"Snap the finished work — it goes on the sign-off report.";
+    E("fxModal").style.display="block"; return; }
+  var f={Status:v}, note=null;
+  if(v==="Not ours"){ note=prompt("Whose item is it? (e.g. electrician, GC, drywall)",i.Notes||""); if(note===null) return; f.Notes=note.trim(); }
+  if(i.Status==="Fixed"){ f.FixedBy=""; f.FixedDate=null; }
+  try{ await patchItem(i,f); renderItems(); syncHead(); }catch(e){ showMsg("topMsg","err","Couldn't save ("+e.message+")."); window.scrollTo(0,0); } }
+E("fxCancel").onclick=function(){ E("fxModal").style.display="none"; };
+E("fxSave").onclick=async function(){ var i=FX_ITEM; if(!i) return; var files=Array.prototype.slice.call(E("fxPh").files||[]);
+  if(!files.length&&!js(i.AfterPhotos).length&&!confirm("No photo of the finished work. Mark it fixed anyway?")) return;
+  var btn=E("fxSave"); btn.disabled=true;
+  try{ var after=js(i.AfterPhotos);
+    for(var k=0;k<files.length;k++){ showMsg("fxMsg","info","Uploading photo "+(k+1)+" of "+files.length+"…"); after.push(await upPhoto(files[k],i,"after")); }
+    showMsg("fxMsg","info","Saving…");
+    await patchItem(i,{Status:"Fixed",FixedBy:MY_NAME,FixedDate:today()+"T12:00:00Z",AfterPhotos:JSON.stringify(after),Notes:E("fxNotes").value.trim()});
+    E("fxModal").style.display="none"; btn.disabled=false; renderItems(); syncHead(); loadThumbs(after.map(function(p){return p.id;}));
+  }catch(e){ btn.disabled=false; showMsg("fxMsg","err","Couldn't save ("+e.message+")."); } };
+
+/* ===== photos ===== */
+function shrink(file,max){ return new Promise(function(res){ if(!/^image\//.test(file.type)||/gif|svg/.test(file.type)){ res(file); return; }
+  var img=new Image(); img.onload=function(){ var w=img.naturalWidth, h=img.naturalHeight, s=Math.min(1,max/Math.max(w,h)); var c=document.createElement("canvas"); c.width=Math.round(w*s); c.height=Math.round(h*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height); c.toBlob(function(b){ res(b||file); },"image/jpeg",0.82); URL.revokeObjectURL(img.src); };
+  img.onerror=function(){ res(file); }; img.src=URL.createObjectURL(file); }); }
+function stamp(){ var d=new Date(); return today()+"-"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+"-"+Math.random().toString(36).slice(2,5); }
+async function upPhoto(file,i,kind){ var b=await shrink(file,1800); return uploadFile(b,FILE_ROOT+"/"+safe(CUR.l.JobNo)+"/"+CUR.l._id+"/photos/"+(i?("item "+(i.ItemNo?safe(i.ItemNo)+" ":"")+i._id+" "):"")+kind+" "+stamp()+".jpg"); }
+async function addPhotos(i,key,fl,inp){ var files=Array.prototype.slice.call(fl||[]); if(!files.length) return; var lab=inp.parentNode; lab.style.opacity=".5"; lab.firstChild.nodeValue="…";
+  try{ var arr=js(i[key]); for(var k=0;k<files.length;k++) arr.push(await upPhoto(files[k],i,key==="AfterPhotos"?"after":"before"));
+    var f={}; f[key]=JSON.stringify(arr); await patchItem(i,f); renderItems(); loadThumbs(arr.map(function(p){return p.id;}));
+  }catch(e){ showMsg("topMsg","err","Couldn't add the photo ("+e.message+")."); window.scrollTo(0,0); renderItems(); } }
+
+/* ===== add / edit item ===== */
+var IT_EDIT=null;
+function nextNo(){ var m=0; ITEMS.forEach(function(i){ var n=parseInt(String(i.ItemNo||"").replace(/[^\d]/g,""),10); if(n>m) m=n; }); return String(m+1); }
+function openItem(i){ IT_EDIT=i||null; hideMsg("itMsg");
+  E("itTitle").textContent=i?"Edit item":"Add item"; E("itDel").style.display=(i&&CAN_MANAGE)?"":"none"; E("itPhWrap").style.display=i?"none":"";
+  E("itNo").value=i?(i.ItemNo||""):nextNo(); E("itDesc").value=i?(i.Description||i.Title||""):""; E("itLoc").value=i?(i.Location||""):""; E("itResp").value=i?(i.Responsible||""):"Vision"; E("itNotes").value=i?(i.Notes||""):""; E("itPh").value="";
+  E("itModal").style.display="block"; E("itDesc").focus(); }
+E("addItemBtn").onclick=function(){ openItem(null); };
+E("itCancel").onclick=function(){ E("itModal").style.display="none"; };
+E("itSave").onclick=async function(){ var d=E("itDesc").value.trim(); if(!d){ showMsg("itMsg","err","Type the item."); return; }
+  var f={Title:d.slice(0,250), Description:d, ItemNo:E("itNo").value.trim(), Location:E("itLoc").value.trim(), Responsible:E("itResp").value.trim(), Notes:E("itNotes").value.trim()};
+  var btn=E("itSave"); btn.disabled=true; showMsg("itMsg","info","Saving…");
+  try{ if(IT_EDIT){ await patchItem(IT_EDIT,f); }
+    else { Object.assign(f,{ListRef:String(CUR.l._id), JobNo:CUR.l.JobNo, Status:"Open", AddedBy:MY_NAME, SortOrder:ITEMS.length?Math.max.apply(null,ITEMS.map(function(x){return +x.SortOrder||0;}))+1:1});
+      var r=await gfetch(GRAPH+ITM_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:only(f,ITM_COLS)})}); var it=Object.assign({_id:r.id},f); ITEMS.push(it);
+      var files=Array.prototype.slice.call(E("itPh").files||[]);
+      if(files.length){ var arr=[]; for(var k=0;k<files.length;k++){ showMsg("itMsg","info","Uploading photo "+(k+1)+" of "+files.length+"…"); arr.push(await upPhoto(files[k],it,"before")); } await patchItem(it,{BeforePhotos:JSON.stringify(arr)}); loadThumbs(arr.map(function(p){return p.id;})); } }
+    E("itModal").style.display="none"; btn.disabled=false; sortItems(); renderListHead(); renderItems(); syncHead();
+  }catch(e){ btn.disabled=false; showMsg("itMsg","err","Couldn't save ("+e.message+")."); } };
+E("itDel").onclick=async function(){ var i=IT_EDIT; if(!i||!CAN_MANAGE||!confirm("Delete this item? Its photos stay in SharePoint.")) return;
+  try{ await gfetch(GRAPH+ITM_ID+"/items/"+i._id,{method:"DELETE"}); ITEMS=ITEMS.filter(function(x){return x!==i;}); E("itModal").style.display="none"; renderListHead(); renderItems(); syncHead(); }
+  catch(e){ showMsg("itMsg","err","Couldn't delete ("+e.message+")."); } };
+
+/* ===== sign off / reopen ===== */
+E("signBtn").onclick=function(){ if(!CUR) return; var c=counts();
+  if(!c.tot){ alert("There are no items on this list yet."); return; }
+  if(c.open){ alert(c.open+" item"+(c.open===1?" is":"s are")+" still open. Mark each one Fixed or Not ours before signing off."); ISTAT="open"; E("iSt").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-v")==="open");}); renderItems(); return; }
+  E("soWhat").textContent=CUR.l.Title+" — "+c.fixed+" fixed"+(c.na?", "+c.na+" not ours":"")+".";
+  E("soBy").value=MY_NAME; E("soDate").value=today(); E("soNotes").value=""; E("soPh").value=""; E("soOk").checked=false; hideMsg("soMsg"); E("soModal").style.display="block"; };
+E("soCancel").onclick=function(){ E("soModal").style.display="none"; };
+E("soSave").onclick=async function(){ if(!E("soOk").checked){ showMsg("soMsg","err","Tick the box to confirm you walked it."); return; } if(!E("soBy").value.trim()){ showMsg("soMsg","err","Who's signing off?"); return; }
+  var files=Array.prototype.slice.call(E("soPh").files||[]); if(!files.length&&!confirm("No photos of the finished product. Sign off anyway?")) return;
+  var btn=E("soSave"); btn.disabled=true;
+  try{ var ph=js(CUR.l.SignOffPhotos); for(var k=0;k<files.length;k++){ showMsg("soMsg","info","Uploading photo "+(k+1)+" of "+files.length+"…"); ph.push(await upPhoto(files[k],null,"signoff")); }
+    var c=counts(), f={Status:"Signed off", SignedOffBy:E("soBy").value.trim(), SignedOffDate:(E("soDate").value||today())+"T12:00:00Z", SignOffNotes:E("soNotes").value.trim(), SignOffPhotos:JSON.stringify(ph), ItemCount:c.tot, OpenCount:0};
+    await gfetch(GRAPH+HDR_ID+"/items/"+CUR.l._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(only(f,HDR_COLS))}); Object.assign(CUR.l,f);
+    E("soModal").style.display="none"; btn.disabled=false; renderListHead(); renderItems();
+  }catch(e){ btn.disabled=false; showMsg("soMsg","err","Couldn't sign off ("+e.message+")."); } };
+E("reopenBtn").onclick=async function(){ var l=CUR&&CUR.l; if(!l||!confirm("Reopen this list? The sign-off is cleared (it's kept in the list notes).")) return;
+  var c=counts(), was="Reopened "+nice(today())+" by "+MY_NAME+" (was signed off by "+(l.SignedOffBy||"?")+" "+nice(l.SignedOffDate)+")";
+  var f={Status:c.open===0?"Ready for sign-off":"Open", SignedOffBy:"", SignedOffDate:null, Notes:((l.Notes?l.Notes+"\n":"")+was)};
+  try{ await gfetch(GRAPH+HDR_ID+"/items/"+l._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(only(f,HDR_COLS))}); Object.assign(l,f); renderListHead(); renderItems(); }
+  catch(e){ showMsg("topMsg","err","Couldn't reopen ("+e.message+")."); } };
+
+/* ===== import (Excel / PDF) ===== */
+var IMP=null;
+function loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=function(){ rej(new Error("couldn't load "+src.split("/").pop())); }; document.head.appendChild(s); }); }
+E("importBtn").onclick=function(){ IMP=null; E("imPick").style.display=""; E("imXl").style.display="none"; E("imTools").style.display="none"; E("imTbl").innerHTML=""; E("imInfo").textContent=""; E("imProg").textContent=""; hideMsg("imMsg"); E("imGo").disabled=true; E("imFile").value=""; E("imTitle").textContent="Import items"; E("imModal").style.display="block"; };
+E("imCancel").onclick=function(){ E("imModal").style.display="none"; IMP=null; };
+E("imFile").onchange=async function(){ var f=E("imFile").files[0]; if(!f) return;
+  /* attach it to the list too */
+  try{ showMsg("imMsg","info","Attaching "+f.name+"…"); var up=await uploadFile(f,FILE_ROOT+"/"+safe(CUR.l.JobNo)+"/"+CUR.l._id+"/"+safe(f.name.replace(/\.[^.]+$/,""))+(/\.[^.]+$/.exec(f.name)||[""])[0]);
+    var have=js(CUR.l.Files); have.push(up); CUR.l.Files=JSON.stringify(have); await gfetch(GRAPH+HDR_ID+"/items/"+CUR.l._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({Files:CUR.l.Files})}); renderListHead(); hideMsg("imMsg");
+  }catch(e){ showMsg("imMsg","err","Couldn't attach the file ("+e.message+") — you can still import the items."); }
+  startImport(f,false); };
+async function startImport(file,fresh){
+  E("imModal").style.display="block"; E("imPick").style.display=fresh?"none":""; E("imTitle").textContent="Import items — "+file.name; E("imGo").disabled=true; E("imTbl").innerHTML='<div class="empty">Reading the file…</div>'; E("imProg").textContent="";
+  try{ if(/\.pdf$/i.test(file.name)) await readPdf(file); else await readXl(file); }
+  catch(e){ E("imTbl").innerHTML=""; showMsg("imMsg","err","Couldn't read that file ("+e.message+")."); } }
+
+/* --- Excel --- */
+var COLKEYS=[["desc","Item / description *"],["no","Item #"],["loc","Location / room"],["resp","Responsible / trade"],["status","Status (closed rows come in as Fixed)"],["notes","Notes"]];
+async function readXl(file){
+  if(!window.XLSX) await loadScript(XLSX_SRC);
+  var buf=await file.arrayBuffer(), wb=XLSX.read(buf,{type:"array",cellDates:true});
+  var sheets=wb.SheetNames.filter(function(n){ var a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:"",raw:false}); return a.some(function(r){return r.filter(function(c){return String(c).trim();}).length>=1;}); });
+  if(!sheets.length) throw new Error("the workbook is empty");
+  IMP={kind:"xl", wb:wb, rows:[]}; E("imXl").style.display="";
+  var best=sheets[0], bestN=-1; sheets.forEach(function(n){ var a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:"",raw:false}); if(a.length>bestN){ bestN=a.length; best=n; } });
+  E("imSheet").innerHTML=sheets.map(function(n){return '<option>'+esc(n)+'</option>';}).join(""); E("imSheet").value=best;
+  pickSheet(); }
+function pickSheet(){ var a=XLSX.utils.sheet_to_json(IMP.wb.Sheets[E("imSheet").value],{header:1,defval:"",raw:false,blankrows:false});
+  a=a.map(function(r){ return r.map(function(c){ return String(c==null?"":c).replace(/\s+/g," ").trim(); }); });
+  IMP.aoa=a; var h=guessHeader(a);
+  E("imHdr").innerHTML='<option value="-1">No header row</option>'+a.slice(0,25).map(function(r,i){ return '<option value="'+i+'">Row '+(i+1)+': '+esc(r.filter(Boolean).slice(0,4).join(" | ").slice(0,60))+'</option>'; }).join("");
+  E("imHdr").value=String(h); pickHeader(); }
+var KW={desc:/descr|deficien|punch|issue|comment|observ|item(?!\s*(#|no|num))|work|correct|finding|condition|remark|action/i, no:/^(#|no\.?|num(ber)?|item\s*(#|no\.?|num(ber)?)|ref(\.|erence)?|id|seq)$/i,
+  loc:/loc|room|area|level|floor|space|grid|bldg|building|unit|zone|rm\b/i, resp:/trade|resp|sub(contractor)?\b|contractor|assign|discipline|party|who|by$/i, status:/status|complete|closed|done|fixed|resolved|open/i, notes:/note|remark|response|reply/i};
+function guessHeader(a){ var best=-1, score=0; for(var i=0;i<Math.min(a.length,25);i++){ var r=a[i], s=0, filled=r.filter(Boolean).length; if(filled<2) continue;
+    r.forEach(function(c){ if(!c||c.length>40) return; Object.keys(KW).forEach(function(k){ if(KW[k].test(c)) s++; }); }); if(s>score){ score=s; best=i; } }
+  return score>=1?best:-1; }
+function pickHeader(){ var a=IMP.aoa, h=+E("imHdr").value, hdr=h>=0?a[h]:[], ncol=Math.max.apply(null,a.slice(0,200).map(function(r){return r.length;}).concat([1]));
+  var names=[]; for(var c=0;c<ncol;c++) names.push(hdr[c]||("Column "+String.fromCharCode(65+(c%26))+(c>=26?Math.floor(c/26):"")));
+  /* guess mapping */
+  var used={}, map={}; ["no","loc","resp","status","notes","desc"].forEach(function(k){ for(var c=0;c<ncol;c++){ if(used[c]) continue; if(h>=0&&hdr[c]&&KW[k].test(hdr[c])&&!(k==="notes"&&KW.desc.test(hdr[c])&&!/note/i.test(hdr[c]))){ map[k]=c; used[c]=1; break; } } });
+  if(map.desc==null){ /* the column with the longest text on average */ var best=-1, bl=0; for(var c2=0;c2<ncol;c2++){ if(used[c2]) continue; var tot=0; a.slice(h+1,h+80).forEach(function(r){ tot+=String(r[c2]||"").length; }); if(tot>bl){ bl=tot; best=c2; } } if(best>-1) map.desc=best; }
+  IMP.names=names; IMP.map=map; IMP.h=h;
+  E("imMap").innerHTML=COLKEYS.map(function(k){ return '<div><label>'+esc(k[1])+'</label><select data-mk="'+k[0]+'"><option value="">(none)</option>'+names.map(function(n,i){ return '<option value="'+i+'"'+(map[k[0]]===i?" selected":"")+'>'+esc(n.slice(0,40))+'</option>'; }).join("")+'</select></div>'; }).join("");
+  E("imMap").querySelectorAll("select").forEach(function(s){ s.onchange=function(){ var v=s.value; IMP.map[s.getAttribute("data-mk")]=v===""?null:+v; buildXlRows(); }; });
+  buildXlRows(); }
+function buildXlRows(){ var a=IMP.aoa, m=IMP.map, out=[]; if(m.desc==null){ IMP.rows=[]; renderImp("Pick which column has the item description."); return; }
+  a.slice(IMP.h+1).forEach(function(r){ var g=function(k){ return m[k]==null?"":String(r[m[k]]||"").trim(); }; var d=g("desc"); if(!d||d.length<2) return;
+    if(IMP.h<0&&KW.desc.test(d)&&d.length<25&&!out.length) return;
+    var st=g("status"), closed=/^(closed|complete(d)?|done|fixed|resolved|yes|x|✓|✔)$/i.test(st)||/\b(closed|completed?)\b/i.test(st);
+    out.push({chk:true, no:g("no"), desc:d, loc:g("loc"), resp:g("resp"), notes:g("notes"), fixed:closed}); });
+  IMP.rows=out; renderImp(out.length+" row"+(out.length===1?"":"s")+" found on “"+E("imSheet").value+"”. Uncheck anything that isn't ours."); }
+E("imSheet").onchange=pickSheet; E("imHdr").onchange=pickHeader;
+
+/* --- PDF --- */
+async function readPdf(file){
+  if(!window.pdfjsLib) await loadScript(PDF_SRC); pdfjsLib.GlobalWorkerOptions.workerSrc=PDF_WORKER;
+  var pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise, pages=[];
+  for(var p=1;p<=pdf.numPages;p++){ var pg=await pdf.getPage(p), tc=await pg.getTextContent(), rows={}, ph=pg.getViewport({scale:1}).height||792;
+    tc.items.forEach(function(t){ if(!t.str||!t.str.trim()) return; var y=Math.round(t.transform[5]/3)*3; (rows[y]=rows[y]||[]).push({x:t.transform[4],s:t.str,w:t.width||0}); });
+    var lines=Object.keys(rows).map(Number).sort(function(a,b){return b-a;}).map(function(y){ var r=rows[y].sort(function(a,b){return a.x-b.x;}), out="", lastEnd=null;
+      r.forEach(function(t){ if(lastEnd!==null){ var gap=t.x-lastEnd; out+=gap>18?"  |  ":(gap>1.5?" ":""); } out+=t.s; lastEnd=t.x+t.w; }); return {x:r[0].x, edge:(y>ph*0.9||y<ph*0.07), s:out.replace(/\s+/g," ").replace(/(\s\|\s)+/g," | ").trim()}; });
+    pages.push(lines); }
+  IMP={kind:"pdf", rows:[]}; E("imXl").style.display="none";
+  var total=pages.reduce(function(n,l){return n+l.length;},0);
+  if(total<3){ IMP.rows=[]; renderImp("This PDF looks like a scan (no typed text to read). It's attached to the list — add the items with + Add item."); return; }
+  /* lines at the very top/bottom that repeat on most pages are headers/footers */
+  var seen={}; pages.forEach(function(l){ var u={}; l.forEach(function(x){ if(!x.edge) return; var k=x.s.replace(/\d+/g,"#"); if(!u[k]){ u[k]=1; seen[k]=(seen[k]||0)+1; } }); });
+  var rep=function(x){ return x.edge&&pages.length>1&&seen[x.s.replace(/\d+/g,"#")]>=Math.max(2,Math.ceil(pages.length*0.6)); };
+  var all=[]; pages.forEach(function(l){ l.forEach(function(x){ if(!rep(x)&&!/^page\s*\d+(\s*of\s*\d+)?$/i.test(x.s)) all.push(x); }); });
+  var NUM=/^\s*((?:[A-Z]{1,3}[-.]?)?\d{1,4}(?:[.\-]\d{1,3})?)[.)\]:\-]?\s+(?:\|\s*)?(\S.*)$/;
+  var numbered=all.filter(function(x){ return NUM.test(x.s); }).length, out=[];
+  if(numbered>=3){ var cur=null;
+    all.forEach(function(x){ var m=NUM.exec(x.s); if(m){ cur={chk:true,no:m[1],desc:m[2].replace(/^\|\s*/,""),more:[],loc:"",resp:"",notes:"",fixed:false}; out.push(cur); }
+      else if(cur&&x.s.length>1&&!/^(item|no\.?|#|description|location|status)\b.*\|/i.test(x.s)) cur.more.push(x.s.replace(/\s\|\s/g," ")); }); }
+  else all.forEach(function(x){ if(x.s.length>=8) out.push({chk:true,no:"",desc:x.s,loc:"",resp:"",notes:"",fixed:false}); });
+  /* columns split with " | " — first long chunk is the description, a short chunk that looks like a room goes to location */
+  out.forEach(function(r){ var parts=r.desc.split(" | ").map(function(s){return s.trim();}).filter(Boolean); var more=(r.more||[]).join(" "); delete r.more; if(parts.length<2){ r.desc=(r.desc.replace(/\s\|\s/g," ")+" "+more).trim(); return; }
+    var loc=parts.filter(function(s){ return s.length<=30&&/(room|rm\.?|level|floor|area|corridor|mech|roof|bldg|unit|lobby|office|suite|^\d{2,4}[A-Z]?$)/i.test(s); })[0];
+    if(loc){ r.loc=loc; parts.splice(parts.indexOf(loc),1); }
+    var resp=parts.filter(function(s){ return s.length<=25&&/^(mech(anical)?|hvac|plumb(ing)?|elec(trical)?|gc|controls?|sheet ?metal|fire ?protection|tab|insul(ation)?|all|drywall|paint(ing)?)$/i.test(s); })[0];
+    if(resp){ r.resp=resp; parts.splice(parts.indexOf(resp),1); }
+    r.desc=(parts.join(" — ")+" "+more).trim(); });
+  out=out.filter(function(r){ return r.desc&&r.desc.length>=3; });
+  IMP.rows=out; renderImp(out.length+" item"+(out.length===1?"":"s")+" pulled from "+pdf.numPages+" page"+(pdf.numPages===1?"":"s")+". Check them over — PDFs don't always read cleanly. Uncheck anything that isn't ours."); }
+
+function renderImp(info){ E("imInfo").textContent=info||""; var rows=IMP.rows; E("imTools").style.display=rows.length?"":"none";
+  if(!rows.length){ E("imTbl").innerHTML=""; E("imGo").disabled=true; E("imGo").textContent="Add items"; return; }
+  E("imTbl").innerHTML='<table><thead><tr><th style="width:28px"></th><th style="width:60px">#</th><th>Item</th><th style="width:18%">Location</th><th style="width:16%">Responsible</th></tr></thead><tbody>'+rows.map(function(r,i){
+    return '<tr class="'+(r.chk?"":"off")+'"><td><input type="checkbox" data-ri="'+i+'"'+(r.chk?" checked":"")+' style="width:18px;height:18px"></td><td><input type="text" data-rf="no" data-ri="'+i+'" value="'+esc(r.no)+'"></td>'+
+      '<td><textarea data-rf="desc" data-ri="'+i+'" rows="2">'+esc(r.desc)+'</textarea>'+(r.fixed?'<div class="hint" style="color:var(--ok);font-weight:700">Closed on their list — comes in as Fixed</div>':'')+(r.notes?'<div class="hint">'+esc(r.notes)+'</div>':'')+'</td>'+
+      '<td><input type="text" data-rf="loc" data-ri="'+i+'" value="'+esc(r.loc)+'"></td><td><input type="text" data-rf="resp" data-ri="'+i+'" value="'+esc(r.resp)+'"></td></tr>'; }).join("")+'</tbody></table>';
+  E("imTbl").querySelectorAll("input[type=checkbox]").forEach(function(c){ c.onchange=function(){ var r=IMP.rows[+c.getAttribute("data-ri")]; r.chk=c.checked; c.closest("tr").className=c.checked?"":"off"; impCount(); }; });
+  E("imTbl").querySelectorAll("[data-rf]").forEach(function(inp){ inp.addEventListener("input",function(){ IMP.rows[+inp.getAttribute("data-ri")][inp.getAttribute("data-rf")]=inp.value; }); });
+  impCount(); }
+function impCount(){ var n=IMP.rows.filter(function(r){return r.chk;}).length; E("imGo").disabled=!n; E("imGo").textContent="Add "+n+" item"+(n===1?"":"s"); }
+E("imAll").onclick=function(){ IMP.rows.forEach(function(r){r.chk=true;}); renderImp(E("imInfo").textContent); };
+E("imNone").onclick=function(){ IMP.rows.forEach(function(r){r.chk=false;}); renderImp(E("imInfo").textContent); };
+E("imKeepBtn").onclick=function(){ var ws=E("imKeep").value.toLowerCase().split(/[,;]+|\s+/).map(function(s){return s.trim();}).filter(Boolean); if(!ws.length) return;
+  IMP.rows.forEach(function(r){ var t=[r.desc,r.loc,r.resp,r.notes].join(" ").toLowerCase(); r.chk=ws.some(function(w){ return t.indexOf(w)>-1; }); }); renderImp(E("imInfo").textContent); };
+E("imGo").onclick=async function(){ var rows=IMP.rows.filter(function(r){return r.chk&&String(r.desc).trim();}); if(!rows.length) return;
+  var btn=E("imGo"); btn.disabled=true; hideMsg("imMsg");
+  var base=ITEMS.length?Math.max.apply(null,ITEMS.map(function(x){return +x.SortOrder||0;})):0, n0=parseInt(nextNo(),10), auto=0;
+  var reqs=rows.map(function(r,k){ var d=String(r.desc).trim(), no=String(r.no||"").trim(); if(!no){ no=String(n0+auto); auto++; }
+    var f={Title:d.slice(0,250), Description:d, ItemNo:no, Location:String(r.loc||"").trim(), Responsible:String(r.resp||"").trim(), Notes:String(r.notes||"").trim(), ListRef:String(CUR.l._id), JobNo:CUR.l.JobNo,
+      Status:r.fixed?"Fixed":"Open", AddedBy:MY_NAME, SortOrder:base+k+1}; if(r.fixed){ f.FixedBy="(closed on "+(CUR.l.Source||"their")+" list)"; }
+    return {method:"POST",url:"/sites/"+SITE+"/lists/"+ITM_ID+"/items",headers:{"Content-Type":"application/json"},body:{fields:only(f,ITM_COLS)},_f:f}; });
+  try{ var rs=await batch(reqs.map(function(r){ return {method:r.method,url:r.url,headers:r.headers,body:r.body}; }),function(d,t){ E("imProg").textContent="Adding "+d+" of "+t+"…"; });
+    var ok=0, bad=0; rs.forEach(function(r){ var q=reqs[+r.id]; if(r.status>=200&&r.status<300&&r.body&&r.body.id){ ok++; ITEMS.push(Object.assign({_id:r.body.id},q._f)); } else bad++; });
+    sortItems(); renderListHead(); renderItems(); await syncHead();
+    if(bad){ E("imProg").textContent=""; showMsg("imMsg","err",ok+" added, "+bad+" didn't save. Close this and add the missing ones by hand, or try the import again with just those rows."); btn.disabled=false; }
+    else { E("imModal").style.display="none"; IMP=null; showMsg("topMsg","ok",ok+" item"+(ok===1?"":"s")+" added."); window.scrollTo(0,0); }
+  }catch(e){ btn.disabled=false; E("imProg").textContent=""; showMsg("imMsg","err","Couldn't add the items ("+e.message+")."); } };
+
+/* ===== print ===== */
+E("printBtn").onclick=async function(){ if(!CUR) return; var l=CUR.l, c=counts(), w=window.open("","_blank"); if(!w){ alert("Allow pop-ups for this site to print."); return; }
+  w.document.write("<p style='font-family:Arial'>Building the report…</p>");
+  var so=js(l.SignOffPhotos), ids=allPhotoIds().concat(so.map(function(p){return p.id;}));
+  await loadThumbs(ids);
+  var img=function(p){ var t=THUMB[p.id]||{}; return t.l||t.m?'<img src="'+esc(t.l||t.m)+'">':''; };
+  var stc={"Open":"#b91c1c","In progress":"#b45309","Fixed":"#15803d","Not ours":"#64748b"};
+  var body=ITEMS.map(function(i){ var b=js(i.BeforePhotos), a=js(i.AfterPhotos), st=i.Status||"Open";
+    return '<tr><td>'+esc(i.ItemNo||"")+'</td><td>'+esc(i.Description||i.Title||"")+(i.Location||i.Responsible?'<div class="m">'+esc([i.Location,i.Responsible].filter(Boolean).join(" · "))+'</div>':'')+(i.Notes?'<div class="m">'+esc(i.Notes)+'</div>':'')+'</td>'+
+      '<td style="color:'+(stc[st]||"#111")+';font-weight:700">'+esc(st)+(st==="Fixed"?'<div class="m">'+esc([i.FixedBy,nice(i.FixedDate)].filter(Boolean).join(" "))+'</div>':'')+'</td>'+
+      '<td class="ph">'+b.map(img).join("")+'</td><td class="ph">'+a.map(img).join("")+'</td></tr>'; }).join("");
+  var signed=l.Status==="Signed off";
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc((l.ListType||"Punch")+" — "+(l.JobNo||"")+" "+(l.Title||""))+'</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:24px;font-size:12px}'+
+    '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #7f1d1d;padding-bottom:8px;margin-bottom:12px}.hd h1{margin:0;font-size:18px;color:#7f1d1d}.hd .s{color:#555;font-size:11.5px;text-align:right}'+
+    '.sum{display:flex;gap:24px;margin:0 0 10px}.sum b{font-size:20px;color:#7f1d1d;display:block}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:4px 6px;vertical-align:top;text-align:left}th{background:#f3f4f6;font-size:11px}'+
+    'tr{page-break-inside:avoid}.m{color:#555;font-size:11px;margin-top:2px}.ph img{width:110px;height:82px;object-fit:cover;margin:0 3px 3px 0;border-radius:3px}td.ph{width:118px}'+
+    '.so{margin-top:16px;border:2px solid #15803d;border-radius:6px;padding:10px;page-break-inside:avoid}.so h3{margin:0 0 6px;color:#15803d}.so img{width:200px;height:150px;object-fit:cover;margin:4px 6px 0 0;border-radius:3px}'+
+    '.sig{margin-top:22px;display:flex;gap:30px}.sig div{flex:1;border-top:1px solid #111;padding-top:3px;font-size:11px;color:#555}@media print{body{margin:10mm}.np{display:none}}</style></head><body>'+
+    '<div class="hd"><div><h1>Vision Mechanical — '+esc(l.ListType==="Deficiency"?"Deficiency List":"Punch List")+'</h1><div style="font-size:14px;font-weight:700;color:#333">'+esc((l.JobName||JOBNAME[njob(l.JobNo)]||"")+" · "+(l.JobNo||""))+'</div><div style="color:#555">'+esc([l.Title, l.Source?"from "+l.Source:"", l.ReceivedDate?"received "+nice(l.ReceivedDate):""].filter(Boolean).join(" · "))+'</div></div>'+
+    '<div class="s">Printed '+esc(new Date().toLocaleString())+'</div></div>'+
+    '<div class="sum"><div><b>'+c.tot+'</b>items</div><div><b>'+c.fixed+'</b>fixed</div><div><b>'+c.open+'</b>open</div>'+(c.na?'<div><b>'+c.na+'</b>not ours</div>':'')+'<div><b>'+c.pct+'%</b>complete</div></div>'+
+    '<table><thead><tr><th style="width:40px">#</th><th>Item</th><th style="width:90px">Status</th><th>Before</th><th>After</th></tr></thead><tbody>'+body+'</tbody></table>'+
+    (signed?'<div class="so"><h3>&#10004; Signed off</h3><div>By <b>'+esc(l.SignedOffBy||"")+'</b> on <b>'+esc(nice(l.SignedOffDate))+'</b></div>'+(l.SignOffNotes?'<div style="white-space:pre-wrap;margin-top:4px">'+esc(l.SignOffNotes)+'</div>':'')+(so.length?'<div>'+so.map(img).join("")+'</div>':'')+'</div>'
+      :'<div class="sig"><div>Vision Mechanical — signature / date</div><div>'+esc(l.Source&&l.Source!=="Vision (internal)"?l.Source:"Owner / GC")+' — signature / date</div></div>')+
+    '<div class="np" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 18px;font-size:14px">Print</button></div>'+
+    '<script>(function(){ var im=[].slice.call(document.images), n=im.length, go=function(){ setTimeout(function(){window.print();},300); }; if(!n){ go(); return; } var left=n; im.forEach(function(i){ if(i.complete){ if(--left===0) go(); } else { i.onload=i.onerror=function(){ if(--left===0) go(); }; } }); setTimeout(function(){ if(left>0){ left=0; go(); } },8000); })();<\/script></body></html>';
+  w.document.open(); w.document.write(html); w.document.close(); };
+
+window.addEventListener("keydown",function(e){ if(e.key==="Escape") document.querySelectorAll(".modal").forEach(function(m){ m.style.display="none"; }); });
+</script>
+<script>
+/* ===== Job lists show NAME first, A–Z (e.g. "Epic Phase II · A26103") =====
+   Works on any <select> or <datalist> whose options are jobs. Values the page saves are unchanged:
+   a picked datalist entry is turned back into "A26103 Epic Phase II" before the page reads it. */
+(function(){
+  var NO="[A-Z]?\\d{2}[A-Z]?-?\\d{3,}";
+  var FWD=new RegExp("^("+NO+")(?:\\s*·\\s*|\\s+)(.+)$"), REV=new RegExp("^(.+?)\\s+·\\s+("+NO+")$");
+  function fl(t){ var m=FWD.exec(String(t||"").trim()); return m?{no:m[1],name:m[2].trim()}:null; }
+  function cmp(a,b){ return a.k.localeCompare(b.k,undefined,{sensitivity:"base",numeric:true}); }
+  function doSelect(sel){
+    var opts=Array.prototype.slice.call(sel.options), real=opts.filter(function(o){return o.value!=="";});
+    var jobs=real.filter(function(o){ return o.getAttribute("data-vmflip")||fl(o.textContent); });
+    if(jobs.length<2||jobs.length<real.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmflip");})) return;
+    var v=sel.value;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmflip")) return; if(!o.hasAttribute("value")) o.setAttribute("value",o.textContent); var f=fl(o.textContent); o.textContent=f.name+" · "+f.no; o.setAttribute("data-vmflip","1"); });
+    var items=jobs.map(function(o){return {o:o,k:o.textContent.toLowerCase()};}).sort(cmp);
+    items.forEach(function(it){ sel.appendChild(it.o); });
+    opts.filter(function(o){return jobs.indexOf(o)<0&&o.value!=="";}).forEach(function(o){ sel.appendChild(o); });
+    sel.value=v;
+  }
+  function doList(dl){
+    var opts=Array.prototype.slice.call(dl.options), jobs=opts.filter(function(o){ return o.getAttribute("data-vmorig")||fl(o.value); });
+    if(jobs.length<2||jobs.length<opts.length*0.6) return;
+    if(jobs.every(function(o){return o.getAttribute("data-vmorig");})) return;
+    jobs.forEach(function(o){ if(o.getAttribute("data-vmorig")) return; var f=fl(o.value); o.setAttribute("data-vmorig",o.value); o.value=f.name+" · "+f.no; });
+    jobs.map(function(o){return {o:o,k:o.value.toLowerCase()};}).sort(cmp).forEach(function(it){ dl.appendChild(it.o); });
+  }
+  var busy=false;
+  function scan(){ if(busy) return; busy=true; try{ document.querySelectorAll("select").forEach(doSelect); document.querySelectorAll("datalist").forEach(doList); }catch(e){} busy=false; }
+  function back(e){ var t=e.target; if(!t||t.tagName!=="INPUT"||!t.getAttribute("list")) return; var m=REV.exec(String(t.value||"").trim()); if(m) t.value=m[2]+" "+m[1]; }
+  document.addEventListener("input",back,true); document.addEventListener("change",back,true); document.addEventListener("focusout",back,true);
+  var tmr=null; new MutationObserver(function(){ if(busy) return; clearTimeout(tmr); tmr=setTimeout(scan,30); }).observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState!=="loading") scan(); else document.addEventListener("DOMContentLoaded",scan);
+  window.vmJobScan=scan;
+})();
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>
