@@ -31,6 +31,7 @@
 <div class="wrap">
   <h1>Vision TV setup</h1>
   <p class="sub">Use the arrow buttons on the remote to move, and the center button to pick.</p>
+  <p style="margin:-6px 0 12px"><a href="/portal.html" style="color:inherit;opacity:.75;font-weight:700;font-size:14px">&#8962; Home (employee portal)</a></p>
 
   <!-- step 1: sign in -->
   <div id="stepSign" class="card hide">
@@ -57,8 +58,8 @@
   <div id="stepPick" class="hide">
     <div class="big">Step 2 — What should this TV show?</div>
     <p class="msg" id="who"></p>
-    <h2>Project manager screens</h2>
-    <div class="grid" id="pmGrid"><div class="msg">Loading project managers…</div></div>
+    <h2>Office screens · pick the person this TV is for</h2>
+    <div class="grid" id="pmGrid"><div class="msg">Loading people…</div></div>
     <h2>Other screens</h2>
     <div class="grid" id="otherGrid"></div>
     <div class="row"><button id="btnSignOut">Sign out of this TV</button></div>
@@ -102,19 +103,18 @@ function button(c){ var b=document.createElement("button"); b.innerHTML=esc(c.la
 async function loadPMs(){
   var g=E("pmGrid");
   try{
-    var jobs=await pull(JOBS,"Title,PMName,Archive"), emps=await pull(EMP,"EmployeeName,LoginEmail,Active");
-    var count={}; jobs.forEach(function(j){ if(yes(val(j.Archive))) return; var pm=String(val(j.PMName)||"").trim(); if(pm) count[pm]=(count[pm]||0)+1; });
-    var names=Object.keys(count).sort();
+    var jobs=await pull(JOBS,"Title,PMName,Archive"), emps=await pull(EMP,"EmployeeName,LoginEmail,Active,Foreman,Admin");
+    var count={}; jobs.forEach(function(j){ if(yes(val(j.Archive))) return; var pm=String(val(j.PMName)||"").trim().toLowerCase(); if(pm) count[pm]=(count[pm]||0)+1; });
+    var seen={}, people=[];
+    emps.forEach(function(f){ if(String(f.Active||"Yes").toLowerCase()==="no"||!f.EmployeeName) return; var n=String(f.EmployeeName).trim(), e=String(f.LoginEmail||"").trim().toLowerCase();
+      if(!e||e===TV_ACCOUNT||seen[e]) return; seen[e]=1; var pj=count[n.toLowerCase()]||0;
+      people.push({n:n,e:e,note:pj?("PM · "+pj+" open job"+(pj===1?"":"s")):(yes(f.Foreman)?"Foreman":(yes(f.Admin)?"Office":"")),rank:pj?0:(yes(f.Foreman)?1:2)}); });
+    people.sort(function(a,b){ return a.rank-b.rank||a.n.localeCompare(b.n); });
     g.innerHTML="";
-    if(!names.length){ g.innerHTML='<div class="msg">No jobs have a PM set yet. Set PMs in Job Setup, then come back.</div>'; return; }
-    names.forEach(function(n){
-      var emp=emps.filter(function(f){ return String(f.EmployeeName||"").trim().toLowerCase()===n.toLowerCase(); })[0];
-      var email=(emp&&String(emp.LoginEmail||"").trim().toLowerCase())||autoEmail(n);
-      if(!email) return;
-      g.appendChild(button({label:n,note:count[n]+" open job"+(count[n]===1?"":"s"),url:"/display.html?screen=pm&who="+encodeURIComponent(email)}));
-    });
+    if(!people.length){ g.innerHTML='<div class="msg">No employees with a login email found in Employee Setup.</div>'; return; }
+    people.forEach(function(p){ g.appendChild(button({label:p.n,note:p.note,url:"/display.html?screen=person&who="+encodeURIComponent(p.e)})); });
     var first=g.querySelector("button"); if(first) first.focus();
-  }catch(e){ g.innerHTML='<div class="msg">Couldn’t load the PM list ('+esc(e.message)+'). Check the Wi-Fi, then press the center button to try again.</div>'; var b=document.createElement("button"); b.textContent="Try again"; b.onclick=loadPMs; g.appendChild(b); b.focus(); }
+  }catch(e){ g.innerHTML='<div class="msg">Couldn’t load the list ('+esc(e.message)+'). Check the Wi-Fi, then press the center button to try again.</div>'; var b=document.createElement("button"); b.textContent="Try again"; b.onclick=loadPMs; g.appendChild(b); b.focus(); }
 }
 
 function pickScreen(){
