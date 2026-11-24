@@ -22,6 +22,7 @@ header.app .sub{font-size:12px;opacity:.9;margin-top:2px}
 .controls label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
 #jobPick{flex:1;min-width:240px;font-size:15px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit}
 .rolepill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--goodbg);color:var(--good)}
+.prbtn{margin-left:auto;font-size:13px;font-weight:800;border:1.5px solid var(--vm);color:var(--vm);background:#fff;border-radius:9px;padding:8px 14px;cursor:pointer}
 .rolepill.view{background:#eef2f7;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--shadow)}
@@ -79,6 +80,7 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
     <label>Job</label>
     <select id="jobPick"></select>
     <span class="rolepill" id="rolePill"></span>
+    <button class="prbtn" id="printBtn" style="display:none">&#128424; Print schedule</button>
   </div>
   <div class="kpis" id="kpis"></div>
   <div class="card" id="chartCard" style="display:none;padding:16px"><div class="chartbox"><canvas id="phaseChart"></canvas></div></div>
@@ -214,6 +216,7 @@ function render(jobNo, tasks, act){
   h+='</tbody></table>';
   E("sched").innerHTML=_banner+h;
   drawPhaseChart(cLabels,cBud,cAct,cErn);
+  PRINT_JOB={no:jobNo,name:jobName}; E("printBtn").style.display="";
 
   /* KPI cards */
   E("kpis").innerHTML=
@@ -228,6 +231,33 @@ function render(jobNo, tasks, act){
   if(isPM){ E("sched").querySelectorAll(".pctin").forEach(function(inp){ inp.onchange=function(){ savePct(inp); }; }); }
   if(isPM){ E("sched").querySelectorAll(".priorin").forEach(function(inp){ inp.onchange=function(){ savePrior(inp); }; }); }
 }
+/* ===== Print: header, KPI cards, the phase graph and the full table, sized for a landscape page ===== */
+var PRINT_JOB=null;
+E("printBtn").onclick=function(){
+  if(!PRINT_JOB) return;
+  var w=window.open("","_blank"); if(!w){ alert("Allow pop-ups for this site to print."); return; }
+  var css=Array.prototype.map.call(document.querySelectorAll("style"),function(st){return st.textContent;}).join("\n");
+  var img=""; try{ if(phaseChart){ phaseChart.options.animation=false; img=phaseChart.toBase64Image("image/png",1); } }catch(e){}
+  /* inputs (PM edit boxes) print as plain numbers */
+  var box=E("sched").cloneNode(true);
+  box.querySelectorAll("input").forEach(function(inp){ var sp=document.createElement("span"); sp.textContent=inp.classList.contains("pctin")?((inp.value||"0")+"%"):(inp.value||"0.0"); inp.parentNode.replaceChild(sp,inp); });
+  var when=new Date().toLocaleString([], {month:"numeric",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Task Schedule — '+esc(PRINT_JOB.no+" "+PRINT_JOB.name)+'</title><style>'+css+
+    'body{background:#fff !important;margin:0;padding:18px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '.phd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #7f1d1d;padding-bottom:8px;margin-bottom:12px}'+
+    '.phd img{height:44px}.phd h1{margin:0;font-size:19px;color:#7f1d1d}.phd .s{font-size:12px;color:#555;text-align:right}'+
+    '.kpis{margin:0 0 12px}.pchart{border:1px solid #e5e7eb;border-radius:10px;padding:8px;margin-bottom:12px;text-align:center;page-break-inside:avoid}.pchart img{max-width:100%;max-height:330px}'+
+    'table{font-size:11px}tr{page-break-inside:avoid}thead{display:table-header-group}'+
+    '.np{margin-top:14px}@page{size:landscape;margin:10mm}@media print{body{padding:0}.np{display:none}}</style></head><body>'+
+    '<div class="phd"><div style="display:flex;gap:12px;align-items:center"><img src="'+document.querySelector("header img.logo").src+'" alt=""><div><h1>Task Schedule — '+esc(PRINT_JOB.name||"")+'</h1><div style="font-weight:700;color:#333">'+esc(PRINT_JOB.no)+'</div></div></div>'+
+    '<div class="s">Budget vs. earned hours by phase<br>Actual hours live from timecards<br>Printed '+esc(when)+'</div></div>'+
+    '<div class="kpis">'+E("kpis").innerHTML+'</div>'+
+    (img?'<div class="pchart"><img src="'+img+'" alt="Budget vs actual vs earned hours by phase"></div>':'')+
+    box.innerHTML+
+    '<div class="np"><button onclick="window.print()" style="padding:10px 18px;font-size:14px">Print</button></div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>');
+  w.document.close();
+};
 function kpi(v,l){ return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
 function drawPhaseChart(labels,bud,act,ern){
   E("chartCard").style.display="block";
