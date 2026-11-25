@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#7f1d1d">
+<title>Vision Mechanical — Employee Write-Up</title>
+<style>
+:root{--vm:#c0392b;--vm2:#7f1d1d;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f4f5f7;--ok:#15803d;--okbg:#dcfce7;--red:#b91c1c;--redbg:#fde8e8;--amb:#b45309;--ambbg:#fef3c7;--gry:#475569;--grybg:#eef2f7;--blu:#1d4ed8;--blubg:#eef4fe}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--vm),var(--vm2));color:#fff;padding:12px 14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header .row{display:flex;align-items:center;gap:12px;max-width:860px;margin:0 auto}
+header img{height:36px;width:auto;background:#fff;border-radius:8px;padding:4px 6px}
+header h1{margin:0;font-size:18px}header .who{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:860px;margin:0 auto;padding:12px 12px 90px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 8px;font-size:15px;color:var(--vm2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:9px 0 4px}
+input,select,textarea{width:100%;padding:10px;font-size:16px;border:1.5px solid #9ca3af;border-radius:9px;background:#f3f5f8;font-family:inherit;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:10px 14px;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-p{background:var(--vm);color:#fff}.btn-g{background:#fff;color:var(--vm);border:1.5px solid var(--vm)}.btn-s{padding:6px 10px;font-size:12.5px}
+.btn-d{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn:disabled{opacity:.55;cursor:default}
+.chip{font-size:11.5px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap;background:var(--grybg);color:var(--gry)}
+.chip.done{background:var(--okbg);color:var(--ok)}.chip.prog{background:var(--ambbg);color:var(--amb)}
+.sec{font-size:11.5px;font-weight:800;color:var(--vm2);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 2px;border-bottom:1px solid #f1d5d2;padding-bottom:3px}
+.msg{padding:10px;border-radius:9px;font-size:14px;margin:8px 0;display:none}
+.msg.ok{background:var(--okbg);color:var(--ok);display:block}.msg.err{background:var(--redbg);color:var(--red);display:block}.msg.info{background:var(--grybg);color:var(--gry);display:block}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:40}
+.bar .in{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}.bar .in .btn{flex:1;padding:13px}
+.bar .cnt{font-size:12.5px;color:var(--mut);font-weight:700;min-width:110px}
+.bar .cnt.dirty{color:var(--amb)}.bar .cnt.saved{color:var(--ok)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:80;padding:16px;overflow:auto}
+.modal .box{background:#fff;max-width:540px;margin:0 auto;border-radius:12px;padding:16px}
+.modal h2{margin:0 0 6px;font-size:17px;color:var(--vm2)}
+.row-b{display:flex;gap:8px;margin-top:14px}.row-b .btn{flex:1}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--vm),var(--vm2));display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;text-align:center;padding:24px}
+.gate .box{max-width:340px}.gate img{height:74px;background:#fff;border-radius:12px;padding:8px 12px;margin-bottom:16px}
+.gate h1{font-size:22px;margin:0 0 6px}.gate p{opacity:.9;font-size:14px;margin:0 0 20px}
+.gate button{background:#fff;color:var(--vm2);border:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.empty{color:var(--mut);font-size:14px;padding:10px 2px}
+/* write-up */
+.tabs{display:flex;gap:6px;margin:0 0 12px}.tabs button{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--vm);background:#fff;color:var(--vm);font-weight:800;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--vm);color:#fff}
+.req{color:var(--red)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}.seg button{flex:1;min-width:120px;padding:9px 6px;border-radius:9px;border:1.5px solid #cbd5e1;background:#fff;font-weight:800;font-size:12.5px;color:var(--gry);cursor:pointer}
+.seg button.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.hist{border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13.5px;background:var(--grybg);color:var(--gry)}
+.hist.warn{background:var(--ambbg);color:#7c2d12}.hist.bad{background:var(--redbg);color:var(--red)}
+.hist b{color:inherit}
+.sigwrap{border:2px solid #6b7280;border-radius:10px;background:#fff;position:relative;touch-action:none}
+.sigwrap.bad{border-color:var(--red)}
+.sigwrap canvas{display:block;width:100%;height:160px;border-radius:8px}
+.sigwrap .line{position:absolute;left:14px;right:14px;bottom:34px;border-bottom:1.5px solid #cbd5e1;pointer-events:none}
+.sigwrap .hint{position:absolute;left:14px;bottom:10px;font-size:12px;color:#9ca3af;pointer-events:none}
+.sigacts{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;color:var(--mut)}
+.sigacts button{background:none;border:none;color:var(--vm);font-weight:800;cursor:pointer;font-size:13px}
+.legal{font-size:12.5px;color:var(--gry);background:#f8fafc;border-radius:8px;padding:9px 10px;margin:8px 0}
+.wu{display:block;border:1px solid var(--line);border-left:5px solid var(--amb);border-radius:10px;padding:10px 12px;margin:8px 0;background:#fff;cursor:pointer}
+.wu.l-Verbal{border-left-color:#94a3b8}.wu.l-Written{border-left-color:var(--amb)}.wu.l-Final{border-left-color:var(--red)}.wu.l-Suspension,.wu.l-Termination{border-left-color:#111}
+.wu .t{display:flex;justify-content:space-between;gap:8px}.wu .t b{font-size:15px}.wu .s{font-size:12.5px;color:var(--mut);margin-top:3px}
+.fil{display:flex;gap:6px;flex-wrap:wrap}.fil select,.fil input{width:auto;flex:1;min-width:140px;font-size:14px;padding:8px}
+.deny{text-align:center;padding:30px 16px}.deny .ic{font-size:40px}.deny h2{justify-content:center}
+.done{text-align:center;padding:24px 14px}.done .ic{font-size:44px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vision">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+</head>
+<body>
+<div id="gate" class="gate"><div class="box">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:140,m/qt=q:92" alt="Vision Mechanical">
+  <h1>Employee Write-Up</h1><p>Document a safety, attendance or conduct issue and get it signed. Supervisors only. Sign in with your Vision Mechanical account.</p>
+  <button id="signin">Sign in with Microsoft</button><div id="gateMsg" style="margin-top:14px;font-size:13px"></div>
+</div></div>
+<header><div class="row">
+  <img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:96,m/qt=q:92" alt="Vision Mechanical">
+  <div><h1>Employee Write-Up</h1><div class="who" id="who"></div></div>
+</div></header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="msg" id="topMsg"></div>
+  <div class="card deny" id="deny" style="display:none"><div class="ic">&#128274;</div><h2>Supervisors only</h2>
+    <div class="hint" style="font-size:14px">Write-ups are done by foremen, PMs and the office. If something needs to be written up, talk to your foreman or PM.</div></div>
+
+  <div id="main" style="display:none">
+  <div class="tabs"><button data-t="new" class="on">New write-up</button><button data-t="list" id="tabList">Write-ups on file</button></div>
+
+  <!-- ===== new ===== -->
+  <div id="vNew">
+    <div class="card">
+      <h2>Employee</h2>
+      <label>Employee <span class="req">*</span></label><select id="emp"><option value="">Loading…</option></select>
+      <div id="histBox"></div>
+      <div class="g2">
+        <div><label>Date it happened <span class="req">*</span></label><input type="date" id="dt"></div>
+        <div><label>Job (if on a job)</label><input type="text" id="job" list="dlJob" placeholder="Job # or name"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>What kind</h2>
+      <label>Category <span class="req">*</span></label>
+      <div class="seg" id="cat"><button data-v="Safety">Safety</button><button data-v="Attendance / absence">Attendance / absence</button><button data-v="Tardiness">Tardiness</button><button data-v="Conduct / behavior">Conduct / behavior</button><button data-v="Work quality">Work quality</button><button data-v="Policy violation">Policy violation</button><button data-v="Other">Other</button></div>
+      <label>Level <span class="req">*</span></label>
+      <div class="seg" id="lvl"><button data-v="Verbal warning">Verbal warning</button><button data-v="Written warning">Written warning</button><button data-v="Final written warning">Final warning</button><button data-v="Suspension">Suspension</button><button data-v="Termination">Termination</button></div>
+      <div class="hint" id="lvlHint"></div>
+    </div>
+    <div class="card">
+      <h2>What happened</h2>
+      <label>Describe what happened — facts only: who, what, where, when <span class="req">*</span></label><textarea id="desc" rows="4"></textarea>
+      <label>Earlier talks or warnings about this (if any)</label><textarea id="prior" rows="2" placeholder="e.g. Talked to him 11/3 about tie-off at the RTU curb"></textarea>
+      <label>What has to change <span class="req">*</span></label><textarea id="fix" rows="2" placeholder="e.g. 100% tie-off above 6 ft, every time"></textarea>
+      <label>What happens if it happens again</label><textarea id="next" rows="2" placeholder="e.g. Final written warning / sent home without pay"></textarea>
+    </div>
+    <div class="card">
+      <h2>Signatures</h2>
+      <label>Supervisor signature <span class="req">*</span> <span class="hint" id="supName" style="display:inline"></span></label>
+      <div class="sigwrap" id="wrapS"><canvas id="sigS"></canvas><div class="line"></div><div class="hint">Supervisor signs here</div></div>
+      <div class="sigacts"><span id="whenS"></span><button type="button" data-clear="S">Clear</button></div>
+
+      <label style="margin-top:14px">Employee</label>
+      <div class="seg" id="empMode"><button data-v="sign" class="on">Employee signs</button><button data-v="refused">Refused to sign</button><button data-v="absent">Not present</button></div>
+      <div id="boxSign">
+        <div class="legal">My signature means I received this write-up and it was explained to me. It does not mean I agree with it. I may write my side below.</div>
+        <label>Employee comments (optional)</label><textarea id="ecom" rows="2" placeholder="Employee's side, in their words"></textarea>
+        <label>Employee signature <span class="req">*</span></label>
+        <div class="sigwrap" id="wrapE"><canvas id="sigE"></canvas><div class="line"></div><div class="hint">Employee signs here</div></div>
+        <div class="sigacts"><span id="whenE"></span><button type="button" data-clear="E">Clear</button></div>
+      </div>
+      <div id="boxWit" style="display:none">
+        <div class="legal" id="witNote">The employee was shown this write-up and refused to sign. A witness signs that it was presented.</div>
+        <label>Witness name <span class="req">*</span></label><input type="text" id="wname" placeholder="Another supervisor or employee">
+        <label>Witness signature <span class="req">*</span></label>
+        <div class="sigwrap" id="wrapW"><canvas id="sigW"></canvas><div class="line"></div><div class="hint">Witness signs here</div></div>
+        <div class="sigacts"><span id="whenW"></span><button type="button" data-clear="W">Clear</button></div>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <button class="btn btn-p" id="submit" style="width:100%;padding:14px;font-size:16px">Submit write-up</button>
+  </div>
+
+  <div id="vDone" class="card done" style="display:none"><div class="ic">&#9989;</div><h2 style="justify-content:center">Write-up filed</h2>
+    <div class="hint" style="font-size:14px" id="doneTxt"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-p" id="donePrint">&#128424; Print / save PDF</button><button class="btn btn-g" id="doneNew">Start another</button></div></div>
+
+  <!-- ===== list ===== -->
+  <div id="vList" style="display:none">
+    <div class="card">
+      <h2><span>Write-ups on file <span id="lCount" style="color:#6b7280;font-weight:700;font-size:13px"></span></span><button class="btn btn-g btn-s" id="csvBtn" style="display:none">CSV</button></h2>
+      <div class="hint" id="lHint"></div>
+      <div class="fil" style="margin-top:8px"><select id="fEmp"><option value="">Everyone</option></select><select id="fCat"><option value="">All categories</option></select><select id="fYr"><option value="365">Last 12 months</option><option value="all">All time</option></select></div>
+      <div id="list"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+  </div>
+</div>
+<datalist id="dlJob"></datalist>
+
+<!-- review -->
+<div class="modal" id="rvModal"><div class="box">
+  <h2 id="rvTitle">Write-up</h2>
+  <div id="rvBody" style="font-size:14px"></div>
+  <div id="rvAdm" style="display:none">
+    <label>Office review notes</label><textarea id="rvNotes" rows="2"></textarea>
+    <label class="tog" style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700;font-size:13px;color:var(--gry)"><input type="checkbox" id="rvDone" style="width:18px;height:18px"> Reviewed by the office / in personnel file</label>
+  </div>
+  <div class="msg" id="rvMsg"></div>
+  <div class="row-b"><button class="btn btn-g" id="rvClose">Close</button><button class="btn btn-g" id="rvPrint">&#128424; Print</button><button class="btn btn-p" id="rvSave" style="display:none">Save review</button></div>
+</div></div>
+
+<script>
+/* ===================== Employee Write-Up =====================
+   "Employee Write-Ups" (private): one row per write-up. List security = people read/edit only their own rows;
+     the "Write-Up Reviewers" group (owners/office) sees all. Signatures stored as small JPEG data URLs.
+   "Write-Up Tally": key (hash of employee #) + level + date only — lets a supervisor see how many prior
+     write-ups someone has without seeing what they were for. No dollars, no medical info. */
+var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
+var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
+var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
+var L_WU="Employee Write-Ups", L_TALLY="Write-Up Tally";
+var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_PMS=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var LEVELS=["Verbal warning","Written warning","Final written warning","Suspension","Termination"];
+var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
+var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, WU_ID=null, TALLY_ID=null, WU_COLS={}, EMPS=[], ROWS=[], CAT="", LVL="", EMODE="sign", LAST=null, CUR=null, SEES_ALL=false;
+
+function E(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function pad(n){return (n<10?"0":"")+n;}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function d10(v){return String(v||"").slice(0,10);}
+function nice(s){ s=d10(s); if(!/^\d{4}-\d\d-\d\d$/.test(s)) return ""; var p=s.split("-"); return (+p[1])+"/"+(+p[2])+"/"+p[0]; }
+function yes(v){return v===true||v==="Yes"||v==="true";}
+function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
+function showMsg(id,cls,t){ var m=E(id); m.className="msg "+cls; m.textContent=t; }
+async function getToken(){ try{ return (await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account})).accessToken; }catch(e){ msalApp.acquireTokenRedirect({scopes:[SCOPE]}); throw e; } }
+async function gfetch(url,opt){ opt=opt||{}; var t=await getToken(); opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{}); var r=await fetch(url,opt);
+  if(!r.ok&&r.status!==204){ var tx=await r.text(), m=""; try{ m=JSON.parse(tx).error.message; }catch(e){ m=tx.slice(0,160); } throw new Error("HTTP "+r.status+(m?" — "+m:"")); }
+  if(r.status===204) return {}; return r.json(); }
+async function pullAll(listId,select,filter){ var url=GRAPH+listId+"/items?$expand=fields"+(select?"($select="+select+")":"")+"&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await gfetch(url,{headers:{Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}); (j.value||[]).forEach(function(it){ if(it.fields){ it.fields._id=it.id; it.fields._by=(it.createdBy&&it.createdBy.user&&it.createdBy.user.email)||""; out.push(it.fields);} }); url=j["@odata.nextLink"]||null; } return out; }
+/* who the write-up is about, without naming them in the shared tally list */
+async function empKey(e){ var s=("vm-wu|"+(e.num||"")+"|"+String(e.name||"").toLowerCase().replace(/[^a-z]/g,"")); var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)); return Array.prototype.map.call(new Uint8Array(b),function(x){return ("0"+x.toString(16)).slice(-2);}).join("").slice(0,24); }
+
+/* ===== sign-in ===== */
+E("signin").onclick=function(){ msalApp.loginRedirect({scopes:[SCOPE]}); };
+msalApp.handleRedirectPromise().then(function(r){ var all=msalApp.getAllAccounts(); var a=r&&r.account?r.account:(msalApp.getActiveAccount()||all.filter(function(x){return /@visionmech\.net$/i.test(x.username||"");})[0]||all[0]||null); if(a) start(a); })
+  .catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+(e.message||e); });
+
+async function start(a){
+  account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase();
+  E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
+  var isForeman=false;
+  try{ (await pullAll(EMP,"EmployeeNumber,EmployeeName,LoginEmail,Admin,Foreman,Active")).forEach(function(f){ if((f.Active||"Yes")==="No"||!f.EmployeeName) return; var n=f.EmployeeName.trim(), e=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(n);
+      EMPS.push({num:String(f.EmployeeNumber||"").trim(), name:n, email:e});
+      if(e===loginEmail){ MY_NAME=n; if(yes(f.Admin)) IS_ADMIN=true; if(yes(f.Foreman)) isForeman=true; } }); }catch(e){}
+  if(VM_SUPER.indexOf(loginEmail)>-1) IS_ADMIN=true;
+  if(!MY_NAME) MY_NAME=a.name||a.username;
+  if(!IS_ADMIN&&!isForeman&&VM_PMS.indexOf(loginEmail)<0){ E("deny").style.display="block"; return; }
+  E("main").style.display="block";
+  try{ var lists=(await gfetch(SITEURL+"/lists?$select=id,displayName&$top=999")).value||[];
+    var w=lists.filter(function(x){return x.displayName===L_WU;})[0], t=lists.filter(function(x){return x.displayName===L_TALLY;})[0];
+    if(!w||!t){ showMsg("topMsg","err","The write-up lists aren't set up in SharePoint yet."); E("main").style.display="none"; return; }
+    WU_ID=w.id; TALLY_ID=t.id; var c=await gfetch(GRAPH+WU_ID+"/columns?$select=name,readOnly"); (c.value||[]).forEach(function(x){ if(!x.readOnly) WU_COLS[x.name]=1; });
+  }catch(e){ showMsg("topMsg","err","Couldn't load ("+e.message+")."); return; }
+  EMPS.sort(function(x,y){return x.name.localeCompare(y.name);});
+  E("emp").innerHTML='<option value="">— Pick the employee —</option>'+EMPS.map(function(e,i){ return '<option value="'+i+'">'+esc(e.name)+(e.num?" ("+esc(e.num)+")":"")+'</option>'; }).join("");
+  E("dt").value=today(); E("supName").textContent="— "+MY_NAME;
+  initSig("S"); initSig("E"); initSig("W");
+  pullAll(JOBTASKS,"JobNo,JobName,Active").then(function(ts){ var seen={}, o=[]; ts.forEach(function(t){ if((t.Active||"Yes")==="No") return; var k=(t.JobNo||"").trim(); if(!k||seen[k]) return; seen[k]=1; o.push(k+" "+(t.JobName||"").trim()); }); E("dlJob").innerHTML=o.sort().map(function(x){return '<option value="'+esc(x)+'">';}).join(""); }).catch(function(){});
+}
+
+/* ===== tabs ===== */
+document.querySelectorAll(".tabs button").forEach(function(b){ b.onclick=function(){ document.querySelectorAll(".tabs button").forEach(function(x){x.classList.toggle("on",x===b);});
+  var t=b.getAttribute("data-t"); E("vNew").style.display=t==="new"?"":"none"; E("vDone").style.display="none"; E("vList").style.display=t==="list"?"":"none"; if(t==="list") loadList(); if(t==="new") setTimeout(function(){ window.dispatchEvent(new Event("resize")); },30); }; });
+
+/* ===== choices ===== */
+function seg(id,cb){ E(id).querySelectorAll("button").forEach(function(b){ b.onclick=function(){ E(id).querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); cb(b.getAttribute("data-v")); }; }); }
+seg("cat",function(v){ CAT=v; }); seg("lvl",function(v){ LVL=v; });
+seg("empMode",function(v){ EMODE=v; E("boxSign").style.display=v==="sign"?"":"none"; E("boxWit").style.display=v==="sign"?"none":"";
+  E("witNote").textContent=v==="refused"?"The employee was shown this write-up and refused to sign. A witness signs that it was presented.":"The employee wasn't available to sign. A witness signs that this is the write-up being filed; the office will go over it with the employee.";
+  setTimeout(function(){ window.dispatchEvent(new Event("resize")); },30); });
+
+/* ===== prior write-ups (counts only) ===== */
+var HIST=null;
+E("emp").onchange=async function(){ var i=E("emp").value; E("histBox").innerHTML=""; HIST=null; if(i==="") return; var e=EMPS[+i];
+  E("histBox").innerHTML='<div class="hist">Checking for earlier write-ups…</div>';
+  try{ var k=await empKey(e), rows=await pullAll(TALLY_ID,"Title,Level,IncidentDate","fields/Title eq '"+k+"'"); rows=rows.filter(function(r){return r.Title===k;});
+    if(E("emp").value!==i) return;
+    var since=new Date(Date.now()-365*864e5).toISOString().slice(0,10), yr=rows.filter(function(r){return d10(r.IncidentDate)>=since;});
+    var top=-1; yr.forEach(function(r){ var x=LEVELS.indexOf(r.Level); if(x>top) top=x; });
+    var nextL=LEVELS[Math.min(top+1,LEVELS.length-1)];
+    HIST={n:yr.length,all:rows.length,top:top,next:nextL};
+    if(!yr.length) E("histBox").innerHTML='<div class="hist">No write-ups in the last 12 months'+(rows.length?' ('+rows.length+' older)':'')+'. Suggested level: <b>Verbal warning</b>.</div>';
+    else E("histBox").innerHTML='<div class="hist '+(top>=2?"bad":"warn")+'"><b>'+yr.length+' write-up'+(yr.length===1?"":"s")+' in the last 12 months</b> — highest: '+esc(LEVELS[top]||"?")+'. Suggested next level: <b>'+esc(nextL)+'</b>.'+(top>=2?' Talk to the office before handing this one out.':'')+'</div>';
+    E("lvlHint").textContent="Suggested: "+nextL+" (a serious safety violation can go higher).";
+  }catch(e){ E("histBox").innerHTML='<div class="hist">Couldn\'t check earlier write-ups ('+esc(e.message)+').</div>'; } };
+
+/* ===== signature pads ===== */
+var PAD={};
+function initSig(k){ var c=E("sig"+k), w=E("wrap"+k), ratio=Math.max(window.devicePixelRatio||1,1), p={c:c,signed:false,at:"",ctx:null}; PAD[k]=p; var drawing=false, last=null;
+  function size(){ if(!w.clientWidth) return; var data=p.signed?c.toDataURL():null; c.width=w.clientWidth*ratio; c.height=160*ratio; p.ctx=c.getContext("2d"); p.ctx.scale(ratio,ratio); p.ctx.lineWidth=2.4; p.ctx.lineCap="round"; p.ctx.lineJoin="round"; p.ctx.strokeStyle="#0f172a";
+    if(data){ var im=new Image(); im.onload=function(){ p.ctx.drawImage(im,0,0,w.clientWidth,160); }; im.src=data; } }
+  size(); window.addEventListener("resize",size);
+  function pos(e){ var r=c.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+  c.addEventListener("pointerdown",function(e){ if(!p.ctx) size(); drawing=true; last=pos(e); c.setPointerCapture(e.pointerId); e.preventDefault(); });
+  c.addEventListener("pointermove",function(e){ if(!drawing) return; var q=pos(e); p.ctx.beginPath(); p.ctx.moveTo(last.x,last.y); p.ctx.lineTo(q.x,q.y); p.ctx.stroke(); last=q;
+    if(!p.signed){ p.signed=true; p.at=new Date().toLocaleString(); w.querySelector(".hint").style.display="none"; w.classList.remove("bad"); E("when"+k).textContent="Signed "+p.at; } e.preventDefault(); });
+  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ c.addEventListener(ev,function(){ drawing=false; }); });
+}
+document.querySelectorAll("[data-clear]").forEach(function(b){ b.onclick=function(){ var k=b.getAttribute("data-clear"), p=PAD[k]; p.ctx&&p.ctx.clearRect(0,0,p.c.width,p.c.height); p.signed=false; p.at=""; E("wrap"+k).querySelector(".hint").style.display=""; E("when"+k).textContent=""; }; });
+function sigJpg(k){ var c=PAD[k].c, o=document.createElement("canvas"), sc=Math.min(1,560/c.width); o.width=Math.round(c.width*sc); o.height=Math.round(c.height*sc); var x=o.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,o.width,o.height); x.drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg",0.7); }
+
+/* ===== submit ===== */
+E("submit").onclick=async function(){
+  var miss=[], i=E("emp").value, e=i===""?null:EMPS[+i];
+  if(!e) miss.push("employee"); if(!E("dt").value) miss.push("date"); if(!CAT) miss.push("category"); if(!LVL) miss.push("level");
+  if(!E("desc").value.trim()) miss.push("what happened"); if(!E("fix").value.trim()) miss.push("what has to change");
+  if(!PAD.S.signed){ miss.push("supervisor signature"); E("wrapS").classList.add("bad"); }
+  if(EMODE==="sign"&&!PAD.E.signed){ miss.push("employee signature"); E("wrapE").classList.add("bad"); }
+  if(EMODE!=="sign"){ if(!E("wname").value.trim()) miss.push("witness name"); if(!PAD.W.signed){ miss.push("witness signature"); E("wrapW").classList.add("bad"); } }
+  if(e&&e.email&&e.email===loginEmail) miss.push("a different employee (you can't write yourself up)");
+  if(miss.length){ showMsg("msg","err","Still need: "+miss.join(", ")+"."); return; }
+  var btn=E("submit"); btn.disabled=true; showMsg("msg","info","Filing…");
+  var job=E("job").value.trim(), f={Title:e.name, EmployeeName:e.name, EmployeeNumber:e.num, EmployeeEmail:e.email, IncidentDate:E("dt").value+"T12:00:00Z", Category:CAT, Level:LVL,
+    JobNo:job.split(/\s+/)[0]||"", JobName:job.split(/\s+/).slice(1).join(" "), Description:E("desc").value.trim(), PriorDiscussion:E("prior").value.trim(), CorrectiveAction:E("fix").value.trim(), Consequence:E("next").value.trim(),
+    SupervisorName:MY_NAME, SupervisorEmail:loginEmail, SupervisorSig:sigJpg("S"), EmployeeAck:EMODE==="sign"?"Signed":(EMODE==="refused"?"Refused to sign":"Not present"),
+    EmployeeComments:EMODE==="sign"?E("ecom").value.trim():"", EmployeeSig:EMODE==="sign"?sigJpg("E"):"", WitnessName:EMODE!=="sign"?E("wname").value.trim():"", WitnessSig:EMODE!=="sign"?sigJpg("W"):"",
+    SignedAt:new Date().toISOString(), Status:"Filed", PriorCount:HIST?HIST.n:null};
+  Object.keys(f).forEach(function(k){ if(k!=="Title"&&!WU_COLS[k]) delete f[k]; if(f[k]===""||f[k]==null) delete f[k]; });
+  try{ var r=await gfetch(GRAPH+WU_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f})});
+    try{ var k=await empKey(e); await gfetch(GRAPH+TALLY_ID+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:k,Level:LVL,IncidentDate:f.IncidentDate}})}); }catch(er){}
+    LAST=Object.assign({_id:r.id,_by:loginEmail},f);
+    E("vNew").style.display="none"; E("vDone").style.display=""; E("doneTxt").textContent=LVL+" for "+e.name+" — "+CAT+". It's in the office's file now. Print a copy for the employee if they want one.";
+    btn.disabled=false; E("msg").className="msg"; window.scrollTo(0,0);
+  }catch(er){ btn.disabled=false; showMsg("msg","err","Didn't file ("+er.message+"). Nothing was lost — try again."); } };
+E("donePrint").onclick=function(){ if(LAST) printWU(LAST); };
+E("doneNew").onclick=function(){ resetForm(); E("vDone").style.display="none"; E("vNew").style.display=""; window.scrollTo(0,0); setTimeout(function(){ window.dispatchEvent(new Event("resize")); },30); };
+function resetForm(){ ["desc","prior","fix","next","ecom","wname","job"].forEach(function(id){ E(id).value=""; }); E("emp").value=""; E("histBox").innerHTML=""; E("lvlHint").textContent=""; E("dt").value=today(); CAT=""; LVL=""; HIST=null;
+  ["cat","lvl"].forEach(function(id){ E(id).querySelectorAll("button").forEach(function(b){ b.classList.remove("on"); }); });
+  document.querySelectorAll("[data-clear]").forEach(function(b){ b.click(); }); E("empMode").querySelector('[data-v="sign"]').click(); }
+
+/* ===== list ===== */
+async function loadList(){ E("list").innerHTML='<div class="empty">Loading…</div>';
+  try{ ROWS=await pullAll(WU_ID); }catch(e){ E("list").innerHTML='<div class="empty">Couldn\'t load ('+esc(e.message)+').</div>'; return; }
+  SEES_ALL=ROWS.some(function(r){ return (r.SupervisorEmail||r._by||"").toLowerCase()!==loginEmail; });
+  E("lHint").textContent=SEES_ALL?"You can see every write-up on file.":"You can see the write-ups you filed. The office sees all of them.";
+  E("csvBtn").style.display=SEES_ALL?"":"none";
+  var names={}, cats={}; ROWS.forEach(function(r){ names[r.EmployeeName||r.Title]=1; if(r.Category) cats[r.Category]=1; });
+  var fe=E("fEmp").value, fc=E("fCat").value;
+  E("fEmp").innerHTML='<option value="">Everyone</option>'+Object.keys(names).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join(""); E("fEmp").value=fe;
+  E("fCat").innerHTML='<option value="">All categories</option>'+Object.keys(cats).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join(""); E("fCat").value=fc;
+  renderList(); }
+function filtered(){ var fe=E("fEmp").value, fc=E("fCat").value, since=E("fYr").value==="all"?"":new Date(Date.now()-365*864e5).toISOString().slice(0,10);
+  return ROWS.filter(function(r){ if(fe&&(r.EmployeeName||r.Title)!==fe) return false; if(fc&&r.Category!==fc) return false; if(since&&d10(r.IncidentDate)<since) return false; return true; })
+    .sort(function(a,b){ return String(b.IncidentDate||"").localeCompare(String(a.IncidentDate||"")); }); }
+function lvlCls(l){ return "l-"+String(l||"").split(" ")[0].replace("Final","Final"); }
+function renderList(){ var rows=filtered(); E("lCount").textContent="("+rows.length+")";
+  if(!rows.length){ E("list").innerHTML='<div class="empty">Nothing on file'+(E("fYr").value!=="all"?" in the last 12 months":"")+'.</div>'; return; }
+  E("list").innerHTML=rows.map(function(r){ return '<div class="wu '+lvlCls(r.Level)+'" data-id="'+esc(r._id)+'"><div class="t"><b>'+esc(r.EmployeeName||r.Title)+'</b><span class="chip '+(r.Status==="Reviewed"?"done":"prog")+'">'+esc(r.Status||"Filed")+'</span></div>'+
+    '<div class="s">'+esc([nice(r.IncidentDate), r.Level, r.Category, r.JobNo?("Job "+r.JobNo):"", "by "+(r.SupervisorName||""), r.EmployeeAck&&r.EmployeeAck!=="Signed"?r.EmployeeAck:""].filter(Boolean).join(" · "))+'</div></div>'; }).join("");
+  E("list").querySelectorAll(".wu").forEach(function(el){ el.onclick=function(){ var r=ROWS.filter(function(x){return String(x._id)===el.getAttribute("data-id");})[0]; if(r) openWU(r); }; }); }
+E("fEmp").onchange=renderList; E("fCat").onchange=renderList; E("fYr").onchange=renderList;
+
+/* ===== review ===== */
+function detailHtml(r){ var row=function(k,v){ return v?'<tr><td style="color:#6b7280;width:34%;padding:4px 8px 4px 0;vertical-align:top">'+k+'</td><td style="padding:4px 0;white-space:pre-wrap">'+esc(v)+'</td></tr>':''; };
+  return '<table style="width:100%;border-collapse:collapse">'+row("Employee",(r.EmployeeName||r.Title)+(r.EmployeeNumber?" (#"+r.EmployeeNumber+")":""))+row("Date",nice(r.IncidentDate))+row("Category",r.Category)+row("Level",r.Level)+row("Job",[r.JobNo,r.JobName].filter(Boolean).join(" "))+
+    row("What happened",r.Description)+row("Earlier talks / warnings",r.PriorDiscussion)+row("What has to change",r.CorrectiveAction)+row("If it happens again",r.Consequence)+row("Employee comments",r.EmployeeComments)+
+    row("Supervisor",r.SupervisorName)+row("Employee",r.EmployeeAck)+row("Witness",r.WitnessName)+row("Prior write-ups (12 mo)",r.PriorCount!=null&&r.PriorCount!==""?String(r.PriorCount):"")+row("Office notes",r.ReviewNotes)+row("Reviewed by",r.ReviewedBy)+'</table>'; }
+function openWU(r){ CUR=r; E("rvTitle").textContent=(r.Level||"Write-up")+" — "+(r.EmployeeName||r.Title); E("rvBody").innerHTML=detailHtml(r); E("rvMsg").className="msg";
+  var adm=SEES_ALL;   /* seeing everyone's write-ups = in the Write-Up Reviewers group */ E("rvAdm").style.display=adm?"":"none"; E("rvSave").style.display=adm?"":"none"; E("rvNotes").value=r.ReviewNotes||""; E("rvDone").checked=r.Status==="Reviewed"; E("rvModal").style.display="block"; }
+E("rvClose").onclick=function(){ E("rvModal").style.display="none"; };
+E("rvPrint").onclick=function(){ if(CUR) printWU(CUR); };
+E("rvSave").onclick=async function(){ if(!CUR) return; var f={ReviewNotes:E("rvNotes").value.trim(), Status:E("rvDone").checked?"Reviewed":"Filed", ReviewedBy:E("rvDone").checked?MY_NAME:""};
+  Object.keys(f).forEach(function(k){ if(!WU_COLS[k]) delete f[k]; });
+  try{ await gfetch(GRAPH+WU_ID+"/items/"+CUR._id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(f)}); Object.assign(CUR,f); E("rvModal").style.display="none"; renderList(); }
+  catch(e){ showMsg("rvMsg","err","Couldn't save ("+e.message+")."); } };
+E("csvBtn").onclick=function(){ var cols=["IncidentDate","EmployeeName","EmployeeNumber","Category","Level","JobNo","SupervisorName","EmployeeAck","WitnessName","Status","Description","CorrectiveAction"];
+  var q=function(v){ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  var csv=[cols.join(",")].concat(filtered().map(function(r){ return cols.map(function(c){ return q(c==="IncidentDate"?d10(r[c]):r[c]); }).join(","); })).join("\n");
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="write-ups-"+today()+".csv"; a.click(); };
+
+/* ===== print ===== */
+function printWU(r){ var w=window.open("","_blank"); if(!w){ alert("Allow pop-ups for this site to print."); return; }
+  var sig=function(label,img,name,when){ return '<div class="sg"><div class="im">'+(img?'<img src="'+img+'">':'')+'</div><div class="ln">'+esc(label)+(name?': '+esc(name):'')+(when?' &nbsp;·&nbsp; '+esc(when):'')+'</div></div>'; };
+  var when=r.SignedAt?new Date(r.SignedAt).toLocaleString():"";
+  var ack=r.EmployeeAck==="Signed"?sig("Employee",r.EmployeeSig,r.EmployeeName||r.Title,when):'<div class="sg"><div class="im" style="display:flex;align-items:flex-end"><b style="color:#b91c1c">'+esc(r.EmployeeAck||"")+'</b></div><div class="ln">Employee: '+esc(r.EmployeeName||r.Title)+'</div></div>';
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Write-up — '+esc((r.EmployeeName||r.Title)+" "+nice(r.IncidentDate))+'</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:28px;font-size:13px}'+
+    '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #7f1d1d;padding-bottom:8px;margin-bottom:14px}.hd img{height:46px}.hd h1{margin:0;font-size:20px;color:#7f1d1d}'+
+    'h2{font-size:13px;color:#7f1d1d;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.04em}.box{border:1px solid #ccc;border-radius:4px;padding:8px 10px;min-height:28px;white-space:pre-wrap}'+
+    'table.k{width:100%;border-collapse:collapse}table.k td{border:1px solid #ddd;padding:5px 8px;vertical-align:top}table.k td.l{width:22%;color:#555;background:#fafafa}'+
+    '.lv span{display:inline-block;border:1.5px solid #999;border-radius:4px;padding:3px 8px;margin:0 6px 4px 0;font-size:12px;color:#777}.lv span.on{border-color:#7f1d1d;background:#7f1d1d;color:#fff;font-weight:700}'+
+    '.sigs{display:flex;gap:24px;margin-top:22px;page-break-inside:avoid}.sg{flex:1}.sg .im{height:70px;border-bottom:1px solid #111}.sg .im img{max-height:70px;max-width:100%}.sg .ln{font-size:11px;color:#555;margin-top:3px}'+
+    '.legal{font-size:11px;color:#555;margin-top:14px}@media print{body{margin:12mm}.np{display:none}}</style></head><body>'+
+    '<div class="hd"><div style="display:flex;gap:12px;align-items:center"><img src="https://img1.wsimg.com/isteam/ip/758c2db3-5548-4484-9c69-07d1b4315f5e/logo%20main%20jpg.jpg/:/rs=h:120,m/qt=q:92" alt=""><h1>Employee Write-Up</h1></div><div style="font-size:12px;color:#555;text-align:right">Vision Mechanical<br>Printed '+esc(new Date().toLocaleDateString())+'</div></div>'+
+    '<table class="k"><tr><td class="l">Employee</td><td>'+esc((r.EmployeeName||r.Title)+(r.EmployeeNumber?" (#"+r.EmployeeNumber+")":""))+'</td><td class="l">Date of incident</td><td>'+esc(nice(r.IncidentDate))+'</td></tr>'+
+    '<tr><td class="l">Supervisor</td><td>'+esc(r.SupervisorName||"")+'</td><td class="l">Job</td><td>'+esc([r.JobNo,r.JobName].filter(Boolean).join(" "))+'</td></tr>'+
+    '<tr><td class="l">Category</td><td colspan="3">'+esc(r.Category||"")+'</td></tr></table>'+
+    '<h2>Level</h2><div class="lv">'+LEVELS.map(function(l){ return '<span class="'+(l===r.Level?"on":"")+'">'+esc(l)+'</span>'; }).join("")+'</div>'+
+    '<h2>What happened</h2><div class="box">'+esc(r.Description||"")+'</div>'+
+    (r.PriorDiscussion?'<h2>Earlier talks or warnings</h2><div class="box">'+esc(r.PriorDiscussion)+'</div>':'')+
+    '<h2>What has to change</h2><div class="box">'+esc(r.CorrectiveAction||"")+'</div>'+
+    '<h2>If it happens again</h2><div class="box">'+esc(r.Consequence||"")+'</div>'+
+    '<h2>Employee comments</h2><div class="box" style="min-height:50px">'+esc(r.EmployeeComments||"")+'</div>'+
+    '<div class="legal">The employee\'s signature means they received this write-up and it was explained to them. It does not mean they agree with it.</div>'+
+    '<div class="sigs">'+sig("Supervisor",r.SupervisorSig,r.SupervisorName,when)+ack+(r.WitnessName?sig("Witness",r.WitnessSig,r.WitnessName,when):'')+'</div>'+
+    (r.ReviewNotes||r.ReviewedBy?'<h2>Office</h2><div class="box">'+esc([r.ReviewNotes, r.ReviewedBy?"Reviewed by "+r.ReviewedBy:""].filter(Boolean).join("\n"))+'</div>':'')+
+    '<div class="np" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 18px;font-size:14px">Print</button></div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>');
+  w.document.close(); }
+window.addEventListener("keydown",function(e){ if(e.key==="Escape") E("rvModal").style.display="none"; });
+</script>
+<script src="/feedback.js" defer></script>
+</body>
+</html>
