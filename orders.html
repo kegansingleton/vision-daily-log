@@ -116,7 +116,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
         <select id="hCat"><option value="">All categories</option></select>
         <select id="hRange"><option value="365">Last 12 months</option><option value="ytd">This year</option><option value="all" selected>All time</option></select>
       </div>
-      <div class="muted" style="margin-top:8px">Received orders are locked — only an admin can undo a receipt that was clicked by mistake. Tap an item to see every time we bought it.</div>
+      <div class="muted" style="margin-top:8px">Received orders are locked. Tap <b>Open ›</b> on a line to update its shelf / bay (admins: edit or undo a receipt). Tap the row to see every time we bought the item. Tap an item to see every time we bought it.</div>
     </div>
     <div class="card" style="padding:0"><div class="scroll" id="histList"></div></div>
   </section>
@@ -421,9 +421,10 @@ function renderHist(){
   rows.sort(function(a,b){ var x=val(a),y=val(b); return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d; });
   var cols=[["date","Received"],["item","Item"],["loc","Shelf / bay"],["vendor","Vendor"],["job","Job"],["po","PO"],["qty","Qty",1]].concat(COSTS?[["unit","Unit $",1],["tot","Total $",1]]:[]);
   var show=rows.slice(0,600);
-  var h='<div class="muted" style="padding:8px 10px">'+rows.length.toLocaleString()+' lines'+(COSTS?' · '+money0(rows.reduce(function(s,l){return s+(cost(l).tot||0);},0)):'')+(rows.length>600?' · showing first 600 — narrow the search':'')+'</div><table><thead><tr>'+cols.map(function(c){ return '<th class="sort'+(c[2]?' n':'')+(HSORT.k===c[0]?(d>0?' asc':' desc'):'')+'" data-k="'+c[0]+'">'+c[1]+'</th>'; }).join("")+'</tr></thead><tbody>'+
-    show.map(function(l){ var c=cost(l); return '<tr class="clk" data-item="'+esc(itemKey(l.item))+'"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.item)+'</td><td>'+(l.loc?'<b>'+esc(l.loc)+'</b>':'<span class="muted">—</span>')+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>';
+  var h='<div class="muted" style="padding:8px 10px">'+rows.length.toLocaleString()+' lines'+(COSTS?' · '+money0(rows.reduce(function(s,l){return s+(cost(l).tot||0);},0)):'')+(rows.length>600?' · showing first 600 — narrow the search':'')+'</div><table><thead><tr>'+cols.map(function(c){ return '<th class="sort'+(c[2]?' n':'')+(HSORT.k===c[0]?(d>0?' asc':' desc'):'')+'" data-k="'+c[0]+'">'+c[1]+'</th>'; }).join("")+'<th></th></tr></thead><tbody>'+
+    show.map(function(l){ var c=cost(l); return '<tr class="clk" data-item="'+esc(itemKey(l.item))+'"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.item)+'</td><td>'+(l.loc?'<b>'+esc(l.loc)+'</b>':'<span class="muted">—</span>')+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'<td><button class="btn gh sm" data-line="'+esc(l.id)+'" title="Open this order line (move it, edit or undo receiving)">Open &#8250;</button></td></tr>'; }).join("")+'</tbody></table>';
   E("histList").innerHTML=h;
+  E("histList").querySelectorAll("[data-line]").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); openLine(b.getAttribute("data-line")); }; });
   E("histList").querySelectorAll("th.sort").forEach(function(th){ th.onclick=function(){ var kk=th.getAttribute("data-k"); if(HSORT.k===kk) HSORT.d=-HSORT.d; else { HSORT.k=kk; HSORT.d=/date|tot|unit|qty/.test(kk)?-1:1; } renderHist(); }; });
   E("histList").querySelectorAll("tr[data-item]").forEach(function(tr){ tr.onclick=function(){ openItem(tr.getAttribute("data-item")); }; });
 }
@@ -494,7 +495,8 @@ function openItem(k){
     '<h4 style="margin:14px 0 6px">By vendor</h4><table><thead><tr><th>Vendor</th><th class="n">Times</th><th class="n">Qty</th>'+(COSTS?'<th class="n">Avg unit</th><th class="n">Low</th>':'')+'</tr></thead><tbody>'+Object.keys(vend).map(function(v){ var x=vend[v], a=x.units.length?x.units.reduce(function(s,u){return s+u;},0)/x.units.length:null;
       return '<tr><td>'+esc(v)+'</td><td class="n">'+x.n+'</td><td class="n">'+q(x.qty)+'</td>'+(COSTS?'<td class="n">'+money(a)+'</td><td class="n">'+money(x.units.length?Math.min.apply(null,x.units):null)+'</td>':'')+'</tr>'; }).join("")+'</tbody></table>'+
     '<h4 style="margin:14px 0 6px">Every order</h4><div class="scroll" style="max-height:40vh"><table><thead><tr><th>Date</th><th>Vendor</th><th>Job</th><th>PO</th><th class="n">Qty</th>'+(COSTS?'<th class="n">Unit $</th><th class="n">Total $</th>':'')+'<th>Status</th></tr></thead><tbody>'+
-    rows.map(function(l){ var c=cost(l); return '<tr><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'<td>'+stPill(l)+'</td></tr>'; }).join("")+'</tbody></table></div>';
+    rows.map(function(l){ var c=cost(l); return '<tr class="clk" data-line="'+esc(l.id)+'" title="Open this order line"><td>'+shortD(lineDate(l))+'</td><td>'+esc(l.vendor)+'</td><td>'+esc(l.job)+'</td><td>'+esc(l.po)+'</td><td class="n">'+q(l.qo)+'</td>'+(COSTS?'<td class="n">'+money(c.unit)+'</td><td class="n">'+money(c.tot)+'</td>':'')+'<td>'+stPill(l)+'</td></tr>'; }).join("")+'</tbody></table></div>';
+  E("iBody").querySelectorAll("tr[data-line]").forEach(function(tr){ tr.onclick=function(){ E("ovItem").style.display="none"; openLine(tr.getAttribute("data-line")); }; });
   E("ovItem").style.display="flex"; }
 
 /* ===== one-time import (owners) ===== */
