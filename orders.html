@@ -116,7 +116,7 @@ tr.clk{cursor:pointer}tr.clk:hover td{background:#fff7f6}
         <select id="hCat"><option value="">All categories</option></select>
         <select id="hRange"><option value="365">Last 12 months</option><option value="ytd">This year</option><option value="all" selected>All time</option></select>
       </div>
-      <div class="muted" style="margin-top:8px">Received orders are locked — nobody can change them here. Tap an item to see every time we bought it.</div>
+      <div class="muted" style="margin-top:8px">Received orders are locked — only an admin can undo a receipt that was clicked by mistake. Tap an item to see every time we bought it.</div>
     </div>
     <div class="card" style="padding:0"><div class="scroll" id="histList"></div></div>
   </section>
@@ -201,6 +201,7 @@ var G="https://graph.microsoft.com/v1.0/sites/"+SITE;
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
 var L_LOG="Order Log", L_COST="Order Costs";
 var SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SETUP_USERS=SUPER.concat(["ssnow@visionmech.net"]);   /* who gets the Setup tab */
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(location.origin+location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, me="", MY_NAME="", IS_ADMIN=false, COSTS=false, LOG_ID=null, COST_ID=null, LINES=[], COST={}, JOBS=[], TAB="open";
 var OF={chip:"open"}, HSORT={k:"date",d:-1};
@@ -307,16 +308,35 @@ function openLine(id,focusRcv){
     ["Received",l.rec?shortD(l.rec)+(l.by?" by "+l.by:""):""],["Shelf / bay",l.loc],["Entered by",l.ent],["Category",l.cat]].concat(COSTS?[["Total $",money(c.tot)],["Unit $",money(c.unit)]]:[]).filter(function(r){return r[1]!==""&&r[1]!=null;}).map(function(r){ return '<tr><td style="color:var(--muted);width:150px">'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>'; }).join("")+'</table>';
   var act="";
   var locBox='<div class="card" style="background:var(--wash)"><b>Moved it?</b> <span class="muted">Update where it is now</span><div class="fg" style="margin-top:8px"><label>Shelf / bay<input id="mLoc" list="dlLoc" autocomplete="off" value="'+esc(l.loc)+'"></label></div><div class="mrow"><button class="btn gh" id="mSave">Save location</button></div></div>';
-  if(l.locked||l.st==="Received") act='<div class="lock" style="margin-bottom:10px">&#128274; Received — quantities, dates and prices are locked. Only the shelf / bay can be updated. Every change is kept in SharePoint version history.</div>'+locBox;
+  var isAdm=IS_ADMIN||SETUP_USERS.indexOf(me)>-1, canUndo=isAdm&&(l.qr>0||l.locked);
+  var catNames=CATS.map(function(c){return c[0];}).concat(["Other"]).filter(function(v,i,a){return a.indexOf(v)===i;}); if(l.cat&&catNames.indexOf(l.cat)<0) catNames.push(l.cat);
+  var TOS=["SHIP TO SITE","PICK UP","PL SHOP","SM SHOP","STOCK"]; if(l.to&&TOS.indexOf(l.to)<0) TOS.push(l.to);
+  var editBox=isAdm?'<details class="card" style="background:#eef4fe;border-color:#bfd3f7"'+(l.locked?'':'')+'><summary style="cursor:pointer;font-weight:800">&#9998; Edit order <span class="muted" style="font-weight:400">(admins only)</span></summary>'+
+    '<div class="fg" style="margin-top:8px"><label style="grid-column:1/-1">Item<input id="eItem" value="'+esc(l.item)+'"></label>'+
+    '<label>Qty ordered<input type="number" step="any" min="0" id="eQo" value="'+(l.qo==null?"":l.qo)+'"></label>'+
+    '<label>Vendor<input id="eVen" list="dlVen" autocomplete="off" value="'+esc(l.vendor)+'"></label>'+
+    '<label>Job<input id="eJob" list="dlJob" autocomplete="off" value="'+esc(l.job)+'"></label>'+
+    '<label>PO #<input id="ePo" value="'+esc(l.po)+'"></label>'+
+    '<label>Expected delivery<input type="date" id="eExp" value="'+esc(l.exp||"")+'"></label>'+
+    '<label>Deliver to<select id="eTo">'+TOS.map(function(t){return '<option'+(t===l.to?" selected":"")+'>'+esc(t)+'</option>';}).join("")+'</select></label>'+
+    '<label>Urgency<select id="eUrg"><option value="">Normal</option><option'+(l.urg==="High"?" selected":"")+'>High</option><option'+(l.urg==="Critical"?" selected":"")+'>Critical</option></select></label>'+
+    '<label>Category<select id="eCat">'+catNames.map(function(c){return '<option'+(c===l.cat?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select></label>'+
+    (COSTS?'<label>Total $<input id="eTot" inputmode="decimal" value="'+(c.tot==null?"":c.tot)+'"></label>':'')+
+    '<label style="grid-column:1/-1">Why (optional)<input id="eWhy" placeholder="e.g. vendor shipped 6, not 5"></label></div>'+
+    '<div class="mrow"><button class="btn" id="eSave">Save changes</button></div></details>':'';
+  var undoBox=canUndo?'<div class="card" style="background:#fff7ed;border-color:#fdba74"><b>Received by mistake?</b> <span class="muted">Admins only. Sets the received qty back; the old receipt is kept in the notes.</span><div class="fg" style="margin-top:8px"><label>Qty actually received<input type="number" step="any" min="0" id="uQty" value="0"></label><label style="grid-column:1/-1">Why <span style="color:var(--crit)">*</span><input id="uWhy" placeholder="e.g. clicked the wrong line"></label></div><div class="mrow"><button class="btn gh" id="uGo" style="border-color:#c2410c;color:#c2410c">Undo receiving</button></div></div>':'';
+  if(l.locked||l.st==="Received") act='<div class="lock" style="margin-bottom:10px">&#128274; Received — quantities, dates and prices are locked. Only the shelf / bay can be updated'+(canUndo?', or an admin can edit or undo it below':'')+'. Every change is kept in SharePoint version history.</div>'+locBox+editBox+undoBox;
   else act='<div class="card" style="background:var(--wash)"><b>Receive</b><div class="fg" style="margin-top:8px"><label>Qty received now<input type="number" step="any" id="rQty" value="'+remaining(l)+'"></label><label>Date<input type="date" id="rDate" value="'+today()+'"></label><label>Shelf / bay it\'s in <span style="color:var(--crit)">*</span><input id="rLoc" list="dlLoc" autocomplete="off" placeholder="e.g. Bay 3, Shelf B" value="'+esc(l.loc||(/SITE/.test(l.to)?"JOBSITE (delivered)":""))+'"></label><label style="grid-column:1/-1">Note (optional)<input id="rNote" placeholder="e.g. 2 short, rest on BO"></label></div>'+
     '<div class="mrow"><button class="btn ok" id="rAll">Received all '+q(remaining(l))+'</button><button class="btn gh" id="rPart">Save this qty</button></div></div>'+
     '<div class="card" style="background:var(--wash)"><b>Backordered / update</b><div class="fg" style="margin-top:8px"><label>New expected date<input type="date" id="bExp" value="'+(l.exp||"")+'"></label><label>Note<input id="bNote" value=""></label><label>Urgency<select id="bUrg"><option value="">Normal</option><option'+(l.urg==="High"?" selected":"")+'>High</option><option'+(l.urg==="Critical"?" selected":"")+'>Critical</option></select></label></div>'+
-    '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+(l.qr>0?locBox:'');
+    '<div class="mrow"><button class="btn gh" id="bBo">Mark backordered</button><button class="btn gh" id="bSave">Save date / note</button></div></div>'+(l.qr>0?locBox:'')+editBox+undoBox;
   E("lBody").innerHTML=info+act; E("ovLine").style.display="flex";
   if(E("rAll")){ E("rAll").onclick=function(){ receive(l,remaining(l)); }; E("rPart").onclick=function(){ receive(l,num(E("rQty").value)); };
     E("bBo").onclick=function(){ upd(l,{Status:"Backordered",ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:noteAdd(l,"Backordered"+(E("bNote").value?": "+E("bNote").value:""))}); };
     E("bSave").onclick=function(){ upd(l,{ExpectedDate:E("bExp").value?E("bExp").value+"T12:00:00Z":null,Urgency:E("bUrg").value,Notes:E("bNote").value?noteAdd(l,E("bNote").value):l.notes}); };
     if(focusRcv) setTimeout(function(){ E("rQty").focus(); E("rQty").select(); },50); }
+  if(E("uGo")) E("uGo").onclick=function(){ unreceive(l); };
+  if(E("eSave")) E("eSave").onclick=function(){ adminEdit(l); };
   if(E("mSave")) E("mSave").onclick=function(){ var v=E("mLoc").value.trim().toUpperCase(); if(!v){ E("lMsg").textContent="Enter the shelf / bay."; return; } if(v===l.loc){ E("ovLine").style.display="none"; return; } upd(l,{BinLocation:v,Notes:noteAdd(l,"Moved to "+v+(l.loc?" (was "+l.loc+")":""))}); };
 }
 function noteAdd(l,t){ var stamp=shortD(today())+" "+(MY_NAME||me.split("@")[0]); return (l.notes?l.notes+" | ":"")+stamp+": "+t; }
@@ -324,6 +344,38 @@ async function receive(l,n){ if(n==null||n<=0){ E("lMsg").textContent="Enter the
   var loc=E("rLoc").value.trim().toUpperCase(); if(!loc){ E("lMsg").textContent="Enter the shelf / bay it was put in (or JOBSITE if it went to the job)."; E("rLoc").focus(); return; }
   var tot=(l.qr||0)+n, full=tot>=(l.qo||0), f={QtyReceived:tot,Status:full?"Received":"Partial",ReceivedDate:(E("rDate").value||today())+"T12:00:00Z",ReceivedBy:MY_NAME||me,BinLocation:loc};
   if(full) f.Locked="Yes"; if(E("rNote").value.trim()) f.Notes=noteAdd(l,E("rNote").value.trim());
+  await upd(l,f); }
+/* admin edit of an order line: quantities, vendor, job, PO, dates, category, total $ — every change written to the notes */
+async function adminEdit(l){
+  var item=E("eItem").value.trim(), qo=num(E("eQo").value), ven=E("eVen").value.trim(), job=E("eJob").value.trim().split(/\s+/)[0]||"", po=E("ePo").value.trim(),
+      exp=E("eExp").value, to=E("eTo").value, urg=E("eUrg").value, cat=E("eCat").value, why=E("eWhy").value.trim();
+  if(!item){ E("lMsg").textContent="The item can't be blank."; return; }
+  if(qo==null||qo<=0){ E("lMsg").textContent="Qty ordered has to be more than 0."; return; }
+  var ch=[], f={}, add=function(key,label,ov,nv){ if(String(ov==null?"":ov)!==String(nv==null?"":nv)){ f[key]=nv; ch.push(label+" "+(ov===""||ov==null?"(blank)":ov)+" \u2192 "+(nv===""||nv==null?"(blank)":nv)); } };
+  add("Title","Item",l.item,item); add("QtyOrdered","Qty",l.qo,qo); add("Vendor","Vendor",l.vendor,ven); add("JobNo","Job",l.job,job); add("PONumber","PO",l.po,po);
+  add("DeliverTo","Deliver to",l.to,to); add("Urgency","Urgency",l.urg||"",urg); add("Category","Category",l.cat,cat);
+  if((l.exp||"")!==exp){ f.ExpectedDate=exp?exp+"T12:00:00Z":null; ch.push("Expected "+(l.exp?shortD(l.exp):"(blank)")+" \u2192 "+(exp?shortD(exp):"(blank)")); }
+  var c=cost(l), tot=COSTS&&E("eTot")?num(E("eTot").value):undefined, costChange=COSTS&&E("eTot")&&(tot!==c.tot||(f.QtyOrdered!=null&&c.tot!=null));
+  if(!ch.length&&!(COSTS&&E("eTot")&&tot!==c.tot)){ E("lMsg").textContent="Nothing changed."; return; }
+  /* quantity change re-sets the status against what's already been received */
+  if(f.QtyOrdered!=null&&l.qr>0){ if(l.qr>=qo){ f.Status="Received"; f.Locked="Yes"; } else { f.Status="Partial"; f.Locked=""; } }
+  if(ch.length) f.Notes=noteAdd(l,"Edited: "+ch.join("; ")+(why?". Why: "+why:""));
+  E("lMsg").textContent="Saving…";
+  try{
+    if(costChange){ var cf={TotalCost:tot,UnitCost:(tot!=null&&qo)?Math.round(tot/qo*10000)/10000:null};
+      if(c.id) await gx("PATCH","/lists/"+COST_ID+"/items/"+c.id+"/fields",cf); else if(tot!=null){ var r=await gx("POST","/lists/"+COST_ID+"/items",{fields:Object.assign({Title:l.key},cf)}); c={id:r.id}; }
+      COST[l.key]={tot:cf.TotalCost,unit:cf.UnitCost,id:c.id}; }
+    if(Object.keys(f).length) await upd(l,f); else { E("ovLine").style.display="none"; render(); }
+  }catch(e){ E("lMsg").textContent="Didn't save: "+e.message; } }
+/* undo a receipt clicked by mistake (admins): back to Ordered, or to Partial with the right qty */
+async function unreceive(l){ var n=num(E("uQty").value), why=E("uWhy").value.trim();
+  if(n==null||n<0){ E("lMsg").textContent="Enter the qty that really came in (0 if none)."; return; }
+  if(l.qo&&n>=l.qo){ E("lMsg").textContent="That's the full order — nothing to undo. Enter less than "+q(l.qo)+"."; return; }
+  if(!why){ E("lMsg").textContent="Say why you're undoing it."; E("uWhy").focus(); return; }
+  if(!confirm("Undo receiving on “"+l.item+"”?\n\nReceived goes from "+q(l.qr)+" to "+q(n)+" and the line reopens.")) return;
+  var was="Receipt undone — was "+q(l.qr)+" rec'd"+(l.rec?" "+shortD(l.rec):"")+(l.by?" by "+l.by:"")+(l.loc?" at "+l.loc:"")+"; now "+q(n)+". Why: "+why;
+  var f={QtyReceived:n, Status:n>0?"Partial":"Ordered", Locked:"", Notes:noteAdd(l,was)};
+  if(n===0){ f.ReceivedDate=null; f.ReceivedBy=""; f.BinLocation=""; }
   await upd(l,f); }
 async function upd(l,f){ E("lMsg").textContent="Saving…";
   try{ await gx("PATCH","/lists/"+LOG_ID+"/items/"+l.id+"/fields",f); var n=toLine(Object.assign(fieldsOf(l),f,{_id:l.id})); Object.assign(l,n); E("ovLine").style.display="none"; fillFilters(); render(); }
@@ -486,7 +538,7 @@ async function start(a){
   try{ (await pullAll("/lists/"+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999")).forEach(function(f){ var e=String(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e===me){ MY_NAME=String(f.EmployeeName||"").trim(); if(yes(f.Admin)&&(f.Active||"Yes")!=="No") IS_ADMIN=true; } }); }catch(e){}
   try{ await load(); }catch(e){ E("gateMsg").textContent="Couldn't load: "+e.message; return; }
   E("gate").style.display="none"; E("app").style.display="block"; E("newTop").style.display="";
-  if(SUPER.indexOf(me)>-1) E("tabAdm").style.display="";
+  if(SETUP_USERS.indexOf(me)>-1) E("tabAdm").style.display="";
   var QP=new URLSearchParams(location.search); if(QP.get("chip")) OF.chip=QP.get("chip");
   fillFilters(); render();
   var qt=QP.get("tab"); if(qt){ var tb=document.querySelector('#tabs [data-t="'+qt+'"]'); if(tb&&tb.style.display!=="none") tb.click(); }
