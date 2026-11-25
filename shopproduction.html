@@ -203,8 +203,8 @@ function applyPrefill(){ var q=new URLSearchParams(location.search); if(!q.get("
   E("msg").className="msg info"; E("msg").textContent="Filled in from fitting ticket "+(q.get("ft")||"")+". The pounds are an estimate — weigh it and fix the number before you log.";
 }
 async function hasShopAccess(){
-  try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName");
-    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail; });
+  try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName,Active");
+    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if((!s&&!a)||(e.Active||"Yes")==="No") return false; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail; });
   }catch(e){ return false; }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }

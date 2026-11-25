@@ -157,9 +157,9 @@ function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Bool
 async function isAdminUser(em){
   if(SUPERADMIN.indexOf(em)>-1) return true;
   try{ var token=await getToken();
-    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName)&$top=999", out=[];
+    var url=GRAPH+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=LoginEmail,Admin,EmployeeName,Active)&$top=999", out=[];
     while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error) break; (j.value||[]).forEach(function(it){if(it.fields)out.push(it.fields);}); url=j["@odata.nextLink"]||null; }
-    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a) return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
+    return out.some(function(e){ var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!a||(e.Active||"Yes")==="No") return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
   }catch(e){ return false; }
 }
 async function afterLogin(acct){

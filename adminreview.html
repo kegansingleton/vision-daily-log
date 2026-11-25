@@ -158,7 +158,7 @@ async function afterLogin(a){
   account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim();
   E("gate").style.display="none";
   var ok=SUPERADMIN.indexOf(loginEmail)>-1;
-  if(!ok){ try{ var url=GRAPH+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin)&$top=999"; while(url&&!ok){ var j=await gget(url); (j.value||[]).forEach(function(it){ var f=it.fields||{}; var em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(em===loginEmail&&truthy(f.Admin)) ok=true; }); url=j["@odata.nextLink"]||null; } }catch(e){} }
+  if(!ok){ try{ var url=GRAPH+EMP+"/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Active)&$top=999"; while(url&&!ok){ var j=await gget(url); (j.value||[]).forEach(function(it){ var f=it.fields||{}; var em=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(em===loginEmail&&truthy(f.Admin)&&(f.Active||"Yes")!=="No") ok=true; }); url=j["@odata.nextLink"]||null; } }catch(e){} }
   if(!ok){ document.body.innerHTML='<div class="denied"><h2 style="color:#7f1d1d">Admins only</h2><p>Admin Review is limited to people with the Admin flag in Employee Setup. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=a.name||a.username;
   E("from").value=iso(addDays(new Date(),-14)); E("to").value=iso(new Date());

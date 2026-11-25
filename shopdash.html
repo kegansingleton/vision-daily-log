@@ -157,8 +157,8 @@ async function afterLogin(acct){
 }
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }
 async function hasShopAccess(em){
-  try{ var emps=await pullAll(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName");
-    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
+  try{ var emps=await pullAll(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName,Active");
+    return emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"); var a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if((!s&&!a)||(e.Active||"Yes")==="No") return false; var x=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return x===em; });
   }catch(e){ return false; }
 }
 async function getToken(){ try{var r=await msalApp.acquireTokenSilent({scopes:[SCOPE],account:account});return r.accessToken;}catch(e){msalApp.acquireTokenRedirect({scopes:[SCOPE]});throw e;} }

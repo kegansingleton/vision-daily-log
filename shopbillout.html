@@ -253,7 +253,7 @@ async function afterLogin(acct){
   account=acct; msalApp.setActiveAccount(acct); loginEmail=(acct.username||"").toLowerCase(); loginName=acct.name||acct.username;
   E("gate").style.display="none";
   var ok=SUPERADMIN.indexOf(loginEmail)>-1;
-  if(!ok){ try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName"); ok=emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"), a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if(!s&&!a) return false; return ((e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName))===loginEmail; }); }catch(e){} }
+  if(!ok){ try{ var emps=await pull(EMPL,"LoginEmail,ShopAccess,Admin,EmployeeName,Active"); ok=emps.some(function(e){ var s=(e.ShopAccess===true||e.ShopAccess==="Yes"||e.ShopAccess==="true"), a=(e.Admin===true||e.Admin==="Yes"||e.Admin==="true"); if((!s&&!a)||(e.Active||"Yes")==="No") return false; return ((e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName))===loginEmail; }); }catch(e){} }
   if(!ok){ document.body.innerHTML='<div class="denied"><h2 style="color:#7f1d1d">Not authorized</h2><p>Shop Bill-Out is limited to shop staff and admins. Signed in as <b>'+esc(loginEmail)+'</b>.</p></div>'; return; }
   E("app").style.display="block"; E("who").textContent=loginName; E("bdate").value=todayISO();
   try{ var sv=localStorage.getItem("vm_shop_scrap"); if(sv!=null) E("scrap").value=sv; }catch(e){}

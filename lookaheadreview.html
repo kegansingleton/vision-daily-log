@@ -154,7 +154,7 @@ async function afterLogin(a){
   account=a; msalApp.setActiveAccount(a); loginEmail=(a.username||"").toLowerCase().trim();
   E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=a.name||a.username;
   var ok=SUPERADMIN.indexOf(loginEmail)>-1||NAMED_PM.indexOf(loginEmail)>-1;
-  if(!ok){ try{ var emps=await pull(EMP,"EmployeeName,LoginEmail,Admin"); ok=emps.some(function(r){ var e=r.f; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&truthy(e.Admin); });  /* PMs + Admins only */ }catch(e){} }
+  if(!ok){ try{ var emps=await pull(EMP,"EmployeeName,LoginEmail,Admin,Active"); ok=emps.some(function(r){ var e=r.f; var em=(e.LoginEmail||"").toLowerCase().trim()||autoEmail(e.EmployeeName); return em===loginEmail&&truthy(e.Admin)&&(e.Active||"Yes")!=="No"; });  /* PMs + Admins only */ }catch(e){} }
   if(!ok){ E("denied").style.display="block"; return; }
   E("main").style.display="block";
   var m=/[?&]week=(\d{4}-\d{2}-\d{2})/.exec(location.search);

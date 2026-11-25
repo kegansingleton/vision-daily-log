@@ -96,7 +96,7 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 
   <div class="card">
     <h2>Refresh the crew list from Vista</h2>
-    <p class="help">Export the <b>PR Employee List (Active Only)</b> from Vista as a CSV and drop it below. This reads every active employee's number and name and <b>replaces</b> the crew list — new hires appear, terminated employees drop off. Past timecards keep their names, so nothing is lost.</p>
+    <p class="help">Export the <b>PR Employee List (Active Only)</b> from Vista as a CSV and drop it below. New hires are added, name changes are updated, and anyone no longer on the list is marked <b>Inactive</b> (not deleted). Foreman, Shop, Admin and Office checkboxes and login emails on existing employees are <b>never changed</b> by an upload. Past timecards keep their names.</p>
     <label class="drop" id="drop">
       <input type="file" id="file" accept=".csv,text/csv">
       <div><b>Drop the Vista employee CSV here</b><br><span class="mut">or tap to choose a file</span></div>
@@ -109,7 +109,7 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
     <div class="stat" id="stat"></div>
     <div class="warn" id="warn"></div>
     <div class="preview"><table id="previewTbl"></table></div>
-    <button class="btn" id="loadBtn">Replace crew list with this file</button>
+    <button class="btn" id="loadBtn">Update crew list from this file</button>
     <div class="bar" id="bar"><i></i></div>
     <div class="msg" id="msg"></div>
   </div>
@@ -369,12 +369,33 @@ function handleFile(f){
   reader.readAsText(f);
 }
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+/* match file rows to the existing roster by employee number (leading zeros ignored), else by name */
+function nkey(n){ return String(n||"").trim().replace(/^0+/,""); }
+function tokKey(n){ return String(n||"").toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean).sort().join(" "); }
+function nmKey(n){ return String(n||"").toLowerCase().replace(/[^a-z]/g,""); }
+var PLAN=null;
+function buildPlan(emps){
+  var byNum={}, byName={}; ROSTER.forEach(function(r){ if(nkey(r.num)) byNum[nkey(r.num)]=r; byName[nmKey(r.name)]=byName[nmKey(r.name)]||r; });
+  var plan={add:[],upd:[],same:[],off:[]}, used={};
+  emps.forEach(function(e){ var r=byNum[nkey(e.num)]||(!byNum[nkey(e.num)]&&byName[nmKey(e.name)]&&!nkey(byName[nmKey(e.name)].num)?byName[nmKey(e.name)]:null);
+    if(!r){ plan.add.push(e); return; } used[r.id]=1;
+    var f={}; if(tokKey(r.name)!==tokKey(e.name)) f.EmployeeName=e.name;   /* "Snow, Stuart H" = "Stuart H Snow": same person, no rename */ if(nkey(r.num)!==nkey(e.num)){ f.EmployeeNumber=e.num; f.Title=e.num; } if(r.active==="No") f.Active="Yes";
+    if(Object.keys(f).length) plan.upd.push({r:r,e:e,f:f}); else plan.same.push(r); });
+  /* only people who HAVE an employee number can be dropped by Vista; hand-added people without a number are left alone */
+  ROSTER.forEach(function(r){ if(!used[r.id]&&nkey(r.num)&&r.active!=="No") plan.off.push(r); });
+  return plan; }
 function renderPreview(emps){
   document.getElementById("previewCard").style.display="block";
-  document.getElementById("stat").innerHTML='<div><b>'+emps.length+'</b><span>Active employees</span></div>';
-  document.getElementById("warn").textContent="This replaces the entire crew list with the "+emps.length+" people in this file.";
-  var tbl='<tr><th>Number</th><th>Name</th></tr>';
-  emps.slice().sort(function(a,b){return parseInt(a.num)-parseInt(b.num);}).forEach(function(e){ tbl+='<tr><td>'+e.num+'</td><td>'+esc(e.name)+'</td></tr>'; });
+  PLAN=buildPlan(emps);
+  document.getElementById("stat").innerHTML='<div><b>'+emps.length+'</b><span>In this file</span></div><div><b>'+PLAN.add.length+'</b><span>New hires</span></div><div><b>'+PLAN.upd.length+'</b><span>Updated</span></div><div><b>'+PLAN.off.length+'</b><span>To inactive</span></div><div><b>'+PLAN.same.length+'</b><span>No change</span></div>';
+  var guarded=PLAN.off.filter(function(r){return r.foreman||r.admin||r.shop||r.office;});
+  document.getElementById("warn").innerHTML="Checkboxes and login emails stay as they are."+(PLAN.off.length>Math.max(10,ROSTER.length*0.3)?" <b>Heads up: "+PLAN.off.length+" people would go inactive — make sure this is the full Active employee list.</b>":"")+(guarded.length?" <b>"+guarded.length+" of the people going inactive have a role checked ("+guarded.map(function(r){return esc(r.name);}).slice(0,6).join(", ")+(guarded.length>6?"…":"")+").</b>":"");
+  var tag=function(t,c){ return '<span style="font-weight:700;color:'+c+'">'+t+'</span>'; };
+  var tbl='<tr><th>Number</th><th>Name</th><th>What happens</th></tr>';
+  PLAN.add.forEach(function(e){ tbl+='<tr><td>'+esc(e.num)+'</td><td>'+esc(e.name)+'</td><td>'+tag("New hire — added","#15803d")+'</td></tr>'; });
+  PLAN.upd.forEach(function(u){ var w=[]; if(u.f.EmployeeName) w.push("name was "+esc(u.r.name)); if(u.f.EmployeeNumber) w.push("number was "+esc(u.r.num||"blank")); if(u.f.Active) w.push("back to active"); tbl+='<tr><td>'+esc(u.e.num)+'</td><td>'+esc(u.e.name)+'</td><td>'+tag("Updated","#1d4ed8")+' <span class="mut">('+w.join(", ")+')</span></td></tr>'; });
+  PLAN.off.forEach(function(r){ tbl+='<tr><td>'+esc(r.num)+'</td><td>'+esc(r.name)+'</td><td>'+tag("Not in file — marked inactive","#b91c1c")+'</td></tr>'; });
+  if(PLAN.same.length) tbl+='<tr><td colspan="3" class="mut">'+PLAN.same.length+' employees already match — no change.</td></tr>';
   document.getElementById("previewTbl").innerHTML=tbl;
   document.getElementById("msg").style.display="none";
 }
@@ -390,32 +411,32 @@ async function getAllIds(token){
   return ids;
 }
 
-/* ===== LOAD (full replace) ===== */
+/* ===== LOAD (merge — never deletes, never touches checkboxes or login emails) ===== */
 document.getElementById("loadBtn").onclick=async function(){
   if(!PARSED) return;
   var btn=this, msg=document.getElementById("msg"), bar=document.getElementById("bar"), fill=bar.querySelector("i");
   btn.disabled=true; msg.className="msg info"; msg.style.display="block"; bar.style.display="block";
   try{
     var token=await getToken();
+    await loadRoster(); PLAN=buildPlan(PARSED);   /* re-check against the list as it is right now */
     var rel="/sites/"+SITE_ID+"/lists/"+EMP_LIST+"/items";
-    msg.textContent="Clearing old crew list…";
-    var oldIds=await getAllIds(token);
-    for(var d=0; d<oldIds.length; d+=20){
-      await graphBatch(token, oldIds.slice(d,d+20).map(function(id,ix){return {id:String(ix),method:"DELETE",url:rel+"/"+id};}));
+    var reqs=[].concat(
+      PLAN.add.map(function(e){ return {method:"POST",url:rel,headers:{"Content-Type":"application/json"},body:{fields:{Title:e.num, EmployeeNumber:e.num, EmployeeName:e.name, Active:"Yes"}}}; }),
+      PLAN.upd.map(function(u){ return {method:"PATCH",url:rel+"/"+u.r.id+"/fields",headers:{"Content-Type":"application/json"},body:u.f}; }),
+      PLAN.off.map(function(r){ return {method:"PATCH",url:rel+"/"+r.id+"/fields",headers:{"Content-Type":"application/json"},body:{Active:"No"}}; }));
+    if(!reqs.length){ msg.className="msg ok"; msg.textContent="✓ Crew list already matches this file — nothing to change."; return; }
+    msg.textContent="Updating "+reqs.length+" employees…";
+    var done=0, bad=0;
+    for(var s=0; s<reqs.length; s+=20){
+      var chunk=reqs.slice(s,s+20).map(function(r,ix){ return Object.assign({id:String(ix)},r); });
+      var resp=await graphBatch(token, chunk);
+      bad+=resp.filter(function(r){return r.status>=300;}).length;
+      done+=chunk.length; fill.style.width=Math.round(done/reqs.length*100)+"%";
     }
-    msg.textContent="Loading "+PARSED.length+" employees…";
-    var done=0;
-    for(var s=0; s<PARSED.length; s+=20){
-      var chunk=PARSED.slice(s,s+20);
-      var reqs=chunk.map(function(e,ix){ return {id:String(ix),method:"POST",url:rel,headers:{"Content-Type":"application/json"},
-        body:{fields:{Title:e.num, EmployeeNumber:e.num, EmployeeName:e.name, Active:"Yes"}}}; });
-      var resp=await graphBatch(token, reqs);
-      var bad=resp.filter(function(r){return r.status>=300;});
-      if(bad.length) throw new Error("Write failed ("+bad[0].status+"): "+JSON.stringify(bad[0].body).slice(0,160));
-      done+=chunk.length; fill.style.width=Math.round(done/PARSED.length*100)+"%";
-    }
-    msg.className="msg ok"; msg.textContent="✓ Crew list refreshed — "+PARSED.length+" active employees are now available on timecards."; loadRoster();
-  }catch(e){ msg.className="msg err"; msg.textContent="Refresh failed: "+e.message; }
+    msg.className=bad?"msg err":"msg ok";
+    msg.textContent=(bad?"Done with "+bad+" problem(s) — run it again to retry. ":"✓ Crew list updated — ")+PLAN.add.length+" added, "+PLAN.upd.length+" updated, "+PLAN.off.length+" marked inactive. Checkboxes and login emails unchanged.";
+    loadRoster();
+  }catch(e){ msg.className="msg err"; msg.textContent="Update failed: "+e.message; }
   finally{ btn.disabled=false; }
 };
 </script>
