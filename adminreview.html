@@ -62,6 +62,7 @@ table.list tr.open td{background:#fdf2f1}
 @media(max-width:640px){.hide-sm{display:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -99,7 +100,7 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
 /* each tab: list (id or name), date column, summary columns, the big report column, and how to show a row */
 var TABS=[
  {k:"logs",t:"Daily Logs",id:"bccd1165-a999-41b4-9cae-394d0766fb4a",date:"LogDate",body:"LogText",html:true,

@@ -57,6 +57,7 @@ td.note{white-space:normal;min-width:180px;max-width:340px;color:#374151;font-si
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -124,7 +125,7 @@ td.note{white-space:normal;min-width:180px;max-width:340px;color:#374151;font-si
 <div class="footer">Vision Mechanical &bull; Shop Production &bull; Rates = output ÷ crew hours on that job/phase/day (live).</div>
 
 <script>
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
 var EMPL="537b8d9b-e666-43d1-9441-efc2bed48d73";
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var GRAPH="https://graph.microsoft.com/v1.0/sites/"+SITE_ID+"/lists/";

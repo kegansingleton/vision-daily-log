@@ -77,6 +77,7 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
 @media(max-width:560px){.pr.duct{grid-template-columns:1fr 1fr 1fr}.pr .cn{grid-column:span 2}.cnt{grid-template-columns:1fr 1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -204,7 +205,7 @@ table.h a{color:var(--vm);font-weight:700;text-decoration:none}
 <div class="modal" id="modal"><div class="box"><button class="xx" id="mx">&times;</button><div id="mbody"></div></div></div>
 
 <script>
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE_ID, GRAPH=SITEURL+"/lists/";
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";

@@ -48,6 +48,7 @@ header.app .sub{font-size:13px;opacity:.9;margin-top:2px}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:24px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -128,7 +129,7 @@ async function afterLogin(acct){ account=acct; msalApp.setActiveAccount(acct); E
   if(!(await vmIsAdmin(acct.username))){ vmDenied(acct.username,"Manpower Load"); return; }
   E("app").style.display="block"; E("who").textContent=acct.name||acct.username; run(); loadProjection(); }
 /* ===== Admin gate: Kegan/Bill or the Admin flag in Employee Setup ===== */
-var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_SUPER=VMR.owners.slice();
 function vmAutoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
 async function vmIsAdmin(email){
   email=String(email||"").toLowerCase().trim(); if(VM_SUPER.indexOf(email)>-1) return true;

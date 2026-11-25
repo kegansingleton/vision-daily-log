@@ -7,6 +7,7 @@
 <title>Vision Mechanical — Order Log</title>
 <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" type="image/png" href="/favicon-32.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vision"><meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <style>
 :root{--vm:#c0392b;--vm2:#7f1d1d;--page:#f4f5f7;--surface:#fff;--ink:#111827;--ink2:#4b5563;--muted:#6b7280;--line:#e5e7eb;--wash:#f9fafb;
   --s1:#2a78d6;--track:#dbe8f8;--good:#15803d;--goodbg:#dcfce7;--warn:#a16207;--warnbg:#fef3c7;--crit:#b91c1c;--critbg:#fde8e8;--info:#1e40af;--infobg:#dbeafe}
@@ -200,7 +201,7 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var G="https://graph.microsoft.com/v1.0/sites/"+SITE;
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
 var L_LOG="Order Log", L_COST="Order Costs";
-var SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPER=VMR.owners.slice();
 var SETUP_USERS=SUPER.concat(["ssnow@visionmech.net"]);   /* who gets the Setup tab */
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(location.origin+location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, me="", MY_NAME="", IS_ADMIN=false, COSTS=false, LOG_ID=null, COST_ID=null, LINES=[], COST={}, JOBS=[], TAB="open";

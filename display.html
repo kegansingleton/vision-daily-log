@@ -133,6 +133,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--page);color:var(
 #hint.off{opacity:0;pointer-events:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -390,7 +391,7 @@ FETCH.actions=async function(){
   return {open:rows.filter(function(r){ return String(val(r.Status)||"Open")!=="Done"; })};
 };
 /* --- owner channel: bid hit / miss (Bid Log list is locked to Kegan & Bill; counts and % only, no dollars on screen) --- */
-var BID_OWNERS=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var BID_OWNERS=VMR.owners.slice();
 FETCH.bids=async function(){
   if(BID_OWNERS.indexOf(meEmail())<0) throw new Missing("Bid Log");
   var id=await named("Bid Log"), rows=await pullAll(id,"BidDate,Status,Scope,BidAmount,AwardAmount");
@@ -412,7 +413,7 @@ FETCH.due=async function(){
   try{ lg=(await getRange(LOGS,"LogDate",today,today,"LogDate,LoginEmail")).filter(function(r){return String(r.LoginEmail||"").toLowerCase()===email;}).length; }catch(e){ if(e instanceof AuthError) throw e; lg=null; }
   return {foreman:true,tc:tc,log:lg,day:today};
 };
-var ORDER_VIEWERS=["kegan.singleton@visionmech.net","bsingleton@visionmech.net","ssnow@visionmech.net"];   /* whose screens get the order-log slides */
+var ORDER_VIEWERS=VMR.owners.concat(["ssnow@visionmech.net"]);   /* whose screens get the order-log slides */
 /* --- owner channel: Order Log metrics (prices come from "Order Costs", which only office/owners can read). Refreshed every 30 min — it's 7k+ rows --- */
 FETCH.orders=async function(){
   if(ORDER_VIEWERS.indexOf(meEmail())<0) throw new Missing("Order Log");

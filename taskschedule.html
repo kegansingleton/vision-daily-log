@@ -51,6 +51,7 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -92,8 +93,8 @@ tr.total td{background:#1f2937;color:#fff;font-weight:800;font-size:13.5px}
 
 <script>
 /* ===== Security ===== */
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
+var NAMED_PM=VMR.pms.slice();
 
 /* ===== Config ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";

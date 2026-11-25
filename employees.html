@@ -116,6 +116,7 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script>
 /* ===== CONFIG ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
@@ -127,7 +128,7 @@ var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority
 
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginName="", loginEmail="", isSuper=false;
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
 var PARSED=null; // [{num,name}]
 
 /* ===== AUTH ===== */
@@ -171,14 +172,14 @@ function escA(s){ return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/<
 async function loadRoster(){
   try{
     var token=await getToken();
-    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail,ShopAccess,Admin)&$top=999";
-    var out=[];
+    var url=GRAPH+EMP_LIST+"/items?$expand=fields($select=EmployeeNumber,EmployeeName,Active,OfficeStaff,Foreman,LoginEmail,ShopAccess,Admin,PM,Owner,ServiceTech)&$top=999";
+    var out=[], raw=[];
     while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json();}); if(j.error)throw new Error(j.error.message);
-      (j.value||[]).forEach(function(it){ if(it.fields) out.push({id:it.id,num:it.fields.EmployeeNumber||"",name:it.fields.EmployeeName||"",active:(it.fields.Active||"Yes"),office:(it.fields.OfficeStaff===true||it.fields.OfficeStaff==="Yes"||it.fields.OfficeStaff==="true"),foreman:(it.fields.Foreman===true||it.fields.Foreman==="Yes"||it.fields.Foreman==="true"),email:(it.fields.LoginEmail||""),shop:(it.fields.ShopAccess===true||it.fields.ShopAccess==="Yes"||it.fields.ShopAccess==="true"),admin:(it.fields.Admin===true||it.fields.Admin==="Yes"||it.fields.Admin==="true")}); });
+      (j.value||[]).forEach(function(it){ if(it.fields){ raw.push(it.fields); var yy=function(v){return v===true||v==="Yes"||v==="true";}; out.push({pm:yy(it.fields.PM),owner:yy(it.fields.Owner),svc:yy(it.fields.ServiceTech),id:it.id,num:it.fields.EmployeeNumber||"",name:it.fields.EmployeeName||"",active:(it.fields.Active||"Yes"),office:(it.fields.OfficeStaff===true||it.fields.OfficeStaff==="Yes"||it.fields.OfficeStaff==="true"),foreman:(it.fields.Foreman===true||it.fields.Foreman==="Yes"||it.fields.Foreman==="true"),email:(it.fields.LoginEmail||""),shop:(it.fields.ShopAccess===true||it.fields.ShopAccess==="Yes"||it.fields.ShopAccess==="true"),admin:(it.fields.Admin===true||it.fields.Admin==="Yes"||it.fields.Admin==="true")}); } });
       url=j["@odata.nextLink"]||null;
     }
     out.sort(function(a,b){ return ((parseInt(a.num)||0)-(parseInt(b.num)||0)) || String(a.name).localeCompare(String(b.name)); });
-    ROSTER=out; renderRoster();
+    ROSTER=out; renderRoster(); if(window.VMR) VMR.store(raw);
   }catch(e){ document.getElementById("rosterTbl").innerHTML='<tr><td>Could not load crew list: '+esc(e.message||e)+'</td></tr>'; }
 }
 function autoEmail(name){
@@ -192,8 +193,9 @@ function renderRoster(){
   var list=ROSTER.filter(function(e){ return !q || (e.num+" "+e.name).toLowerCase().indexOf(q)>-1; });
   var active=ROSTER.filter(function(e){return e.active!=="No";}).length;
   document.getElementById("rosterStat").innerHTML='<div><b>'+active+'</b><span>Active</span></div><div><b>'+ROSTER.length+'</b><span>Total on file</span></div>';
-  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th>Foreman</th><th>Shop</th><th>Admin</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
-  if(!list.length){ h+='<tr><td colspan="9" class="mut">No matches.</td></tr>'; }
+  var h='<tr><th>Emp #</th><th>Name</th><th>Status</th><th>Type</th><th title="Owes daily logs, timecards, look-aheads">Foreman</th><th title="Project manager">PM</th><th title="Service technician">Service</th><th title="Shop pages">Shop</th><th title="Office admin pages">Admin</th><th title="Owner: bids, everything">Owner</th><th>Login email</th><th style="text-align:right">Actions</th></tr>';
+  if(!list.length){ h+='<tr><td colspan="12" class="mut">No matches.</td></tr>'; }
+  var cb=function(e,flag,on,locked){ return '<td style="text-align:center"><input type="checkbox" class="rolecb" data-flag="'+flag+'"'+(on?" checked":"")+(locked?" disabled title=\"Only an owner can change this\"":"")+' style="width:18px;height:18px;margin:0"></td>'; };
   list.forEach(function(e){
     var badge = e.active==="No" ? '<span style="color:#b91c1c;font-weight:600">Inactive</span>' : '<span style="color:#15803d;font-weight:600">Active</span>';
     var typeBadge = e.office ? '<span style="color:#1d4ed8;font-weight:600">Office</span>' : '<span class="mut">Field</span>';
@@ -201,16 +203,14 @@ function renderRoster(){
     var shopBadge = e.shop ? '<span style="color:#c8932a;font-weight:700">Shop</span>' : '<span class="mut">—</span>';
     var adminBadge = e.admin ? '<span style="color:#7f1d1d;font-weight:800">Admin</span>' : '<span class="mut">—</span>';
     var emailCell = e.email ? esc(e.email) : '<span class="mut" title="auto-generated from name — Edit to confirm">'+esc(autoEmail(e.name))+'</span>';
-    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td><td>'+foreBadge+'</td><td>'+shopBadge+'</td><td>'+adminBadge+'</td><td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
+    h+='<tr data-id="'+e.id+'"><td class="c-num">'+esc(e.num)+'</td><td class="c-name">'+esc(e.name)+'</td><td>'+badge+'</td><td>'+typeBadge+'</td>'+cb(e,"Foreman",e.foreman)+cb(e,"PM",e.pm)+cb(e,"ServiceTech",e.svc)+cb(e,"ShopAccess",e.shop)+cb(e,"Admin",e.admin,!isSuper)+cb(e,"Owner",e.owner,!isSuper)+'<td class="c-email" style="font-size:12px">'+emailCell+'</td>'+
        '<td style="text-align:right"><div class="acts"><button class="mini" data-act="edit">Edit</button> '+
-       '<button class="mini" data-act="foreman">'+(e.foreman?"Unset FM":"Make FM")+'</button> '+
-       '<button class="mini" data-act="shop">'+(e.shop?"Remove shop":"Make shop")+'</button> '+
-       (isSuper?'<button class="mini" data-act="admin">'+(e.admin?"Remove admin":"Make admin")+'</button> ':'')+
        '<button class="mini" data-act="office">'+(e.office?"Make Field":"Make Office")+'</button> '+
        '<button class="mini" data-act="toggle">'+(e.active==="No"?"Activate":"Deactivate")+'</button> '+
        '<button class="mini danger" data-act="del">Delete</button></div></td></tr>';
   });
   var tbl=document.getElementById("rosterTbl"); tbl.innerHTML=h;
+  tbl.querySelectorAll("input.rolecb").forEach(function(c){ c.onchange=function(){ setFlag(c.closest("tr").getAttribute("data-id"),c.getAttribute("data-flag"),c.checked,c); }; });
   tbl.querySelectorAll("button[data-act]").forEach(function(b){
     b.onclick=function(){ var tr=b.closest("tr"), id=tr.getAttribute("data-id"), act=b.getAttribute("data-act");
       if(act==="del") delEmp(id); else if(act==="toggle") toggleEmp(id); else if(act==="office") toggleOffice(id); else if(act==="foreman") toggleForeman(id); else if(act==="shop") toggleShop(id); else if(act==="admin") toggleAdmin(id); else if(act==="edit") editRow(tr,id);
@@ -251,6 +251,19 @@ async function toggleEmp(id){
     rMsg("ok",e.name+" set "+(to==="No"?"inactive":"active")+"."); loadRoster();
   }catch(err){ rMsg("err","Update failed: "+err.message); }
 }
+/* one checkbox = one role. Owner and Admin are owners-only. Turning a role on fills a blank login email from the name. */
+var FLAG_NAME={Foreman:"Foreman",PM:"PM",ServiceTech:"Service tech",ShopAccess:"Shop",Admin:"Admin",Owner:"Owner"};
+async function setFlag(id,flag,on,box){
+  var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;
+  if((flag==="Admin"||flag==="Owner")&&!isSuper){ box.checked=!on; rMsg("err","Only an owner can change "+FLAG_NAME[flag]+"."); return; }
+  if(flag==="Owner"&&!on&&(e.email||autoEmail(e.name)).toLowerCase()===loginEmail&&!confirm("Remove yourself as an owner? You'll lose owner pages.")){ box.checked=true; return; }
+  var body={}; body[flag]=on?"Yes":"No"; if(on&&!e.email) body.LoginEmail=autoEmail(e.name);
+  box.disabled=true;
+  try{ var token=await getToken();
+    var r=await fetch(GRAPH+EMP_LIST+"/items/"+id+"/fields",{method:"PATCH",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    rMsg("ok",e.name+(on?" is now ":" is no longer ")+(flag==="Admin"||flag==="Owner"?"an ":"a ")+FLAG_NAME[flag]+"."+(flag==="Foreman"&&on?" They now owe daily logs & look-aheads.":"")); loadRoster();
+  }catch(er){ box.checked=!on; box.disabled=false; rMsg("err","Couldn't save: "+er.message); } }
 async function toggleAdmin(id){
   if(!isSuper){ rMsg("err","Only Kegan or Bill can change admin rights."); return; }
   var e=ROSTER.filter(function(x){return x.id===id;})[0]; if(!e) return;

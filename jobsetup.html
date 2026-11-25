@@ -135,6 +135,7 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script>
 /* ===== CONFIG ===== */
 var SITE_ID="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
@@ -149,8 +150,8 @@ var GENERIC_PHASES=["1110","1115","1151","1211","1210","1310","1335","1600","162
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginName="";
 var PARSED=null; // {jobs:{jobNo:{name, rows:[{phase,pdesc,line,ldesc,budget}]}}}
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
+var NAMED_PM=VMR.pms.slice();
 
 /* ===== AUTH ===== */
 function autoEmail(name){ var p=String(name||"").trim().split(/\s+/).filter(Boolean); if(!p.length) return ""; var fi=(p[0][0]||"").toLowerCase(), ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,""); return (fi&&ln)?(fi+ln+"@visionmech.net"):""; }

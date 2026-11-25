@@ -78,6 +78,7 @@ table.o3 tr[data-id]{cursor:pointer}table.o3 tr[data-id]:hover td{background:#ff
 @media print{header,.vtabs,.tools,.tiles,.bar,.near{display:none!important}.osha{border:none}table.o3{min-width:0;font-size:10px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -234,7 +235,7 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973";
 var L_INC="Incident Reports", PHOTO_ROOT="Incident Photos";
-var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_SUPER=VMR.owners.slice();
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, LIST_ID=null, COLS=null, EMPS=[], ROWS=[], LOADED=false, SUBMITTED=false;
 var ITYPE="", RTW="", PHOTOS=[], CUR=null;

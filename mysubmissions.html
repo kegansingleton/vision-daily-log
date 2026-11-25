@@ -56,6 +56,7 @@ td.oth{background:#eef4ff;color:#1e3a8a;font-weight:700;cursor:help}td.both{back
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -284,7 +285,7 @@ async function loadExtras(){
 
 /* ===== Timecards (weekly grid) ===== */
 var tcRows=[], tcAll=[], TC_SCOPE="mine", CAN_ALL=false, FOREMAN_NAME={}, selMon=mondayOf(new Date());
-var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", TC_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", TC_SUPER=VMR.owners.slice();
 function autoEmailTC(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
 async function getAllTC(fromISO){
   var token=await getToken(), base=GRAPH+TC+"/items?$expand=fields($select=WorkDate,EmployeeName,EmployeeNumber,JobNo,Hours,ForemanEmail,PayType)&$top=999", out=[];

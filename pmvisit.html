@@ -66,6 +66,7 @@ table.pl{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}table
 .tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -218,7 +219,7 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";
 var L_SITES="Service Sites", L_EQ="Site Equipment", L_VIS="PM Visits", PHOTO_ROOT="PM Visit Photos";
-var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var VM_SUPER=VMR.owners.slice();
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, loginEmail="", MY_NAME="", IS_ADMIN=false, LID={}, COLS={}, SITES=[], UNITS=[], RETIRED=[], CUR_SITE=null, NEWN=0, SUBMITTED=false;
 

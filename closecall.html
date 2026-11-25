@@ -46,6 +46,7 @@ table.dt{border-collapse:collapse;width:100%;font-size:14px}table.dt td{padding:
 .lnk{background:none;border:none;color:var(--vm);font-weight:700;font-size:13px;cursor:pointer;padding:4px 0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -163,7 +164,7 @@ function submitReport(){
 E("submitBtn").onclick=submitReport;
 /* ===== Turned-in reports: everyone sees their own; admins (site owners) see all + review =====
    The SharePoint list uses item-level security (read/edit own items) — only site Owners/admins can read everyone's. */
-var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=VMR.owners.slice();
 var IS_ADMIN=false, MY_NAME="", ROWS=[], CUR=null, TAB="form", LOADED=false;
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function d10(v){return String(v||"").slice(0,10);}
@@ -192,8 +193,21 @@ async function loadRows(){
   ROWS.sort(function(a,b){ return d10(b.CloseCallDate||b.CloseCallDateText).localeCompare(d10(a.CloseCallDate||a.CloseCallDateText))||(+b._id)-(+a._id); });
   var yrs={}; ROWS.forEach(function(r){ var y=d10(r.CloseCallDate||r.CloseCallDateText).slice(0,4); if(y) yrs[y]=1; });
   var fy=E("fYear").value; E("fYear").innerHTML='<option value="">All years</option>'+Object.keys(yrs).sort().reverse().map(function(y){return '<option>'+y+'</option>';}).join(""); E("fYear").value=fy;
-  LOADED=true; renderList();
+  LOADED=true; renderList(); publishCount();
 }
+/* Post ONLY the close-call counts to "Safety Stats" so the shop / office TV screens can show them without reading any report.
+   Only when this login can see everyone's reports (a site owner) — otherwise the count would be too low. */
+async function publishCount(){ try{
+  if(!IS_ADMIN) return; var me=loginEmail.toLowerCase();
+  var seesAll=VM_SUPER.indexOf(me)>-1||ROWS.some(function(r){ return String(r.SubmittedBy||"").toLowerCase()&&String(r.SubmittedBy||"").toLowerCase()!==me; });
+  if(!seesAll) return;
+  var t=today(), m=t.slice(0,7), y=t.slice(0,4);
+  var val=JSON.stringify({m:m,month:ROWS.filter(function(r){return dateOf(r).slice(0,7)===m;}).length,y:y,ytd:ROWS.filter(function(r){return dateOf(r).slice(0,4)===y;}).length,asof:t});
+  var base="https://graph.microsoft.com/v1.0/sites/"+SITE, L=await gx(base+"/lists?$select=id,displayName&$top=999"), l=(L.value||[]).filter(function(x){return (x.displayName||"").toLowerCase()==="safety stats";})[0]; if(!l) return;
+  var j=await gx(base+"/lists/"+l.id+"/items?$expand=fields($select=Title,Value)&$top=50"), it=(j.value||[]).filter(function(x){return x.fields&&x.fields.Title==="CloseCalls";})[0];
+  if(it){ if(it.fields.Value!==val) await gx(base+"/lists/"+l.id+"/items/"+it.id+"/fields",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({Value:val})}); }
+  else await gx(base+"/lists/"+l.id+"/items",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{Title:"CloseCalls",Value:val}})});
+}catch(e){} }
 function dateOf(r){ return d10(r.CloseCallDate||r.CloseCallDateText); }
 function statusPill(r){ var s=r.Status||"Submitted", c=s==="Closed"?"p-cl":s==="Action taken"?"p-act":s==="Reviewed"?"p-rev":"p-sub"; return '<span class="pill '+c+'">'+esc(s)+'</span>'; }
 function filtered(){ var q=E("fq").value.toLowerCase().trim(), fk=E("fKind").value, fs=E("fStatus").value, fy=E("fYear").value;

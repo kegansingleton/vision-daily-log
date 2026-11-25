@@ -64,6 +64,7 @@ td.wrap-cell{white-space:normal}
 .footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -160,7 +161,7 @@ td.wrap-cell{white-space:normal}
 
 <script>
 /* ===== Admin access ===== */
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
 
 /* Office/salaried staff are flagged in Employee Master (OfficeStaff column) — flat 40h handled off the timecard, so they're skipped in the "missing time" check. Set the flag in the Employee manager. */
 function isOffice(e){ var v=e&&e.OfficeStaff; return v===true||v==="Yes"||v==="true"||v===1; }

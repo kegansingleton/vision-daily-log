@@ -135,6 +135,7 @@ table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:11.5px;white-space:n
 .noaccess{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:24px 0;text-align:center;color:var(--mut)}.noaccess b{color:var(--vm2)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -209,8 +210,8 @@ var LIST="25279cba-004d-4b8c-8356-4b32f24d9cc8";         /* Action Items */
 var EMP_LIST="537b8d9b-e666-43d1-9441-efc2bed48d73";     /* Employee Master */
 var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371";     /* Job Tasks (job #/name source) */
 var ITEMS_URL=GRAPH+LIST+"/items";
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
+var NAMED_PM=VMR.pms.slice();
 
 /* ===== v1.8 resilient upload ===== */
 function vmPost(url,token,body,ms){return new Promise(function(resolve,reject){var ctl=("AbortController"in window)?new AbortController():null;var done=false;var to=setTimeout(function(){done=true;if(ctl){try{ctl.abort();}catch(e){}}reject(new Error("timed out"));},ms||20000);var opts={method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)};if(ctl)opts.signal=ctl.signal;fetch(url,opts).then(function(r){if(!r.ok){return r.text().then(function(t){var err=new Error("HTTP "+r.status+" "+t.slice(0,200));err.httpStatus=r.status;throw err;});}return r.json();}).then(function(j){if(done)return;clearTimeout(to);resolve(j);},function(e){if(done)return;clearTimeout(to);reject(e);});});}

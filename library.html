@@ -57,6 +57,7 @@ input:focus{outline:none;border-color:var(--vm);box-shadow:0 0 0 3px rgba(192,57
 .admin{font-size:12px;margin-top:16px;text-align:center}.admin a{color:var(--mut)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -101,7 +102,7 @@ var LIBS={
 var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, G="https://graph.microsoft.com/v1.0";
-var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
+var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", VM_SUPER=VMR.owners.slice();
 if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, loginEmail="", KEY=(new URLSearchParams(location.search).get("lib")||"sds").toLowerCase(), LIB=LIBS[KEY]||LIBS.sds, DRIVE=null, FILES=[], FOLDER="", CUR=null, VIEWSEQ=0;

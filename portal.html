@@ -33,8 +33,21 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 .tile[data-role].show{display:flex}
 .sec.empty-sec,.grid.empty-sec{display:none}
 .foot{text-align:center;font-size:11px;color:var(--mut);margin-top:28px;line-height:1.5}
+.myday{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.myday .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.myday .hd b{font-size:17px;color:var(--vm2)}
+.rolechips{display:flex;gap:5px;flex-wrap:wrap}.rolechips button{border:1.5px solid #e5c7c3;background:#fff;color:var(--vm2);border-radius:16px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.rolechips button.on{background:var(--vm2);border-color:var(--vm2);color:#fff}
+.due{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.due a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:700;border-radius:18px;padding:6px 12px;background:#eef2f7;color:#475569}
+.due a.ok{background:#dcfce7;color:#15803d}.due a.warn{background:#fef3c7;color:#92400e}.due a.bad{background:#fde8e8;color:#b91c1c}
+.myday .grid .tile{padding:14px 14px}.myday .grid .tile .ic{width:40px;height:40px;font-size:20px}
+.allhd{display:flex;justify-content:space-between;align-items:center;margin:26px 4px 0}
+.allhd b{font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--vm2)}
+.allhd input{border:1.5px solid #cbd5e1;border-radius:9px;padding:7px 10px;font-size:14px;width:180px;max-width:50%}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -63,90 +76,13 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 </header>
 
 <div class="wrap" id="app" style="display:none">
-  <div class="sec">Field Tools</div>
-  <div class="grid">
-    <a class="tile" href="/timecard.html"><div class="ic">&#128337;</div><div class="tx"><b>Daily Timecard</b><span>Foremen: enter crew time</span></div></a>
-    <a class="tile" href="/"><div class="ic">&#128221;</div><div class="tx"><b>Daily Field Log</b><span>Submit the daily field report</span></div></a>
-    <a class="tile" href="/mysubmissions.html"><div class="ic">&#128203;</div><div class="tx"><b>My Submissions</b><span>Your timecards, logs &amp; look-aheads</span></div></a>
-    <a class="tile" href="/lookahead.html"><div class="ic">&#128301;</div><div class="tx"><b>2 Week Look Ahead</b><span>Plan the next 2 weeks</span></div></a>
-    <a class="tile" href="/tmticket.html"><div class="ic">&#9997;&#65039;</div><div class="tx"><b>T&amp;M / Extra Work Ticket</b><span>Extra work with customer signature</span></div></a>
-    <a class="tile" data-role="lead" href="/writeup.html"><div class="ic">&#128221;</div><div class="tx"><b>Employee Write-Up</b><span>Safety, attendance &amp; conduct — signed on the phone</span></div></a>
-    <a class="tile" data-role="lead" href="/punch.html"><div class="ic">&#128203;</div><div class="tx"><b>Punch &amp; Deficiency</b><span>Punch lists, photos &amp; sign-off</span></div></a>
-    <a class="tile" data-role="lead" href="/orders.html"><div class="ic">&#128230;</div><div class="tx"><b>Order Log</b><span>POs, backorders &amp; receiving</span></div></a>
-    <a class="tile" href="/rentals.html"><div class="ic">&#127959;&#65039;</div><div class="tx"><b>Equipment Rentals</b><span>Request a lift &amp; call rentals off</span></div></a>
-    <a class="tile" href="/fitting.html"><div class="ic">&#128208;</div><div class="tx"><b>Fitting Ticket</b><span>Draw up duct &amp; fittings, send to the shop</span></div></a>
+  <div class="myday" id="myday">
+    <div class="hd"><b id="mdTitle">My day</b><div class="rolechips" id="roleChips"></div></div>
+    <div class="due" id="due"></div>
+    <div class="grid" id="mdGrid"></div>
   </div>
-
-  <div class="sec">Service Reporting</div>
-  <div class="grid">
-    <a class="tile" href="/servicereport.html"><div class="ic">&#128295;</div><div class="tx"><b>Service Report</b><span>Service ticket / daily report</span></div></a>
-    <a class="tile" href="/pmvisit.html"><div class="ic">&#128295;</div><div class="tx"><b>PM Visit</b><span>Pick the site &mdash; all units load pre-filled</span></div></a>
-    <a class="tile" href="/startupreport.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Start-Up Report</b><span>New equipment start-up checklists</span></div></a>
-    <a class="tile" href="/mysubmissions.html#service"><div class="ic">&#128203;</div><div class="tx"><b>My Submissions</b><span>Your service &amp; start-up reports</span></div></a>
-    <a class="tile" href="/equipment.html"><div class="ic">&#128269;</div><div class="tx"><b>Equipment Register</b><span>Search units by tag, model, serial &mdash; full history</span></div></a>
-  </div>
-
-  <div class="sec">Tasks</div>
-  <div class="grid">
-    <a class="tile" href="/mytasks.html"><div class="ic">&#128204;</div><div class="tx"><b>My Tasks</b><span>Items assigned to you</span></div></a>
-    <a class="tile" data-role="lead" href="/assigntask.html"><div class="ic">&#9745;&#65039;</div><div class="tx"><b>Action Items</b><span>Assign &amp; track tasks by job</span></div></a>
-  </div>
-
-  <div class="sec">Safety &amp; Quality</div>
-  <div class="grid">
-    <a class="tile" href="/pretask.html"><div class="ic">&#129466;</div><div class="tx"><b>Daily Pre-Task Plan</b><span>JHA, toolbox talk &amp; crew sign-on</span></div></a>
-    <a class="tile" href="/toolbox.html"><div class="ic">&#128227;</div><div class="tx"><b>Monthly Toolbox Talks</b><span>Read this month's talks &amp; sign off the crew</span></div></a>
-    <a class="tile" href="/incident.html"><div class="ic">&#129657;</div><div class="tx"><b>Injury / Incident Report</b><span>Injury, damage, vehicle or spill</span></div></a>
-    <a class="tile" href="/closecall.html"><div class="ic">&#9888;&#65039;</div><div class="tx"><b>Close Call Report</b><span>Safety close-call / near miss</span></div></a>
-    <a class="tile" href="/pressuretest.html"><div class="ic">&#127777;&#65039;</div><div class="tx"><b>Piping Pressure Test</b><span>QC test verification (22.02)</span></div></a>
-    <a class="tile" href="/transmittal.html"><div class="ic">&#128230;</div><div class="tx"><b>Transmittal</b><span>Hand-off of items, with photo</span></div></a>
-  </div>
-
-  <div class="sec">HR &amp; Expenses</div>
-  <div class="grid">
-    <a class="tile" href="/absence.html"><div class="ic">&#128197;</div><div class="tx"><b>Absence / Sick Request</b><span>Request time off</span></div></a>
-    <a class="tile" href="/expense.html"><div class="ic">&#128176;</div><div class="tx"><b>Expense / Reimbursement</b><span>Submit expenses for payment</span></div></a>
-    <a class="tile" href="/training.html"><div class="ic">&#127891;</div><div class="tx"><b>Training Sign-In</b><span>Log a training session &amp; roster</span></div></a>
-    <a class="tile" href="/certifications.html"><div class="ic">&#129706;</div><div class="tx"><b>Certifications &amp; Fleet</b><span>Look up anyone's cards &mdash; plus trucks, DOT &amp; registrations</span></div></a>
-  </div>
-
-  <div class="sec">Documents &amp; Files</div>
-  <div class="grid">
-    <a class="tile" href="/library.html?lib=sop"><div class="ic">&#128218;</div><div class="tx"><b>SOP Library</b><span>Standard Operating Procedures</span></div></a>
-    <a class="tile" href="/library.html?lib=sds"><div class="ic">&#129514;</div><div class="tx"><b>Safety Data Sheets (SDS)</b><span>MSDS / SDS for products &amp; chemicals</span></div></a>
-    <a class="tile" href="/fieldfiles.html"><div class="ic">&#128193;</div><div class="tx"><b>Field Files</b><span>Your job's files, by job</span></div></a>
-  </div>
-
-  <div class="sec">Shop</div>
-  <div class="grid">
-    <a class="tile" data-role="shop" href="/shopqueue.html"><div class="ic">&#128230;</div><div class="tx"><b>Shop Queue</b><span>Fitting tickets from the field</span></div></a>
-    <a class="tile" data-role="shop" href="/shopproduction.html"><div class="ic">&#128296;</div><div class="tx"><b>Shop Fab Run</b><span>Log a fabrication batch</span></div></a>
-    <a class="tile" data-role="shop" href="/shopbillout.html"><div class="ic">&#129534;</div><div class="tx"><b>Shop Bill-Out</b><span>Bill shop material out to a job</span></div></a>
-    <a class="tile" data-role="shop" href="/shoplog.html"><div class="ic">&#128221;</div><div class="tx"><b>Shop Daily Log</b><span>Shop foreman: jobs, problems, foreman talks</span></div></a>
-  </div>
-
-  <div class="sec">Reports</div>
-  <div class="grid">
-    <a class="tile" data-role="owner" href="/bids.html"><div class="ic">&#127919;</div><div class="tx"><b>Bid Tracking</b><span>Owners only: bids, hit ratios, GCs</span></div></a>
-    <a class="tile" data-role="admin" href="/dashboard.html"><div class="ic">&#128202;</div><div class="tx"><b>Executive Dashboard</b><span>Everything at a glance</span></div></a>
-    <a class="tile" data-role="pm" href="/closeout.html"><div class="ic">&#9989;</div><div class="tx"><b>Job Closeout</b><span>O&amp;Ms, warranties, start-ups, punch, permits</span></div></a>
-    <a class="tile" data-role="admin" href="/manpower.html"><div class="ic">&#128200;</div><div class="tx"><b>Manpower Load</b><span>Company man-hours by job</span></div></a>
-    <a class="tile" data-role="pm" href="/lookaheadreview.html"><div class="ic">&#128197;</div><div class="tx"><b>Look-Ahead Review</b><span>All 2-week look-aheads for the Monday meeting</span></div></a>
-    <a class="tile" data-role="pm" href="/weeklyreport.html"><div class="ic">&#128240;</div><div class="tx"><b>Weekly Owner Report</b><span>Draft the weekly owner / GC report</span></div></a>
-    <a class="tile" href="/taskschedule.html"><div class="ic">&#128203;</div><div class="tx"><b>Task Schedule</b><span>Budget vs earned hours by phase</span></div></a>
-    <a class="tile" data-role="shop" href="/shopdash.html"><div class="ic">&#128295;</div><div class="tx"><b>Shop Production</b><span>Fab rates &amp; optimal batch size</span></div></a>
-  </div>
-
-  <div class="sec">Setup (Office)</div>
-  <div class="grid">
-    <a class="tile" data-role="admin" href="/adminreview.html"><div class="ic">&#128269;</div><div class="tx"><b>Admin Review</b><span>Admins: review &amp; edit submitted reports</span></div></a>
-    <a class="tile" data-role="admin" href="/compliance.html"><div class="ic">&#9989;</div><div class="tx"><b>Compliance Dashboard</b><span>Timecards, logs &amp; look-aheads turned in vs. not</span></div></a>
-    <a class="tile" data-role="admin" href="/tcadmin.html"><div class="ic">&#128202;</div><div class="tx"><b>Timecard Admin</b><span>Accounting: all entries + CSV</span></div></a>
-    <a class="tile" data-role="admin" href="/phasecodes.html"><div class="ic">&#10133;</div><div class="tx"><b>Phase Codes</b><span>Add, lock or delete a job's phase/line codes</span></div></a>
-    <a class="tile" data-role="pm" href="/jobsetup.html"><div class="ic">&#9881;&#65039;</div><div class="tx"><b>Job Setup</b><span>Load phase &amp; line codes for a job</span></div></a>
-    <a class="tile" data-role="admin" href="/employees.html"><div class="ic">&#128101;</div><div class="tx"><b>Employee Setup</b><span>Refresh the crew list from Vista</span></div></a>
-  </div>
-
+  <div class="allhd"><b>All tools</b><input type="search" id="find" placeholder="Find a tool…"></div>
+  <div id="sections"></div>
   <div class="foot">Vision Mechanical &bull; Employee Portal &bull; Access limited to Vision Mechanical accounts.</div>
 </div>
 
@@ -154,60 +90,167 @@ header .who{font-size:12px;opacity:.9;margin-top:2px}
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalInstance=new msal.PublicClientApplication(MSAL_CONFIG);
 function E(id){return document.getElementById(id);}
-function showApp(acct){
-  E("gate").style.display="none";
-  E("app").style.display="block";
-  E("who").textContent=acct&&acct.username?acct.username:"";
-  tidySections();
-  applyRoles(acct);
-}
-/* ===== Role-based buttons =====
-   admin = Kegan/Bill or Admin flag in Employee Setup  -> everything
-   pm    = named PMs (+admins)                        -> Job Setup, Look-Ahead Review
-   lead  = PMs, admins, Foremen                       -> Action Items
-   shop  = Shop access flag (+admins)                 -> Shop Fab Run, Shop Production
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ===== Every tool, once. who: all | lead (foremen, PMs, admins) | pm (PMs, admins) | admin | owner | shop (shop + admins) =====
    Hidden buttons are a convenience only; each page still checks access itself. */
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var T={
+ timecard:{h:"/timecard.html",i:"&#128337;",n:"Daily Timecard",s:"Foremen: enter crew time"},
+ dailylog:{h:"/",i:"&#128221;",n:"Daily Field Log",s:"The day's field report"},
+ lookahead:{h:"/lookahead.html",i:"&#128301;",n:"2-Week Look-Ahead",s:"Plan the next two weeks"},
+ pretask:{h:"/pretask.html",i:"&#129466;",n:"Pre-Task Plan",s:"Morning JHA & crew sign-on"},
+ tm:{h:"/tmticket.html",i:"&#9997;&#65039;",n:"T&M Ticket",s:"Extra work, signed by the customer"},
+ mysubs:{h:"/mysubmissions.html",i:"&#128203;",n:"My Submissions",s:"Your timecards, logs & reports"},
+ service:{h:"/servicereport.html",i:"&#128295;",n:"Service Report",s:"Service ticket / daily report"},
+ pmvisit:{h:"/pmvisit.html",i:"&#128736;&#65039;",n:"PM Visit",s:"Pick the site — units load pre-filled"},
+ startup:{h:"/startupreport.html",i:"&#9881;&#65039;",n:"Start-Up Report",s:"New equipment start-up checklists"},
+ equip:{h:"/equipment.html",i:"&#128269;",n:"Equipment Register",s:"Units by tag, model, serial — full history"},
+ toolbox:{h:"/toolbox.html",i:"&#128227;",n:"Toolbox Talks",s:"This month's talks & crew sign-off"},
+ incident:{h:"/incident.html",i:"&#129657;",n:"Incident Report",s:"Injury, damage, vehicle or spill"},
+ closecall:{h:"/closecall.html",i:"&#9888;&#65039;",n:"Close-Call Report",s:"Near miss — what almost happened"},
+ training:{h:"/training.html",i:"&#127891;",n:"Training Sign-In",s:"Log a training session & roster"},
+ certs:{h:"/certifications.html",i:"&#129706;",n:"Certifications & Fleet",s:"Cards, trucks, DOT & registrations"},
+ mytasks:{h:"/mytasks.html",i:"&#128204;",n:"My Tasks",s:"Action items assigned to you"},
+ actions:{h:"/assigntask.html",i:"&#9745;&#65039;",n:"Action Items",s:"Assign & track tasks by job",w:"lead"},
+ tasksched:{h:"/taskschedule.html",i:"&#128200;",n:"Task Schedule",s:"Budget vs. earned hours by phase"},
+ punch:{h:"/punch.html",i:"&#128203;",n:"Punch & Deficiency",s:"Punch lists, photos & sign-off",w:"lead"},
+ pressure:{h:"/pressuretest.html",i:"&#127777;&#65039;",n:"Pressure Test",s:"Piping QC test verification"},
+ transmittal:{h:"/transmittal.html",i:"&#128228;",n:"Transmittal",s:"Hand-off of items, with photo"},
+ files:{h:"/fieldfiles.html",i:"&#128193;",n:"Field Files",s:"Your job's drawings & files"},
+ closeout:{h:"/closeout.html",i:"&#9989;",n:"Job Closeout",s:"O&Ms, warranties, permits, punch",w:"pm"},
+ orders:{h:"/orders.html",i:"&#128230;",n:"Order Log",s:"POs, backorders & receiving",w:"lead"},
+ rentals:{h:"/rentals.html",i:"&#127959;&#65039;",n:"Equipment Rentals",s:"Request a lift & call rentals off"},
+ fitting:{h:"/fitting.html",i:"&#128208;",n:"Fitting Ticket",s:"Draw duct & fittings, send to the shop"},
+ shopqueue:{h:"/shopqueue.html",i:"&#128229;",n:"Shop Queue",s:"Fitting tickets from the field",w:"shop"},
+ fabrun:{h:"/shopproduction.html",i:"&#128296;",n:"Shop Fab Run",s:"Log a fabrication batch",w:"shop"},
+ billout:{h:"/shopbillout.html",i:"&#129534;",n:"Shop Bill-Out",s:"Bill shop material out to a job",w:"shop"},
+ shoplog:{h:"/shoplog.html",i:"&#128221;",n:"Shop Daily Log",s:"Jobs, problems & foreman talks",w:"shop"},
+ shopdash:{h:"/shopdash.html",i:"&#128202;",n:"Shop Production",s:"Fab rates & best batch size",w:"shop"},
+ absence:{h:"/absence.html",i:"&#128197;",n:"Absence / Sick Request",s:"Request time off"},
+ expense:{h:"/expense.html",i:"&#128176;",n:"Expense / Reimbursement",s:"Submit expenses for payment"},
+ sop:{h:"/library.html?lib=sop",i:"&#128218;",n:"SOP Library",s:"Standard operating procedures"},
+ sds:{h:"/library.html?lib=sds",i:"&#129514;",n:"Safety Data Sheets",s:"SDS for products & chemicals"},
+ writeup:{h:"/writeup.html",i:"&#128221;",n:"Employee Write-Up",s:"Safety, attendance & conduct",w:"lead"},
+ dashboard:{h:"/dashboard.html",i:"&#128202;",n:"Executive Dashboard",s:"Everything at a glance",w:"admin"},
+ lareview:{h:"/lookaheadreview.html",i:"&#128197;",n:"Look-Ahead Review",s:"Every look-ahead for the Monday meeting",w:"pm"},
+ weekly:{h:"/weeklyreport.html",i:"&#128240;",n:"Weekly Owner Report",s:"Draft the weekly owner / GC report",w:"pm"},
+ manpower:{h:"/manpower.html",i:"&#128200;",n:"Manpower Load",s:"Company man-hours by job",w:"admin"},
+ bids:{h:"/bids.html",i:"&#127919;",n:"Bid Tracking",s:"Bids, hit ratios, GCs",w:"owner"},
+ compliance:{h:"/compliance.html",i:"&#9989;",n:"Compliance",s:"Timecards, logs & look-aheads in vs. not",w:"admin"},
+ adminreview:{h:"/adminreview.html",i:"&#128269;",n:"Admin Review",s:"Review & correct submitted reports",w:"admin"},
+ jobsetup:{h:"/jobsetup.html",i:"&#9881;&#65039;",n:"Job Setup",s:"Load a job's phase & line codes",w:"pm"},
+ phasecodes:{h:"/phasecodes.html",i:"&#10133;",n:"Phase Codes",s:"Add, lock or delete phase/line codes",w:"admin"},
+ employees:{h:"/employees.html",i:"&#128101;",n:"Employee Setup",s:"Crew list & who has which role",w:"admin"},
+ tcadmin:{h:"/tcadmin.html",i:"&#128202;",n:"Timecard Admin",s:"Accounting: all entries + CSV",w:"admin"}
+};
+var SECTIONS=[
+ ["Field",["timecard","dailylog","lookahead","pretask","tm","rentals","fitting","mysubs"]],
+ ["Service",["service","pmvisit","startup","equip"]],
+ ["Safety & training",["toolbox","incident","closecall","training","certs"]],
+ ["Jobs & quality",["mytasks","actions","tasksched","punch","orders","pressure","transmittal","files","closeout"]],
+ ["Shop",["shopqueue","fabrun","billout","shoplog","shopdash"]],
+ ["HR & documents",["absence","expense","sop","sds","writeup"]],
+ ["Management",["dashboard","lareview","weekly","manpower","bids","compliance","adminreview"]],
+ ["Office setup",["jobsetup","phasecodes","employees","tcadmin"]]
+];
+var MIN_SECTION=3;   /* a section showing fewer tools than this folds into "More tools" — no 1- or 2-button headings */
+/* My day: the handful of tools each kind of person uses most, in the order the day runs */
+var MYDAY={
+ owner:{t:"Owner",k:["dashboard","compliance","adminreview","orders","actions","bids"]},
+ office:{t:"Office",k:["adminreview","compliance","tcadmin","orders","employees","mytasks"]},
+ pm:{t:"PM",k:["lareview","tasksched","actions","punch","closeout","weekly"]},
+ foreman:{t:"Foreman",k:["pretask","tm","dailylog","timecard","lookahead","mytasks"]},
+ shop:{t:"Shop",k:["shopqueue","fabrun","billout","shoplog","fitting","mytasks"]},
+ svc:{t:"Service",k:["service","pmvisit","startup","equip","mytasks","mysubs"]},
+ crew:{t:"Crew",k:["mytasks","toolbox","closecall","absence","expense","sop"]}
+};
+var ROLE={owner:false,admin:false,pm:false,foreman:false,shop:false,svc:false}, ME_EMAIL="", PICK=null;
+function can(w){ var r=ROLE; if(!w||w==="all") return true; if(w==="owner") return r.owner; if(r.admin) return true;
+  if(w==="pm") return r.pm; if(w==="lead") return r.pm||r.foreman; if(w==="shop") return r.shop; return false; }
+function tileHtml(k){ var t=T[k]; return '<a class="tile" href="'+t.h+'" data-k="'+k+'"><div class="ic">'+t.i+'</div><div class="tx"><b>'+esc(t.n)+'</b><span>'+esc(t.s)+'</span></div></a>'; }
+function myKinds(){ var r=ROLE, out=[]; if(r.owner) out.push("owner"); if(r.admin&&!r.owner) out.push("office"); if(r.pm) out.push("pm"); if(r.foreman) out.push("foreman"); if(r.shop) out.push("shop"); if(r.svc) out.push("svc"); if(!out.length) out.push("crew"); return out; }
+function render(){
+  var kinds=myKinds(), saved=null; try{ saved=localStorage.getItem("vm_myday_pick"); }catch(e){}
+  if(!PICK||kinds.indexOf(PICK)<0) PICK=kinds.indexOf(saved)>-1?saved:kinds[0];
+  E("roleChips").innerHTML=kinds.length>1?kinds.map(function(k){ return '<button data-k="'+k+'" class="'+(k===PICK?"on":"")+'">'+MYDAY[k].t+'</button>'; }).join(""):"";
+  E("roleChips").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ PICK=b.getAttribute("data-k"); try{ localStorage.setItem("vm_myday_pick",PICK); }catch(e){} render(); }; });
+  E("mdTitle").textContent="My day"+(kinds.length>1?"":" · "+MYDAY[PICK].t);
+  E("mdGrid").innerHTML=MYDAY[PICK].k.filter(function(k){ return T[k]&&can(T[k].w); }).map(tileHtml).join("");
+  /* all tools: sections with too few visible tools fold into More tools */
+  var q=(E("find").value||"").toLowerCase().trim(), h="", more=[];
+  SECTIONS.forEach(function(sec){ var ks=sec[1].filter(function(k){ return can(T[k].w)&&(!q||(T[k].n+" "+T[k].s).toLowerCase().indexOf(q)>-1); });
+    if(!ks.length) return; if(ks.length<MIN_SECTION&&!q){ more=more.concat(ks); return; }
+    h+='<div class="sec">'+esc(sec[0])+'</div><div class="grid">'+ks.map(tileHtml).join("")+'</div>'; });
+  if(more.length) h+='<div class="sec">More tools</div><div class="grid">'+more.map(tileHtml).join("")+'</div>';
+  if(!h) h='<div class="sec">Nothing matches “'+esc(q)+'”.</div>';
+  E("sections").innerHTML=h;
+}
+E("find").addEventListener("input",render);
+
+/* ===== Due today: what this person still owes =====*/
+function pad(n){return (n<10?"0":"")+n;}
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function d10(v){ return String(v||"").slice(0,10); }
+var SITE_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/";
+async function rows(tok,list,select,filter){ var url=SITE_URL+list+"/items?$expand=fields($select="+select+")&$top=999"+(filter?"&$filter="+encodeURIComponent(filter):""), out=[];
+  while(url){ var j=await fetch(url,{headers:{Authorization:"Bearer "+tok,Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly"}}).then(function(r){return r.json();}); if(j.error) throw new Error(j.error.message); (j.value||[]).forEach(function(it){ if(it.fields) out.push(it.fields); }); url=j["@odata.nextLink"]||null; } return out; }
+async function loadDue(tok,em,myName){
+  var pills=[], now=new Date(), today=ymd(now), dow=now.getDay(), weekday=dow>=1&&dow<=5, late=now.getHours()*60+now.getMinutes()>=14*60+30;
+  var mon=new Date(now); mon.setDate(now.getDate()-((dow+6)%7)); var monday=ymd(mon);
+  var q=function(s){ return String(s).replace(/'/g,"''"); };
+  var jobs=[];
+  if(ROLE.foreman){
+    jobs.push(rows(tok,"bccd1165-a999-41b4-9cae-394d0766fb4a","LogDate,LoginEmail","fields/LoginEmail eq '"+q(em)+"'").then(function(r){ if(!weekday) return; var done=r.some(function(x){return d10(x.LogDate)===today;});
+      pills.push({o:1,c:done?"ok":(late?"bad":"warn"),t:done?"&#10003; Daily log in":"Daily log due today",h:"/"}); }).catch(function(){}));
+    jobs.push(rows(tok,"91c4a3db-97f6-4b52-a855-516d5c414124","WorkDate,ForemanEmail","fields/ForemanEmail eq '"+q(em)+"'").then(function(r){ if(!weekday) return; var done=r.some(function(x){return d10(x.WorkDate)===today;});
+      pills.push({o:2,c:done?"ok":(late?"bad":"warn"),t:done?"&#10003; Timecard in":"Timecard due today",h:"/timecard.html"}); }).catch(function(){}));
+    jobs.push(rows(tok,"3c787f11-c841-4fc9-a4c1-d04e11b6cd2c","WeekOf,LoginEmail","fields/LoginEmail eq '"+q(em)+"'").then(function(r){ var done=r.some(function(x){ return d10(x.WeekOf)>=monday; });
+      pills.push({o:3,c:done?"ok":(dow>=4||dow===0?"bad":"warn"),t:done?"&#10003; Look-ahead in this week":"Look-ahead due this week",h:"/lookahead.html"}); }).catch(function(){}));
+  }
+  jobs.push(rows(tok,"25279cba-004d-4b8c-8356-4b32f24d9cc8","AssignedTo,AssignedToName,Status,DueDate").then(function(r){
+    var mine=r.filter(function(x){ var to=String(x.AssignedTo||"").toLowerCase().trim(); return (to===em||(!to&&myName&&String(x.AssignedToName||"").toLowerCase()===myName.toLowerCase()))&&String(x.Status||"Open")!=="Done"&&String(x.Status||"Open")!=="Complete"; });
+    var over=mine.filter(function(x){ return x.DueDate&&d10(x.DueDate)<today; }).length;
+    if(mine.length) pills.push({o:4,c:over?"bad":"",t:mine.length+" open task"+(mine.length===1?"":"s")+(over?" · "+over+" overdue":""),h:"/mytasks.html"});
+    else pills.push({o:4,c:"ok",t:"&#10003; No open tasks",h:"/mytasks.html"}); }).catch(function(){}));
+  await Promise.all(jobs);
+  pills.sort(function(a,b){return a.o-b.o;});
+  E("due").innerHTML=pills.map(function(p){ return '<a class="'+p.c+'" href="'+p.h+'">'+p.t+'</a>'; }).join("");
+}
+
+/* ===== sign-in + roles ===== */
+function showApp(acct){ E("gate").style.display="none"; E("app").style.display="block"; E("who").textContent=acct&&acct.username?acct.username:""; applyRoles(acct); }
 var GRAPH_SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
-var EMP_URL="https://graph.microsoft.com/v1.0/sites/visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281/lists/537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Foreman,ShopAccess,Active)&$top=999";
+var EMP_URL=SITE_URL+"537b8d9b-e666-43d1-9441-efc2bed48d73/items?$expand=fields($select=EmployeeName,LoginEmail,Admin,Foreman,ShopAccess,PM,Owner,ServiceTech,Active)&$top=999";
 function truthy(v){return v===true||v==="Yes"||v==="true";}
 function autoEmail(n){var p=String(n||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "";var fi=(p[0][0]||"").toLowerCase(),ln=p[p.length-1].toLowerCase().replace(/[^a-z0-9]/g,"");return (fi&&ln)?(fi+ln+"@visionmech.net"):"";}
-function showRoles(r){
-  document.querySelectorAll(".tile[data-role]").forEach(function(el){ var need=el.getAttribute("data-role");
-    var ok=(need==="owner") ? !!r.owner : r.admin || (need==="pm"&&r.pm) || (need==="lead"&&(r.pm||r.foreman)) || (need==="shop"&&r.shop);
-    el.classList.toggle("show",!!ok); });
-  tidySections();
-}
-function tidySections(){ /* hide a section header when every button under it is hidden */
-  document.querySelectorAll(".grid").forEach(function(g){ var any=Array.prototype.some.call(g.querySelectorAll(".tile"),function(t){ return !t.hasAttribute("data-role")||t.classList.contains("show"); });
-    g.classList.toggle("empty-sec",!any); var h=g.previousElementSibling; if(h&&h.classList.contains("sec")) h.classList.toggle("empty-sec",!any); });
-}
-function roleNote(t,fix){ var n=E("roleNote"); if(!n){ n=document.createElement("div"); n.id="roleNote"; n.style.cssText="background:#fef3c7;color:#92400e;border-radius:9px;padding:9px 12px;font-size:13px;margin:8px 0"; var a=E("app"); a.insertBefore(n,a.firstChild); }
+function roleNote(t,fix){ var n=E("roleNote"); if(!n){ n=document.createElement("div"); n.id="roleNote"; n.style.cssText="background:#fef3c7;color:#92400e;border-radius:9px;padding:9px 12px;font-size:13px;margin:0 0 10px"; var a=E("app"); a.insertBefore(n,a.firstChild); }
   n.textContent=t;
   if(fix){ var b=document.createElement("button"); b.textContent="Fix my access"; b.style.cssText="margin-left:10px;background:#7f1d1d;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-weight:700;cursor:pointer";
     b.onclick=function(){ try{ sessionStorage.removeItem("vm_roles_try"); }catch(e){} msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:fix,prompt:"consent"}); }; n.appendChild(b); } }
 var REDIR_TOKEN=null;   /* token handed back by a sign-in redirect — used directly so we don't depend on the silent call */
 function applyRoles(acct){
-  var em=String(acct&&acct.username||"").toLowerCase().trim();
-  var r={owner:SUPERADMIN.indexOf(em)>-1, admin:SUPERADMIN.indexOf(em)>-1, pm:NAMED_PM.indexOf(em)>-1, foreman:false, shop:false};
-  try{ var c=JSON.parse(localStorage.getItem("vm_roles_v1")||"null"); if(c&&c.em===em) showRoles(c.r); }catch(e){}   /* instant from last visit */
-  showRoles(r);
+  var em=String(acct&&acct.username||"").toLowerCase().trim(); ME_EMAIL=em;
+  ROLE={owner:VMR.isOwner(em), admin:VMR.isOwner(em), pm:VMR.isPM(em), foreman:false, shop:false, svc:VMR.isSvc(em)};
+  try{ var c=JSON.parse(localStorage.getItem("vm_roles_v1")||"null"); if(c&&c.em===em&&c.r) ROLE=Object.assign(ROLE,c.r); }catch(e){}   /* instant from last visit */
+  render();
   (REDIR_TOKEN?Promise.resolve({accessToken:REDIR_TOKEN}):msalInstance.acquireTokenSilent({scopes:[GRAPH_SCOPE],account:acct})).then(function(tok){
-    var url=EMP_URL, me=null;
+    var me=null, all=[];
     function page(u){ return fetch(u,{headers:{Authorization:"Bearer "+tok.accessToken}}).then(function(x){return x.json();}).then(function(j){
       if(j.error) throw new Error(j.error.message||"no access");
-      (j.value||[]).forEach(function(it){ var f=it.fields||{}; if((f.Active||"Yes")==="No") return; var e2=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e2===em) me=f; });
+      (j.value||[]).forEach(function(it){ var f=it.fields||{}; all.push(f); if((f.Active||"Yes")==="No") return; var e2=(f.LoginEmail||"").toLowerCase().trim()||autoEmail(f.EmployeeName); if(e2===em) me=f; });
       if(j["@odata.nextLink"]) return page(j["@odata.nextLink"]); }); }
-    return page(url).then(function(){
-      if(!me && SUPERADMIN.indexOf(em)<0) roleNote("Signed in as "+em+" — not found in Employee Setup, so office buttons are hidden. Check the login email on your employee record.");
-      if(me){ r.admin=r.admin||truthy(me.Admin); r.foreman=truthy(me.Foreman); r.shop=truthy(me.ShopAccess); }
-      r.pm=r.pm||r.admin;
-      showRoles(r);
+    return page(EMP_URL).then(function(){
+      VMR.store(all);
+      var r={owner:VMR.isOwner(em), admin:false, pm:VMR.isPM(em), foreman:false, shop:false, svc:VMR.isSvc(em)};
+      if(!me && !r.owner) roleNote("Signed in as "+em+" — not found in Employee Setup, so office buttons are hidden. Check the login email on your employee record.");
+      if(me){ r.owner=truthy(me.Owner)||(!("Owner" in me)&&r.owner); r.pm=truthy(me.PM)||(!("PM" in me)&&r.pm); r.svc=truthy(me.ServiceTech)||(!("ServiceTech" in me)&&r.svc);
+        r.admin=truthy(me.Admin); r.foreman=truthy(me.Foreman); r.shop=truthy(me.ShopAccess); }
+      r.admin=r.admin||r.owner;
+      ROLE=r; render();
       try{ localStorage.setItem("vm_roles_v1",JSON.stringify({em:em,r:r})); }catch(e){}
+      loadDue(tok.accessToken,em,me?String(me.EmployeeName||""):"");
     }).catch(function(e){ roleNote("Couldn't check your access ("+e.message+"). Office buttons may be hidden — tell the office."); });
   }).catch(function(e){
-    /* first visit on this device: get the data permission once, then come back */
     roleNote("Microsoft needs you to confirm access on this device ("+(e&&(e.errorCode||e.message)||"sign-in")+"). Tap the button and approve, then you'll land back here.",acct);
     try{ if(!sessionStorage.getItem("vm_roles_try")){ sessionStorage.setItem("vm_roles_try","1"); msalInstance.acquireTokenRedirect({scopes:[GRAPH_SCOPE],account:acct}); } }catch(e){}
   });
@@ -217,13 +260,9 @@ function start(){
     if(resp&&resp.accessToken&&resp.scopes&&resp.scopes.join(" ").toLowerCase().indexOf("sites.readwrite.all")>-1) REDIR_TOKEN=resp.accessToken;
     var all=msalInstance.getAllAccounts(), acct=msalInstance.getActiveAccount()||all.filter(function(a){return /@visionmech\.net$/i.test(a.username||"");})[0]||all[0];
     if(acct){ msalInstance.setActiveAccount(acct); showApp(acct); }
-  }).catch(function(e){
-    E("gateMsg").textContent="Sign-in problem: "+String(e);
-  });
+  }).catch(function(e){ E("gateMsg").textContent="Sign-in problem: "+String(e); });
 }
-E("signin").onclick=function(){
-  msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]});
-};
+E("signin").onclick=function(){ msalInstance.loginRedirect({scopes:["openid","profile","email",GRAPH_SCOPE]}); };
 start();
 </script>
 <script src="/feedback.js" defer></script>

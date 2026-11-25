@@ -63,6 +63,7 @@ textarea{min-height:70px;resize:vertical}
 .denied{max-width:440px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:30px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -130,7 +131,7 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var LIST_NAME="Shop Daily Logs", PHOTO_ROOT="Shop Log Photos", DRAFT_KEY="vm_shoplog_draft_v1";
 var JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", TC="91c4a3db-97f6-4b52-a855-516d5c414124", ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8";
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"], SHOP_FOREMAN=["nholliday@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice(), SHOP_FOREMAN=["nholliday@visionmech.net"];
 var SHOP_PHASES={"1210":"Pre-assembly","1220":"Hanger fab","1230":"Duct","1240":"Welded steel","1250":"Fittings","1810":"Steel pipe","1820":"Copper","1830":"PVC","1840":"Cast iron","1850":"Aquatherm","1860":"Fixture fab"};
 var PROBLEMS=["Missing / unclear info","Dimension conflict","Material shortage","Rework","Equipment down","Waiting on approval","Schedule / priority change","Other"];
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});

@@ -67,6 +67,7 @@ table.wk2 td.lbl{font-weight:700;color:var(--vm2);font-size:12.5px;white-space:n
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -118,8 +119,8 @@ var LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c";      /* Weekly 2-Week Look Ahea
 var TC="91c4a3db-97f6-4b52-a855-516d5c414124";        /* Timecard Entries — who worked which job */
 var JOBS="836523ba-cd20-4736-98ce-5716668b8973";      /* Jobs — archive flag */
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";       /* Employee Master */
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice();
+var NAMED_PM=VMR.pms.slice();
 var MSAL_CONFIG={auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}};
 var msalApp=new msal.PublicClientApplication(MSAL_CONFIG);
 var account=null, loginEmail="", WEEK=null, ROWS=[], MISSING=[], ALL_OPEN=true, LOAD_SEQ=0;

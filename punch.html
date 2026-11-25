@@ -97,6 +97,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--vm);back
 @media(max-width:560px){.map{grid-template-columns:1fr 1fr}.phs{grid-template-columns:1fr}.seg button{font-size:11px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -264,8 +265,8 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var EMP="537b8d9b-e666-43d1-9441-efc2bed48d73", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", JOBS="836523ba-cd20-4736-98ce-5716668b8973", TC="91c4a3db-97f6-4b52-a855-516d5c414124";
 var L_HDR="Punch Lists", L_ITM="Punch Items", FILE_ROOT="Punch Lists";
-var VM_SUPER=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"];
-var VM_PMS=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var VM_SUPER=VMR.owners.slice();
+var VM_PMS=VMR.pms.slice();
 var SOURCES=["Architect","Owner","GC","Engineer","Inspector","Vision (internal)","Other"];
 var IST=["Open","In progress","Fixed","Not ours"];
 var XLSX_SRC="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";

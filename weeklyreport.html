@@ -49,6 +49,7 @@ input:focus{outline:none;border-color:var(--vm);background:#fff}
 @media print{header,.noprint{display:none!important}body{background:#fff}.wrap{padding:0;max-width:none}#doc{border:none;padding:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"></script>
+<script src="/roles.js"></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/favicon-32.png">
@@ -93,7 +94,7 @@ var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce771
 var SITEURL="https://graph.microsoft.com/v1.0/sites/"+SITE, GRAPH=SITEURL+"/lists/";
 var LOGS="bccd1165-a999-41b4-9cae-394d0766fb4a", LOOK="3c787f11-c841-4fc9-a4c1-d04e11b6cd2c", TC="91c4a3db-97f6-4b52-a855-516d5c414124",
     ACTIONS="25279cba-004d-4b8c-8356-4b32f24d9cc8", JOBTASKS="192b6fd5-5a12-47c1-9d1b-ba4b51e13371", EMP="537b8d9b-e666-43d1-9441-efc2bed48d73";
-var SUPERADMIN=["kegan.singleton@visionmech.net","bsingleton@visionmech.net"], NAMED_PM=["avrell@visionmech.net","jbeach@visionmech.net","sthomas@visionmech.net","avigil@visionmech.net"];
+var SUPERADMIN=VMR.owners.slice(), NAMED_PM=VMR.pms.slice();
 var SECTIONS=[["summary","Summary",1],["manpower","Manpower",1],["work","Work completed",1],["deliveries","Deliveries & material",1],["quality","Inspections & quality",1],
   ["safety","Safety",1],["issues","Delays, issues & extra work",1],["look","Two-week look-ahead",1],["photos","Photos",1],["actions","Open action items (internal)",0]];
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
