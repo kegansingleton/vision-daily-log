@@ -165,7 +165,7 @@ var MYDAY={
  crew:{t:"Crew",k:["mytasks","toolbox","closecall","absence","expense","sop"]}
 };
 var ROLE={owner:false,admin:false,pm:false,foreman:false,shop:false,svc:false}, ME_EMAIL="", PICK=null;
-function can(w){ var r=ROLE; if(!w||w==="all") return true; if(w==="owner") return r.owner; if(r.admin) return true;
+function can(w){ var r=ROLE; if(!w||w==="all") return true; if(w==="owner") return r.owner||ME_EMAIL==="pguest@visionmech.net"; if(r.admin) return true;
   if(w==="pm") return r.pm; if(w==="lead") return r.pm||r.foreman; if(w==="shop") return r.shop; return false; }
 function tileHtml(k){ var t=T[k]; return '<a class="tile" href="'+t.h+'" data-k="'+k+'"><div class="ic">'+t.i+'</div><div class="tx"><b>'+esc(t.n)+'</b><span>'+esc(t.s)+'</span></div></a>'; }
 function myKinds(){ var r=ROLE, out=[]; if(r.owner) out.push("owner"); if(r.admin&&!r.owner) out.push("office"); if(r.pm) out.push("pm"); if(r.foreman) out.push("foreman"); if(r.shop) out.push("shop"); if(r.svc) out.push("svc"); if(!out.length) out.push("crew"); return out; }

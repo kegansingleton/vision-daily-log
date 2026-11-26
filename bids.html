@@ -171,6 +171,7 @@ var SCOPE="https://graph.microsoft.com/Sites.ReadWrite.All";
 var SITE="visionmech.sharepoint.com,ccfe4256-b2bf-4a3b-8e37-50f8021bb3b2,acce7714-1643-4364-86e0-8641745e0281";
 var LIST="Bid Log";
 var OWNERS=VMR.owners.slice();
+var BID_VIEWERS=["pguest@visionmech.net"];   /* read-only guest login (peer group): can open Bid Tracking, saves are blocked */
 var G="https://graph.microsoft.com/v1.0/sites/"+SITE+"/lists/"+encodeURIComponent(LIST);
 var msalApp=new msal.PublicClientApplication({auth:{clientId:"ece3c8e3-0f54-49dc-bf83-b46411ade0aa",authority:"https://login.microsoftonline.com/8d64d0b9-91ba-4959-a83c-2e7e8cf233b3",redirectUri:(window.location.origin+window.location.pathname)},cache:{cacheLocation:"localStorage"}});
 var account=null, ROWS=[], EDIT=null, F={q:"",year:"",gc:"",scope:"",est:"",st:""}, SORT={k:"date",dir:-1};
@@ -340,7 +341,7 @@ function deny(html){ E("gate").style.display="none"; E("denied").style.display="
 async function start(a){
   account=a; msalApp.setActiveAccount(a); var em=(a.username||"").toLowerCase();
   E("who").textContent=a.name||a.username;
-  if(OWNERS.indexOf(em)<0){ deny('<h2>Owners only</h2><p class="muted">Bid Tracking is limited to Kegan and Bill. Signed in as <b>'+esc(em)+'</b>.</p><p><a href="/portal.html" style="color:var(--link);font-weight:700">Back to the portal</a></p>'); return; }
+  if(OWNERS.indexOf(em)<0&&BID_VIEWERS.indexOf(em)<0){ deny('<h2>Owners only</h2><p class="muted">Bid Tracking is limited to Kegan and Bill. Signed in as <b>'+esc(em)+'</b>.</p><p><a href="/portal.html" style="color:var(--link);font-weight:700">Back to the portal</a></p>'); return; }
   E("gateMsg").textContent="Loading bids…";
   try{ await load(); }
   catch(e){
